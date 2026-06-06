@@ -8887,7 +8887,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v65 · regroupement auto nouveau tiers ✨';
+    b.textContent='YADA · v66 · nouveau client dans la création ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -9101,9 +9101,14 @@ ${lignes}
       +'<input type="hidden" id="fa-type" value="facture">'
       +'<div class="row g3">'
       +'<div class="field"><label>Type</label><select id="fa-type2" onchange="document.getElementById(&quot;fa-type&quot;).value=this.value"><option value="facture">Facture</option><option value="devis">Devis</option></select></div>'
-      +'<div class="field"><label>Client</label><select id="fa-client" onchange="faMaj()">'+(clients.map(function(c){return '<option value="'+c.id+'">'+c.nom+'</option>';}).join('')||'<option value="">— aucun client —</option>')+'</select></div>'
+      +'<div class="field"><label>Client</label><select id="fa-client" onchange="faClientToggleNew();faMaj()">'+(clients.map(function(c){return '<option value="'+c.id+'">'+c.nom+'</option>';}).join(''))+'<option value="__new__">➕ Nouveau client…</option></select></div>'
       +'<div class="field"><label>Date d\'émission</label><input type="date" id="fa-date" value="'+todayStr()+'"></div>'
       +'</div>'
+      +'<div id="fa-newcli" style="display:none;margin:-4px 0 10px;padding:11px 12px;border:1px dashed var(--line);border-radius:10px;background:var(--paper-2,rgba(127,127,127,.05))">'
+      +'<div class="sub" style="margin-bottom:8px">🆕 Nouveau client — il sera créé et marqué « NOUVEAU » pour que le cabinet complète sa fiche (IBAN, e-mail…).</div>'
+      +'<div class="row g3"><div class="field"><label>Raison sociale *</label><input id="fa-newnom" placeholder="Nom du client"></div>'
+      +'<div class="field"><label>SIRET</label><input id="fa-newsiret" placeholder="14 chiffres"></div>'
+      +'<div class="field" style="align-self:end"><button class="btn btn-gold" style="width:100%" onclick="faClientNewSiret()">🔎 Compléter via le SIRET</button></div></div></div>'
       +'<div class="row g3"><div class="field"><label>Date d\'échéance</label><input type="date" id="fa-ech" value="'+todayStr()+'"></div><div></div><div></div></div>'
       +'<div class="field"><label>Lignes</label>'+liHead+liRows
       +'<button class="btn btn-ghost btn-sm" onclick="faSync();faAddLigne()">+ Ajouter une ligne</button></div>'
@@ -9115,10 +9120,41 @@ ${lignes}
       +'</tbody></table></div>'
       +'<div id="fa-apercu"></div>'
       +'<div class="right">'
-      +'<button class="btn btn-ghost" onclick="emettre(false)">Enregistrer en brouillon</button>'
-      +'<button class="btn btn-pri" onclick="emettre(true)">Valider la facture</button>'
+      +'<button class="btn btn-ghost" onclick="faClientEmettre(false)">Enregistrer en brouillon</button>'
+      +'<button class="btn btn-pri" onclick="faClientEmettre(true)">Valider la facture</button>'
       +'</div></div>';
   }
+  /* afficher/masquer le bloc « nouveau client » */
+  window.faClientToggleNew=function(){ var s=document.getElementById('fa-client'); var b=document.getElementById('fa-newcli');
+    if(b) b.style.display=(s&&s.value==='__new__')?'block':'none'; };
+  /* complétion du nouveau client via le SIRET */
+  window.faClientNewSiret=function(){ var g=function(x){return document.getElementById(x);};
+    var siret=((g('fa-newsiret')||{}).value||'').replace(/\D/g,'');
+    if(siret.length!==14 && siret.length!==9) return toast('Saisissez un SIRET (14) ou un SIREN (9).');
+    if(typeof lookupSiret!=='function') return toast('Service indisponible.');
+    toast('Recherche…');
+    Promise.resolve(lookupSiret(siret)).then(function(info){ if(!info)return toast('Aucune entreprise trouvée.');
+      if(info.raison&&g('fa-newnom')) g('fa-newnom').value=info.raison;
+      if(info.siret&&g('fa-newsiret')) g('fa-newsiret').value=info.siret;
+      g('fa-newnom').dataset.tva=info.tvaIntra||''; g('fa-newnom').dataset.adr=((info.adresse||'')+((info.cp||info.ville)?(', '+(info.cp||'')+' '+(info.ville||'')):'')).trim();
+      toast('✓ '+(info.raison||'Complété'));
+    }).catch(function(e){ toast('Échec : '+(e&&e.message||'réseau requis')); }); };
+  /* émission : crée le nouveau client (marqué NOUVEAU) si « ➕ Nouveau client » puis émet la facture */
+  window.faClientEmettre=function(valider){
+    var sel=document.getElementById('fa-client');
+    if(sel && sel.value==='__new__'){
+      var nomEl=document.getElementById('fa-newnom'); var nom=((nomEl||{}).value||'').trim();
+      if(!nom) return toast('Indiquez le nom du nouveau client.');
+      var siret=((document.getElementById('fa-newsiret')||{}).value||'').replace(/\s/g,'');
+      var t={ id:uid(), type:'client', categorie:'societe', nom:nom, compteContre:'706000', compteTVA:'44571', taux:20,
+        compteAux:null, email:'', tel:'', siret:siret, tvaIntra:(nomEl&&nomEl.dataset?nomEl.dataset.tva||'':''), iban:'',
+        adresse:(nomEl&&nomEl.dataset?nomEl.dataset.adr||'':''), nouveau:true, origine:'client', dateAjout:todayStr() };
+      db.tiers.push(t); try{ t.compteAux=genAux('client',t.nom); }catch(e){}
+      var o=document.createElement('option'); o.value=t.id; o.textContent=t.nom; sel.appendChild(o); sel.value=t.id;
+      toast('Nouveau client « '+nom+' » créé — à compléter par le cabinet.');
+    }
+    if(typeof emettre==='function') emettre(valider);
+  };
   function faClientRecentes(){
     var docs=(db.docs||[]).slice().sort(function(a,b){return a.date<b.date?1:(a.date>b.date?-1:((a.numero||'')<(b.numero||'')?1:-1));}).slice(0,5);
     var rows=docs.map(function(d){ var c=(db.tiers||[]).find(function(x){return x.id===d.clientId;}); var st=docStatutFac(d);
