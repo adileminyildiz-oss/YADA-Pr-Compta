@@ -8769,7 +8769,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v44 · dépôts validés par le cabinet ✨';
+    b.textContent='YADA · v46 · fiche fournisseur inconnu ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -9194,6 +9194,155 @@ ${lignes}
   if(typeof buildNav==='function'){ var _bn=buildNav; buildNav=function(){ var r=_bn.apply(this,arguments);
     try{ if((window.sessionRole||'cabinet')!=='client'){ var nav=document.getElementById('nav'); if(nav){ addBadge(nav,'Facturation client',notifNonLus('vente')); addBadge(nav,'Factures fournisseurs',notifNonLus('achat')); } } }catch(e){}
     return r; }; }
+})();
+</script>
+<script id="yada-addon45">
+/* Fournisseur inconnu → fiche d'information.
+   Au dépôt d'une facture d'achat, le client indique le fournisseur ; s'il est
+   « inconnu / nouveau », une fiche d'information est demandée (proposition
+   visible côté client ET cabinet). Le client remplit la fiche ; le cabinet la
+   valide → création du fournisseur (db.tiers) puis comptabilisation du dépôt. */
+(function(){
+  if(typeof render!=='function') return;
+  function gstore(){ if(!db.parametres)db.parametres={}; if(!Array.isArray(db.parametres.pieces))db.parametres.pieces=[]; return db.parametres.pieces; }
+  function dstore(){ if(!db.parametres)db.parametres={}; if(!Array.isArray(db.parametres.depots))db.parametres.depots=[]; return db.parametres.depots; }
+  function nstore(){ if(!db.parametres)db.parametres={}; if(!Array.isArray(db.parametres.notifsDepot))db.parametres.notifsDepot=[]; return db.parametres.notifsDepot; }
+  function fstore(){ if(!db.parametres)db.parametres={}; if(!Array.isArray(db.parametres.fichesTiers))db.parametres.fichesTiers=[]; return db.parametres.fichesTiers; }
+  function normName(n){ return String(n||'').trim().toLowerCase(); }
+  function v(s){ return String(s||'').replace(/"/g,'&quot;'); }
+
+  /* Override du dépôt : prend en compte le fournisseur indiqué (achat) + fiche si inconnu */
+  window.factDepotAdd=function(file,cat){ return new Promise(function(res){ var r=new FileReader();
+    r.onload=function(){ try{
+      var nom=file.name;
+      var dup=gstore().some(function(p){ return p.cat===cat && normName(p.nom)===normName(nom); });
+      var piece={ id:uid(), nom:nom, mime:file.type||'', taille:file.size||0, data:r.result, date:todayStr(), cat:cat };
+      gstore().push(piece);
+      var tiersId='', inconnu=false;
+      if(cat==='achat'){ var selv=(document.getElementById('dep-four-achat')||{}).value||'';
+        if(selv && selv!=='__inconnu__'){ tiersId=selv; } else { inconnu=true; } }
+      var dep={ id:uid(), cat:cat, fichierId:piece.id, nom:nom, date:todayStr(), statut:'deposee',
+        doublon:dup, doublonRaison:dup?('Fichier « '+nom+' » déjà déposé dans le dossier'):'',
+        tiersId:tiersId, tiersInconnu:inconnu, numero:'', dateFacture:'', ht:0, tva:0, ttc:0, taux:20,
+        ecritureId:null, factureId:null, ficheId:null };
+      dstore().push(dep);
+      nstore().push({ id:uid(), date:todayStr(), cat:cat, depotId:dep.id, nom:nom, doublon:dup, lu:false });
+      if(inconnu){ var fiche={ id:uid(), type:'fournisseur', depotId:dep.id, statut:'a_remplir', date:todayStr(),
+        raison:'', siret:'', tvaIntra:'', adresse:'', cp:'', ville:'', email:'', tel:'', iban:'', tiersId:null };
+        fstore().push(fiche); dep.ficheId=fiche.id; }
+      save(); res(true);
+    }catch(e){ toast('Fichier trop volumineux'); res(false); } };
+    r.onerror=function(){res(false);}; r.readAsDataURL(file); }); };
+
+  /* Override de la carte de dépôt client : ajoute le sélecteur fournisseur (achat) */
+  if(typeof window.depotFacturesCard==='function'){
+    window.depotFacturesCard=function(cat,titre,sub){
+      var selHtml='';
+      if(cat==='achat'){ var fourns=(db.tiers||[]).filter(function(t){return t.type==='fournisseur';});
+        selHtml='<div class="field" style="margin-bottom:10px"><label>Fournisseur de cette facture</label>'
+          +'<select id="dep-four-achat"><option value="">— Sélectionner —</option>'
+          +fourns.map(function(t){return '<option value="'+t.id+'">'+t.nom+'</option>';}).join('')
+          +'<option value="__inconnu__">➕ Fournisseur inconnu / nouveau</option></select>'
+          +'<div class="hint">Fournisseur inconnu ? Une fiche d\'information vous sera demandée après le dépôt.</div></div>'; }
+      return '<div class="card"><h2>'+titre+'</h2><div class="sub">'+sub+' Chaque dépôt notifie votre cabinet ; un doublon s\'affiche en rouge. La réception et la comptabilisation sont validées par le cabinet.</div>'
+        +selHtml
+        +'<div class="ged-drop" onclick="factPick(\''+cat+'\')" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="factDrop(event,\''+cat+'\')">'
+        +'<div style="font-size:24px">⬆</div><div style="font-weight:700">Déposez vos factures ici</div><div class="hint">ou cliquez — PDF, JPG, PNG</div>'
+        +'<input type="file" id="fdep-'+cat+'" hidden multiple accept=".pdf,.jpg,.jpeg,.png,image/*" onchange="factFile(event,\''+cat+'\')"></div>'
+        +depotsListe(cat,'client')+'</div>';
+    };
+  }
+
+  /* Fiche : remplissage par le client (modale) */
+  window.ficheRemplir=function(id){ var f=fstore().find(function(x){return x.id===id;}); if(!f)return;
+    var d=dstore().find(function(x){return x.id===f.depotId;});
+    document.getElementById('modal-c').innerHTML=
+      '<h2 style="margin-top:0">📝 Fiche d\'information fournisseur</h2>'
+      +'<div class="sub">Renseignez les informations du nouveau fournisseur'+(d?(' (facture « '+v(d.nom)+' »)'):'')+'. Elles seront transmises à votre cabinet.</div>'
+      +'<div class="row g2"><div class="field"><label>Raison sociale *</label><input id="fi-raison" value="'+v(f.raison)+'"></div>'
+      +'<div class="field"><label>SIRET</label><input id="fi-siret" value="'+v(f.siret)+'"></div></div>'
+      +'<div class="row g2"><div class="field"><label>N° TVA intracom.</label><input id="fi-tva" value="'+v(f.tvaIntra)+'"></div>'
+      +'<div class="field"><label>E-mail</label><input id="fi-email" value="'+v(f.email)+'"></div></div>'
+      +'<div class="row g2"><div class="field"><label>Téléphone</label><input id="fi-tel" value="'+v(f.tel)+'"></div>'
+      +'<div class="field"><label>IBAN</label><input id="fi-iban" value="'+v(f.iban)+'"></div></div>'
+      +'<div class="field"><label>Adresse</label><input id="fi-adresse" value="'+v(f.adresse)+'"></div>'
+      +'<div class="row g2"><div class="field"><label>Code postal</label><input id="fi-cp" value="'+v(f.cp)+'"></div>'
+      +'<div class="field"><label>Ville</label><input id="fi-ville" value="'+v(f.ville)+'"></div></div>'
+      +'<div class="right" style="margin-top:10px"><button class="btn btn-ghost" onclick="closeModal()">Annuler</button> <button class="btn btn-pri" onclick="ficheEnregistrer(\''+id+'\')">Transmettre au cabinet</button></div>';
+    document.getElementById('modal').classList.add('show');
+  };
+  window.ficheEnregistrer=function(id){ var f=fstore().find(function(x){return x.id===id;}); if(!f)return;
+    var g=function(x){return (document.getElementById(x)||{}).value||'';};
+    var raison=g('fi-raison').trim(); if(!raison)return toast('La raison sociale est obligatoire.');
+    f.raison=raison; f.siret=g('fi-siret'); f.tvaIntra=g('fi-tva'); f.email=g('fi-email'); f.tel=g('fi-tel');
+    f.iban=g('fi-iban'); f.adresse=g('fi-adresse'); f.cp=g('fi-cp'); f.ville=g('fi-ville'); f.statut='remplie';
+    save(); if(typeof closeModal==='function')closeModal(); toast('Fiche transmise au cabinet.'); render();
+  };
+  window.ficheVoir=function(id){ var f=fstore().find(function(x){return x.id===id;}); if(!f)return;
+    var L=function(k,val){ return '<div class="cp-row"><span>'+k+'</span><div>'+(val||'—')+'</div></div>'; };
+    document.getElementById('modal-c').innerHTML='<h2 style="margin-top:0">📝 Fiche fournisseur — '+v(f.raison||'(à compléter)')+'</h2>'
+      +L('Raison sociale',v(f.raison))+L('SIRET',v(f.siret))+L('N° TVA',v(f.tvaIntra))+L('E-mail',v(f.email))+L('Téléphone',v(f.tel))+L('IBAN',v(f.iban))+L('Adresse',v((f.adresse||'')+(f.cp||f.ville?(', '+(f.cp||'')+' '+(f.ville||'')):'')))
+      +'<div class="right" style="margin-top:10px"><button class="btn btn-ghost" onclick="closeModal()">Fermer</button>'+(f.statut==='remplie'?(' <button class="btn btn-pri" onclick="ficheValider(\''+id+'\')">✔ Valider &amp; créer le fournisseur</button>'):'')+'</div>';
+    document.getElementById('modal').classList.add('show');
+  };
+  /* Validation cabinet → création du fournisseur + rattachement au dépôt */
+  window.ficheValider=function(id){ var f=fstore().find(function(x){return x.id===id;}); if(!f)return;
+    if(f.statut!=='remplie')return toast('La fiche n\'est pas encore remplie par le client.');
+    var adr=((f.adresse||'')+((f.cp||f.ville)?(', '+(f.cp||'')+' '+(f.ville||'')):'')).trim();
+    var t={ id:uid(), type:'fournisseur', categorie:'societe', nom:f.raison, compteContre:'606000', compteTVA:'44566',
+      taux:20, compteAux:null, email:f.email||'', tel:f.tel||'', siret:f.siret||'', tvaIntra:f.tvaIntra||'', iban:f.iban||'', adresse:adr };
+    db.tiers.push(t); try{ t.compteAux=genAux('fournisseur',t.nom); }catch(e){}
+    f.statut='validee'; f.tiersId=t.id;
+    var d=dstore().find(function(x){return x.id===f.depotId;}); if(d){ d.tiersId=t.id; d.tiersInconnu=false; }
+    save(); if(typeof closeModal==='function')closeModal(); toast('✅ Fournisseur « '+t.nom+' » créé. Vous pouvez comptabiliser le dépôt.'); render();
+  };
+
+  /* Liste des fiches côté CLIENT (proposition à remplir) */
+  function fichesClientCard(){
+    var fs=fstore().filter(function(f){return f.type==='fournisseur' && f.statut!=='validee';});
+    if(!fs.length) return '';
+    var rows=fs.map(function(f){ var d=dstore().find(function(x){return x.id===f.depotId;});
+      var st=f.statut==='remplie'?'<span class="tag t-part">transmise — en attente cabinet</span>':'<span class="tag t-att">à remplir</span>';
+      var btn=f.statut==='remplie'?'<button class="btn btn-ghost btn-xs" onclick="ficheRemplir(\''+f.id+'\')">Modifier</button>':'<button class="btn btn-gold btn-xs" onclick="ficheRemplir(\''+f.id+'\')">✍ Remplir la fiche</button>';
+      return '<div class="ged-it dep-dup"><span>📝</span><span class="ged-nm">'+(f.raison||(d?d.nom:'Nouveau fournisseur'))+'</span>'+st+'<span>'+btn+'</span></div>';
+    }).join('');
+    return '<div class="card"><h2>📝 Fiches fournisseur à compléter</h2><div class="sub">Un fournisseur inconnu a été détecté sur une facture déposée : complétez sa fiche d\'information pour votre cabinet.</div>'+rows+'</div>';
+  }
+  /* Liste des fiches côté CABINET (à valider) */
+  function fichesCabinetCard(){
+    var fs=fstore().filter(function(f){return f.type==='fournisseur' && f.statut!=='validee';});
+    if(!fs.length) return '';
+    var rows=fs.map(function(f){ var d=dstore().find(function(x){return x.id===f.depotId;});
+      var det=f.statut==='remplie'?('<span class="ged-mt">'+[f.siret?('SIRET '+f.siret):'',f.email,f.ville].filter(Boolean).join(' · ')+'</span>'):'';
+      var st=f.statut==='remplie'?'<span class="tag t-part">remplie — à valider</span>':'<span class="tag t-att">en attente du client</span>';
+      var act=f.statut==='remplie'?'<button class="btn btn-gold btn-xs" onclick="ficheValider(\''+f.id+'\')">✔ Valider &amp; créer</button> <button class="btn btn-ghost btn-xs" onclick="ficheVoir(\''+f.id+'\')">Voir</button>':'';
+      return '<div class="ged-it '+(f.statut==='remplie'?'dep-ok':'dep-dup')+'"><span>📝</span><span class="ged-nm">'+(f.raison||(d?d.nom:'Nouveau fournisseur'))+'</span>'+st+det+'<span>'+act+'</span></div>';
+    }).join('');
+    var nb=fs.filter(function(f){return f.statut==='remplie';}).length;
+    var ban=nb?'<div class="dep-notif">🔔 '+nb+' fiche(s) fournisseur à valider</div>':'';
+    return '<div class="card"><h2>📝 Nouveaux fournisseurs (fiches d\'information)</h2><div class="sub">Un fournisseur inconnu détecté sur une facture déposée : le client complète la fiche, validez-la pour créer le fournisseur puis comptabilisez le dépôt.</div>'+ban+rows+'</div>';
+  }
+
+  /* Greffes : client (page achats simplifiée) + cabinet (page achats complète) */
+  if(typeof window.pageAchatsClient==='function'){ var _pac=window.pageAchatsClient; window.pageAchatsClient=function(){ return fichesClientCard()+_pac(); }; }
+  if(typeof pageAchats==='function'){ var _pa=pageAchats; pageAchats=function(){ var h=_pa(); if((window.sessionRole||'cabinet')!=='client') h+=fichesCabinetCard(); return h; }; }
+})();
+</script>
+<script id="yada-addon46">
+/* Préserver la position de défilement lors d'un re-rendu de la même page
+   (ne plus « remonter en haut » après chaque enregistrement). */
+(function(){
+  if(typeof render!=='function') return;
+  function scroller(){ var m=document.getElementById('main'); if(!m)return null; return m.querySelector('.mod-wrap, .dash-wrap') || m; }
+  var _r=render;
+  render=function(){
+    var prev=(typeof current!=='undefined')?current:null;
+    var sc=scroller(); var y=sc?sc.scrollTop:0;
+    var res=_r.apply(this,arguments);
+    try{ var now=(typeof current!=='undefined')?current:null;
+      if(now===prev && y){ var ns=scroller(); if(ns){ ns.scrollTop=y; if(window.requestAnimationFrame) requestAnimationFrame(function(){ var s2=scroller(); if(s2)s2.scrollTop=y; }); } } }catch(e){}
+    return res;
+  };
 })();
 </script>
 </body>
