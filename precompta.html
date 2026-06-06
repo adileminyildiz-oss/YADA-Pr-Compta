@@ -3387,7 +3387,7 @@ function pageSaisieBq(){
   const tousTriers=db.banque.slice().sort((a,b)=>a.date<b.date?-1:(a.date>b.date?1:0));
   let bal=0; const soldeApres={};
   tousTriers.forEach(b=>{ const e=db.ecritures.find(x=>x.id===b.ecritureId); if(!e)return;
-    const l512=e.lignes.find(l=>l.compte==='512'); bal=r2(bal+(l512?l512.debit-l512.credit:0)); soldeApres[b.id]=bal; });
+    const l512=e.lignes.find(l=>c9(l.compte)==='512000000'); bal=r2(bal+(l512?l512.debit-l512.credit:0)); soldeApres[b.id]=bal; });
   // lignes du mois sélectionné
   const moisB=tousTriers.filter(b=>ym(b.date)===sjMois);
   let rows='', td=0, tc=0;
@@ -8047,6 +8047,49 @@ ${lignes}
     </div>`;
   };
   if(typeof pageEditions==='function'){ const _p=pageEditions; pageEditions=function(){ return _p()+t1Card(); }; }
+})();
+</script>
+
+<script id="yada-addon22">
+/* ============================================================
+   T2 — Cohérence des comptes (TVA) : normalisation c9 (9 chiffres)
+   Problème résolu : les factures alimentaient 44571/44566 (codes courts)
+   tandis que l'OD TVA soldait 445710000/445660000 — comptes distincts en
+   stockage → la déclaration ne soldait pas réellement les comptes de TVA.
+   Solution : normaliser TOUS les comptes d'écriture en c9. Après quoi
+   44571→445710000 = compte de l'OD TVA, donc l'OD solde réellement la TVA.
+   100% additif (+ 1 correctif chirurgical du solde banque, ligne ~3390).
+   ============================================================ */
+(function(){
+  if(typeof c9!=='function') return;
+  function normDS(){ /* normalise le dataset courant (db.*) */
+    (db.ecritures||[]).forEach(e=>(e.lignes||[]).forEach(l=>{ if(l && l.compte!=null) l.compte=c9(l.compte); }));
+    (db.banque||[]).forEach(b=>{ if(b && b.compte!=null) b.compte=c9(b.compte); });
+  }
+  window.t2Normaliser=normDS;
+  /* Migration unique : dossier actif + tous les autres dossiers du portefeuille */
+  (function migrate(){ try{
+    normDS();
+    if(db.dossiersData) Object.keys(db.dossiersData).forEach(id=>{ const d=db.dossiersData[id]; if(!d) return;
+      (d.ecritures||[]).forEach(e=>(e.lignes||[]).forEach(l=>{ if(l && l.compte!=null) l.compte=c9(l.compte); }));
+      (d.banque||[]).forEach(b=>{ if(b && b.compte!=null) b.compte=c9(b.compte); }); });
+  }catch(e){} })();
+  /* Normalisation continue : à chaque enregistrement (toute source d'écriture) */
+  if(typeof save==='function'){ const _s=save; save=function(){ try{ normDS(); }catch(e){} return _s.apply(this,arguments); }; }
+  /* tvaDuMois : comparer en c9 (44571→445710000, 44566→445660000, 44562→445620000) */
+  if(typeof tvaDuMois==='function'){
+    tvaDuMois=function(m){ let col=0,ded=0;
+      (db.ecritures||[]).filter(e=>ym(e.date)===m && e.journal!=='BQ').forEach(e=>e.lignes.forEach(l=>{
+        const k=c9(l.compte);
+        if(k==='445710000') col+=(+l.credit||0);
+        if(k==='445660000'||k==='445620000') ded+=(+l.debit||0);
+      }));
+      col=r2(col); ded=r2(ded); const net=r2(col-ded);
+      return {col, ded, net, aDecaisser:net>0?net:0, credit:net<0?-net:0};
+    };
+  }
+  /* Verrouille la migration en mémoire dans le stockage */
+  try{ if(typeof save==='function') save(); }catch(e){}
 })();
 </script>
 
