@@ -1724,6 +1724,10 @@ body[data-theme="noir"] #ec-hero.cab-hero{background:linear-gradient(120deg,#1c5
 .cmp-row.tot{border-bottom:none;font-size:15px;margin-top:4px}
 .cmp-note{font-size:12.5px;color:var(--ink-soft);margin:6px 0 2px}
 @media(max-width:760px){.cmp-wrap{grid-template-columns:1fr}}
+.cmp-recap{font-size:13px;background:rgba(47,158,110,.10);border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin-bottom:10px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
+.cmp-recap b{font-weight:700}
+.da-tot{display:flex;gap:18px;flex-wrap:wrap;background:var(--paper-2,rgba(127,127,127,.06));border:1px solid var(--line);border-radius:9px;padding:9px 12px;margin:6px 0}
+.da-tot span b{font-size:15px}
 </style>
 </head>
 <body data-theme="noir">
@@ -8777,7 +8781,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v47 · doublon: confirmation & remplacement ✨';
+    b.textContent='YADA · v48 · saisie complète & pré-remplissage ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -9461,6 +9465,132 @@ ${lignes}
     faireComptabilisation(d,p.tiersId,p.numero,p.date,p.ttc,p.taux);
     window._depotComptaPending=null;
     toast('Ancienne facture remplacée'+(nLet?(' (délettrage de '+nLet+' ligne(s))'):'')+'.');
+  };
+})();
+</script>
+<script id="yada-addon48">
+/* Saisie complète de la facture reçue (HT, remise, taux, TVA, TTC, date, n°)
+   → pré-remplissage automatique de la comptabilisation cabinet + récapitulatif
+   comparatif (avec ouverture du fichier) avant validation. */
+(function(){
+  if(typeof render!=='function') return;
+  function gstore(){ if(!db.parametres)db.parametres={}; if(!Array.isArray(db.parametres.pieces))db.parametres.pieces=[]; return db.parametres.pieces; }
+  function dstore(){ if(!db.parametres)db.parametres={}; if(!Array.isArray(db.parametres.depots))db.parametres.depots=[]; return db.parametres.depots; }
+  function nstore(){ if(!db.parametres)db.parametres={}; if(!Array.isArray(db.parametres.notifsDepot))db.parametres.notifsDepot=[]; return db.parametres.notifsDepot; }
+  function fstore(){ if(!db.parametres)db.parametres={}; if(!Array.isArray(db.parametres.fichesTiers))db.parametres.fichesTiers=[]; return db.parametres.fichesTiers; }
+  function normName(n){ return String(n||'').trim().toLowerCase(); }
+  function gico(p){ var n=(p&&p.nom||'').toLowerCase(); var m=(p&&p.mime||''); if(m.indexOf('pdf')>=0||n.endsWith('.pdf'))return '📕'; if(m.indexOf('image')>=0||/\.(jpe?g|png|gif|webp)$/.test(n))return '🖼'; return '📄'; }
+  function statutTagDep(s){ if(s==='recue')return '<span class="tag t-part">réception validée</span>'; if(s==='comptabilisee')return '<span class="tag t-pay">comptabilisée ✓</span>'; if(s==='refusee')return '<span class="tag t-late">refusée</span>'; return '<span class="tag t-att">déposée · à valider</span>'; }
+  function markNotifLu(depotId){ nstore().forEach(function(n){ if(n.depotId===depotId)n.lu=true; }); }
+  function tauxOpts(sel){ return [20,10,5.5,0].map(function(x){ return '<option '+((sel!=null&&parseFloat(sel)===x)?'selected':'')+'>'+x+'</option>'; }).join(''); }
+
+  /* ---- Calcul live du formulaire de dépôt achat ---- */
+  window.depotCalcAchat=function(){
+    var g=function(x){return document.getElementById(x);};
+    var ht=+((g('da-ht')||{}).value)||0, rem=+((g('da-remise')||{}).value)||0, tx=+((g('da-taux')||{}).value)||0;
+    var net=Math.max(0,r2(ht-rem)); var m=calcMontants(net,tx,'HT');
+    if(g('da-net'))g('da-net').innerHTML='<b>'+eur(net)+'</b>';
+    if(g('da-tva'))g('da-tva').innerHTML='<b>'+eur(m.tva)+'</b>';
+    if(g('da-ttc'))g('da-ttc').innerHTML='<b>'+eur(m.ttc)+'</b>';
+  };
+  /* ---- Dépôt achat avec toutes les informations ---- */
+  window.depotAchatDeposer=function(){
+    var g=function(x){return document.getElementById(x);};
+    var selv=(g('dep-four-achat')||{}).value||''; var tiersId='', inconnu=false;
+    if(selv && selv!=='__inconnu__') tiersId=selv; else inconnu=true;
+    var numero=(g('da-num')||{}).value||'';
+    var date=(g('da-date')||{}).value||todayStr();
+    var htBrut=+((g('da-ht')||{}).value)||0;
+    var remise=+((g('da-remise')||{}).value)||0;
+    var taux=+((g('da-taux')||{}).value)||20;
+    if(htBrut<=0) return toast('Indiquez le montant HT de la facture.');
+    var net=Math.max(0,r2(htBrut-remise)); var m=calcMontants(net,taux,'HT');
+    var fi=g('da-file');
+    function finishWith(fileId,nom,dupName){
+      var dep={ id:uid(), cat:'achat', fichierId:fileId, nom:nom||(numero?('Facture '+numero):'Facture fournisseur'), date:todayStr(), statut:'deposee',
+        doublon:!!dupName, doublonRaison:dupName?('Fichier déjà déposé dans le dossier'):'',
+        tiersId:tiersId, tiersInconnu:inconnu, numero:numero, dateFacture:date,
+        htBrut:r2(htBrut), remise:r2(remise), taux:taux, ht:m.ht, tva:m.tva, ttc:m.ttc,
+        ecritureId:null, factureId:null, ficheId:null };
+      dstore().push(dep);
+      nstore().push({ id:uid(), date:todayStr(), cat:'achat', depotId:dep.id, nom:dep.nom, doublon:dep.doublon, lu:false });
+      if(inconnu){ var fiche={ id:uid(), type:'fournisseur', depotId:dep.id, statut:'a_remplir', date:todayStr(), raison:'', siret:'', tvaIntra:'', adresse:'', cp:'', ville:'', email:'', tel:'', iban:'', tiersId:null }; fstore().push(fiche); dep.ficheId=fiche.id; }
+      save(); toast('Facture déposée — informations transmises au cabinet.'); render();
+    }
+    if(fi && fi.files && fi.files.length){ var f=fi.files[0]; var dupName=gstore().some(function(p){return p.cat==='achat'&&normName(p.nom)===normName(f.name);});
+      var rd=new FileReader(); rd.onload=function(){ try{ var piece={id:uid(),nom:f.name,mime:f.type||'',taille:f.size||0,data:rd.result,date:todayStr(),cat:'achat'}; gstore().push(piece); finishWith(piece.id,f.name,dupName); }catch(e){ toast('Fichier trop volumineux'); } };
+      rd.onerror=function(){ finishWith(null,null,false); }; rd.readAsDataURL(f);
+    } else { finishWith(null,null,false); }
+  };
+
+  /* ---- Carte de dépôt client : formulaire complet (achat) / dropzone (vente) ---- */
+  window.depotFacturesCard=function(cat,titre,sub){
+    if(cat==='achat'){
+      var fourns=(db.tiers||[]).filter(function(t){return t.type==='fournisseur';});
+      var opts='<option value="">— Sélectionner —</option>'+fourns.map(function(t){return '<option value="'+t.id+'">'+t.nom+'</option>';}).join('')+'<option value="__inconnu__">➕ Fournisseur inconnu / nouveau</option>';
+      return '<div class="card"><h2>'+titre+'</h2><div class="sub">'+sub+' Renseignez les informations de la facture : elles seront reprises automatiquement dans la saisie comptable du cabinet (qui compare avec le fichier avant de valider). Un doublon s\'affiche en rouge.</div>'
+        +'<div class="row g3">'
+        +'<div class="field"><label>Fournisseur</label><select id="dep-four-achat">'+opts+'</select></div>'
+        +'<div class="field"><label>N° de facture</label><input id="da-num" placeholder="ex. F2026-001"></div>'
+        +'<div class="field"><label>Date de la facture</label><input type="date" id="da-date" value="'+todayStr()+'"></div>'
+        +'</div><div class="row g4">'
+        +'<div class="field"><label>Montant HT</label><input type="number" id="da-ht" placeholder="0.00" oninput="depotCalcAchat()"></div>'
+        +'<div class="field"><label>Remise fournisseur</label><input type="number" id="da-remise" placeholder="0.00" oninput="depotCalcAchat()"></div>'
+        +'<div class="field"><label>Taux TVA %</label><select id="da-taux" onchange="depotCalcAchat()">'+tauxOpts(20)+'</select></div>'
+        +'<div class="field"><label>Justificatif (PDF/photo)</label><input type="file" id="da-file" accept=".pdf,.jpg,.jpeg,.png,image/*"></div>'
+        +'</div>'
+        +'<div class="da-tot"><span>Net HT : <span id="da-net"><b>'+eur(0)+'</b></span></span><span>TVA : <span id="da-tva"><b>'+eur(0)+'</b></span></span><span>TTC : <span id="da-ttc"><b>'+eur(0)+'</b></span></span></div>'
+        +'<div class="right"><button class="btn btn-pri" onclick="depotAchatDeposer()">📥 Déposer la facture</button></div>'
+        +depotsListe('achat','client')+'</div>';
+    }
+    /* vente : dépôt fichier simple */
+    return '<div class="card"><h2>'+titre+'</h2><div class="sub">'+sub+' Chaque dépôt notifie votre cabinet ; un doublon s\'affiche en rouge. La comptabilisation est validée par le cabinet.</div>'
+      +'<div class="ged-drop" onclick="factPick(\''+cat+'\')" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="factDrop(event,\''+cat+'\')">'
+      +'<div style="font-size:24px">⬆</div><div style="font-weight:700">Déposez vos factures ici</div><div class="hint">ou cliquez — PDF, JPG, PNG</div>'
+      +'<input type="file" id="fdep-'+cat+'" hidden multiple accept=".pdf,.jpg,.jpeg,.png,image/*" onchange="factFile(event,\''+cat+'\')"></div>'
+      +depotsListe(cat,'client')+'</div>';
+  };
+
+  /* ---- Liste de réception : pré-remplissage + récapitulatif comparatif ---- */
+  window.depotsListe=function(cat,role){
+    var deps=dstore().filter(function(d){return d.cat===cat;}).slice().reverse();
+    if(!deps.length) return '<div class="hint">Aucune facture déposée pour l\'instant.</div>';
+    var tiersList=(db.tiers||[]).filter(function(t){return t.type===(cat==='achat'?'fournisseur':'client');});
+    return deps.map(function(d){
+      var cls=d.doublon?'dep-dup':'dep-ok';
+      var dbl=d.doublon?' <span class="tag t-late" title="'+String(d.doublonRaison||'').replace(/"/g,'&quot;')+'">⚠ doublon</span>':' <span class="tag t-pay">✓ unique</span>';
+      var file=d.fichierId?'<button class="btn btn-ghost btn-xs" onclick="gedVoir(\''+d.fichierId+'\')">📎 Ouvrir</button> <button class="btn btn-ghost btn-xs" onclick="gedDl(\''+d.fichierId+'\')">⤓</button>':'';
+      var info=(d.statut==='comptabilisee')?(' <span class="ged-mt">'+(d.numero||'')+' · '+eur(d.ttc)+'</span>'):'';
+      var actions='';
+      if(role==='cabinet'){
+        if(d.statut==='deposee') actions='<button class="btn btn-gold btn-xs" onclick="depotRecevoir(\''+d.id+'\')">✔ Valider la réception</button> <button class="btn btn-ghost btn-xs" onclick="depotRefuser(\''+d.id+'\')">Refuser</button>';
+        else if(d.statut==='recue') actions='<button class="btn btn-ghost btn-xs" onclick="depotRefuser(\''+d.id+'\')">Refuser</button>';
+      } else { if(d.statut==='deposee') actions='<button class="btn btn-ghost btn-xs" onclick="depotSupprimer(\''+d.id+'\')">✕ Retirer</button>'; }
+      var row='<div class="ged-it '+cls+'"><span>'+gico({nom:d.nom})+'</span>'
+        +'<span class="ged-nm" title="'+String(d.nom||'').replace(/"/g,'&quot;')+'">'+(d.nom||'pièce')+'</span>'
+        +'<span class="ged-mt">'+frDate(d.date)+'</span>'+statutTagDep(d.statut)+dbl+info
+        +'<span style="white-space:nowrap">'+file+(actions?(' '+actions):'')+'</span></div>';
+      if(role==='cabinet' && d.statut==='recue'){
+        var opts=tiersList.map(function(t){return '<option value="'+t.id+'" '+(t.id===d.tiersId?'selected':'')+'>'+t.nom+'</option>';}).join('')||'<option value="">— aucun tiers —</option>';
+        var recap='<div class="cmp-recap"><span>📄 <b>Informations reçues</b> — N° <b>'+(d.numero||'—')+'</b> · '+(d.dateFacture?frDate(d.dateFacture):frDate(d.date))
+          +' · HT <b>'+eur(d.ht||0)+'</b>'+((d.remise&&d.remise>0)?(' · Remise <b>'+eur(d.remise)+'</b>'):'')+' · TVA '+(d.taux!=null?d.taux:'')+'% <b>'+eur(d.tva||0)+'</b> · TTC <b>'+eur(d.ttc||0)+'</b></span>'
+          +(d.fichierId?'<button class="btn btn-gold btn-xs" onclick="gedVoir(\''+d.fichierId+'\')">📎 Comparer avec la facture</button>':'<span class="ged-mt">aucun fichier joint</span>')+'</div>';
+        row+='<div class="dep-cmp">'+recap
+          +'<div class="sub" style="margin:2px 0 8px">Vérifiez les informations ci-dessous (reprises automatiquement de la facture) puis validez :</div>'
+          +'<div class="row g4">'
+          +'<div class="field"><label>'+(cat==='achat'?'Fournisseur':'Client')+'</label><select id="cmp-tiers-'+d.id+'">'+opts+'</select></div>'
+          +'<div class="field"><label>N° facture</label><input id="cmp-num-'+d.id+'" value="'+String(d.numero||'').replace(/"/g,'&quot;')+'" placeholder="(auto si vide)"></div>'
+          +'<div class="field"><label>Date facture</label><input type="date" id="cmp-date-'+d.id+'" value="'+(d.dateFacture||d.date||todayStr())+'"></div>'
+          +'<div class="field"><label>Montant TTC</label><input type="number" id="cmp-ttc-'+d.id+'" value="'+(d.ttc>0?d.ttc:'')+'" placeholder="0.00"></div>'
+          +'</div><div class="row g4">'
+          +'<div class="field"><label>TVA %</label><select id="cmp-taux-'+d.id+'">'+tauxOpts(d.taux)+'</select></div>'
+          +'<div class="field"><label>dont HT</label><input value="'+eur(d.ht||0)+'" disabled></div>'
+          +'<div class="field"><label>dont remise</label><input value="'+eur(d.remise||0)+'" disabled></div>'
+          +'<div class="field" style="align-self:end"><button class="btn btn-pri" style="width:100%" onclick="depotComptabiliser(\''+d.id+'\')">📒 Valider la comptabilisation</button></div>'
+          +'</div></div>';
+      }
+      return row;
+    }).join('');
   };
 })();
 </script>
