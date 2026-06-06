@@ -8781,7 +8781,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v50 · lecture auto, cabinet valide ✨';
+    b.textContent='YADA · v51 · lecture PDF réelle ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -9680,6 +9680,107 @@ ${lignes}
       +'<input type="file" id="fdep-'+cat+'" hidden multiple accept=".pdf,.jpg,.jpeg,.png,image/*" onchange="factFile(event,\''+cat+'\')"></div>'
       +depotsListe(cat,'client')+'</div>';
   };
+})();
+</script>
+<script id="yada-addon51">
+/* Lecture RÉELLE de la facture PDF (couche texte) — sans bibliothèque ni réseau.
+   Décompresse les flux FlateDecode via DecompressionStream natif, extrait le
+   texte et détecte TTC/TVA/HT. Repli : nom de fichier (image/PDF illisible). */
+(function(){
+  if(typeof render!=='function') return;
+  function gstore(){ if(!db.parametres)db.parametres={}; if(!Array.isArray(db.parametres.pieces))db.parametres.pieces=[]; return db.parametres.pieces; }
+  function dstore(){ if(!db.parametres)db.parametres={}; if(!Array.isArray(db.parametres.depots))db.parametres.depots=[]; return db.parametres.depots; }
+  function nstore(){ if(!db.parametres)db.parametres={}; if(!Array.isArray(db.parametres.notifsDepot))db.parametres.notifsDepot=[]; return db.parametres.notifsDepot; }
+  function fstore(){ if(!db.parametres)db.parametres={}; if(!Array.isArray(db.parametres.fichesTiers))db.parametres.fichesTiers=[]; return db.parametres.fichesTiers; }
+  function normName(n){ return String(n||'').trim().toLowerCase(); }
+
+  /* --- Repli : extraction depuis le nom de fichier --- */
+  function extractFromFile(nom){
+    var base=String(nom||'').replace(/\.[a-z0-9]+$/i,'');
+    var ttc=0; var mDec=base.match(/(\d{1,7}[.,]\d{2})(?!\d)/);
+    if(mDec){ ttc=parseFloat(mDec[1].replace(',','.')); }
+    else { var nums=(base.match(/\d{2,7}/g)||[]).map(Number); if(nums.length){ ttc=Math.max.apply(null,nums); } }
+    if(!ttc || ttc<=0){ var h=0; for(var i=0;i<base.length;i++){ h=(h*31+base.charCodeAt(i))>>>0; } ttc=r2(60+(h%1900)+((h%100)/100)); }
+    var numero=''; var mN=base.match(/\b((?:fac|inv|fa|f)[-_ ]?[a-z0-9]*\d[a-z0-9-]*)\b/i); if(mN){ numero=mN[1].replace(/[ _]/g,'').toUpperCase(); }
+    return { ttc:r2(ttc), numero:numero, taux:20 };
+  }
+
+  /* --- Décompression FlateDecode via DecompressionStream natif --- */
+  async function pumpToU8(readable){ var reader=readable.getReader(); var chunks=[],len=0;
+    while(true){ var rr=await reader.read(); if(rr.done)break; chunks.push(rr.value); len+=rr.value.length; }
+    var out=new Uint8Array(len),o=0; for(var i=0;i<chunks.length;i++){ out.set(chunks[i],o); o+=chunks[i].length; } return out; }
+  async function inflate(u8,mode){ var ds=new DecompressionStream(mode); var w=ds.writable.getWriter();
+    w.closed.catch(function(){}); w.write(u8).catch(function(){}); w.close().catch(function(){});
+    return await pumpToU8(ds.readable); }
+  async function flate(u8){ try{ return await inflate(u8,'deflate'); }catch(e){ try{ return await inflate(u8,'deflate-raw'); }catch(e2){ return null; } } }
+
+  function pdfUnescape(s){ return s.replace(/\\([nrtbf()\\]|[0-7]{1,3})/g,function(_,c){
+    switch(c){ case 'n':return '\n'; case 'r':return '\r'; case 't':return '\t'; case 'b':return ' '; case 'f':return ' '; case '(':return '('; case ')':return ')'; case '\\':return '\\'; default:return String.fromCharCode(parseInt(c,8)); } }); }
+  function hexDecode(h){ h=h.replace(/[^0-9A-Fa-f]/g,''); if(h.length%2)h+='0'; var s=''; for(var i=0;i<h.length;i+=2){ s+=String.fromCharCode(parseInt(h.substr(i,2),16)); } return s; }
+  function textFromContent(content){ var out=[]; var re=/\(((?:\\[\s\S]|[^\\()])*)\)|<([0-9A-Fa-f\s]+)>/g, m;
+    while((m=re.exec(content))){ if(m[1]!=null) out.push(pdfUnescape(m[1])); else if(m[2]!=null) out.push(hexDecode(m[2])); } return out.join(' '); }
+
+  async function pdfExtractText(ab){
+    var u8=new Uint8Array(ab); var raw=new TextDecoder('latin1').decode(u8);
+    var out=''; var re=/stream\r?\n/g, m, guard=0;
+    while((m=re.exec(raw)) && guard<5000){ guard++;
+      var start=m.index+m[0].length; var end=raw.indexOf('endstream',start); if(end<0)break;
+      var ds=raw.lastIndexOf('<<', m.index); var dict=ds>=0?raw.slice(ds,m.index):'';
+      var dataEnd=end; while(dataEnd>start && (raw.charCodeAt(dataEnd-1)===10||raw.charCodeAt(dataEnd-1)===13)) dataEnd--;
+      var bytes=u8.subarray(start,dataEnd); var data;
+      if(/FlateDecode/.test(dict)){ data=await flate(bytes); } else { data=bytes; }
+      if(data){ try{ out+=textFromContent(new TextDecoder('latin1').decode(data))+'\n'; }catch(e){} }
+      re.lastIndex=end+9;
+    }
+    return out;
+  }
+
+  function frNum(s){ return parseFloat(String(s).replace(/[   ]/g,'').replace(/\.(?=\d{3}\b)/g,'').replace(',','.')); }
+  function pdfParseAmounts(text){
+    var T=String(text||'').replace(/[  ]/g,' '); var low=T.toLowerCase();
+    function near(kw){ var i=low.indexOf(kw); if(i<0)return null; var seg=T.slice(i, i+90);
+      var m=seg.match(/(\d{1,3}(?:[ .]\d{3})*[.,]\d{2}|\d+[.,]\d{2})/); return m?frNum(m[1]):null; }
+    var ttc=near('total ttc')||near('montant ttc')||near('net à payer')||near('net a payer')||near('total t.t.c')||near('ttc')||near('à payer')||near('a payer');
+    var tva=near('total tva')||near('montant tva')||near('t.v.a')||near('tva');
+    var ht=near('total ht')||near('montant ht')||near('total h.t')||near('base ht')||near('ht');
+    if(ttc==null) return null;
+    var taux=null; if(ht&&tva&&ht>0){ var t=tva/ht*100; [20,10,5.5,2.1,0].forEach(function(x){ if(Math.abs(x-t)<1.2)taux=x; }); }
+    if(taux==null){ var mt=low.match(/(20|10|5[.,]5|2[.,]1)\s*%/); taux=mt?frNum(mt[1]):20; }
+    var numero=''; var mn=T.match(/facture\s*(?:n[°o]?|num[ée]ro)?\s*[:.]?\s*([A-Za-z0-9][A-Za-z0-9\/-]{2,})/i); if(mn)numero=mn[1];
+    return { ttc:r2(ttc), tva:(tva!=null?r2(tva):null), ht:(ht!=null?r2(ht):null), taux:taux, numero:numero };
+  }
+
+  /* --- Dépôt : lecture réelle du PDF puis repli --- */
+  window.factDepotAdd=function(file,cat){ return new Promise(function(res){
+    (async function(){
+      var nom=file.name;
+      var ab=null; try{ ab=await file.arrayBuffer(); }catch(e){}
+      var dataUrl=await new Promise(function(rz){ try{ var rd=new FileReader(); rd.onload=function(){rz(rd.result);}; rd.onerror=function(){rz(null);}; rd.readAsDataURL(file); }catch(e){ rz(null);} });
+      var dup=gstore().some(function(p){return p.cat===cat && normName(p.nom)===normName(nom);});
+      var piece={ id:uid(), nom:nom, mime:file.type||'', taille:file.size||0, data:dataUrl, date:todayStr(), cat:cat }; gstore().push(piece);
+      var tiersId='', inconnu=false;
+      if(cat==='achat'){ var selv=(document.getElementById('dep-four-achat')||{}).value||''; if(selv && selv!=='__inconnu__') tiersId=selv; else inconnu=true; }
+      var dep={ id:uid(), cat:cat, fichierId:piece.id, nom:nom, date:todayStr(), statut:'deposee',
+        doublon:!!dup, doublonRaison:dup?('Fichier « '+nom+' » déjà déposé dans le dossier'):'',
+        tiersId:tiersId, tiersInconnu:inconnu, numero:'', dateFacture:'', htBrut:0, remise:0, taux:20,
+        ht:0, tva:0, ttc:0, ecritureId:null, factureId:null, ficheId:null, auto:false, lecture:'' };
+      if(cat==='achat'){
+        var amounts=null, src='';
+        var isPdf=/pdf/i.test(file.type||'')||/\.pdf$/i.test(nom);
+        if(isPdf && ab){ try{ var txt=await pdfExtractText(ab); amounts=pdfParseAmounts(txt); if(amounts)src='lecture PDF'; }catch(e){} }
+        if(!amounts){ var ex=extractFromFile(nom); amounts={ttc:ex.ttc,taux:ex.taux,numero:ex.numero,tva:null,ht:null};
+          src=isPdf?'nom de fichier (PDF non lisible)':(/\.(jpe?g|png|gif|webp)$/i.test(nom)?'nom de fichier (image — OCR indisponible hors-ligne)':'nom de fichier'); }
+        var taux=amounts.taux||20; var ttc=amounts.ttc; var net=r2(ttc/(1+taux/100)); var tva=r2(ttc-net);
+        dep.numero=amounts.numero||''; dep.dateFacture=todayStr(); dep.taux=taux; dep.ht=net; dep.tva=tva; dep.ttc=ttc; dep.auto=true; dep.lecture=src;
+      }
+      dstore().push(dep);
+      nstore().push({ id:uid(), date:todayStr(), cat:cat, depotId:dep.id, nom:nom, doublon:dep.doublon, lu:false });
+      if(inconnu){ var fiche={ id:uid(), type:'fournisseur', depotId:dep.id, statut:'a_remplir', date:todayStr(), raison:'', siret:'', tvaIntra:'', adresse:'', cp:'', ville:'', email:'', tel:'', iban:'', tiersId:null }; fstore().push(fiche); dep.ficheId=fiche.id; }
+      save();
+      if(cat==='achat') toast('Facture lue ('+dep.lecture+') — TTC '+eur(dep.ttc)+'. À valider par le cabinet.');
+      res(true);
+    })().catch(function(e){ toast('Erreur de lecture du fichier'); res(false); });
+  }); };
 })();
 </script>
 </body>
