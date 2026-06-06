@@ -8861,7 +8861,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v61 · interface mobile ✨';
+    b.textContent='YADA · v62 · mobile = client + install QR ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -8901,7 +8901,11 @@ ${lignes}
     var h=5381; for(var i=0;i<s.length;i++){ h=(((h<<5)+h)^s.charCodeAt(i))>>>0; } return 'f'+h.toString(16);
   }
   function el(){ var o=document.getElementById('sec-lock'); if(!o){ o=document.createElement('div'); o.id='sec-lock'; document.body.appendChild(o); } return o; }
+  function isMobile(){ try{ if(window.matchMedia) return window.matchMedia('(max-width:820px)').matches; }catch(e){} return (window.innerWidth||1024)<=820; }
+  window.__secMobile=isMobile;
   function secAfficher(){ var o=el(); window.__secLocked=true;
+    var mob=isMobile();
+    if(mob) CHOICE='client'; /* sur mobile : seul l'Espace Client est accessible */
     if(!CHOICE){
       o.innerHTML='<div class="sec-card"><h2>🔒 Bienvenue sur YADA</h2>'
         +'<p>Choisissez votre espace pour vous connecter.</p>'
@@ -8911,16 +8915,16 @@ ${lignes}
     }
     var isCab=(CHOICE==='cabinet');
     o.innerHTML='<div class="sec-card"><h2>🔒 '+(isCab?'Espace Cabinet':'Espace Client')+'</h2>'
-      +'<p>Saisissez vos identifiants '+(isCab?'cabinet':'client')+'.</p>'
+      +'<p>'+(mob?'Connexion à votre espace client.':('Saisissez vos identifiants '+(isCab?'cabinet':'client')+'.'))+'</p>'
       +'<div class="sec-err" id="sec-err"></div>'
       +'<input id="sec-email" type="email" placeholder="Identifiant (e-mail)" autocomplete="username" onkeydown="if(event.key===\'Enter\'){var p=document.getElementById(\'sec-pwd\');if(p)p.focus();}">'
       +'<input id="sec-pwd" type="password" placeholder="Mot de passe" autocomplete="current-password" onkeydown="if(event.key===\'Enter\')secEssayer()">'
       +'<label class="sec-remember"><input type="checkbox" id="sec-remember" '+(lsGet(KR)===CHOICE?'checked':'')+'> Rester connecté sur cet appareil</label>'
       +'<button class="sec-btn" onclick="secEssayer()">Se connecter</button>'
-      +'<div style="margin-top:12px;display:flex;justify-content:space-between"><button class="sec-link" onclick="secRetour()">← Changer d\'espace</button><button class="sec-link" onclick="secAide()">Identifiants oubliés ?</button></div></div>';
+      +'<div style="margin-top:12px;display:flex;justify-content:'+(mob?'flex-end':'space-between')+'">'+(mob?'':'<button class="sec-link" onclick="secRetour()">← Changer d\'espace</button>')+'<button class="sec-link" onclick="secAide()">Identifiants oubliés ?</button></div></div>';
     o.classList.add('show'); setTimeout(function(){ var i=document.getElementById('sec-email'); if(i)i.focus(); },30);
   }
-  window.secChoisir=function(r){ CHOICE=r; secAfficher(); };
+  window.secChoisir=function(r){ CHOICE=(isMobile()?'client':r); secAfficher(); };
   window.secRetour=function(){ CHOICE=null; secAfficher(); };
   function secCacher(){ var o=document.getElementById('sec-lock'); if(o){ o.classList.remove('show'); o.innerHTML=''; } window.__secLocked=false; secResetTimer(); }
   function clientDossierId(){ try{ if(CLIENT_DOSSIER && db&&db.dossiersData&&db.dossiersData[CLIENT_DOSSIER]) return CLIENT_DOSSIER;
@@ -8959,7 +8963,8 @@ ${lignes}
   function addSideBtn(){ try{ var foot=document.querySelector('.side-foot'); if(foot && !document.getElementById('sec-side-btn')){ var b=document.createElement('button'); b.id='sec-side-btn'; b.textContent='🔒 Déconnexion'; b.onclick=window.secVerrouiller; foot.insertBefore(b, foot.firstChild.nextSibling); } }catch(e){} }
   if(typeof render==='function'){ var _r=render; render=function(){ var x=_r.apply(this,arguments); addSideBtn(); return x; }; }
   function boot(){ var role=ssGet('yada-role'); var auto=false;
-    if(!(role==='cabinet'||role==='client')){ var rem=lsGet(KR); if(rem==='cabinet'||rem==='client'){ role=rem; auto=true; ssSet('yada-role', role); } }
+    if(isMobile() && role==='cabinet') role=null; /* mobile : pas d'accès cabinet */
+    if(!(role==='cabinet'||role==='client')){ var rem=lsGet(KR); if(rem==='cabinet'||rem==='client'){ if(!(isMobile()&&rem==='cabinet')){ role=rem; auto=true; ssSet('yada-role', role); } } }
     if(role==='cabinet'||role==='client'){ CHOICE=role; window.sessionRole=role; window.selClientMode=(role==='client'); secResetTimer();
       if(role==='client'){ var id=clientDossierId(); if(id && typeof choisirDossierClient==='function') choisirDossierClient(id); }
       else if(auto && typeof render==='function'){ try{ render(); }catch(e){} }
@@ -10040,7 +10045,41 @@ ${lignes}
     return _pp()+'<div class="card"><h2>Installer l\'application</h2>'
       +'<div class="sub">YADA peut s\'installer comme une application de bureau (PWA), avec une icône et un fonctionnement hors-ligne.</div>'
       +'<div class="hint">• <b>Chrome / Edge</b> : icône « Installer » dans la barre d\'adresse, ou menu ⋮ → « Installer YADA ».<br>• <b>Bouton ci-dessous</b> si proposé par le navigateur.<br>• <b>Safari (Mac)</b> : Fichier → « Ajouter au Dock ».<br>• Une fois installée, elle s\'ouvre dans sa propre fenêtre et fonctionne sans connexion.</div>'
-      +'<div class="right"><button class="btn btn-pri" onclick="(function(){var b=document.getElementById(\'yada-install\'); if(b){b.click();} else { toast(\'Utilisez l\\\'icône « Installer » de la barre d\\\'adresse (Chrome/Edge) ou le menu du navigateur.\'); }})()">⤓ Installer maintenant</button></div></div>'; }; }
+      +'<div class="right" style="gap:8px"><button class="btn btn-ghost" onclick="mobileInstallModal()">📱 Installer sur mobile (QR code)</button><button class="btn btn-pri" onclick="(function(){var b=document.getElementById(\'yada-install\'); if(b){b.click();} else { toast(\'Utilisez l\\\'icône « Installer » de la barre d\\\'adresse (Chrome/Edge) ou le menu du navigateur.\'); }})()">⤓ Installer maintenant</button></div></div>'; }; }
+})();
+</script>
+<script id="yada-addon62">
+/* Proposition d'installation mobile depuis la version ordinateur : QR code +
+   lien vers l'app (Espace Client mobile). Bannière discrète (1 fois) + modale. */
+(function(){
+  if(typeof render!=='function') return;
+  function isMobile(){ try{ return window.__secMobile?window.__secMobile():(window.matchMedia&&window.matchMedia('(max-width:820px)').matches); }catch(e){ return false; } }
+  function lg(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+  function ls(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+  function appUrl(){ try{ if(location && /^https?:/.test(location.protocol)) return location.origin+location.pathname; }catch(e){} return 'https://adileminyildiz-oss.github.io/Yada-precompta/'; }
+  window.mobileInstallModal=function(){
+    var url=appUrl(); var qr='https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=2&data='+encodeURIComponent(url);
+    var mc=document.getElementById('modal-c'); if(!mc) return;
+    mc.innerHTML='<h2 style="margin-top:0">📱 Installer YADA sur mobile</h2>'
+      +'<div class="sub">Scannez ce QR code avec votre téléphone (l\'application s\'ouvre sur l\'<b>Espace Client</b>), puis ajoutez-la à l\'écran d\'accueil.</div>'
+      +'<div style="text-align:center;margin:12px 0"><img src="'+qr+'" alt="QR code" width="220" height="220" style="background:#fff;border-radius:14px;padding:10px;box-shadow:0 6px 20px rgba(0,0,0,.25)" onerror="this.style.display=\'none\';var n=document.getElementById(\'qr-fb\');if(n)n.style.display=\'block\'"><div id="qr-fb" style="display:none" class="hint">QR indisponible (hors-ligne) — copiez le lien ci-dessous et ouvrez-le sur votre mobile.</div></div>'
+      +'<div class="field"><label>Lien de l\'application</label><input id="mi-url" value="'+String(url).replace(/"/g,'&quot;')+'" readonly onclick="this.select()"></div>'
+      +'<div class="hint">📲 <b>Android (Chrome)</b> : menu ⋮ → « Installer l\'application » / « Ajouter à l\'écran d\'accueil ».<br>🍎 <b>iPhone (Safari)</b> : bouton Partager → « Sur l\'écran d\'accueil ».<br>🔒 Sur mobile, seul l\'<b>Espace Client</b> est accessible.</div>'
+      +'<div class="right" style="margin-top:10px;gap:8px"><button class="btn btn-ghost" onclick="closeModal()">Fermer</button> <button class="btn btn-pri" onclick="(function(){var i=document.getElementById(\'mi-url\');if(!i)return;i.select();try{document.execCommand(\'copy\');}catch(e){} try{ if(navigator.clipboard)navigator.clipboard.writeText(i.value); }catch(e){} toast(\'Lien copié ✓\');})()">📋 Copier le lien</button></div>';
+    document.getElementById('modal').classList.add('show');
+  };
+  function banner(){
+    if(isMobile()) return; if(lg('yada-mob-prop')) return; if(document.getElementById('mob-prop')||!document.body) return;
+    var b=document.createElement('div'); b.id='mob-prop';
+    b.style.cssText='position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:9998;display:flex;align-items:center;gap:10px;background:linear-gradient(120deg,#0f2138,#0a1422);color:#fff;border:1px solid rgba(95,176,255,.4);border-radius:12px;padding:9px 13px;box-shadow:0 10px 30px rgba(0,0,0,.45);font:500 12.5px system-ui,sans-serif;max-width:92vw';
+    b.innerHTML='📱 Installez aussi YADA sur votre mobile '
+      +'<button id="mob-prop-go" style="background:linear-gradient(120deg,#46d39a,#1f8d63);color:#04130c;border:none;border-radius:8px;padding:6px 11px;font-weight:700;cursor:pointer">Afficher le QR code</button>'
+      +'<button id="mob-prop-x" style="background:none;border:none;color:#9fb8d8;cursor:pointer;font-size:16px;line-height:1">×</button>';
+    document.body.appendChild(b);
+    var g=document.getElementById('mob-prop-go'); if(g) g.onclick=function(){ window.mobileInstallModal(); };
+    var x=document.getElementById('mob-prop-x'); if(x) x.onclick=function(){ ls('yada-mob-prop','1'); var n=document.getElementById('mob-prop'); if(n)n.remove(); };
+  }
+  setTimeout(banner, 1500);
 })();
 </script>
 </body>
