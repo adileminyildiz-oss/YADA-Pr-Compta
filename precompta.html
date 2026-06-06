@@ -8573,5 +8573,65 @@ ${lignes}
 })();
 </script>
 
+<script id="yada-addon35">
+/* ============================================================
+   Autoliquidation de TVA sur achats (UE / hors-UE / sous-traitance)
+   Le fournisseur facture HT ; l'acheteur auto-déclare la TVA :
+     60x (HT)                 D
+     445660000 (TVA déd.)     D
+        401 (HT)              C
+        445710000 (TVA coll.) C
+   → impact trésorerie nul (TVA collectée = déductible), mais déclarée sur
+   la CA3 (les deux remontent dans tvaDuMois et sont soldées par l'OD TVA).
+   100% additif (case à cocher dans Achats + override validerAchat/majAc).
+   ============================================================ */
+(function(){
+  if(typeof posterFacture!=='function' || typeof pageAchats!=='function') return;
+  window.posterAchatAutoliq=function(o){
+    const m=calcMontants(o.base, o.taux, 'HT'); const t=(db.tiers||[]).find(x=>x.id===o.tiersId);
+    const numero=o.numero||nextNumUnique('ACH');
+    const f={ id:uid(), type:'achat', tiersId:o.tiersId, date:o.date, numero, taux:+o.taux,
+      ht:m.ht, tva:m.tva, ttc:m.ht /* net dû = HT (TVA autoliquidée) */, compteContre:o.compteContre,
+      compteTVA:'445660000', source:o.source||'manuelle', modeReglement:o.modeReglement||'', autoliq:true, recuLe:o.date };
+    const lignes=[
+      {compte:o.compteContre, lib:(COMPTES[o.compteContre]||'Charge')+' (autoliq.)', debit:m.ht, credit:0},
+      {compte:'445660000', lib:'TVA déductible autoliquidée', debit:m.tva, credit:0},
+      {compte:'401', lib:'Fournisseur '+(t?t.nom:''), debit:0, credit:m.ht},
+      {compte:'445710000', lib:'TVA collectée autoliquidée', debit:0, credit:m.tva},
+    ];
+    const ecr={ id:uid(), factureId:f.id, date:o.date, journal:'ACH', libelle:numero+' · '+(t?t.nom:'')+' (autoliquidation)', lignes };
+    f.ecritureId=ecr.id;
+    const reg={ id:uid(), factureId:f.id, type:'achat', sens:'a_payer', statut:'attente', echeance:o.echeance||o.date, regle:0, restant:m.ht, notes:[], echelonne:false };
+    db.factures.push(f); db.ecritures.push(ecr); db.reglements.push(reg); save();
+    return f;
+  };
+  /* case à cocher dans le formulaire d'achat */
+  const _pa=pageAchats; pageAchats=function(){ let h=_pa();
+    const ctrl='<div class="field" style="margin-top:2px"><label class="md-check" style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="ac-autoliq" onchange="majAc()"> <b>Autoliquidation de TVA</b> (achat UE / hors-UE / sous-traitance) — le fournisseur facture <b>HT</b>, la TVA est auto-déclarée</label></div>';
+    return h.replace('<div id="ac-apercu"></div>', ctrl+'<div id="ac-apercu"></div>'); };
+  /* aperçu autoliquidé */
+  const _ma=majAc; window.majAc=function(){ const cb=document.getElementById('ac-autoliq'); if(!cb||!cb.checked) return _ma();
+    const ht=+document.getElementById('ac-ttc').value||0, taux=+document.getElementById('ac-taux').value; const m=calcMontants(ht,taux,'HT');
+    const sel=document.getElementById('ac-contre'); const fid=document.getElementById('ac-four').value; const t=(db.tiers||[]).find(x=>x.id===fid);
+    if(sel && (sel.options.length===0||sel.dataset.f!==fid)){ sel.innerHTML=optComptes(COMPTES_CHARGE, t?t.compteContre:'606400'); sel.dataset.f=fid; }
+    const cc=sel?sel.value:'606400';
+    document.getElementById('ac-apercu').innerHTML='<div class="ecr"><div class="ecr-h"><span>Écriture AUTOLIQUIDÉE (journal ACH)</span><span class="balance-ok">Équilibrée ✓</span></div><table><tbody>'
+      +'<tr><td class="num">'+cc+'</td><td>'+(COMPTES[cc]||'')+'</td><td class="r num deb">'+eur(m.ht)+'</td><td class="r num"></td></tr>'
+      +'<tr><td class="num">445660000</td><td>TVA déductible autoliquidée ('+taux+'%)</td><td class="r num deb">'+eur(m.tva)+'</td><td class="r num"></td></tr>'
+      +'<tr><td class="num">401</td><td>Fournisseur '+(t?t.nom:'')+' (HT)</td><td class="r num"></td><td class="r num cre">'+eur(m.ht)+'</td></tr>'
+      +'<tr><td class="num">445710000</td><td>TVA collectée autoliquidée</td><td class="r num"></td><td class="r num cre">'+eur(m.tva)+'</td></tr>'
+      +'<tr class="totrow"><td colspan=2>Totaux</td><td class="r num">'+eur(r2(m.ht+m.tva))+'</td><td class="r num">'+eur(r2(m.ht+m.tva))+'</td></tr>'
+      +'</tbody></table><div class="hint">Le montant saisi est le <b>HT</b>. La TVA ('+taux+'%) est collectée ET déductible → trésorerie nulle, mais déclarée sur la CA3.</div></div>'; };
+  /* validation : route vers l'autoliquidation si coché */
+  const _va=validerAchat; window.validerAchat=function(){ const cb=document.getElementById('ac-autoliq');
+    if(cb && cb.checked){ const t=(db.tiers||[]).find(x=>x.id===document.getElementById('ac-four').value); if(!t) return toast('Ajoutez un fournisseur d\'abord');
+      posterAchatAutoliq({ tiersId:t.id, date:document.getElementById('ac-date').value, base:+document.getElementById('ac-ttc').value||0,
+        taux:+document.getElementById('ac-taux').value, compteContre:document.getElementById('ac-contre').value,
+        source:(typeof acSource!=='undefined'?acSource:'manuelle'), modeReglement:document.getElementById('ac-mode').value });
+      toast('Écriture d\'achat AUTOLIQUIDÉE générée — TVA collectée + déductible déclarées'); render(); return; }
+    return _va(); };
+})();
+</script>
+
 </body>
 </html>
