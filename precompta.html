@@ -8538,12 +8538,29 @@ ${lignes}
       +'<div class="row g3"><div class="field"><label>E-mail</label><input id="te-email" value="'+(t.email||'').replace(/"/g,'&quot;')+'"></div>'
       +'<div class="field"><label>Téléphone</label><input id="te-tel" value="'+(t.tel||'').replace(/"/g,'&quot;')+'"></div>'
       +'<div class="field"><label>Adresse</label><input id="te-adr" value="'+(t.adresse||'').replace(/"/g,'&quot;')+'"></div></div>'
+      +'<div class="row g3"><div class="field"><label>SIRET</label><input id="te-siret" value="'+(t.siret||'').replace(/"/g,'&quot;')+'" placeholder="14 chiffres"></div>'
+      +'<div class="field"><label>N° TVA intracom.</label><input id="te-tvaintra" value="'+(t.tvaIntra||'').replace(/"/g,'&quot;')+'"></div>'
+      +'<div class="field" style="align-self:end"><button class="btn btn-gold" style="width:100%" onclick="tiersEditSiret(\''+id+'\')">🔎 Compléter via le SIRET</button></div></div>'
       +'<div class="right" style="gap:8px">'+(mv?'':'<button class="btn btn-ghost" onclick="tiersSupprimer(\''+id+'\')">🗑 Supprimer la fiche</button>')
       +'<button class="btn btn-pri" onclick="tiersEnregistrer(\''+id+'\')">💾 Enregistrer</button></div></div>';
     document.getElementById('modal').classList.add('show'); };
   window.tiersEnregistrer=function(id){ const t=(db.tiers||[]).find(x=>x.id===id); if(!t)return; const g=i=>{const e=document.getElementById(i);return e?e.value:'';};
     t.nom=g('te-nom').trim()||t.nom; t.taux=+g('te-taux'); t.compteContre=g('te-contre'); t.compteTVA=g('te-tva');
-    t.email=g('te-email'); t.tel=g('te-tel'); t.adresse=g('te-adr'); save(); closeModal(); render(); toast('Fiche tiers mise à jour'); };
+    t.email=g('te-email'); t.tel=g('te-tel'); t.adresse=g('te-adr');
+    var sr=g('te-siret').replace(/\s/g,''); if(sr)t.siret=sr; var tv=g('te-tvaintra').trim(); if(tv)t.tvaIntra=tv;
+    save(); closeModal(); render(); toast('Fiche tiers mise à jour'); };
+  window.tiersEditSiret=function(id){ const g=x=>document.getElementById(x);
+    const siret=((g('te-siret')||{}).value||'').replace(/\D/g,'');
+    if(siret.length!==14 && siret.length!==9) return toast('Saisissez un SIRET (14 chiffres) ou un SIREN (9).');
+    if(typeof lookupSiret!=='function') return toast('Service de recherche indisponible.');
+    toast('Recherche de l\'entreprise…');
+    Promise.resolve(lookupSiret(siret)).then(function(info){ if(!info) return toast('Aucune entreprise trouvée.');
+      if(info.raison && g('te-nom')) g('te-nom').value=info.raison;
+      if(info.siret && g('te-siret')) g('te-siret').value=info.siret;
+      if(info.tvaIntra && g('te-tvaintra')) g('te-tvaintra').value=info.tvaIntra;
+      if(info.adresse && g('te-adr')) g('te-adr').value=info.adresse+((info.cp||info.ville)?(', '+(info.cp||'')+' '+(info.ville||'')).trim():'');
+      toast('✓ Fiche complétée'+(info.raison?(' — '+info.raison):'')+' (e-mail/téléphone à compléter à la main).');
+    }).catch(function(e){ toast('Échec : '+(e&&e.message||'service indisponible')+' (accès réseau requis).'); }); };
   window.tiersSupprimer=function(id){ const t=(db.tiers||[]).find(x=>x.id===id); if(!t)return;
     if(tiersMouvemente(t)) return toast('Tiers mouvementé : suppression impossible');
     if(!confirm('Supprimer la fiche « '+t.nom+' » ?'))return; db.tiers=db.tiers.filter(x=>x.id!==id); save(); closeModal(); render(); toast('Fiche supprimée'); };
@@ -8781,7 +8798,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v53 · fiche fournisseur via SIRET ✨';
+    b.textContent='YADA · v54 · SIRET dans l\'édition Tiers ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
