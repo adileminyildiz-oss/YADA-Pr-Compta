@@ -8678,7 +8678,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v38 · sécurité 🔒';
+    b.textContent='YADA · v38 · code MAJ 🔒';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -8698,7 +8698,7 @@ ${lignes}
 (function(){
   var K='yada-lock', KD='yada-lock-delay', KP='yada-lock-prompted';
   /* Code d'accès partagé (empreinte). Pour changer le code → demander au cabinet (régénère salt+hash). */
-  var SHARED={ salt:'fd8d1d1777ad198f', hash:'ca9cd2df519c072223eb21565b3d3ddfa861b11ed8cc6c171c6001fcb7a8b2a5' };
+  var SHARED={ salt:'2f42aac557685aaa', hash:'576617f376dea7952ee351a9b4d7e0295e2070835909c93069d02fdac8b42331' };
   window.__secLocked=false; window.__secMode=''; var secTimer=null;
   function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
   function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
