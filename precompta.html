@@ -1619,6 +1619,21 @@ body[data-page="coffre"] .card:hover,body[data-page="coffre"] .kpi:hover,body[da
 .dem-it{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:10px;background:rgba(127,127,127,.08);margin-bottom:5px}
 .dem-it.fournie{opacity:.62}.dem-it.fournie .dem-lb{text-decoration:line-through}.dem-it .dem-lb{flex:1}
 </style>
+<style id="sec-css">
+/* Sécurité : écran de verrouillage */
+#sec-lock{position:fixed;inset:0;z-index:100000;display:none;align-items:center;justify-content:center;
+  background:radial-gradient(1000px 600px at 70% -10%, #0e2236, #05080d 60%);color:#eaf3ff;font-family:'IBM Plex Sans',system-ui,sans-serif}
+#sec-lock.show{display:flex}
+#sec-lock .sec-card{width:min(420px,92vw);background:rgba(16,26,42,.94);border:1.5px solid #2f6db0;border-radius:16px;padding:26px 24px;box-shadow:0 24px 70px rgba(0,0,0,.6)}
+#sec-lock h2{font-family:'Fraunces',serif;font-size:22px;margin:0 0 6px}
+#sec-lock p{color:#9fb8d8;font-size:13px;margin:0 0 16px;line-height:1.45}
+#sec-lock input,#sec-lock select{width:100%;padding:11px 13px;border-radius:10px;border:1px solid #2f6db0;background:rgba(8,16,30,.85);color:#fff;font-size:15px;margin-bottom:10px}
+#sec-lock .sec-btn{width:100%;padding:11px;border:none;border-radius:10px;background:linear-gradient(120deg,#5fb0ff,#2f6db0);color:#04060a;font-weight:700;font-size:15px;cursor:pointer}
+#sec-lock .sec-btn:hover{filter:brightness(1.07)}
+#sec-lock .sec-link{display:inline-block;margin-top:12px;color:#7fc0ff;font-size:12px;cursor:pointer;background:none;border:none;text-decoration:underline}
+#sec-lock .sec-err{color:#ff9d8f;font-size:12.5px;min-height:16px;margin-bottom:6px}
+#sec-lock .sec-lbl{font-size:12px;color:#9fb8d8;margin:4px 0 4px}
+</style>
 </head>
 <body data-theme="noir">
 <div class="layout">
@@ -8663,12 +8678,102 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v36 · 06/06/2026';
+    b.textContent='YADA · v38 · sécurité 🔒';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
   if(document.body) add(); else document.addEventListener('DOMContentLoaded', add);
 }catch(e){} })();
+</script>
+
+<script id="yada-addon38">
+/* ============================================================
+   Sécurité : mot de passe à l'ouverture (haché SHA-256) + verrouillage
+   automatique après inactivité. App statique → dissuasif, pas inviolable.
+   Porte de sortie : « code oublié » explique comment réinitialiser.
+   100% additif.
+   ============================================================ */
+(function(){
+  var K='yada-lock', KD='yada-lock-delay', KP='yada-lock-prompted';
+  window.__secLocked=false; var secTimer=null;
+  function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+  function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+  function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+  function secHasCode(){ return !!lsGet(K); }
+  function secDelay(){ var d=parseInt(lsGet(KD),10); return (d>=0)?d:10; }
+  function secLocked(){ return window.__secLocked; }
+  window.secHasCode=secHasCode; window.secDelay=secDelay; window.secLocked=secLocked;
+  async function sha(s){
+    try{ if(window.crypto&&crypto.subtle){ var b=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+      return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0');}).join(''); } }catch(e){}
+    var h=5381; for(var i=0;i<s.length;i++){ h=(((h<<5)+h)^s.charCodeAt(i))>>>0; } return 'f'+h.toString(16);
+  }
+  function el(){ var o=document.getElementById('sec-lock'); if(!o){ o=document.createElement('div'); o.id='sec-lock'; document.body.appendChild(o); } return o; }
+  function secAfficher(mode){
+    var o=el(); window.__secLocked=true;
+    if(mode==='set'){
+      o.innerHTML='<div class="sec-card"><h2>🔒 Définir un code d\'accès</h2>'
+        +'<p>Protégez l\'accès à YADA sur cet appareil. Le code est stocké <b>haché</b> (jamais en clair). '
+        +'Astuce : notez-le — en cas d\'oubli, il faudra réinitialiser (efface le verrou).</p>'
+        +'<div class="sec-err" id="sec-err"></div>'
+        +'<input id="sec-new" type="password" placeholder="Nouveau code d\'accès" autocomplete="new-password">'
+        +'<input id="sec-new2" type="password" placeholder="Confirmer le code" autocomplete="new-password">'
+        +'<div class="sec-lbl">Verrouillage auto après inactivité</div>'
+        +'<select id="sec-delay"><option value="5">5 minutes</option><option value="10" selected>10 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="0">Désactivé</option></select>'
+        +'<button class="sec-btn" onclick="secActiver()">Activer la protection</button>'
+        +'<button class="sec-link" onclick="secPasser()">Passer pour l\'instant</button></div>';
+      o.classList.add('show'); setTimeout(function(){ var i=document.getElementById('sec-new'); if(i)i.focus(); },30);
+    } else {
+      o.innerHTML='<div class="sec-card"><h2>🔒 Accès sécurisé — YADA</h2>'
+        +'<p>Saisissez votre code d\'accès pour ouvrir l\'application.</p>'
+        +'<div class="sec-err" id="sec-err"></div>'
+        +'<input id="sec-inp" type="password" placeholder="Code d\'accès" autocomplete="current-password" onkeydown="if(event.key===\'Enter\')secEssayer()">'
+        +'<button class="sec-btn" onclick="secEssayer()">Déverrouiller</button>'
+        +'<button class="sec-link" onclick="secOubli()">Code oublié ?</button></div>';
+      o.classList.add('show'); setTimeout(function(){ var i=document.getElementById('sec-inp'); if(i)i.focus(); },30);
+    }
+  }
+  function secCacher(){ var o=document.getElementById('sec-lock'); if(o){ o.classList.remove('show'); o.innerHTML=''; } window.__secLocked=false; secResetTimer(); }
+  window.secEssayer=async function(){ var i=document.getElementById('sec-inp'); var v=i?i.value:''; var rec=lsGet(K);
+    try{ var o=JSON.parse(rec); var h=await sha((o.salt||'')+v);
+      if(h===o.hash){ secCacher(); if(typeof toast==='function') toast('Déverrouillé ✓'); }
+      else { var e=document.getElementById('sec-err'); if(e)e.textContent='Code incorrect.'; if(i){i.value='';i.focus();} }
+    }catch(err){ var e2=document.getElementById('sec-err'); if(e2)e2.textContent='Erreur de vérification.'; }
+  };
+  window.secActiver=async function(){ var a=document.getElementById('sec-new'), b=document.getElementById('sec-new2'), d=document.getElementById('sec-delay');
+    var v=a?a.value:'', v2=b?b.value:''; var e=document.getElementById('sec-err');
+    if(!v||v.length<4){ if(e)e.textContent='Choisissez un code d\'au moins 4 caractères.'; return; }
+    if(v!==v2){ if(e)e.textContent='Les deux codes ne correspondent pas.'; return; }
+    var salt=Math.random().toString(36).slice(2)+Date.now().toString(36);
+    var h=await sha(salt+v); lsSet(K, JSON.stringify({salt:salt, hash:h})); lsSet(KD, d?d.value:'10'); lsSet(KP,'1');
+    secCacher(); if(typeof toast==='function') toast('Protection activée 🔒');
+  };
+  window.secPasser=function(){ lsSet(KP,'1'); secCacher(); };
+  window.secVerrouiller=function(){ if(!secHasCode()){ if(typeof toast==='function')toast('Aucun code défini (Paramétrage → Sécurité)'); return; } secAfficher('enter'); };
+  window.secOubli=function(){ if(confirm('Réinitialiser le code d\'accès ?\n\nLe verrou sera supprimé (vos données comptables restent intactes). Vous pourrez définir un nouveau code.')){ lsDel(K); lsDel(KP); secCacher(); secAfficher('set'); } };
+  window.secDefinirDepuisParam=function(){ secAfficher('set'); };
+  window.secDesactiver=function(){ if(confirm('Désactiver la protection par code ?')){ lsDel(K); lsDel(KP); if(typeof toast==='function')toast('Protection désactivée'); if(typeof render==='function')render(); } };
+  window.secSetDelay=function(v){ lsSet(KD, String(v)); secResetTimer(); if(typeof toast==='function')toast('Verrouillage auto : '+(v==0?'désactivé':v+' min')); };
+  function secResetTimer(){ if(secTimer){ clearTimeout(secTimer); secTimer=null; } var d=secDelay(); if(d>0 && secHasCode() && !secLocked()){ secTimer=setTimeout(window.secVerrouiller, d*60000); } }
+  ['mousemove','keydown','click','touchstart','scroll'].forEach(function(ev){ document.addEventListener(ev, function(){ if(!secLocked()) secResetTimer(); }, {passive:true}); });
+  /* carte Sécurité dans Paramétrage */
+  if(typeof pageParametrage==='function'){ var _pp=pageParametrage; pageParametrage=function(){ var on=secHasCode();
+    return _pp()+'<div class="card"><h2>Sécurité — accès</h2>'
+      +'<div class="sub">Protection par code à l\'ouverture (haché SHA-256) et verrouillage automatique après inactivité. Sécurité côté navigateur : dissuasive, à compléter par un back-end pour un usage sensible.</div>'
+      +'<div class="row g3" style="align-items:flex-end">'
+      +'<div class="field"><label>État</label><div class="kv2 '+(on?'ok':'')+'">'+(on?'🔒 Protection active':'🔓 Aucun code défini')+'</div></div>'
+      +'<div class="field"><label>Verrouillage auto (inactivité)</label><select onchange="secSetDelay(this.value)">'+[['5','5 min'],['10','10 min'],['15','15 min'],['30','30 min'],['0','Désactivé']].map(function(o){return '<option value="'+o[0]+'" '+(String(secDelay())===o[0]?'selected':'')+'>'+o[1]+'</option>';}).join('')+'</select></div>'
+      +'<div class="field"><label>&nbsp;</label><button class="btn btn-gold" onclick="secDefinirDepuisParam()">'+(on?'Modifier le code':'Définir un code')+'</button></div>'
+      +'</div>'
+      +'<div class="right" style="gap:8px">'+(on?'<button class="btn btn-ghost" onclick="secVerrouiller()">🔒 Verrouiller maintenant</button><button class="btn btn-ghost" onclick="secDesactiver()">Désactiver la protection</button>':'')+'</div>'
+      +'</div>'; }; }
+  /* bouton « Verrouiller » dans la barre latérale */
+  function addSideBtn(){ try{ var foot=document.querySelector('.side-foot'); if(foot && !document.getElementById('sec-side-btn') && secHasCode()){ var b=document.createElement('button'); b.id='sec-side-btn'; b.textContent='🔒 Verrouiller'; b.onclick=window.secVerrouiller; foot.insertBefore(b, foot.firstChild.nextSibling); } }catch(e){} }
+  if(typeof render==='function'){ var _r=render; render=function(){ var x=_r.apply(this,arguments); addSideBtn(); return x; }; }
+  /* au démarrage : si un code existe → verrouiller ; sinon proposer d'en définir un (une fois) */
+  function boot(){ if(secHasCode()) secAfficher('enter'); else if(!lsGet(KP)) secAfficher('set'); else secResetTimer(); }
+  if(document.body) boot(); else document.addEventListener('DOMContentLoaded', boot);
+})();
 </script>
 
 </body>

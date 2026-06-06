@@ -33,7 +33,7 @@
 
 ## Le projet
 App de **pré-comptabilité française** (style Sage) en **un seul fichier `precompta.html`** autonome, **hors-ligne**, tout en français. Logique + UI dans des `<script>`. 3 thèmes (`noir` défaut, `liquid-clair`, `liquid-teinte`). Écran de connexion + portefeuille multi-dossiers. 2 démos : **AMA** (`d-ama`), **SCI DU 42** (`d-sci42`).
-État actuel : ~684 Ko, 37 `<script>`, **36 modules d'extension** (`yada-addon` → `yada-addon36`), 23 entrées de navigation.
+État actuel : ~690 Ko, 39 `<script>`, **38 modules d'extension** (`yada-addon` → `yada-addon38`), 23 entrées de navigation.
 Feuille de route : voir **`ROADMAP.md`** (finalisation par module).
 - **`yada-addon21` (T1)** : clôture de l'exercice — **OD de résultat** (solde 6/7 → 120/129) + **report des à‑nouveaux** (classes 1→5), carte page Éditions. Continuité comptable (bilan d'ouverture N+1 équilibré). Fonctions : `t1ResultatLignes/t1GenererResultat`, `t1ANLignes/t1GenererAN`, `t1SupprimerCloture`, `t1Card`.
 - **`yada-addon22` (T2)** : **cohérence des comptes** — normalisation `c9` (9 chiffres) de tous les comptes d'écriture (migration de tous les dossiers + à chaque `save`), de sorte que l'**OD TVA solde réellement** les comptes alimentés par les factures (44571→445710000, 44566→445660000). `tvaDuMois` comparé en `c9`. Fonction : `t2Normaliser()`. + correctif chirurgical du solde banque (ligne ~3390 : `c9(l.compte)==='512000000'`).
@@ -51,6 +51,8 @@ Feuille de route : voir **`ROADMAP.md`** (finalisation par module).
 - **`yada-addon34`** : **FEC inverse** — bouton « ouvrir l'exercice précédent (N-1) » pour les à-nouveaux (`fecOuvrirPrecedent`).
 - **`yada-addon35`** : **Autoliquidation de TVA (achats)** — case « Autoliquidation » dans Achats ; écriture 4 lignes équilibrée (60x HT + 445660000 TVA déd. D = 401 HT + 445710000 TVA coll. C). Net dû = HT ; TVA collectée + déductible déclarées sur la CA3. Fonction : `posterAchatAutoliq(o)` (override `validerAchat`/`majAc`).
 - **`yada-addon36`** : **cohérence des KPI de synthèse** — Tableau de bord & Espace Client alignent **CA / Charges / Résultat** sur les **écritures** (classe 7/6 hors « OD RÉSULTAT »), comme le Compte de résultat (avant : basés sur les factures, ignoraient paie/dotations). `resEcritures()` ; greffe `dashCompta`/`pageEspaceClient`. L'Analytique reste basé factures (analyse par pièce).
+- **`yada-addon37`** : badge de version (repère de déploiement, bas-droite) — confirme qu'une MAJ est en ligne (GitHub Pages).
+- **`yada-addon38`** : **Sécurité** — mot de passe à l'ouverture (haché SHA-256, sel ; jamais en clair) + **verrouillage auto par inactivité** (5/10/15/30 min) + verrouillage manuel ; carte « Sécurité » dans Paramétrage. `secActiver/secEssayer/secVerrouiller/secDesactiver`, stockage `localStorage['yada-lock']`. Sécurité côté navigateur (dissuasive). « Code oublié » réinitialise le verrou sans perdre les données.
 > **Hors périmètre hors-ligne** : OCR réel et IA en ligne (réseau/clé API requis) restent simulés ; e-reporting Achats à compléter ultérieurement.
 
 ## Règles de travail (IMPÉRATIF)
