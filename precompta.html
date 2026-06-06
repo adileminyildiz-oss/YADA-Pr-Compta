@@ -8688,21 +8688,27 @@ ${lignes}
 
 <script id="yada-addon38">
 /* ============================================================
-   Sécurité : mot de passe à l'ouverture (haché SHA-256) + verrouillage
-   automatique après inactivité. App statique → dissuasif, pas inviolable.
-   Porte de sortie : « code oublié » explique comment réinitialiser.
+   Sécurité : portail à code d'accès + verrouillage auto par inactivité.
+   - Mode PARTAGÉ (SHARED) : un code commun (empreinte hachée+salée embarquée
+     ici, jamais en clair) est exigé de TOUT visiteur de l'URL publique.
+   - Sinon, repli « verrou par appareil » (chacun définit son code local).
+   App statique → dissuasif (lecture de source possible), pas inviolable.
    100% additif.
    ============================================================ */
 (function(){
   var K='yada-lock', KD='yada-lock-delay', KP='yada-lock-prompted';
-  window.__secLocked=false; var secTimer=null;
+  /* Code d'accès partagé (empreinte). Pour changer le code → demander au cabinet (régénère salt+hash). */
+  var SHARED={ salt:'fd8d1d1777ad198f', hash:'ca9cd2df519c072223eb21565b3d3ddfa861b11ed8cc6c171c6001fcb7a8b2a5' };
+  window.__secLocked=false; window.__secMode=''; var secTimer=null;
   function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
   function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
   function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+  function sharedOn(){ return !!(SHARED && SHARED.hash); }
+  function sessOk(){ try{ if(sessionStorage.getItem('yada-sess-ok')==='1') return true; }catch(e){} return lsGet('yada-shared-ok')===SHARED.hash; }
   function secHasCode(){ return !!lsGet(K); }
   function secDelay(){ var d=parseInt(lsGet(KD),10); return (d>=0)?d:10; }
   function secLocked(){ return window.__secLocked; }
-  window.secHasCode=secHasCode; window.secDelay=secDelay; window.secLocked=secLocked;
+  window.secHasCode=secHasCode; window.secDelay=secDelay; window.secLocked=secLocked; window.secSharedOn=sharedOn;
   async function sha(s){
     try{ if(window.crypto&&crypto.subtle){ var b=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
       return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0');}).join(''); } }catch(e){}
@@ -8710,11 +8716,10 @@ ${lignes}
   }
   function el(){ var o=document.getElementById('sec-lock'); if(!o){ o=document.createElement('div'); o.id='sec-lock'; document.body.appendChild(o); } return o; }
   function secAfficher(mode){
-    var o=el(); window.__secLocked=true;
+    var o=el(); window.__secLocked=true; window.__secMode=mode;
     if(mode==='set'){
       o.innerHTML='<div class="sec-card"><h2>🔒 Définir un code d\'accès</h2>'
-        +'<p>Protégez l\'accès à YADA sur cet appareil. Le code est stocké <b>haché</b> (jamais en clair). '
-        +'Astuce : notez-le — en cas d\'oubli, il faudra réinitialiser (efface le verrou).</p>'
+        +'<p>Protégez l\'accès à YADA sur cet appareil. Le code est stocké <b>haché</b> (jamais en clair). Notez-le : en cas d\'oubli, il faudra réinitialiser (efface le verrou).</p>'
         +'<div class="sec-err" id="sec-err"></div>'
         +'<input id="sec-new" type="password" placeholder="Nouveau code d\'accès" autocomplete="new-password">'
         +'<input id="sec-new2" type="password" placeholder="Confirmer le code" autocomplete="new-password">'
@@ -8724,21 +8729,26 @@ ${lignes}
         +'<button class="sec-link" onclick="secPasser()">Passer pour l\'instant</button></div>';
       o.classList.add('show'); setTimeout(function(){ var i=document.getElementById('sec-new'); if(i)i.focus(); },30);
     } else {
-      o.innerHTML='<div class="sec-card"><h2>🔒 Accès sécurisé — YADA</h2>'
-        +'<p>Saisissez votre code d\'accès pour ouvrir l\'application.</p>'
+      var partage=(mode==='shared');
+      o.innerHTML='<div class="sec-card"><h2>🔒 '+(partage?'Accès réservé — YADA':'Accès sécurisé — YADA')+'</h2>'
+        +'<p>'+(partage?'Application protégée. Saisissez le code d\'accès fourni par le cabinet.':'Saisissez votre code d\'accès pour ouvrir l\'application.')+'</p>'
         +'<div class="sec-err" id="sec-err"></div>'
         +'<input id="sec-inp" type="password" placeholder="Code d\'accès" autocomplete="current-password" onkeydown="if(event.key===\'Enter\')secEssayer()">'
-        +'<button class="sec-btn" onclick="secEssayer()">Déverrouiller</button>'
+        +'<button class="sec-btn" onclick="secEssayer()">'+(partage?'Entrer':'Déverrouiller')+'</button>'
         +'<button class="sec-link" onclick="secOubli()">Code oublié ?</button></div>';
       o.classList.add('show'); setTimeout(function(){ var i=document.getElementById('sec-inp'); if(i)i.focus(); },30);
     }
   }
-  function secCacher(){ var o=document.getElementById('sec-lock'); if(o){ o.classList.remove('show'); o.innerHTML=''; } window.__secLocked=false; secResetTimer(); }
-  window.secEssayer=async function(){ var i=document.getElementById('sec-inp'); var v=i?i.value:''; var rec=lsGet(K);
-    try{ var o=JSON.parse(rec); var h=await sha((o.salt||'')+v);
+  function secCacher(){ var o=document.getElementById('sec-lock'); if(o){ o.classList.remove('show'); o.innerHTML=''; } window.__secLocked=false; window.__secMode=''; secResetTimer(); }
+  window.secEssayer=async function(){ var i=document.getElementById('sec-inp'); var v=i?i.value:''; var e=document.getElementById('sec-err');
+    if(window.__secMode==='shared'){ var hs=await sha(SHARED.salt+v);
+      if(hs===SHARED.hash){ try{sessionStorage.setItem('yada-sess-ok','1');}catch(x){} lsSet('yada-shared-ok',SHARED.hash); secCacher(); if(typeof toast==='function')toast('Bienvenue ✓'); }
+      else { if(e)e.textContent='Code incorrect.'; if(i){i.value='';i.focus();} }
+      return; }
+    var rec=lsGet(K); try{ var o=JSON.parse(rec); var h=await sha((o.salt||'')+v);
       if(h===o.hash){ secCacher(); if(typeof toast==='function') toast('Déverrouillé ✓'); }
-      else { var e=document.getElementById('sec-err'); if(e)e.textContent='Code incorrect.'; if(i){i.value='';i.focus();} }
-    }catch(err){ var e2=document.getElementById('sec-err'); if(e2)e2.textContent='Erreur de vérification.'; }
+      else { if(e)e.textContent='Code incorrect.'; if(i){i.value='';i.focus();} }
+    }catch(err){ if(e)e.textContent='Erreur de vérification.'; }
   };
   window.secActiver=async function(){ var a=document.getElementById('sec-new'), b=document.getElementById('sec-new2'), d=document.getElementById('sec-delay');
     var v=a?a.value:'', v2=b?b.value:''; var e=document.getElementById('sec-err');
@@ -8749,29 +8759,36 @@ ${lignes}
     secCacher(); if(typeof toast==='function') toast('Protection activée 🔒');
   };
   window.secPasser=function(){ lsSet(KP,'1'); secCacher(); };
-  window.secVerrouiller=function(){ if(!secHasCode()){ if(typeof toast==='function')toast('Aucun code défini (Paramétrage → Sécurité)'); return; } secAfficher('enter'); };
-  window.secOubli=function(){ if(confirm('Réinitialiser le code d\'accès ?\n\nLe verrou sera supprimé (vos données comptables restent intactes). Vous pourrez définir un nouveau code.')){ lsDel(K); lsDel(KP); secCacher(); secAfficher('set'); } };
+  window.secVerrouiller=function(){ if(sharedOn()){ try{sessionStorage.removeItem('yada-sess-ok');}catch(e){} lsDel('yada-shared-ok'); secAfficher('shared'); return; }
+    if(!secHasCode()){ if(typeof toast==='function')toast('Aucun code défini (Paramétrage → Sécurité)'); return; } secAfficher('enter'); };
+  window.secOubli=function(){ if(sharedOn()){ alert('Code d\'accès géré par le cabinet. Contactez votre cabinet pour l\'obtenir ou le réinitialiser.'); return; }
+    if(confirm('Réinitialiser le code d\'accès ?\n\nLe verrou sera supprimé (vos données restent intactes). Vous pourrez définir un nouveau code.')){ lsDel(K); lsDel(KP); secCacher(); secAfficher('set'); } };
   window.secDefinirDepuisParam=function(){ secAfficher('set'); };
   window.secDesactiver=function(){ if(confirm('Désactiver la protection par code ?')){ lsDel(K); lsDel(KP); if(typeof toast==='function')toast('Protection désactivée'); if(typeof render==='function')render(); } };
   window.secSetDelay=function(v){ lsSet(KD, String(v)); secResetTimer(); if(typeof toast==='function')toast('Verrouillage auto : '+(v==0?'désactivé':v+' min')); };
-  function secResetTimer(){ if(secTimer){ clearTimeout(secTimer); secTimer=null; } var d=secDelay(); if(d>0 && secHasCode() && !secLocked()){ secTimer=setTimeout(window.secVerrouiller, d*60000); } }
+  function secResetTimer(){ if(secTimer){ clearTimeout(secTimer); secTimer=null; } var d=secDelay(); var active=sharedOn()||secHasCode(); if(d>0 && active && !secLocked()){ secTimer=setTimeout(window.secVerrouiller, d*60000); } }
   ['mousemove','keydown','click','touchstart','scroll'].forEach(function(ev){ document.addEventListener(ev, function(){ if(!secLocked()) secResetTimer(); }, {passive:true}); });
-  /* carte Sécurité dans Paramétrage */
-  if(typeof pageParametrage==='function'){ var _pp=pageParametrage; pageParametrage=function(){ var on=secHasCode();
+  if(typeof pageParametrage==='function'){ var _pp=pageParametrage; pageParametrage=function(){
+    var delaySel='<select onchange="secSetDelay(this.value)">'+[['5','5 min'],['10','10 min'],['15','15 min'],['30','30 min'],['0','Désactivé']].map(function(o){return '<option value="'+o[0]+'" '+(String(secDelay())===o[0]?'selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';
+    if(sharedOn()){
+      return _pp()+'<div class="card"><h2>Sécurité — accès</h2>'
+        +'<div class="sub">🔒 <b>Code d\'accès partagé actif</b> : tout visiteur de l\'URL doit saisir le code (empreinte hachée embarquée dans l\'application). Pour changer le code, demandez au cabinet (redéploiement). + verrouillage automatique par inactivité.</div>'
+        +'<div class="row g3" style="align-items:flex-end"><div class="field"><label>État</label><div class="kv2 ok">🔒 Portail partagé actif</div></div>'
+        +'<div class="field"><label>Verrouillage auto (inactivité)</label>'+delaySel+'</div>'
+        +'<div class="field"><label>&nbsp;</label><button class="btn btn-ghost" onclick="secVerrouiller()">🔒 Verrouiller maintenant</button></div></div></div>';
+    }
+    var on=secHasCode();
     return _pp()+'<div class="card"><h2>Sécurité — accès</h2>'
-      +'<div class="sub">Protection par code à l\'ouverture (haché SHA-256) et verrouillage automatique après inactivité. Sécurité côté navigateur : dissuasive, à compléter par un back-end pour un usage sensible.</div>'
+      +'<div class="sub">Protection par code à l\'ouverture (haché SHA-256) et verrouillage automatique après inactivité. Sécurité côté navigateur : dissuasive.</div>'
       +'<div class="row g3" style="align-items:flex-end">'
       +'<div class="field"><label>État</label><div class="kv2 '+(on?'ok':'')+'">'+(on?'🔒 Protection active':'🔓 Aucun code défini')+'</div></div>'
-      +'<div class="field"><label>Verrouillage auto (inactivité)</label><select onchange="secSetDelay(this.value)">'+[['5','5 min'],['10','10 min'],['15','15 min'],['30','30 min'],['0','Désactivé']].map(function(o){return '<option value="'+o[0]+'" '+(String(secDelay())===o[0]?'selected':'')+'>'+o[1]+'</option>';}).join('')+'</select></div>'
-      +'<div class="field"><label>&nbsp;</label><button class="btn btn-gold" onclick="secDefinirDepuisParam()">'+(on?'Modifier le code':'Définir un code')+'</button></div>'
-      +'</div>'
-      +'<div class="right" style="gap:8px">'+(on?'<button class="btn btn-ghost" onclick="secVerrouiller()">🔒 Verrouiller maintenant</button><button class="btn btn-ghost" onclick="secDesactiver()">Désactiver la protection</button>':'')+'</div>'
-      +'</div>'; }; }
-  /* bouton « Verrouiller » dans la barre latérale */
-  function addSideBtn(){ try{ var foot=document.querySelector('.side-foot'); if(foot && !document.getElementById('sec-side-btn') && secHasCode()){ var b=document.createElement('button'); b.id='sec-side-btn'; b.textContent='🔒 Verrouiller'; b.onclick=window.secVerrouiller; foot.insertBefore(b, foot.firstChild.nextSibling); } }catch(e){} }
+      +'<div class="field"><label>Verrouillage auto (inactivité)</label>'+delaySel+'</div>'
+      +'<div class="field"><label>&nbsp;</label><button class="btn btn-gold" onclick="secDefinirDepuisParam()">'+(on?'Modifier le code':'Définir un code')+'</button></div></div>'
+      +'<div class="right" style="gap:8px">'+(on?'<button class="btn btn-ghost" onclick="secVerrouiller()">🔒 Verrouiller maintenant</button><button class="btn btn-ghost" onclick="secDesactiver()">Désactiver la protection</button>':'')+'</div></div>'; }; }
+  function addSideBtn(){ try{ var foot=document.querySelector('.side-foot'); if(foot && !document.getElementById('sec-side-btn') && (sharedOn()||secHasCode())){ var b=document.createElement('button'); b.id='sec-side-btn'; b.textContent='🔒 Verrouiller'; b.onclick=window.secVerrouiller; foot.insertBefore(b, foot.firstChild.nextSibling); } }catch(e){} }
   if(typeof render==='function'){ var _r=render; render=function(){ var x=_r.apply(this,arguments); addSideBtn(); return x; }; }
-  /* au démarrage : si un code existe → verrouiller ; sinon proposer d'en définir un (une fois) */
-  function boot(){ if(secHasCode()) secAfficher('enter'); else if(!lsGet(KP)) secAfficher('set'); else secResetTimer(); }
+  function boot(){ if(sharedOn()){ if(sessOk()) secResetTimer(); else secAfficher('shared'); return; }
+    if(secHasCode()) secAfficher('enter'); else if(!lsGet(KP)) secAfficher('set'); else secResetTimer(); }
   if(document.body) boot(); else document.addEventListener('DOMContentLoaded', boot);
 })();
 </script>
