@@ -8811,7 +8811,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v58 · factures client/fourn. en 2 colonnes ✨';
+    b.textContent='YADA · v59 · sauvegarde auto + indicateur ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -9919,6 +9919,33 @@ ${lignes}
   var _bn=buildNav; buildNav=function(){ var r=_bn.apply(this,arguments);
     try{ if((window.sessionRole||'cabinet')!=='client'){ var nav=document.getElementById('nav'); if(nav) addBadge(nav,'Tiers (clients',nbNouveaux()); } }catch(e){}
     return r; };
+})();
+</script>
+<script id="yada-addon59">
+/* Sauvegarde automatique à chaque mise à jour + indicateur « Enregistré ✓ ».
+   save() est déjà appelé après chaque action : on l'enveloppe pour afficher
+   l'état, et on ajoute un filet de sécurité (avant fermeture + périodique). */
+(function(){
+  if(typeof save!=='function') return;
+  var ind, hideT;
+  var BASE='position:fixed;left:12px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.3);pointer-events:none;transition:opacity .3s,background .3s,transform .3s;';
+  function el(){ if(ind && document.body && document.body.contains(ind)) return ind;
+    ind=document.getElementById('yada-save-ind');
+    if(!ind && document.body){ ind=document.createElement('div'); ind.id='yada-save-ind'; document.body.appendChild(ind); }
+    return ind; }
+  function two(n){ return (n<10?'0':'')+n; }
+  function idle(e){ e.style.cssText=BASE+'background:rgba(47,109,176,.85);color:#fff;opacity:.7;transform:none'; }
+  function flash(e){ e.style.cssText=BASE+'background:rgba(47,158,110,.96);color:#fff;opacity:1;transform:translateY(-1px)'; }
+  function markSaved(){ try{ var e=el(); if(!e) return; var d=new Date();
+    e.textContent='💾 Enregistré ✓ '+two(d.getHours())+':'+two(d.getMinutes())+':'+two(d.getSeconds());
+    flash(e); if(hideT)clearTimeout(hideT); hideT=setTimeout(function(){ idle(e); }, 900);
+  }catch(_e){} }
+  window.__yadaMarkSaved=markSaved;
+  var _save=save;
+  save=function(){ var r; try{ r=_save.apply(this,arguments); }finally{ markSaved(); } return r; };
+  /* filet de sécurité */
+  try{ window.addEventListener('beforeunload', function(){ try{ _save(); }catch(e){} }); }catch(e){}
+  try{ setInterval(function(){ try{ _save(); markSaved(); }catch(e){} }, 60000); }catch(e){}
 })();
 </script>
 </body>

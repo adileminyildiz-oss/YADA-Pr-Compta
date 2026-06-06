@@ -33,7 +33,7 @@
 
 ## Le projet
 App de **pré-comptabilité française** (style Sage) en **un seul fichier `precompta.html`** autonome, **hors-ligne**, tout en français. Logique + UI dans des `<script>`. 3 thèmes (`noir` défaut, `liquid-clair`, `liquid-teinte`). Écran de connexion + portefeuille multi-dossiers. 2 démos : **AMA** (`d-ama`), **SCI DU 42** (`d-sci42`).
-État actuel : ~760 Ko, 53 `<script>`, **52 modules d'extension** (`yada-addon` → `yada-addon56`, n°49 réservé), 23 entrées de navigation.
+État actuel : ~762 Ko, 54 `<script>`, **53 modules d'extension** (`yada-addon` → `yada-addon59`, n°49 réservé), 23 entrées de navigation.
 Feuille de route : voir **`ROADMAP.md`** (finalisation par module).
 - **`yada-addon21` (T1)** : clôture de l'exercice — **OD de résultat** (solde 6/7 → 120/129) + **report des à‑nouveaux** (classes 1→5), carte page Éditions. Continuité comptable (bilan d'ouverture N+1 équilibré). Fonctions : `t1ResultatLignes/t1GenererResultat`, `t1ANLignes/t1GenererAN`, `t1SupprimerCloture`, `t1Card`.
 - **`yada-addon22` (T2)** : **cohérence des comptes** — normalisation `c9` (9 chiffres) de tous les comptes d'écriture (migration de tous les dossiers + à chaque `save`), de sorte que l'**OD TVA solde réellement** les comptes alimentés par les factures (44571→445710000, 44566→445660000). `tvaDuMois` comparé en `c9`. Fonction : `t2Normaliser()`. + correctif chirurgical du solde banque (ligne ~3390 : `c9(l.compte)==='512000000'`).
@@ -69,6 +69,8 @@ Feuille de route : voir **`ROADMAP.md`** (finalisation par module).
 - **`yada-addon56`** : **Même système pour les clients** — le flux « tiers inconnu → fiche → validation cabinet → tiers marqué nouveau » est généralisé au **type client** (vente). Sélecteur « Client inconnu / nouveau » dans le dépôt Facturation (`dep-client-vente`) ; fonctions `ficheRemplir/ficheVoir/ficheValider/fichesClientCard/fichesCabinetCard` rendues **type-aware** (fournisseur → 401/606/44566 ; client → 411/706/44571). Greffes : `fichesClientCard('client')` sur Facturation client, `fichesCabinetCard('client')` sur Facturation cabinet (et inchangées pour fournisseur sur Achats). Marquage `nouveau` + badge/pastille et édition cabinet (IBAN/mail/tél/SIRET) communs aux deux types.
 
 > **Hors périmètre hors-ligne** : l'OCR d'images nécessite le réseau (chargement de Tesseract.js) — **prêt et activé automatiquement quand connecté**, repli hors-ligne ; la lecture PDF couche-texte est réelle et hors-ligne ; IA en ligne et e-reporting Achats à compléter ultérieurement.
+
+- **`yada-addon59`** : **Sauvegarde automatique + indicateur** — `save()` (déjà appelé après chaque action) est enveloppé pour afficher un indicateur **« 💾 Enregistré ✓ HH:MM:SS »** (bas-gauche, `#yada-save-ind`) à chaque mise à jour ; filet de sécurité : sauvegarde **avant fermeture** (`beforeunload`) + **périodique** (60 s). Données dans `localStorage` (`yada-db`).
 
 ## Règles de travail (IMPÉRATIF)
 1. **Ajouter par-dessus l'existant sans rien casser.** Édition chirurgicale, jamais de réécriture globale. Les nouveautés = nouveaux **scripts d'extension** `yada-addonN` injectés avant `</body>` (greffe sur fonctions globales) + éventuels `<style id="...">` avant `</head>`.
