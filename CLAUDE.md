@@ -46,6 +46,7 @@ Derniers ajouts (addons 21→27) : ouvrir/joindre K-bis & Statuts ; pastille com
    - balises `</head>`/`</body>`/`</html>` uniques ;
    - **rendu réel via Playwright** (Chromium) sur les 2 démos : parcourir les modules, capturer pageerror/console, vérifier que **toutes les écritures sont équilibrées** (Σ débit = Σ crédit).
    - Pré-requis test : `npm i -g playwright && npx playwright install chromium`.
+   - **Repli si Chromium indisponible (réseau bloqué)** : `npm i jsdom && node test-rendu.cjs` — exécute réellement tous les scripts, parcourt les 23 modules sur les 2 démos, teste les addons et vérifie l'équilibre comptable. (42 contrôles ; doit afficher « 0 échoués ».)
 
 ## Architecture
 - `render()` lit `current`, pose `document.body.dataset.page=current`, puis appelle le module via un objet de **dispatch réévalué à chaque rendu**. Réassigner `pageX = function(){…}` fonctionne → pattern de greffe : `const _p=pageX; pageX=function(){ return _p()+complement(); }`.
