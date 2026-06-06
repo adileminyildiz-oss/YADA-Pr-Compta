@@ -8686,7 +8686,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v38 · connexion 🔒';
+    b.textContent='YADA · v38 · espaces 🔒';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -8707,6 +8707,7 @@ ${lignes}
   var SEP='##', KD='yada-lock-delay';
   var CAB={ salt:'bde7c60ed8ebbc65', hash:'c439eeb815469a50d3b3aad73f63759ee5e045689956710fc297f27d2676a87f' };
   var CLI={ salt:'9fb44c9e64732c08', hash:'281b9f17f7420ac6a1173aa6d0655042d555be7c9eab6d9f4460686c614054ce' };
+  var CLIENT_DOSSIER='d-ama'; /* dossier exclusif du portail Client */
   var CHOICE=null;
   window.__secLocked=false; var secTimer=null;
   function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
@@ -8744,8 +8745,14 @@ ${lignes}
   window.secChoisir=function(r){ CHOICE=r; secAfficher(); };
   window.secRetour=function(){ CHOICE=null; secAfficher(); };
   function secCacher(){ var o=document.getElementById('sec-lock'); if(o){ o.classList.remove('show'); o.innerHTML=''; } window.__secLocked=false; secResetTimer(); }
+  function clientDossierId(){ try{ if(CLIENT_DOSSIER && db&&db.dossiersData&&db.dossiersData[CLIENT_DOSSIER]) return CLIENT_DOSSIER;
+      if(db&&db.cabinet&&db.cabinet.dossiers){ var d=db.cabinet.dossiers.find(function(x){return x.id===CLIENT_DOSSIER;}); if(d) return d.id; }
+      if(db&&db.activeId&&db.dossiersData&&db.dossiersData[db.activeId]) return db.activeId;
+      if(db&&db.cabinet&&db.cabinet.dossiers&&db.cabinet.dossiers[0]) return db.cabinet.dossiers[0].id; }catch(e){} return null; }
   function secOuvrir(role){ ssSet('yada-role', role); window.sessionRole=role; window.selClientMode=(role==='client');
-    secCacher(); if(typeof toast==='function') toast(role==='cabinet'?'Espace Cabinet ✓':'Espace Client ✓'); if(typeof render==='function') render(); }
+    secCacher(); if(typeof toast==='function') toast(role==='cabinet'?'Espace Cabinet ✓':'Espace Client ✓');
+    if(role==='client'){ var id=clientDossierId(); if(id && typeof choisirDossierClient==='function'){ choisirDossierClient(id); return; } if(typeof render==='function'){ current='client'; render(); return; } }
+    if(typeof render==='function') render(); }
   window.secEssayer=async function(){ if(!CHOICE){ secAfficher(); return; } var e=document.getElementById('sec-err');
     var em=(document.getElementById('sec-email')||{}).value||''; em=em.trim().toLowerCase();
     var pw=(document.getElementById('sec-pwd')||{}).value||'';
@@ -8770,7 +8777,8 @@ ${lignes}
       +'<div class="field"><label>&nbsp;</label><button class="btn btn-ghost" onclick="secVerrouiller()">🔒 Se déconnecter</button></div></div></div>'; }; }
   function addSideBtn(){ try{ var foot=document.querySelector('.side-foot'); if(foot && !document.getElementById('sec-side-btn')){ var b=document.createElement('button'); b.id='sec-side-btn'; b.textContent='🔒 Déconnexion'; b.onclick=window.secVerrouiller; foot.insertBefore(b, foot.firstChild.nextSibling); } }catch(e){} }
   if(typeof render==='function'){ var _r=render; render=function(){ var x=_r.apply(this,arguments); addSideBtn(); return x; }; }
-  function boot(){ var role=ssGet('yada-role'); if(role==='cabinet'||role==='client'){ CHOICE=role; window.sessionRole=role; window.selClientMode=(role==='client'); secResetTimer(); } else { CHOICE=null; secAfficher(); } }
+  function boot(){ var role=ssGet('yada-role'); if(role==='cabinet'||role==='client'){ CHOICE=role; window.sessionRole=role; window.selClientMode=(role==='client'); secResetTimer();
+      if(role==='client'){ var id=clientDossierId(); if(id && typeof choisirDossierClient==='function') choisirDossierClient(id); } } else { CHOICE=null; secAfficher(); } }
   if(document.body) boot(); else document.addEventListener('DOMContentLoaded', boot);
 })();
 </script>
