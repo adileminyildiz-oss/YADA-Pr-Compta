@@ -8315,5 +8315,47 @@ ${lignes}
 })();
 </script>
 
+<script id="yada-addon26">
+/* ============================================================
+   Immobilisations — Cession : génère l'écriture de sortie
+   Avant : imCeder n'enregistrait que la date/prix sans écriture.
+   Désormais (OD équilibrée) :
+     675 (VCEAC)        D = VNC
+     28x (amort cumulés) D = cumul amortissements
+     21x (immo brute)    C = montant HT
+     512 (banque)        D = prix de cession
+     775 (PCEA)          C = prix de cession
+   (VNC + cumul = montant HT → écriture équilibrée). 100% additif.
+   ============================================================ */
+(function(){
+  if(typeof posterOD!=='function' || typeof immoRowAnnee!=='function') return;
+  COMPTES['675000000']=COMPTES['675000000']||"Valeurs comptables des éléments d'actif cédés";
+  COMPTES['775000000']=COMPTES['775000000']||"Produits des cessions d'éléments d'actif";
+  function cessionLib(im){ return 'CESSION IMMOBILISATION '+im.numero; }
+  window.imCederComptabilise=function(im, dateCession, prix){
+    prix=r2(+prix||0); const an=+String(dateCession).slice(0,4);
+    const row=immoRowAnnee(im, an); const cumul=r2(row.cumul); const vnc=r2(im.montantHT-cumul);
+    const cptImmo=c9(im.compte), cptAmort=c9(im.compteAmort||compteAmortDe(im.compte));
+    const lignes=[];
+    if(vnc>0.005) lignes.push({compte:'675000000', lib:'VNC '+im.numero, debit:vnc, credit:0});
+    if(cumul>0.005) lignes.push({compte:cptAmort, lib:'Amort. cumulés '+im.numero, debit:cumul, credit:0});
+    lignes.push({compte:cptImmo, lib:'Sortie immobilisation '+im.numero, debit:0, credit:r2(im.montantHT)});
+    if(prix>0.005){ lignes.push({compte:'512000000', lib:'Cession '+im.numero, debit:prix, credit:0});
+      lignes.push({compte:'775000000', lib:'Produit cession '+im.numero, debit:0, credit:prix}); }
+    posterOD({date:dateCession, libelle:cessionLib(im), lignes, journal:'OD'});
+    return {vnc, cumul, prix, plusValue:r2(prix-vnc)};
+  };
+  window.imCeder=function(id){
+    const im=(db.immos||[]).find(x=>x.id===id); if(!im) return;
+    if((db.ecritures||[]).some(e=>(e.libelle||'').indexOf(cessionLib(im))>=0)) return toast('Cession déjà comptabilisée pour '+im.numero);
+    const d=prompt('Date de cession (AAAA-MM-JJ) :', (typeof imYear==='function'?imYear():'2026')+'-12-31'); if(!d) return;
+    const prixS=prompt('Prix de cession HT (€) :','0'); if(prixS===null) return;
+    const r=imCederComptabilise(im, d, prixS);
+    im.sortie={date:d, prix:r.prix}; save(); render();
+    toast('Cession comptabilisée — VNC '+eur(r.vnc)+' / produit '+eur(r.prix)+' ('+(r.plusValue>=0?'+ value ':'- value ')+eur(Math.abs(r.plusValue))+')');
+  };
+})();
+</script>
+
 </body>
 </html>
