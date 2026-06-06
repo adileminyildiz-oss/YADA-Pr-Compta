@@ -8528,27 +8528,35 @@ ${lignes}
 </script>
 
 <script id="yada-addon32">
-/* Mode Client séparé — accès dédié n'affichant que l'Espace Client. */
+/* Mode Client séparé — navigation restreinte (Espace Client, Facturation,
+   Réception factures fournisseurs, Tiers). Rôle piloté par le portail (addon38). */
 (function(){
   if(typeof render!=='function') return;
   window.sessionRole=window.sessionRole||'cabinet'; window.selClientMode=window.selClientMode||false;
-  window.choisirDossierClient=function(id){ if(typeof choisirDossier==='function') choisirDossier(id); window.sessionRole='client'; window.selClientMode=false; current='client'; render(); };
-  window.quitterEspaceClient=function(){ if(typeof persistActif==='function')persistActif(); window.sessionRole='cabinet'; window.selClientMode=true; connecte=false; if(typeof selRecherche!=='undefined')selRecherche=''; render(); };
+  window.CLIENT_PAGES=['client','facturation','achats','tiers'];
+  function clientAllowed(p){ return window.CLIENT_PAGES.indexOf(p)>=0; }
+  window.choisirDossierClient=function(id){ if(typeof choisirDossier==='function') choisirDossier(id); window.sessionRole='client'; current='client'; render(); };
+  window.quitterEspaceClient=function(){ if(typeof persistActif==='function')persistActif(); connecte=false; if(typeof selRecherche!=='undefined')selRecherche='';
+    if(typeof window.secVerrouiller==='function' && window.__secDual){ window.secVerrouiller(); return; }
+    window.sessionRole='cabinet'; window.selClientMode=true; render(); };
   if(typeof ecranSelectionDossier==='function'){ const _es=ecranSelectionDossier; ecranSelectionDossier=function(){ let h=_es();
     if(window.selClientMode){ h=h.replace(/choisirDossier\(/g,'choisirDossierClient(').replace('Sélectionnez un dossier','Espace client — sélectionnez votre dossier'); }
-    const btn=window.selClientMode?'<button class="btn btn-ghost" onclick="selClientMode=false;render()">↩ Accès cabinet</button>':'<button class="btn btn-ghost" onclick="selClientMode=true;render()">👤 Accès client</button>';
-    return h.replace('<div class="login-actions">','<div class="login-actions">'+btn); }; }
+    if(!window.__secDual){ const btn=window.selClientMode?'<button class="btn btn-ghost" onclick="selClientMode=false;render()">↩ Accès cabinet</button>':'<button class="btn btn-ghost" onclick="selClientMode=true;render()">👤 Accès client</button>';
+      h=h.replace('<div class="login-actions">','<div class="login-actions">'+btn); }
+    return h; }; }
   const _bn=buildNav; buildNav=function(){ if(window.sessionRole==='client'){ const nav=document.getElementById('nav'); if(!nav)return; nav.innerHTML='';
       const sec=document.createElement('div'); sec.className='nav-sec'; sec.textContent='Espace Client'; nav.appendChild(sec);
-      const b=document.createElement('button'); b.className='nav-btn active'; b.innerHTML='<span class="ico">🧑</span>Mon espace'; b.onclick=()=>{current='client';render();}; nav.appendChild(b); return; }
+      (window.CLIENT_PAGES||[]).forEach(function(pid){ const p=(typeof PAGES!=='undefined'?PAGES:[]).find(function(x){return x.id===pid;}); if(!p)return;
+        const b=document.createElement('button'); b.className='nav-btn'+(pid===current?' active':''); b.innerHTML='<span class="ico">'+(p.ico||'•')+'</span>'+p.lbl;
+        b.onclick=function(){ current=pid; render(); }; nav.appendChild(b); });
+      return; }
     return _bn(); };
   function applyRole(){ const client=(connecte&&window.sessionRole==='client'); document.body.setAttribute('data-role',client?'client':'cabinet');
     const foot=document.querySelector('.side-foot'); if(foot) foot.querySelectorAll('button').forEach(b=>{ const t=b.textContent||'';
       if(/Exporter|Importer|Réinitialiser/.test(t)) b.style.display=client?'none':'';
       if(/Changer de dossier|Quitter l'espace/.test(t)) b.textContent=client?"⎋ Quitter l'espace client":'⇆ Changer de dossier'; }); }
-  const _r=render; render=function(){ if(connecte&&window.sessionRole==='client'&&current!=='client')current='client'; const res=_r.apply(this,arguments); try{applyRole();}catch(e){} return res; };
+  const _r=render; render=function(){ if(connecte&&window.sessionRole==='client'&&!clientAllowed(current)) current='client'; const res=_r.apply(this,arguments); try{applyRole();}catch(e){} return res; };
   if(typeof retourSelectionDossier==='function'){ const _ret=retourSelectionDossier; retourSelectionDossier=function(){ if(window.sessionRole==='client'){ quitterEspaceClient(); return; } return _ret(); }; }
-  if(typeof dashRoute==='function'){ const _dr=dashRoute; dashRoute=function(type,name){ if(connecte&&window.sessionRole==='client'){ toast('Pièce reçue — votre cabinet la traitera.'); current='client'; render(); return; } return _dr(type,name); }; }
 })();
 </script>
 
@@ -8678,7 +8686,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v38 · code MAJ 🔒';
+    b.textContent='YADA · v38 · 2 espaces 🔒';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -8688,107 +8696,69 @@ ${lignes}
 
 <script id="yada-addon38">
 /* ============================================================
-   Sécurité : portail à code d'accès + verrouillage auto par inactivité.
-   - Mode PARTAGÉ (SHARED) : un code commun (empreinte hachée+salée embarquée
-     ici, jamais en clair) est exigé de TOUT visiteur de l'URL publique.
-   - Sinon, repli « verrou par appareil » (chacun définit son code local).
-   App statique → dissuasif (lecture de source possible), pas inviolable.
-   100% additif.
+   Connexion — double portail (Espace Cabinet / Espace Client).
+   Identifiant (e-mail) + mot de passe ; l'espace est déterminé par les
+   identifiants. Empreinte SHA-256 salée de (email+##+motdepasse) embarquée
+   (clair absent du source). + verrouillage auto par inactivité.
+   App statique → dissuasif, pas inviolable. 100% additif.
    ============================================================ */
 (function(){
-  var K='yada-lock', KD='yada-lock-delay', KP='yada-lock-prompted';
-  /* Code d'accès partagé (empreinte). Pour changer le code → demander au cabinet (régénère salt+hash). */
-  var SHARED={ salt:'2f42aac557685aaa', hash:'576617f376dea7952ee351a9b4d7e0295e2070835909c93069d02fdac8b42331' };
-  window.__secLocked=false; window.__secMode=''; var secTimer=null;
+  window.__secDual=true;
+  var SEP='##', KD='yada-lock-delay';
+  var CAB={ salt:'bde7c60ed8ebbc65', hash:'c439eeb815469a50d3b3aad73f63759ee5e045689956710fc297f27d2676a87f' };
+  var CLI={ salt:'9fb44c9e64732c08', hash:'281b9f17f7420ac6a1173aa6d0655042d555be7c9eab6d9f4460686c614054ce' };
+  window.__secLocked=false; var secTimer=null;
   function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
   function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
-  function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
-  function sharedOn(){ return !!(SHARED && SHARED.hash); }
-  function sessOk(){ try{ if(sessionStorage.getItem('yada-sess-ok')==='1') return true; }catch(e){} return lsGet('yada-shared-ok')===SHARED.hash; }
-  function secHasCode(){ return !!lsGet(K); }
+  function ssGet(k){ try{ return sessionStorage.getItem(k); }catch(e){ return null; } }
+  function ssSet(k,v){ try{ sessionStorage.setItem(k,v); }catch(e){} }
+  function ssDel(k){ try{ sessionStorage.removeItem(k); }catch(e){} }
   function secDelay(){ var d=parseInt(lsGet(KD),10); return (d>=0)?d:10; }
   function secLocked(){ return window.__secLocked; }
-  window.secHasCode=secHasCode; window.secDelay=secDelay; window.secLocked=secLocked; window.secSharedOn=sharedOn;
+  window.secLocked=secLocked; window.secDelay=secDelay;
   async function sha(s){
     try{ if(window.crypto&&crypto.subtle){ var b=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
       return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0');}).join(''); } }catch(e){}
     var h=5381; for(var i=0;i<s.length;i++){ h=(((h<<5)+h)^s.charCodeAt(i))>>>0; } return 'f'+h.toString(16);
   }
   function el(){ var o=document.getElementById('sec-lock'); if(!o){ o=document.createElement('div'); o.id='sec-lock'; document.body.appendChild(o); } return o; }
-  function secAfficher(mode){
-    var o=el(); window.__secLocked=true; window.__secMode=mode;
-    if(mode==='set'){
-      o.innerHTML='<div class="sec-card"><h2>🔒 Définir un code d\'accès</h2>'
-        +'<p>Protégez l\'accès à YADA sur cet appareil. Le code est stocké <b>haché</b> (jamais en clair). Notez-le : en cas d\'oubli, il faudra réinitialiser (efface le verrou).</p>'
-        +'<div class="sec-err" id="sec-err"></div>'
-        +'<input id="sec-new" type="password" placeholder="Nouveau code d\'accès" autocomplete="new-password">'
-        +'<input id="sec-new2" type="password" placeholder="Confirmer le code" autocomplete="new-password">'
-        +'<div class="sec-lbl">Verrouillage auto après inactivité</div>'
-        +'<select id="sec-delay"><option value="5">5 minutes</option><option value="10" selected>10 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="0">Désactivé</option></select>'
-        +'<button class="sec-btn" onclick="secActiver()">Activer la protection</button>'
-        +'<button class="sec-link" onclick="secPasser()">Passer pour l\'instant</button></div>';
-      o.classList.add('show'); setTimeout(function(){ var i=document.getElementById('sec-new'); if(i)i.focus(); },30);
-    } else {
-      var partage=(mode==='shared');
-      o.innerHTML='<div class="sec-card"><h2>🔒 '+(partage?'Accès réservé — YADA':'Accès sécurisé — YADA')+'</h2>'
-        +'<p>'+(partage?'Application protégée. Saisissez le code d\'accès fourni par le cabinet.':'Saisissez votre code d\'accès pour ouvrir l\'application.')+'</p>'
-        +'<div class="sec-err" id="sec-err"></div>'
-        +'<input id="sec-inp" type="password" placeholder="Code d\'accès" autocomplete="current-password" onkeydown="if(event.key===\'Enter\')secEssayer()">'
-        +'<button class="sec-btn" onclick="secEssayer()">'+(partage?'Entrer':'Déverrouiller')+'</button>'
-        +'<button class="sec-link" onclick="secOubli()">Code oublié ?</button></div>';
-      o.classList.add('show'); setTimeout(function(){ var i=document.getElementById('sec-inp'); if(i)i.focus(); },30);
-    }
+  function secAfficher(){ var o=el(); window.__secLocked=true;
+    o.innerHTML='<div class="sec-card"><h2>🔒 Connexion — YADA</h2>'
+      +'<p>Accédez à votre espace <b>Cabinet</b> ou <b>Client</b> selon vos identifiants.</p>'
+      +'<div class="sec-err" id="sec-err"></div>'
+      +'<input id="sec-email" type="email" placeholder="Identifiant (e-mail)" autocomplete="username" onkeydown="if(event.key===\'Enter\'){var p=document.getElementById(\'sec-pwd\');if(p)p.focus();}">'
+      +'<input id="sec-pwd" type="password" placeholder="Mot de passe" autocomplete="current-password" onkeydown="if(event.key===\'Enter\')secEssayer()">'
+      +'<button class="sec-btn" onclick="secEssayer()">Se connecter</button>'
+      +'<button class="sec-link" onclick="secAide()">Identifiants oubliés ?</button></div>';
+    o.classList.add('show'); setTimeout(function(){ var i=document.getElementById('sec-email'); if(i)i.focus(); },30);
   }
-  function secCacher(){ var o=document.getElementById('sec-lock'); if(o){ o.classList.remove('show'); o.innerHTML=''; } window.__secLocked=false; window.__secMode=''; secResetTimer(); }
-  window.secEssayer=async function(){ var i=document.getElementById('sec-inp'); var v=i?i.value:''; var e=document.getElementById('sec-err');
-    if(window.__secMode==='shared'){ var hs=await sha(SHARED.salt+v);
-      if(hs===SHARED.hash){ try{sessionStorage.setItem('yada-sess-ok','1');}catch(x){} lsSet('yada-shared-ok',SHARED.hash); secCacher(); if(typeof toast==='function')toast('Bienvenue ✓'); }
-      else { if(e)e.textContent='Code incorrect.'; if(i){i.value='';i.focus();} }
-      return; }
-    var rec=lsGet(K); try{ var o=JSON.parse(rec); var h=await sha((o.salt||'')+v);
-      if(h===o.hash){ secCacher(); if(typeof toast==='function') toast('Déverrouillé ✓'); }
-      else { if(e)e.textContent='Code incorrect.'; if(i){i.value='';i.focus();} }
-    }catch(err){ if(e)e.textContent='Erreur de vérification.'; }
+  function secCacher(){ var o=document.getElementById('sec-lock'); if(o){ o.classList.remove('show'); o.innerHTML=''; } window.__secLocked=false; secResetTimer(); }
+  function secOuvrir(role){ ssSet('yada-role', role); window.sessionRole=role; window.selClientMode=(role==='client');
+    secCacher(); if(typeof toast==='function') toast(role==='cabinet'?'Espace Cabinet ✓':'Espace Client ✓'); if(typeof render==='function') render(); }
+  window.secEssayer=async function(){ var e=document.getElementById('sec-err');
+    var em=(document.getElementById('sec-email')||{}).value||''; em=em.trim().toLowerCase();
+    var pw=(document.getElementById('sec-pwd')||{}).value||'';
+    if(!em||!pw){ if(e)e.textContent='Renseignez l\'identifiant et le mot de passe.'; return; }
+    var hc=await sha(CAB.salt+em+SEP+pw); if(hc===CAB.hash){ return secOuvrir('cabinet'); }
+    var hl=await sha(CLI.salt+em+SEP+pw); if(hl===CLI.hash){ return secOuvrir('client'); }
+    if(e)e.textContent='Identifiant ou mot de passe incorrect.'; var p=document.getElementById('sec-pwd'); if(p){p.value='';p.focus();}
   };
-  window.secActiver=async function(){ var a=document.getElementById('sec-new'), b=document.getElementById('sec-new2'), d=document.getElementById('sec-delay');
-    var v=a?a.value:'', v2=b?b.value:''; var e=document.getElementById('sec-err');
-    if(!v||v.length<4){ if(e)e.textContent='Choisissez un code d\'au moins 4 caractères.'; return; }
-    if(v!==v2){ if(e)e.textContent='Les deux codes ne correspondent pas.'; return; }
-    var salt=Math.random().toString(36).slice(2)+Date.now().toString(36);
-    var h=await sha(salt+v); lsSet(K, JSON.stringify({salt:salt, hash:h})); lsSet(KD, d?d.value:'10'); lsSet(KP,'1');
-    secCacher(); if(typeof toast==='function') toast('Protection activée 🔒');
-  };
-  window.secPasser=function(){ lsSet(KP,'1'); secCacher(); };
-  window.secVerrouiller=function(){ if(sharedOn()){ try{sessionStorage.removeItem('yada-sess-ok');}catch(e){} lsDel('yada-shared-ok'); secAfficher('shared'); return; }
-    if(!secHasCode()){ if(typeof toast==='function')toast('Aucun code défini (Paramétrage → Sécurité)'); return; } secAfficher('enter'); };
-  window.secOubli=function(){ if(sharedOn()){ alert('Code d\'accès géré par le cabinet. Contactez votre cabinet pour l\'obtenir ou le réinitialiser.'); return; }
-    if(confirm('Réinitialiser le code d\'accès ?\n\nLe verrou sera supprimé (vos données restent intactes). Vous pourrez définir un nouveau code.')){ lsDel(K); lsDel(KP); secCacher(); secAfficher('set'); } };
-  window.secDefinirDepuisParam=function(){ secAfficher('set'); };
-  window.secDesactiver=function(){ if(confirm('Désactiver la protection par code ?')){ lsDel(K); lsDel(KP); if(typeof toast==='function')toast('Protection désactivée'); if(typeof render==='function')render(); } };
-  window.secSetDelay=function(v){ lsSet(KD, String(v)); secResetTimer(); if(typeof toast==='function')toast('Verrouillage auto : '+(v==0?'désactivé':v+' min')); };
-  function secResetTimer(){ if(secTimer){ clearTimeout(secTimer); secTimer=null; } var d=secDelay(); var active=sharedOn()||secHasCode(); if(d>0 && active && !secLocked()){ secTimer=setTimeout(window.secVerrouiller, d*60000); } }
+  window.secAide=function(){ alert('Identifiants gérés par le cabinet.\n\nEspace Cabinet et Espace Client ont des identifiants distincts. Contactez le cabinet pour les obtenir ou les réinitialiser.'); };
+  window.secVerrouiller=function(){ ssDel('yada-role'); window.sessionRole='cabinet'; window.selClientMode=false; try{ connecte=false; }catch(e){} secAfficher(); };
+  window.secSetDelay=function(v){ lsSet(KD,String(v)); secResetTimer(); if(typeof toast==='function')toast('Verrouillage auto : '+(v==0?'désactivé':v+' min')); };
+  function unlocked(){ return !!ssGet('yada-role'); }
+  function secResetTimer(){ if(secTimer){clearTimeout(secTimer);secTimer=null;} var d=secDelay(); if(d>0 && !secLocked() && unlocked()){ secTimer=setTimeout(window.secVerrouiller, d*60000); } }
   ['mousemove','keydown','click','touchstart','scroll'].forEach(function(ev){ document.addEventListener(ev, function(){ if(!secLocked()) secResetTimer(); }, {passive:true}); });
   if(typeof pageParametrage==='function'){ var _pp=pageParametrage; pageParametrage=function(){
     var delaySel='<select onchange="secSetDelay(this.value)">'+[['5','5 min'],['10','10 min'],['15','15 min'],['30','30 min'],['0','Désactivé']].map(function(o){return '<option value="'+o[0]+'" '+(String(secDelay())===o[0]?'selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';
-    if(sharedOn()){
-      return _pp()+'<div class="card"><h2>Sécurité — accès</h2>'
-        +'<div class="sub">🔒 <b>Code d\'accès partagé actif</b> : tout visiteur de l\'URL doit saisir le code (empreinte hachée embarquée dans l\'application). Pour changer le code, demandez au cabinet (redéploiement). + verrouillage automatique par inactivité.</div>'
-        +'<div class="row g3" style="align-items:flex-end"><div class="field"><label>État</label><div class="kv2 ok">🔒 Portail partagé actif</div></div>'
-        +'<div class="field"><label>Verrouillage auto (inactivité)</label>'+delaySel+'</div>'
-        +'<div class="field"><label>&nbsp;</label><button class="btn btn-ghost" onclick="secVerrouiller()">🔒 Verrouiller maintenant</button></div></div></div>';
-    }
-    var on=secHasCode();
-    return _pp()+'<div class="card"><h2>Sécurité — accès</h2>'
-      +'<div class="sub">Protection par code à l\'ouverture (haché SHA-256) et verrouillage automatique après inactivité. Sécurité côté navigateur : dissuasive.</div>'
-      +'<div class="row g3" style="align-items:flex-end">'
-      +'<div class="field"><label>État</label><div class="kv2 '+(on?'ok':'')+'">'+(on?'🔒 Protection active':'🔓 Aucun code défini')+'</div></div>'
+    return _pp()+'<div class="card"><h2>Connexion & sécurité</h2>'
+      +'<div class="sub">🔒 Deux espaces avec <b>identifiants distincts</b> (Cabinet / Client), connexion par e-mail + mot de passe (empreinte SHA-256 salée embarquée, clair absent du source). Verrouillage automatique par inactivité. Sécurité côté navigateur : dissuasive. Pour changer les identifiants, demandez au cabinet (redéploiement).</div>'
+      +'<div class="row g3" style="align-items:flex-end"><div class="field"><label>Espace courant</label><div class="kv2 ok">'+(window.sessionRole==='client'?'🧑 Espace Client':'🏢 Espace Cabinet')+'</div></div>'
       +'<div class="field"><label>Verrouillage auto (inactivité)</label>'+delaySel+'</div>'
-      +'<div class="field"><label>&nbsp;</label><button class="btn btn-gold" onclick="secDefinirDepuisParam()">'+(on?'Modifier le code':'Définir un code')+'</button></div></div>'
-      +'<div class="right" style="gap:8px">'+(on?'<button class="btn btn-ghost" onclick="secVerrouiller()">🔒 Verrouiller maintenant</button><button class="btn btn-ghost" onclick="secDesactiver()">Désactiver la protection</button>':'')+'</div></div>'; }; }
-  function addSideBtn(){ try{ var foot=document.querySelector('.side-foot'); if(foot && !document.getElementById('sec-side-btn') && (sharedOn()||secHasCode())){ var b=document.createElement('button'); b.id='sec-side-btn'; b.textContent='🔒 Verrouiller'; b.onclick=window.secVerrouiller; foot.insertBefore(b, foot.firstChild.nextSibling); } }catch(e){} }
+      +'<div class="field"><label>&nbsp;</label><button class="btn btn-ghost" onclick="secVerrouiller()">🔒 Se déconnecter / verrouiller</button></div></div></div>'; }; }
+  function addSideBtn(){ try{ var foot=document.querySelector('.side-foot'); if(foot && !document.getElementById('sec-side-btn')){ var b=document.createElement('button'); b.id='sec-side-btn'; b.textContent='🔒 Déconnexion'; b.onclick=window.secVerrouiller; foot.insertBefore(b, foot.firstChild.nextSibling); } }catch(e){} }
   if(typeof render==='function'){ var _r=render; render=function(){ var x=_r.apply(this,arguments); addSideBtn(); return x; }; }
-  function boot(){ if(sharedOn()){ if(sessOk()) secResetTimer(); else secAfficher('shared'); return; }
-    if(secHasCode()) secAfficher('enter'); else if(!lsGet(KP)) secAfficher('set'); else secResetTimer(); }
+  function boot(){ var role=ssGet('yada-role'); if(role==='cabinet'||role==='client'){ window.sessionRole=role; window.selClientMode=(role==='client'); secResetTimer(); } else { secAfficher(); } }
   if(document.body) boot(); else document.addEventListener('DOMContentLoaded', boot);
 })();
 </script>
