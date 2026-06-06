@@ -8686,7 +8686,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v38 · 2 espaces 🔒';
+    b.textContent='YADA · v38 · connexion 🔒';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -8696,17 +8696,18 @@ ${lignes}
 
 <script id="yada-addon38">
 /* ============================================================
-   Connexion — double portail (Espace Cabinet / Espace Client).
-   Identifiant (e-mail) + mot de passe ; l'espace est déterminé par les
-   identifiants. Empreinte SHA-256 salée de (email+##+motdepasse) embarquée
-   (clair absent du source). + verrouillage auto par inactivité.
-   App statique → dissuasif, pas inviolable. 100% additif.
+   Connexion — choix de l'espace PUIS identifiants.
+   1) Écran « Choisissez votre espace » : Cabinet ou Client.
+   2) Formulaire identifiant (e-mail) + mot de passe propre à l'espace choisi.
+   Empreintes SHA-256 salées de (email+##+mdp) embarquées (clair absent du source).
+   + verrouillage auto par inactivité. App statique → dissuasif. 100% additif.
    ============================================================ */
 (function(){
   window.__secDual=true;
   var SEP='##', KD='yada-lock-delay';
   var CAB={ salt:'bde7c60ed8ebbc65', hash:'c439eeb815469a50d3b3aad73f63759ee5e045689956710fc297f27d2676a87f' };
   var CLI={ salt:'9fb44c9e64732c08', hash:'281b9f17f7420ac6a1173aa6d0655042d555be7c9eab6d9f4460686c614054ce' };
+  var CHOICE=null;
   window.__secLocked=false; var secTimer=null;
   function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
   function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
@@ -8723,28 +8724,39 @@ ${lignes}
   }
   function el(){ var o=document.getElementById('sec-lock'); if(!o){ o=document.createElement('div'); o.id='sec-lock'; document.body.appendChild(o); } return o; }
   function secAfficher(){ var o=el(); window.__secLocked=true;
-    o.innerHTML='<div class="sec-card"><h2>🔒 Connexion — YADA</h2>'
-      +'<p>Accédez à votre espace <b>Cabinet</b> ou <b>Client</b> selon vos identifiants.</p>'
+    if(!CHOICE){
+      o.innerHTML='<div class="sec-card"><h2>🔒 Bienvenue sur YADA</h2>'
+        +'<p>Choisissez votre espace pour vous connecter.</p>'
+        +'<button class="sec-btn" style="margin-bottom:10px" onclick="secChoisir(\'cabinet\')">🏢 Espace Cabinet</button>'
+        +'<button class="sec-btn" style="background:linear-gradient(120deg,#46d39a,#1f8d63)" onclick="secChoisir(\'client\')">🧑 Espace Client</button></div>';
+      o.classList.add('show'); return;
+    }
+    var isCab=(CHOICE==='cabinet');
+    o.innerHTML='<div class="sec-card"><h2>🔒 '+(isCab?'Espace Cabinet':'Espace Client')+'</h2>'
+      +'<p>Saisissez vos identifiants '+(isCab?'cabinet':'client')+'.</p>'
       +'<div class="sec-err" id="sec-err"></div>'
       +'<input id="sec-email" type="email" placeholder="Identifiant (e-mail)" autocomplete="username" onkeydown="if(event.key===\'Enter\'){var p=document.getElementById(\'sec-pwd\');if(p)p.focus();}">'
       +'<input id="sec-pwd" type="password" placeholder="Mot de passe" autocomplete="current-password" onkeydown="if(event.key===\'Enter\')secEssayer()">'
       +'<button class="sec-btn" onclick="secEssayer()">Se connecter</button>'
-      +'<button class="sec-link" onclick="secAide()">Identifiants oubliés ?</button></div>';
+      +'<div style="margin-top:12px;display:flex;justify-content:space-between"><button class="sec-link" onclick="secRetour()">← Changer d\'espace</button><button class="sec-link" onclick="secAide()">Identifiants oubliés ?</button></div></div>';
     o.classList.add('show'); setTimeout(function(){ var i=document.getElementById('sec-email'); if(i)i.focus(); },30);
   }
+  window.secChoisir=function(r){ CHOICE=r; secAfficher(); };
+  window.secRetour=function(){ CHOICE=null; secAfficher(); };
   function secCacher(){ var o=document.getElementById('sec-lock'); if(o){ o.classList.remove('show'); o.innerHTML=''; } window.__secLocked=false; secResetTimer(); }
   function secOuvrir(role){ ssSet('yada-role', role); window.sessionRole=role; window.selClientMode=(role==='client');
     secCacher(); if(typeof toast==='function') toast(role==='cabinet'?'Espace Cabinet ✓':'Espace Client ✓'); if(typeof render==='function') render(); }
-  window.secEssayer=async function(){ var e=document.getElementById('sec-err');
+  window.secEssayer=async function(){ if(!CHOICE){ secAfficher(); return; } var e=document.getElementById('sec-err');
     var em=(document.getElementById('sec-email')||{}).value||''; em=em.trim().toLowerCase();
     var pw=(document.getElementById('sec-pwd')||{}).value||'';
     if(!em||!pw){ if(e)e.textContent='Renseignez l\'identifiant et le mot de passe.'; return; }
-    var hc=await sha(CAB.salt+em+SEP+pw); if(hc===CAB.hash){ return secOuvrir('cabinet'); }
-    var hl=await sha(CLI.salt+em+SEP+pw); if(hl===CLI.hash){ return secOuvrir('client'); }
-    if(e)e.textContent='Identifiant ou mot de passe incorrect.'; var p=document.getElementById('sec-pwd'); if(p){p.value='';p.focus();}
+    var rec=(CHOICE==='client')?CLI:CAB; var h=await sha(rec.salt+em+SEP+pw);
+    if(h===rec.hash){ return secOuvrir(CHOICE); }
+    if(e)e.textContent='Identifiants incorrects pour l\'espace '+(CHOICE==='cabinet'?'Cabinet':'Client')+'.';
+    var p=document.getElementById('sec-pwd'); if(p){p.value='';p.focus();}
   };
   window.secAide=function(){ alert('Identifiants gérés par le cabinet.\n\nEspace Cabinet et Espace Client ont des identifiants distincts. Contactez le cabinet pour les obtenir ou les réinitialiser.'); };
-  window.secVerrouiller=function(){ ssDel('yada-role'); window.sessionRole='cabinet'; window.selClientMode=false; try{ connecte=false; }catch(e){} secAfficher(); };
+  window.secVerrouiller=function(){ ssDel('yada-role'); CHOICE=null; window.sessionRole='cabinet'; window.selClientMode=false; try{ connecte=false; }catch(e){} secAfficher(); };
   window.secSetDelay=function(v){ lsSet(KD,String(v)); secResetTimer(); if(typeof toast==='function')toast('Verrouillage auto : '+(v==0?'désactivé':v+' min')); };
   function unlocked(){ return !!ssGet('yada-role'); }
   function secResetTimer(){ if(secTimer){clearTimeout(secTimer);secTimer=null;} var d=secDelay(); if(d>0 && !secLocked() && unlocked()){ secTimer=setTimeout(window.secVerrouiller, d*60000); } }
@@ -8752,13 +8764,13 @@ ${lignes}
   if(typeof pageParametrage==='function'){ var _pp=pageParametrage; pageParametrage=function(){
     var delaySel='<select onchange="secSetDelay(this.value)">'+[['5','5 min'],['10','10 min'],['15','15 min'],['30','30 min'],['0','Désactivé']].map(function(o){return '<option value="'+o[0]+'" '+(String(secDelay())===o[0]?'selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';
     return _pp()+'<div class="card"><h2>Connexion & sécurité</h2>'
-      +'<div class="sub">🔒 Deux espaces avec <b>identifiants distincts</b> (Cabinet / Client), connexion par e-mail + mot de passe (empreinte SHA-256 salée embarquée, clair absent du source). Verrouillage automatique par inactivité. Sécurité côté navigateur : dissuasive. Pour changer les identifiants, demandez au cabinet (redéploiement).</div>'
+      +'<div class="sub">🔒 Deux espaces avec <b>identifiants distincts</b> (Cabinet / Client). À l\'ouverture : choix de l\'espace puis connexion par e-mail + mot de passe (empreinte SHA-256 salée embarquée, clair absent du source). Verrouillage automatique par inactivité. Sécurité côté navigateur : dissuasive. Pour changer les identifiants, demandez au cabinet (redéploiement).</div>'
       +'<div class="row g3" style="align-items:flex-end"><div class="field"><label>Espace courant</label><div class="kv2 ok">'+(window.sessionRole==='client'?'🧑 Espace Client':'🏢 Espace Cabinet')+'</div></div>'
       +'<div class="field"><label>Verrouillage auto (inactivité)</label>'+delaySel+'</div>'
-      +'<div class="field"><label>&nbsp;</label><button class="btn btn-ghost" onclick="secVerrouiller()">🔒 Se déconnecter / verrouiller</button></div></div></div>'; }; }
+      +'<div class="field"><label>&nbsp;</label><button class="btn btn-ghost" onclick="secVerrouiller()">🔒 Se déconnecter</button></div></div></div>'; }; }
   function addSideBtn(){ try{ var foot=document.querySelector('.side-foot'); if(foot && !document.getElementById('sec-side-btn')){ var b=document.createElement('button'); b.id='sec-side-btn'; b.textContent='🔒 Déconnexion'; b.onclick=window.secVerrouiller; foot.insertBefore(b, foot.firstChild.nextSibling); } }catch(e){} }
   if(typeof render==='function'){ var _r=render; render=function(){ var x=_r.apply(this,arguments); addSideBtn(); return x; }; }
-  function boot(){ var role=ssGet('yada-role'); if(role==='cabinet'||role==='client'){ window.sessionRole=role; window.selClientMode=(role==='client'); secResetTimer(); } else { secAfficher(); } }
+  function boot(){ var role=ssGet('yada-role'); if(role==='cabinet'||role==='client'){ CHOICE=role; window.sessionRole=role; window.selClientMode=(role==='client'); secResetTimer(); } else { CHOICE=null; secAfficher(); } }
   if(document.body) boot(); else document.addEventListener('DOMContentLoaded', boot);
 })();
 </script>
