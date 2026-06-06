@@ -1672,6 +1672,24 @@ tr{transition:background .15s ease}
 /* toast un peu plus présent */
 .toast{box-shadow:0 14px 38px rgba(0,0,0,.4)}
 </style>
+<style id="ec-refonte">
+/* Refonte visuelle de l'Espace Client (additif) */
+#ec-hero{display:flex;justify-content:space-between;align-items:center;gap:16px;border-radius:18px;padding:22px 26px;margin-bottom:18px;
+  background:linear-gradient(120deg,#2f6db0,#1a4e86);color:#fff;box-shadow:0 14px 38px rgba(47,109,176,.35);position:relative;overflow:hidden}
+#ec-hero:after{content:"";position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.10)}
+#ec-hero .ec-hero-hi{font-family:'Fraunces',serif;font-size:24px;font-weight:600}
+#ec-hero .ec-hero-sub{opacity:.92;font-size:13px;margin-top:4px}
+#ec-hero .ec-hero-ico{font-size:46px;opacity:.9;z-index:1}
+.ec-shortcuts{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+@media(max-width:900px){.ec-shortcuts{grid-template-columns:repeat(2,1fr)}}
+.ec-tile{display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 12px;border-radius:14px;cursor:pointer;
+  background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);color:inherit;font:inherit;
+  transition:transform .18s ease,box-shadow .2s ease,border-color .2s}
+.ec-tile:hover{transform:translateY(-4px);box-shadow:0 16px 36px rgba(0,0,0,.18);border-color:var(--gold)}
+.ec-tile .ec-tile-ic{font-size:30px;line-height:1}
+.ec-tile .ec-tile-lbl{font-weight:600;font-size:13.5px;text-align:center}
+body[data-theme="noir"] #ec-hero{background:linear-gradient(120deg,#1a4e86,#0a1422);border:1px solid #2f6db0}
+</style>
 </head>
 <body data-theme="noir">
 <div class="layout">
@@ -8724,7 +8742,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v39 · interface ✨';
+    b.textContent='YADA · v40 · espace client ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -8831,6 +8849,24 @@ ${lignes}
     try{ if(typeof current!=='undefined' && current!==last){ last=current; var m=document.getElementById('main');
       if(m){ m.classList.remove('yfx-anim'); void m.offsetWidth; m.classList.add('yfx-anim'); } } }catch(e){}
     return x; };
+})();
+</script>
+<script id="yada-addon40">
+/* Refonte visuelle Espace Client : en-tête "hero" + raccourcis (même contenu en dessous). */
+(function(){
+  if(typeof pageEspaceClient!=='function') return;
+  function tile(ic,lbl,act){ return '<button class="ec-tile" onclick="'+act+'"><span class="ec-tile-ic">'+ic+'</span><span class="ec-tile-lbl">'+lbl+'</span></button>'; }
+  window.ecHero=function(){ var s=(db&&db.societe)||{};
+    return '<div id="ec-hero"><div class="ec-hero-txt"><div class="ec-hero-hi">Bienvenue dans votre Espace Client</div>'
+      +'<div class="ec-hero-sub">'+(s.raison||'Votre dossier')+' · '+(typeof frDate==='function'?frDate(todayStr()):'')+'</div></div>'
+      +'<div class="ec-hero-ico">🧑‍💼</div></div>'
+      +'<div class="ec-shortcuts">'
+      +tile('🧾','Mes factures &amp; devis',"current='facturation';render()")
+      +tile('📥','Réception factures',"current='achats';render()")
+      +tile('⊞','Mes tiers (clients/fourn.)',"current='tiers';render()")
+      +tile('📎','Déposer une pièce',"(typeof gedPick===&quot;function&quot;?gedPick():render())")
+      +'</div>'; };
+  var _p=pageEspaceClient; pageEspaceClient=function(){ return ecHero()+_p(); };
 })();
 </script>
 </body>
