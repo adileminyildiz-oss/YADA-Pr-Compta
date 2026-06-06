@@ -8887,7 +8887,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v63 · format mobile client ✨';
+    b.textContent='YADA · v64 · fiche tiers groupée (multi-factures) ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -9452,11 +9452,20 @@ ${lignes}
       nouveau:true, origine:'client', dateAjout:todayStr() };
     db.tiers.push(t); try{ t.compteAux=genAux(t.type,t.nom); }catch(e){}
     f.statut='validee'; f.tiersId=t.id;
-    var d=dstore().find(function(x){return x.id===f.depotId;}); if(d){ d.tiersId=t.id; d.tiersInconnu=false; }
-    save(); if(typeof closeModal==='function')closeModal(); toast('✅ '+(isCli?'Client':'Fournisseur')+' « '+t.nom+' » créé. Vous pouvez comptabiliser le dépôt.'); render();
+    /* rattacher TOUTES les factures liées à cette fiche (un seul nouveau tiers pour plusieurs factures) */
+    var ids=Array.isArray(f.depotIds)?f.depotIds.slice():[]; if(f.depotId && ids.indexOf(f.depotId)<0) ids.push(f.depotId);
+    var nb=0; ids.forEach(function(did){ var d=dstore().find(function(x){return x.id===did;}); if(d){ d.tiersId=t.id; d.tiersInconnu=false; nb++; } });
+    save(); if(typeof closeModal==='function')closeModal(); toast('✅ '+(isCli?'Client':'Fournisseur')+' « '+t.nom+' » créé'+(nb>1?(' — '+nb+' factures rattachées'):'')+'.'); render();
   };
 
   function lblTier(type){ return type==='client'?'client':'fournisseur'; }
+  /* fiches d'un nouveau tiers encore en cours (pour rattacher plusieurs factures à la même) */
+  window.fichesPendantes=function(type){ return fstore().filter(function(f){ return f.type===type && f.statut!=='validee'; }); };
+  window.ficheNbFactures=function(f){ var n=(Array.isArray(f.depotIds)?f.depotIds.length:(f.depotId?1:0)); return n; };
+  function fichePendOptions(type){ return window.fichesPendantes(type).map(function(f){
+    var lib=(f.raison&&f.raison.trim())?f.raison:'Nouveau '+lblTier(type)+' en cours'; var n=window.ficheNbFactures(f);
+    return '<option value="fiche:'+f.id+'">↳ '+lib+(n>1?(' ('+n+' factures)'):'')+'</option>'; }).join(''); };
+  window.fichePendOptions=fichePendOptions;
   /* Liste des fiches côté CLIENT (proposition à remplir) */
   function fichesClientCard(type){ type=type||'fournisseur';
     var fs=fstore().filter(function(f){return f.type===type && f.statut!=='validee';});
@@ -9464,7 +9473,8 @@ ${lignes}
     var rows=fs.map(function(f){ var d=dstore().find(function(x){return x.id===f.depotId;});
       var st=f.statut==='remplie'?'<span class="tag t-part">transmise — en attente cabinet</span>':'<span class="tag t-att">à remplir</span>';
       var btn=f.statut==='remplie'?'<button class="btn btn-ghost btn-xs" onclick="ficheRemplir(\''+f.id+'\')">Modifier</button>':'<button class="btn btn-gold btn-xs" onclick="ficheRemplir(\''+f.id+'\')">✍ Remplir la fiche</button>';
-      return '<div class="ged-it dep-dup"><span>📝</span><span class="ged-nm">'+(f.raison||(d?d.nom:'Nouveau '+lblTier(type)))+'</span>'+st+'<span>'+btn+'</span></div>';
+      var nbf=window.ficheNbFactures(f); var cnt=nbf>1?(' <span class="ged-mt">('+nbf+' factures)</span>'):'';
+      return '<div class="ged-it dep-dup"><span>📝</span><span class="ged-nm">'+(f.raison||(d?d.nom:'Nouveau '+lblTier(type)))+cnt+'</span>'+st+'<span>'+btn+'</span></div>';
     }).join('');
     return '<div class="card"><h2>📝 Fiches '+lblTier(type)+' à compléter</h2><div class="sub">Un '+lblTier(type)+' inconnu a été détecté : complétez sa fiche d\'information pour votre cabinet.</div>'+rows+'</div>';
   }
@@ -9476,7 +9486,8 @@ ${lignes}
       var det=f.statut==='remplie'?('<span class="ged-mt">'+[f.siret?('SIRET '+f.siret):'',f.email,f.ville].filter(Boolean).join(' · ')+'</span>'):'';
       var st=f.statut==='remplie'?'<span class="tag t-part">remplie — à valider</span>':'<span class="tag t-att">en attente du client</span>';
       var act=f.statut==='remplie'?'<button class="btn btn-gold btn-xs" onclick="ficheValider(\''+f.id+'\')">✔ Valider &amp; créer</button> <button class="btn btn-ghost btn-xs" onclick="ficheVoir(\''+f.id+'\')">Voir</button>':'';
-      return '<div class="ged-it '+(f.statut==='remplie'?'dep-ok':'dep-dup')+'"><span>📝</span><span class="ged-nm">'+(f.raison||(d?d.nom:'Nouveau '+lblTier(type)))+'</span>'+st+det+'<span>'+act+'</span></div>';
+      var nbf2=window.ficheNbFactures(f); var cnt2=nbf2>1?(' <span class="ged-mt">('+nbf2+' factures)</span>'):'';
+      return '<div class="ged-it '+(f.statut==='remplie'?'dep-ok':'dep-dup')+'"><span>📝</span><span class="ged-nm">'+(f.raison||(d?d.nom:'Nouveau '+lblTier(type)))+cnt2+'</span>'+st+det+'<span>'+act+'</span></div>';
     }).join('');
     var nb=fs.filter(function(f){return f.statut==='remplie';}).length;
     var ban=nb?'<div class="dep-notif">🔔 '+nb+' fiche(s) '+lblTier(type)+' à valider</div>':'';
@@ -9717,7 +9728,8 @@ ${lignes}
     /* vente : dépôt fichier simple */
     var selCli='';
     if(cat==='vente'){ var clients=(db.tiers||[]).filter(function(t){return t.type==='client';});
-      var copts='<option value="">— Sélectionner (ou laisser : client inconnu) —</option>'+clients.map(function(t){return '<option value="'+t.id+'">'+t.nom+'</option>';}).join('')+'<option value="__inconnu__">➕ Client inconnu / nouveau</option>';
+      var cpend=(typeof window.fichePendOptions==='function')?window.fichePendOptions('client'):'';
+      var copts='<option value="">— Sélectionner (ou laisser : client inconnu) —</option>'+clients.map(function(t){return '<option value="'+t.id+'">'+t.nom+'</option>';}).join('')+'<option value="__inconnu__">➕ Client inconnu / nouveau</option>'+(cpend?('<optgroup label="Nouveaux clients en cours">'+cpend+'</optgroup>'):'');
       selCli='<div class="field" style="margin-bottom:10px"><label>Client (facultatif)</label><select id="dep-client-vente">'+copts+'</select><div class="hint">Client inconnu ? Une fiche d\'information sera demandée puis validée par le cabinet.</div></div>'; }
     return '<div class="card"><h2>'+titre+'</h2><div class="sub">'+sub+' Chaque dépôt notifie votre cabinet ; un doublon s\'affiche en rouge. La comptabilisation est validée par le cabinet.</div>'
       +selCli
@@ -9821,7 +9833,8 @@ ${lignes}
   window.depotFacturesCard=function(cat,titre,sub){
     if(cat==='achat'){
       var fourns=(db.tiers||[]).filter(function(t){return t.type==='fournisseur';});
-      var opts='<option value="">— Sélectionner (ou laisser : fournisseur inconnu) —</option>'+fourns.map(function(t){return '<option value="'+t.id+'">'+t.nom+'</option>';}).join('')+'<option value="__inconnu__">➕ Fournisseur inconnu / nouveau</option>';
+      var pend=(typeof window.fichePendOptions==='function')?window.fichePendOptions('fournisseur'):'';
+      var opts='<option value="">— Sélectionner (ou laisser : fournisseur inconnu) —</option>'+fourns.map(function(t){return '<option value="'+t.id+'">'+t.nom+'</option>';}).join('')+'<option value="__inconnu__">➕ Fournisseur inconnu / nouveau</option>'+(pend?('<optgroup label="Nouveaux fournisseurs en cours">'+pend+'</optgroup>'):'');
       return '<div class="card"><h2>'+titre+'</h2><div class="sub">'+sub+' Déposez simplement la facture : le système lit automatiquement le montant TTC et calcule la TVA et le HT. Le cabinet n\'a plus qu\'à valider la saisie (après comparaison avec le fichier).</div>'
         +'<div class="field" style="margin-bottom:10px"><label>Fournisseur (facultatif)</label><select id="dep-four-achat">'+opts+'</select></div>'
         +'<div class="ged-drop" onclick="factPick(\'achat\')" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="factDrop(event,\'achat\')">'
@@ -9831,7 +9844,8 @@ ${lignes}
     }
     var selCli='';
     if(cat==='vente'){ var clients=(db.tiers||[]).filter(function(t){return t.type==='client';});
-      var copts='<option value="">— Sélectionner (ou laisser : client inconnu) —</option>'+clients.map(function(t){return '<option value="'+t.id+'">'+t.nom+'</option>';}).join('')+'<option value="__inconnu__">➕ Client inconnu / nouveau</option>';
+      var cpend=(typeof window.fichePendOptions==='function')?window.fichePendOptions('client'):'';
+      var copts='<option value="">— Sélectionner (ou laisser : client inconnu) —</option>'+clients.map(function(t){return '<option value="'+t.id+'">'+t.nom+'</option>';}).join('')+'<option value="__inconnu__">➕ Client inconnu / nouveau</option>'+(cpend?('<optgroup label="Nouveaux clients en cours">'+cpend+'</optgroup>'):'');
       selCli='<div class="field" style="margin-bottom:10px"><label>Client (facultatif)</label><select id="dep-client-vente">'+copts+'</select><div class="hint">Client inconnu ? Une fiche d\'information sera demandée puis validée par le cabinet.</div></div>'; }
     return '<div class="card"><h2>'+titre+'</h2><div class="sub">'+sub+' Chaque dépôt notifie votre cabinet ; un doublon s\'affiche en rouge. La comptabilisation est validée par le cabinet.</div>'
       +selCli
@@ -9918,10 +9932,15 @@ ${lignes}
       var dataUrl=await new Promise(function(rz){ try{ var rd=new FileReader(); rd.onload=function(){rz(rd.result);}; rd.onerror=function(){rz(null);}; rd.readAsDataURL(file); }catch(e){ rz(null);} });
       var dup=gstore().some(function(p){return p.cat===cat && normName(p.nom)===normName(nom);});
       var piece={ id:uid(), nom:nom, mime:file.type||'', taille:file.size||0, data:dataUrl, date:todayStr(), cat:cat }; gstore().push(piece);
-      var tiersId='', inconnu=false;
+      var tiersId='', inconnu=false, ficheRef=null;
       var selId=(cat==='achat')?'dep-four-achat':'dep-client-vente';
       var selv=(document.getElementById(selId)||{}).value||'';
-      if(selv && selv!=='__inconnu__') tiersId=selv; else inconnu=true;
+      if(selv && selv.indexOf('fiche:')===0){ /* rattacher à une fiche déjà en cours (même nouveau tiers) */
+        var fid=selv.slice(6); ficheRef=fstore().find(function(x){return x.id===fid && x.statut!=='validee';});
+        if(ficheRef){ inconnu=true; if(ficheRef.tiersId) tiersId=ficheRef.tiersId; } else { inconnu=true; }
+      }
+      else if(selv && selv!=='__inconnu__') tiersId=selv;
+      else inconnu=true;
       var dep={ id:uid(), cat:cat, fichierId:piece.id, nom:nom, date:todayStr(), statut:'deposee',
         doublon:!!dup, doublonRaison:dup?('Fichier « '+nom+' » déjà déposé dans le dossier'):'',
         tiersId:tiersId, tiersInconnu:inconnu, numero:'', dateFacture:'', htBrut:0, remise:0, taux:20,
@@ -9939,7 +9958,12 @@ ${lignes}
       }
       dstore().push(dep);
       nstore().push({ id:uid(), date:todayStr(), cat:cat, depotId:dep.id, nom:nom, doublon:dep.doublon, lu:false });
-      if(inconnu){ var fiche={ id:uid(), type:(cat==='achat'?'fournisseur':'client'), depotId:dep.id, statut:'a_remplir', date:todayStr(), raison:'', siret:'', tvaIntra:'', adresse:'', cp:'', ville:'', email:'', tel:'', iban:'', tiersId:null }; fstore().push(fiche); dep.ficheId=fiche.id; }
+      if(inconnu){
+        if(ficheRef){ /* rattacher cette facture à la fiche existante (pas de doublon de fiche) */
+          if(!Array.isArray(ficheRef.depotIds)) ficheRef.depotIds=ficheRef.depotId?[ficheRef.depotId]:[];
+          ficheRef.depotIds.push(dep.id); dep.ficheId=ficheRef.id;
+        } else { var fiche={ id:uid(), type:(cat==='achat'?'fournisseur':'client'), depotId:dep.id, depotIds:[dep.id], statut:'a_remplir', date:todayStr(), raison:'', siret:'', tvaIntra:'', adresse:'', cp:'', ville:'', email:'', tel:'', iban:'', tiersId:null }; fstore().push(fiche); dep.ficheId=fiche.id; }
+      }
       save();
       if(cat==='achat') toast('Facture lue ('+dep.lecture+') — TTC '+eur(dep.ttc)+'. À valider par le cabinet.');
       else toast('Facture déposée'+(inconnu?' — client inconnu : remplissez la fiche':'')+'. À valider par le cabinet.');
