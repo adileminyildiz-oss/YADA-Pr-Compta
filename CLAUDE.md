@@ -33,7 +33,7 @@
 
 ## Le projet
 App de **pré-comptabilité française** (style Sage) en **un seul fichier `precompta.html`** autonome, **hors-ligne**, tout en français. Logique + UI dans des `<script>`. 3 thèmes (`noir` défaut, `liquid-clair`, `liquid-teinte`). Écran de connexion + portefeuille multi-dossiers. 2 démos : **AMA** (`d-ama`), **SCI DU 42** (`d-sci42`).
-État actuel : ~702 Ko, 41 `<script>`, **40 modules d'extension** (`yada-addon` → `yada-addon40`), 23 entrées de navigation.
+État actuel : ~703 Ko, 42 `<script>`, **41 modules d'extension** (`yada-addon` → `yada-addon41`), 23 entrées de navigation.
 Feuille de route : voir **`ROADMAP.md`** (finalisation par module).
 - **`yada-addon21` (T1)** : clôture de l'exercice — **OD de résultat** (solde 6/7 → 120/129) + **report des à‑nouveaux** (classes 1→5), carte page Éditions. Continuité comptable (bilan d'ouverture N+1 équilibré). Fonctions : `t1ResultatLignes/t1GenererResultat`, `t1ANLignes/t1GenererAN`, `t1SupprimerCloture`, `t1Card`.
 - **`yada-addon22` (T2)** : **cohérence des comptes** — normalisation `c9` (9 chiffres) de tous les comptes d'écriture (migration de tous les dossiers + à chaque `save`), de sorte que l'**OD TVA solde réellement** les comptes alimentés par les factures (44571→445710000, 44566→445660000). `tvaDuMois` comparé en `c9`. Fonction : `t2Normaliser()`. + correctif chirurgical du solde banque (ligne ~3390 : `c9(l.compte)==='512000000'`).
@@ -53,6 +53,8 @@ Feuille de route : voir **`ROADMAP.md`** (finalisation par module).
 - **`yada-addon36`** : **cohérence des KPI de synthèse** — Tableau de bord & Espace Client alignent **CA / Charges / Résultat** sur les **écritures** (classe 7/6 hors « OD RÉSULTAT »), comme le Compte de résultat (avant : basés sur les factures, ignoraient paie/dotations). `resEcritures()` ; greffe `dashCompta`/`pageEspaceClient`. L'Analytique reste basé factures (analyse par pièce).
 - **`yada-addon37`** : badge de version (repère de déploiement, bas-droite) — confirme qu'une MAJ est en ligne (GitHub Pages).
 - **`yada-addon38`** : **Connexion 2 espaces avant les dossiers** — choix Cabinet/Client puis identifiant+mot de passe (empreintes SHA-256 salées `CAB`/`CLI`) ; **Client = accès direct à SON dossier** (`CLIENT_DOSSIER='d-ama'`) **sans page intermédiaire** (page rendue sous l'écran de connexion puis dévoilée) ; cloisonnement, verrouillage auto, déconnexion. `secChoisir/secEssayer/secRetour/secVerrouiller/secOuvrir`.
+- **`yada-addon40`** : **Refonte visuelle Espace Client** — en-tête « hero » + 4 raccourcis (`ecHero()`, classes `#ec-hero`/`.ec-shortcuts`/`.ec-tile`), greffe `pageEspaceClient`. Style `<style id="ec-refonte">` ; espacement des modules client via `<style id="ec-spacing">` (colonne centrée 1080px, marges aérées, ciblé `body[data-page="client"]`).
+- **`yada-addon41`** : **Refonte visuelle Tableau de bord Cabinet** — même esprit hero que l'Espace Client (`dashHero()`, hero vert `#ec-hero.cab-hero` + 4 raccourcis Facturation/Achats/Compta/TVA) **injecté dans le `.dash-wrap`** via greffe `pageDash` (`html.replace('<div class="dash-wrap">', …)`) ; styles ciblés `body[data-page="dash"]` dans `<style id="ec-spacing">`. Contenu inchangé en dessous.
 > **Hors périmètre hors-ligne** : OCR réel et IA en ligne (réseau/clé API requis) restent simulés ; e-reporting Achats à compléter ultérieurement.
 
 ## Règles de travail (IMPÉRATIF)

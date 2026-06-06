@@ -1704,6 +1704,12 @@ body[data-page="client"] .mod-wrap .card:last-child{margin-bottom:0}
 body[data-page="client"] .mod-wrap table{margin-top:6px}
 /* tuiles de raccourcis un peu plus hautes pour respirer */
 body[data-page="client"] .ec-tile{padding:22px 14px}
+/* Tableau de bord Cabinet : hero + raccourcis (même esprit que l'Espace Client) */
+body[data-page="dash"] #ec-hero{margin-bottom:22px}
+body[data-page="dash"] .ec-shortcuts{margin-bottom:26px}
+body[data-page="dash"] .ec-tile{padding:20px 14px}
+#ec-hero.cab-hero{background:linear-gradient(120deg,#2f9e6e,#15694a);box-shadow:0 14px 38px rgba(21,105,74,.32)}
+body[data-theme="noir"] #ec-hero.cab-hero{background:linear-gradient(120deg,#1c5a3a,#0a1422);border:1px solid #2f8f5e}
 </style>
 </head>
 <body data-theme="noir">
@@ -8757,7 +8763,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v40 · agencement ✨';
+    b.textContent='YADA · v41 · hero cabinet ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -8882,6 +8888,26 @@ ${lignes}
       +tile('📎','Déposer une pièce',"(typeof gedPick===&quot;function&quot;?gedPick():render())")
       +'</div>'; };
   var _p=pageEspaceClient; pageEspaceClient=function(){ return ecHero()+_p(); };
+})();
+</script>
+<script id="yada-addon41">
+/* Refonte visuelle Tableau de bord Cabinet : en-tête "hero" + raccourcis (même contenu en dessous). */
+(function(){
+  if(typeof pageDash!=='function') return;
+  function tile(ic,lbl,act){ return '<button class="ec-tile" onclick="'+act+'"><span class="ec-tile-ic">'+ic+'</span><span class="ec-tile-lbl">'+lbl+'</span></button>'; }
+  window.dashHero=function(){ var cab=(db&&db.cabinet)||{}; var s=(db&&db.societe)||{};
+    var dossier=(s.dossierNom||s.raison||'dossier courant');
+    return '<div id="ec-hero" class="cab-hero"><div class="ec-hero-txt"><div class="ec-hero-hi">Tableau de bord'+(cab.cabinetNom?' — '+cab.cabinetNom:'')+'</div>'
+      +'<div class="ec-hero-sub">'+dossier+' · '+(typeof frDate==='function'?frDate(todayStr()):'')+'</div></div>'
+      +'<div class="ec-hero-ico">📊</div></div>'
+      +'<div class="ec-shortcuts">'
+      +tile('🧾','Facturation client',"current='facturation';render()")
+      +tile('📥','Factures fournisseurs',"current='achats';render()")
+      +tile('📚','Écritures comptables',"current='compta';render()")
+      +tile('🧮','Déclaration de TVA',"current='tva';render()")
+      +'</div>'; };
+  var _d=pageDash; pageDash=function(){ var html=_d();
+    return html.replace('<div class="dash-wrap">','<div class="dash-wrap">'+dashHero()); };
 })();
 </script>
 </body>
