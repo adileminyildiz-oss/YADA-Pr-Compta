@@ -1716,6 +1716,14 @@ body[data-theme="noir"] #ec-hero.cab-hero{background:linear-gradient(120deg,#1c5
 .dep-notif{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 13px;border-radius:10px;background:rgba(212,175,55,.16);border:1px solid var(--gold,#d4af37);margin-bottom:10px;font-weight:600}
 .nav-badge-dep{display:inline-block;min-width:18px;height:18px;line-height:18px;text-align:center;background:#d9534f;color:#fff;border-radius:9px;font-size:11px;font-weight:700;padding:0 5px;margin-left:6px}
 .dep-cmp{margin:-4px 0 12px;padding:10px 12px;border:1px dashed var(--line);border-radius:10px;background:var(--paper-2,rgba(127,127,127,.06))}
+.cmp-wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0}
+.cmp-col{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--paper-2,rgba(127,127,127,.05))}
+.cmp-col.cmp-new{border-color:#2f9e6e;box-shadow:0 0 0 1px rgba(47,158,110,.4)}
+.cmp-col h3{margin:0 0 8px;font-size:14px}
+.cmp-row{display:flex;justify-content:space-between;gap:10px;padding:4px 0;font-size:13px;border-bottom:1px dashed var(--line)}
+.cmp-row.tot{border-bottom:none;font-size:15px;margin-top:4px}
+.cmp-note{font-size:12.5px;color:var(--ink-soft);margin:6px 0 2px}
+@media(max-width:760px){.cmp-wrap{grid-template-columns:1fr}}
 </style>
 </head>
 <body data-theme="noir">
@@ -8769,7 +8777,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v46 · fiche fournisseur inconnu ✨';
+    b.textContent='YADA · v47 · doublon: confirmation & remplacement ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -9342,6 +9350,117 @@ ${lignes}
     try{ var now=(typeof current!=='undefined')?current:null;
       if(now===prev && y){ var ns=scroller(); if(ns){ ns.scrollTop=y; if(window.requestAnimationFrame) requestAnimationFrame(function(){ var s2=scroller(); if(s2)s2.scrollTop=y; }); } } }catch(e){}
     return res;
+  };
+})();
+</script>
+<script id="yada-addon47">
+/* Comptabilisation des dépôts : compte tiers auxiliaire 401XXXX/411XXXX,
+   détection de doublon comptable avec confirmation + comparaison des 2 factures,
+   remplacement (suppression facture+écriture, délettrage si nécessaire). */
+(function(){
+  if(typeof render!=='function') return;
+  function dstore(){ if(!db.parametres)db.parametres={}; if(!Array.isArray(db.parametres.depots))db.parametres.depots=[]; return db.parametres.depots; }
+  function nstore(){ if(!db.parametres)db.parametres={}; if(!Array.isArray(db.parametres.notifsDepot))db.parametres.notifsDepot=[]; return db.parametres.notifsDepot; }
+  function markNotifLuDep(depotId){ nstore().forEach(function(n){ if(n.depotId===depotId)n.lu=true; }); }
+  function nrm(n){ return String(n||'').trim().toLowerCase().replace(/\s+/g,''); }
+
+  /* Doublon comptable : même tiers + même n°, sinon même tiers + même date + même TTC */
+  function factureDoublon(cat,tiersId,numero,date,ttc,excludeId){
+    var nn=nrm(numero); var ab=Math.abs(r2(+ttc||0));
+    var byNum = nn && (db.factures||[]).find(function(f){ return f.id!==excludeId && f.type===cat && f.tiersId===tiersId && nrm(f.numero)===nn; });
+    if(byNum) return byNum;
+    if(ab>0){ var byAmt=(db.factures||[]).find(function(f){ return f.id!==excludeId && f.type===cat && f.tiersId===tiersId && f.date===date && Math.abs(Math.abs(f.ttc)-ab)<0.01; }); if(byAmt) return byAmt; }
+    return null;
+  }
+
+  /* posterFacture en utilisant le compte tiers auxiliaire (401XXXX / 411XXXX) */
+  function posterFactureAux(opts,t){
+    var f=posterFacture(opts);
+    var ecr=(db.ecritures||[]).find(function(e){return e.id===f.ecritureId;});
+    if(ecr && t && t.compteAux){ var coll=c9((opts.type==='achat')?'401':'411');
+      ecr.lignes.forEach(function(l){ if(c9(l.compte)===coll){ l.compte=t.compteAux; l.lib=(opts.type==='achat'?'Fournisseur ':'Client ')+t.nom; } }); }
+    save(); return f;
+  }
+
+  /* Délettrage d'une écriture : efface le code lettre sur toutes les lignes liées */
+  function delettrerEcriture(ecr){ if(!ecr)return 0; var codes={}; (ecr.lignes||[]).forEach(function(l){ if(l.lettre)codes[l.lettre]=1; });
+    var n=0; if(Object.keys(codes).length){ (db.ecritures||[]).forEach(function(e){ (e.lignes||[]).forEach(function(l){ if(l.lettre && codes[l.lettre]){ l.lettre=''; n++; } }); }); } return n; }
+  function supprimerFactureEtEcriture(f){
+    var ecr=(db.ecritures||[]).find(function(e){return e.id===f.ecritureId;});
+    var nLet=delettrerEcriture(ecr);
+    db.ecritures=(db.ecritures||[]).filter(function(e){ return e.id!==f.ecritureId && e.factureId!==f.id; });
+    db.reglements=(db.reglements||[]).filter(function(r){ return r.factureId!==f.id; });
+    db.factures=(db.factures||[]).filter(function(x){ return x.id!==f.id; });
+    return nLet;
+  }
+
+  function info(f){ return { tiers:(db.tiers.find(function(x){return x.id===f.tiersId;})||{}).nom||'', numero:f.numero, date:f.date, ht:Math.abs(f.ht), tva:Math.abs(f.tva), ttc:Math.abs(f.ttc) }; }
+  function col(title,f,fileId,extra,cls){ return '<div class="cmp-col'+(cls?(' '+cls):'')+'"><h3>'+title+'</h3>'
+      +'<div class="cmp-row"><span>Fournisseur</span><b>'+(f.tiers||'—')+'</b></div>'
+      +'<div class="cmp-row"><span>N° facture</span><b>'+(f.numero||'—')+'</b></div>'
+      +'<div class="cmp-row"><span>Date</span><b>'+(f.date?frDate(f.date):'—')+'</b></div>'
+      +'<div class="cmp-row"><span>HT</span><b>'+eur(f.ht)+'</b></div>'
+      +'<div class="cmp-row"><span>TVA</span><b>'+eur(f.tva)+'</b></div>'
+      +'<div class="cmp-row tot"><span>TTC</span><b>'+eur(f.ttc)+'</b></div>'
+      +'<div style="margin-top:8px">'+(fileId?('<button class="btn btn-ghost btn-sm" onclick="gedVoir(\''+fileId+'\')">📎 Ouvrir la facture</button> '):'')+(extra||'')+'</div></div>'; }
+
+  function compareModal(p,fOld){
+    var t=db.tiers.find(function(x){return x.id===p.tiersId;});
+    var m=calcMontants(p.ttc,p.taux,'TTC');
+    var depNew=dstore().find(function(d){return d.id===p.depId;});
+    var depOld=dstore().find(function(d){return d.factureId===fOld.id;});
+    var existExtra=(fOld.type==='achat')?('<button class="btn btn-ghost btn-sm" onclick="voirFactureAchat(\''+fOld.id+'\')">👁 Détail</button>'):'';
+    document.getElementById('modal-c').innerHTML=
+      '<h2 style="margin-top:0">⚠ Doublon détecté — confirmation</h2>'
+      +'<div class="sub">Une facture semble déjà comptabilisée pour ce tiers. Comparez les deux factures et indiquez laquelle conserver.</div>'
+      +'<div class="cmp-wrap">'
+      + col('Facture déjà comptabilisée', info(fOld), depOld?depOld.fichierId:null, existExtra, '')
+      + col('Nouvelle facture (dépôt)', {tiers:(t?t.nom:''),numero:p.numero,date:p.date,ht:m.ht,tva:m.tva,ttc:m.ttc}, depNew?depNew.fichierId:null, '', 'cmp-new')
+      +'</div>'
+      +'<div class="cmp-note">« Remplacer » supprime l\'ancienne facture et son écriture (délettrage automatique si elle est lettrée), puis comptabilise la nouvelle.</div>'
+      +'<div class="right" style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">'
+      +'<button class="btn btn-ghost" onclick="closeModal()">Conserver l\'existante</button>'
+      +'<button class="btn btn-ghost" onclick="depotComptaGarderLesDeux()">Comptabiliser les deux</button>'
+      +'<button class="btn btn-pri" onclick="depotComptaRemplacer()">♻ Remplacer par la nouvelle</button>'
+      +'</div>';
+    document.getElementById('modal').classList.add('show');
+  }
+
+  function faireComptabilisation(d,tiersId,numero,date,ttc,taux){
+    var t=db.tiers.find(function(x){return x.id===tiersId;}); if(!t)return toast('Tiers introuvable.');
+    if(!t.compteAux){ try{ t.compteAux=genAux(t.type,t.nom); }catch(e){} }
+    var contre=t.compteContre||(d.cat==='achat'?'606000':'706000'); var tva=(d.cat==='achat'?'44566':'44571');
+    var f=posterFactureAux({type:d.cat,tiersId:tiersId,date:date,base:ttc,baseEst:'TTC',taux:taux,compteContre:contre,compteTVA:tva,numero:(numero||undefined),source:'depot'},t);
+    d.statut='comptabilisee'; d.tiersId=tiersId; d.numero=f.numero; d.dateFacture=date; d.ttc=f.ttc; d.ht=f.ht; d.tva=f.tva; d.taux=taux; d.ecritureId=f.ecritureId; d.factureId=f.id;
+    markNotifLuDep(d.id); save(); toast('✅ Facture '+f.numero+' comptabilisée (compte '+(t.compteAux||'401')+').'); render();
+  }
+
+  /* Override : comptabilisation avec contrôle de doublon + compte auxiliaire */
+  window.depotComptabiliser=function(id){ var d=dstore().find(function(x){return x.id===id;}); if(!d)return;
+    if(d.statut==='comptabilisee')return toast('Déjà comptabilisée.');
+    if(d.statut!=='recue')return toast('Validez d\'abord la réception.');
+    var g=function(x){return document.getElementById(x);};
+    var tiersId=(g('cmp-tiers-'+id)||{}).value||'';
+    var numero=(g('cmp-num-'+id)||{}).value||'';
+    var date=(g('cmp-date-'+id)||{}).value||d.date;
+    var ttc=+((g('cmp-ttc-'+id)||{}).value)||0;
+    var taux=+((g('cmp-taux-'+id)||{}).value)||20;
+    if(!tiersId)return toast(d.cat==='achat'?'Sélectionnez le fournisseur':'Sélectionnez le client');
+    if(ttc<=0)return toast('Indiquez le montant TTC');
+    var fOld=factureDoublon(d.cat,tiersId,numero,date,ttc,null);
+    if(fOld){ window._depotComptaPending={depId:id,tiersId:tiersId,numero:numero,date:date,ttc:ttc,taux:taux,oldId:fOld.id}; compareModal(window._depotComptaPending,fOld); return; }
+    if(d.doublon && !confirm('Ce dépôt est marqué comme doublon (même fichier). Comptabiliser quand même ?')) return;
+    faireComptabilisation(d,tiersId,numero,date,ttc,taux);
+  };
+  window.depotComptaGarderLesDeux=function(){ var p=window._depotComptaPending; if(!p)return; var d=dstore().find(function(x){return x.id===p.depId;});
+    if(typeof closeModal==='function')closeModal(); if(d) faireComptabilisation(d,p.tiersId,p.numero,p.date,p.ttc,p.taux); window._depotComptaPending=null; };
+  window.depotComptaRemplacer=function(){ var p=window._depotComptaPending; if(!p)return; var d=dstore().find(function(x){return x.id===p.depId;}); if(!d)return;
+    var fOld=db.factures.find(function(x){return x.id===p.oldId;}); var nLet=0;
+    if(fOld){ nLet=supprimerFactureEtEcriture(fOld); }
+    if(typeof closeModal==='function')closeModal();
+    faireComptabilisation(d,p.tiersId,p.numero,p.date,p.ttc,p.taux);
+    window._depotComptaPending=null;
+    toast('Ancienne facture remplacée'+(nLet?(' (délettrage de '+nLet+' ligne(s))'):'')+'.');
   };
 })();
 </script>
