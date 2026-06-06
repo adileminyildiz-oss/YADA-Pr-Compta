@@ -1625,6 +1625,27 @@ body[data-page="coffre"] .card:hover,body[data-page="coffre"] .kpi:hover,body[da
 .exo-sel .exo-y{font-weight:700;font-size:13px}
 .exo-sel .exo-d{font-size:11px;color:var(--ink-soft)}
 </style>
+<style id="msg-css">
+/* #3 — messagerie client ↔ cabinet + pièces demandées */
+.msg-thread{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;padding:10px;border-radius:12px;background:rgba(127,127,127,.07);margin:6px 0}
+.msg{display:flex;flex-direction:column;max-width:78%}
+.msg.me{align-self:flex-end;align-items:flex-end}
+.msg.them{align-self:flex-start;align-items:flex-start}
+.msg .msg-b{padding:8px 12px;border-radius:14px;background:rgba(127,127,127,.16);font-size:14px;line-height:1.35;white-space:pre-wrap;word-break:break-word}
+.msg.me .msg-b{background:var(--gold,#d4af37);color:#241c05}
+.msg .msg-m{font-size:10.5px;color:var(--ink-soft);margin-top:3px}
+.msg-form{display:flex;gap:8px;margin:6px 0}
+.msg-form input{flex:1 1 auto;padding:8px 10px;border-radius:10px;border:1px solid rgba(127,127,127,.35);background:transparent;color:inherit}
+.msg-h3{font-size:14px;margin:14px 0 4px}
+.dem-list{display:flex;flex-direction:column;gap:5px}
+.dem-it{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:10px;background:rgba(127,127,127,.08)}
+.dem-it.fournie{opacity:.62}
+.dem-it.fournie .dem-lb{text-decoration:line-through}
+.dem-it .dem-st{flex:0 0 auto}
+.dem-it .dem-lb{flex:1 1 auto}
+.dem-it .dem-ac{display:flex;gap:4px;flex:0 0 auto}
+.client-tag{display:inline-block;margin-left:8px;padding:2px 9px;border-radius:10px;background:var(--gold,#d4af37);color:#241c05;font-size:11px;font-weight:700;vertical-align:middle}
+</style>
 </head>
 <body data-theme="noir">
 <div class="layout">
@@ -8186,6 +8207,144 @@ ${lignes}
     }catch(e){}
   };
   if(typeof ouvrirEcrituresCompte==='function'){ const _oe=ouvrirEcrituresCompte; ouvrirEcrituresCompte=function(c){ window.ecFiltre=''; return _oe(c); }; }
+})();
+</script>
+
+<script id="yada-addon26">
+/* ============================================================
+   #2 — Mode Client séparé (accès dédié n'affichant que l'Espace Client)
+   Rôle de session window.sessionRole : 'cabinet' (défaut) | 'client'.
+   Greffes : ecranSelectionDossier, buildNav, render, retourSelectionDossier, dashRoute.
+   ============================================================ */
+(function(){
+  if(typeof render!=='function') return;
+  window.sessionRole = window.sessionRole || 'cabinet';
+  window.selClientMode = window.selClientMode || false;
+
+  /* Connexion d'un dossier en mode client */
+  window.choisirDossierClient=function(id){
+    if(typeof choisirDossier==='function'){ choisirDossier(id); }
+    window.sessionRole='client'; window.selClientMode=false; current='client'; render();
+    const d=db.cabinet&&db.cabinet.dossiers?db.cabinet.dossiers.find(x=>x.id===id):null;
+    toast('Espace client ouvert — '+(d?d.nom:''));
+  };
+  window.quitterEspaceClient=function(){ if(typeof persistActif==='function') persistActif();
+    window.sessionRole='cabinet'; window.selClientMode=true; connecte=false; if(typeof selRecherche!=='undefined') selRecherche=''; render(); };
+
+  /* Écran de sélection : bascule accès cabinet / accès client */
+  if(typeof ecranSelectionDossier==='function'){
+    const _es=ecranSelectionDossier;
+    ecranSelectionDossier=function(){
+      let h=_es();
+      if(window.selClientMode){
+        h=h.replace(/choisirDossier\(/g,'choisirDossierClient(');
+        h=h.replace('Sélectionnez un dossier','Espace client — sélectionnez votre dossier');
+        h=h.replace('Choisissez la société à ouvrir. Vous pourrez changer de dossier à tout moment (vue cabinet comptable).','Accès client : vous ne verrez que votre espace (documents, factures, dépôt de pièces, messagerie).');
+        h=h.replace(/<button class="btn btn-gold" onclick="ouvrirCreationDossier\(\)">[^<]*<\/button>/,'');
+        h=h.replace(/<button class="btn btn-ghost" onclick="document.getElementById\('imp'\)[^<]*<\/button>/,'');
+        h=h.replace(/<button class="btn btn-ghost" onclick="if\(confirm[^<]*<\/button>/,'');
+      }
+      const btn = window.selClientMode
+        ? `<button class="btn btn-ghost" onclick="selClientMode=false;render()">↩ Retour accès cabinet</button>`
+        : `<button class="btn btn-ghost" onclick="selClientMode=true;render()">👤 Accès client</button>`;
+      h=h.replace('<div class="login-actions">','<div class="login-actions">'+btn);
+      return h;
+    };
+  }
+
+  /* Navigation réduite en mode client */
+  const _bn=buildNav;
+  buildNav=function(){
+    if(window.sessionRole==='client'){
+      const nav=document.getElementById('nav'); if(!nav) return; nav.innerHTML='';
+      const sec=document.createElement('div'); sec.className='nav-sec'; sec.textContent='Espace Client'; nav.appendChild(sec);
+      const b=document.createElement('button'); b.className='nav-btn active'; b.innerHTML='<span class="ico">🧑</span>Mon espace';
+      b.onclick=()=>{current='client';render();}; nav.appendChild(b);
+      return;
+    }
+    return _bn();
+  };
+
+  /* Restriction d'affichage + adaptation de la barre latérale */
+  function applyRoleUI(){
+    const client=(connecte && window.sessionRole==='client');
+    document.body.setAttribute('data-role', client?'client':'cabinet');
+    const foot=document.querySelector('.side-foot'); if(foot){
+      foot.querySelectorAll('button').forEach(b=>{ const t=b.textContent||'';
+        if(/Exporter|Importer|Réinitialiser/.test(t)) b.style.display = client?'none':'';
+        if(/Changer de dossier|Quitter l'espace/.test(t)) b.textContent = client?"⎋ Quitter l'espace client":'⇆ Changer de dossier';
+      });
+    }
+  }
+  const _r=render;
+  render=function(){
+    if(connecte && window.sessionRole==='client' && current!=='client') current='client';
+    const res=_r.apply(this,arguments);
+    try{ applyRoleUI(); }catch(e){}
+    return res;
+  };
+
+  /* Un client ne quitte pas son espace via « changer de dossier » → retour à l'accès client */
+  if(typeof retourSelectionDossier==='function'){
+    const _ret=retourSelectionDossier;
+    retourSelectionDossier=function(){ if(window.sessionRole==='client'){ quitterEspaceClient(); return; } return _ret(); };
+  }
+  /* Le dépôt depuis l'Espace Client ne route pas vers les modules cabinet en mode client */
+  if(typeof dashRoute==='function'){
+    const _dr=dashRoute;
+    dashRoute=function(type,name){ if(connecte && window.sessionRole==='client'){ toast('Pièce reçue — votre cabinet la traitera.'); current='client'; render(); return; } return _dr(type,name); };
+  }
+})();
+</script>
+
+<script id="yada-addon27">
+/* ============================================================
+   #3 — Messagerie client ↔ cabinet + pièces demandées / manquantes
+   Stockage per-dossier : db.parametres.messages[] et db.parametres.demandes[].
+   Greffe : pageEspaceClient (vue adaptée au rôle de session).
+   ============================================================ */
+(function(){
+  if(typeof pageEspaceClient!=='function') return;
+  function msgStore(){ if(!db.parametres)db.parametres={}; if(!Array.isArray(db.parametres.messages))db.parametres.messages=[]; return db.parametres.messages; }
+  function demStore(){ if(!db.parametres)db.parametres={}; if(!Array.isArray(db.parametres.demandes))db.parametres.demandes=[]; return db.parametres.demandes; }
+  window.msgStore=msgStore; window.demStore=demStore;
+  function roleCourant(){ return (window.sessionRole==='client')?'client':'cabinet'; }
+  window.msgEnvoyer=function(){ const inp=document.getElementById('msg-inp'); const t=(inp&&inp.value||'').trim(); if(!t)return;
+    msgStore().push({id:uid(), de:roleCourant(), texte:t, date:new Date().toISOString()}); save(); render();
+    const i2=document.getElementById('msg-inp'); if(i2){ i2.focus(); } };
+  window.demAjouter=function(){ const inp=document.getElementById('dem-inp'); const t=(inp&&inp.value||'').trim(); if(!t)return;
+    demStore().push({id:uid(), libelle:t, statut:'demandee', date:todayStr()}); save(); render(); toast('Pièce demandée au client'); };
+  window.demBascule=function(id){ const d=demStore().find(x=>x.id===id); if(!d)return; d.statut=(d.statut==='fournie')?'demandee':'fournie'; save(); render(); };
+  window.demSupprimer=function(id){ const s=demStore(); const i=s.findIndex(x=>x.id===id); if(i>=0){ s.splice(i,1); save(); render(); } };
+  window.messagerieCard=function(){
+    const role=roleCourant();
+    const msgs=msgStore();
+    const thread = msgs.length
+      ? msgs.map(m=>`<div class="msg ${m.de===role?'me':'them'}"><div class="msg-b">${String(m.texte||'').replace(/</g,'&lt;')}</div><div class="msg-m">${m.de==='client'?'Client':'Cabinet'} · ${frDate(String(m.date||'').slice(0,10))}</div></div>`).join('')
+      : `<div class="hint">Aucun message pour l'instant.</div>`;
+    const dem=demStore();
+    const demList = dem.length
+      ? dem.map(d=>`<div class="dem-it ${d.statut}">
+          <span class="dem-st">${d.statut==='fournie'?'✓':'⏳'}</span>
+          <span class="dem-lb">${String(d.libelle||'').replace(/</g,'&lt;')}</span>
+          <span class="dem-ac">
+            <button class="btn btn-ghost btn-xs" onclick="demBascule('${d.id}')">${d.statut==='fournie'?'À fournir':'Marquer fournie'}</button>
+            ${role==='cabinet'?`<button class="btn btn-ghost btn-xs" onclick="demSupprimer('${d.id}')" title="Supprimer">✕</button>`:''}
+          </span></div>`).join('')
+      : `<div class="hint">Aucune pièce demandée.</div>`;
+    return `<div class="card"><h2>Messagerie ${role==='client'?'— mon cabinet':'— mon client'}</h2>
+      <div class="sub">Échange direct cabinet ↔ client et suivi des pièces demandées.</div>
+      <div class="msg-thread">${thread}</div>
+      <div class="msg-form"><input id="msg-inp" placeholder="Écrire un message…" onkeydown="if(event.key==='Enter')msgEnvoyer()"><button class="btn btn-pri" onclick="msgEnvoyer()">Envoyer</button></div>
+      <h3 class="msg-h3">Pièces demandées</h3>
+      ${role==='cabinet'
+        ? `<div class="msg-form"><input id="dem-inp" placeholder="Demander une pièce (ex. relevé bancaire de mars)…" onkeydown="if(event.key==='Enter')demAjouter()"><button class="btn btn-gold" onclick="demAjouter()">Demander</button></div>`
+        : `<div class="hint">Pièces réclamées par votre cabinet — déposez-les dans « Pièces du dossier (GED) » ci-dessus, puis marquez-les fournies.</div>`}
+      <div class="dem-list">${demList}</div>
+    </div>`;
+  };
+  const _p=pageEspaceClient;
+  pageEspaceClient=function(){ return _p()+messagerieCard(); };
 })();
 </script>
 

@@ -94,6 +94,8 @@ Application web de **pré‑comptabilité française** « **YADA / Précompta** 
 - **Suppression de dossier** (addon17) — `dossiersGestionCard()` dans la page Dossier + `supprimerDossier(id)` (gère le dossier actif → retour accueil).
 - **Panneau IA fournisseurs embarqué** (addon18) — `iaFournisseursCard()` greffé en bas d'`pageAchats`.
 - **Espace Client** (addon19, page `client`) — `pageEspaceClient()` : chiffres clés + trésorerie, dépôt de pièces (`dashRoute`), mes devis & factures, `relancesCard()`, suivi par client (`ecTresorerie/ecEncoursParClient`).
+- **Mode Client séparé** (addon26, greffes `ecranSelectionDossier`/`buildNav`/`render`/`retourSelectionDossier`/`dashRoute`) — rôle de session `window.sessionRole` (`cabinet`|`client`). Écran de connexion : bouton « 👤 Accès client » → `selClientMode` → cartes ouvrant via `choisirDossierClient()`. En mode client : navigation réduite à « Mon espace », `current` forcé sur `client`, actions cabinet masquées dans `.side-foot` (export/import/reset), « Changer de dossier » → `quitterEspaceClient()`. `db.body[data-role]` posé.
+- **Messagerie client ↔ cabinet + pièces demandées** (addon27, dans `pageEspaceClient`) — `messagerieCard()` adaptée au rôle : fil de discussion (`msgEnvoyer`, `db.parametres.messages`) + pièces demandées (`demAjouter/demBascule/demSupprimer`, `db.parametres.demandes`). Le cabinet demande des pièces ; le client répond, dépose via la GED et marque « fournie ».
 - **GED — dépôt glisser-déposer de vrais fichiers** (addon24, dans `pageEspaceClient`) — carte « Pièces du dossier (GED) » : zone de drop réelle (`gedDrop/gedFile`) qui stocke les PDF/photos en dataURL dans `db.parametres.pieces` (persisté + isolé par dossier), liste avec `gedVoir/gedTelecharger/gedSupprimer`. Fiabilise aussi les zones de dépôt du tableau de bord (`dashDrop/dashFile` archivent réellement le fichier).
 - **Éditeur Sage — filtre / tri** (addon25, greffe `ecEcritures`+`ecRender`) — barre `.ec-filtbar` injectée sous la barre d'outils : champ de filtre plein texte (date/journal/pièce/compte/libellé/lettre via `ecSetFiltre`) + tri par date (`ecToggleSort`). Filtre réinitialisé à l'ouverture d'un compte.
 - **Pièces légales — ouvrir/joindre K-bis & Statuts** (addon21, dans `pageInfoSociete`) — carte « Pièces légales du dossier » : `ouvrirKbis()/ouvrirStatuts()` (visualisation du PDF stocké en dataURL via `window.open`+iframe) et `joindreKbis()/joindreStatuts()` (FileReader → `db.societe.kbisPdf/statutsPdf`). Insérée juste avant la carte « Enregistrer ».
@@ -104,14 +106,13 @@ Application web de **pré‑comptabilité française** « **YADA / Précompta** 
 - **Sauvegarde automatique** — `save()` → `localStorage`, rechargé à l'INIT.
 
 ## 8. Pistes proposées (non faites)
-- Accès **« mode Client » séparé** (connexion dédiée n'affichant que l'Espace Client).
-- Messagerie client ↔ cabinet + liste « pièces demandées / manquantes ».
 - Lettrage interactif (colonne L) dans l'éditeur Sage.
 - Variante **IA en ligne réelle** (lecture PDF/photo via API + clé) pour pré‑remplir automatiquement.
 - Cas FEC inverse (N → ouvrir aussi N‑1 pour les À‑nouveaux).
 
 > ✅ **Faits (quick wins, addons 21→23)** : bouton « Ouvrir/Joindre K‑bis & Statuts » dans la fiche société · pastille compteur sur l'entrée « Assistant IA » du menu · sélecteur d'exercice visible dans l'en‑tête.
 > ✅ **Faits (confort, addons 24→25)** : dépôt glisser‑déposer de vrais fichiers (GED dossier) · filtre/tri dans la barre d'outils de l'éditeur Sage.
+> ✅ **Faits (gros chantiers, addons 26→27)** : accès « mode Client » séparé (navigation réduite, actions cabinet masquées) · messagerie client ↔ cabinet + pièces demandées/fournies.
 
 ## 9. À dire en début de nouvelle conversation
 > « Je reprends le projet YADA/Précompta (fichier unique `precompta.html` ci‑joint). Voici le document de passation. Continue en repartant de MON fichier, par ajouts chirurgicaux sans rien casser, en validant via node --check + Playwright sur les 2 démos. »
