@@ -8887,7 +8887,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v64 · fiche tiers groupée (multi-factures) ✨';
+    b.textContent='YADA · v65 · regroupement auto nouveau tiers ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -9462,9 +9462,9 @@ ${lignes}
   /* fiches d'un nouveau tiers encore en cours (pour rattacher plusieurs factures à la même) */
   window.fichesPendantes=function(type){ return fstore().filter(function(f){ return f.type===type && f.statut!=='validee'; }); };
   window.ficheNbFactures=function(f){ var n=(Array.isArray(f.depotIds)?f.depotIds.length:(f.depotId?1:0)); return n; };
-  function fichePendOptions(type){ return window.fichesPendantes(type).map(function(f){
+  function fichePendOptions(type){ var fs=window.fichesPendantes(type); var last=fs.length?fs[fs.length-1].id:null; return fs.map(function(f){
     var lib=(f.raison&&f.raison.trim())?f.raison:'Nouveau '+lblTier(type)+' en cours'; var n=window.ficheNbFactures(f);
-    return '<option value="fiche:'+f.id+'">↳ '+lib+(n>1?(' ('+n+' factures)'):'')+'</option>'; }).join(''); };
+    return '<option value="fiche:'+f.id+'"'+(f.id===last?' selected':'')+'>↳ '+lib+(n>1?(' ('+n+' factures)'):'')+'</option>'; }).join(''); };
   window.fichePendOptions=fichePendOptions;
   /* Liste des fiches côté CLIENT (proposition à remplir) */
   function fichesClientCard(type){ type=type||'fournisseur';
@@ -9730,7 +9730,7 @@ ${lignes}
     if(cat==='vente'){ var clients=(db.tiers||[]).filter(function(t){return t.type==='client';});
       var cpend=(typeof window.fichePendOptions==='function')?window.fichePendOptions('client'):'';
       var copts='<option value="">— Sélectionner (ou laisser : client inconnu) —</option>'+clients.map(function(t){return '<option value="'+t.id+'">'+t.nom+'</option>';}).join('')+'<option value="__inconnu__">➕ Client inconnu / nouveau</option>'+(cpend?('<optgroup label="Nouveaux clients en cours">'+cpend+'</optgroup>'):'');
-      selCli='<div class="field" style="margin-bottom:10px"><label>Client (facultatif)</label><select id="dep-client-vente">'+copts+'</select><div class="hint">Client inconnu ? Une fiche d\'information sera demandée puis validée par le cabinet.</div></div>'; }
+      selCli='<div class="field" style="margin-bottom:10px"><label>Client (facultatif)</label><select id="dep-client-vente">'+copts+'</select><div class="hint">'+(cpend?'➡️ Rattaché par défaut au nouveau client en cours (modifiable) — factures du même client regroupées.':'Client inconnu ? Une fiche d\'information sera demandée puis validée par le cabinet.')+'</div></div>'; }
     return '<div class="card"><h2>'+titre+'</h2><div class="sub">'+sub+' Chaque dépôt notifie votre cabinet ; un doublon s\'affiche en rouge. La comptabilisation est validée par le cabinet.</div>'
       +selCli
       +'<div class="ged-drop" onclick="factPick(\''+cat+'\')" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="factDrop(event,\''+cat+'\')">'
@@ -9836,7 +9836,7 @@ ${lignes}
       var pend=(typeof window.fichePendOptions==='function')?window.fichePendOptions('fournisseur'):'';
       var opts='<option value="">— Sélectionner (ou laisser : fournisseur inconnu) —</option>'+fourns.map(function(t){return '<option value="'+t.id+'">'+t.nom+'</option>';}).join('')+'<option value="__inconnu__">➕ Fournisseur inconnu / nouveau</option>'+(pend?('<optgroup label="Nouveaux fournisseurs en cours">'+pend+'</optgroup>'):'');
       return '<div class="card"><h2>'+titre+'</h2><div class="sub">'+sub+' Déposez simplement la facture : le système lit automatiquement le montant TTC et calcule la TVA et le HT. Le cabinet n\'a plus qu\'à valider la saisie (après comparaison avec le fichier).</div>'
-        +'<div class="field" style="margin-bottom:10px"><label>Fournisseur (facultatif)</label><select id="dep-four-achat">'+opts+'</select></div>'
+        +'<div class="field" style="margin-bottom:10px"><label>Fournisseur (facultatif)</label><select id="dep-four-achat">'+opts+'</select>'+(pend?'<div class="hint">➡️ Rattaché par défaut au nouveau fournisseur en cours (modifiable) — les factures du même fournisseur restent regroupées.</div>':'')+'</div>'
         +'<div class="ged-drop" onclick="factPick(\'achat\')" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="factDrop(event,\'achat\')">'
         +'<div style="font-size:24px">⬆</div><div style="font-weight:700">Déposez la facture ici</div><div class="hint">ou cliquez — PDF, JPG, PNG · lecture automatique des montants</div>'
         +'<input type="file" id="fdep-achat" hidden multiple accept=".pdf,.jpg,.jpeg,.png,image/*" onchange="factFile(event,\'achat\')"></div>'
@@ -9846,7 +9846,7 @@ ${lignes}
     if(cat==='vente'){ var clients=(db.tiers||[]).filter(function(t){return t.type==='client';});
       var cpend=(typeof window.fichePendOptions==='function')?window.fichePendOptions('client'):'';
       var copts='<option value="">— Sélectionner (ou laisser : client inconnu) —</option>'+clients.map(function(t){return '<option value="'+t.id+'">'+t.nom+'</option>';}).join('')+'<option value="__inconnu__">➕ Client inconnu / nouveau</option>'+(cpend?('<optgroup label="Nouveaux clients en cours">'+cpend+'</optgroup>'):'');
-      selCli='<div class="field" style="margin-bottom:10px"><label>Client (facultatif)</label><select id="dep-client-vente">'+copts+'</select><div class="hint">Client inconnu ? Une fiche d\'information sera demandée puis validée par le cabinet.</div></div>'; }
+      selCli='<div class="field" style="margin-bottom:10px"><label>Client (facultatif)</label><select id="dep-client-vente">'+copts+'</select><div class="hint">'+(cpend?'➡️ Rattaché par défaut au nouveau client en cours (modifiable) — factures du même client regroupées.':'Client inconnu ? Une fiche d\'information sera demandée puis validée par le cabinet.')+'</div></div>'; }
     return '<div class="card"><h2>'+titre+'</h2><div class="sub">'+sub+' Chaque dépôt notifie votre cabinet ; un doublon s\'affiche en rouge. La comptabilisation est validée par le cabinet.</div>'
       +selCli
       +'<div class="ged-drop" onclick="factPick(\''+cat+'\')" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="factDrop(event,\''+cat+'\')">'
