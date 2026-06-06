@@ -33,7 +33,8 @@
 
 ## Le projet
 App de **pré-comptabilité française** (style Sage) en **un seul fichier `precompta.html`** autonome, **hors-ligne**, tout en français. Logique + UI dans des `<script>`. 3 thèmes (`noir` défaut, `liquid-clair`, `liquid-teinte`). Écran de connexion + portefeuille multi-dossiers. 2 démos : **AMA** (`d-ama`), **SCI DU 42** (`d-sci42`).
-État actuel : ~652 Ko, 21 `<script>`, **20 modules d'extension** (`yada-addon` → `yada-addon20`), 23 entrées de navigation.
+État actuel : ~660 Ko, 22 `<script>`, **21 modules d'extension** (`yada-addon` → `yada-addon21`), 23 entrées de navigation.
+Feuille de route : voir **`ROADMAP.md`** (finalisation par module). Dernier ajout **`yada-addon21` (T1)** : clôture de l'exercice — **OD de résultat** (solde 6/7 → 120/129) + **report des à‑nouveaux** (classes 1→5), carte ajoutée à la page Éditions. Garantit la continuité comptable (bilan d'ouverture N+1 équilibré). Fonctions : `t1ResultatLignes/t1GenererResultat`, `t1ANLignes/t1GenererAN`, `t1SupprimerCloture`, `t1Card`.
 
 ## Règles de travail (IMPÉRATIF)
 1. **Ajouter par-dessus l'existant sans rien casser.** Édition chirurgicale, jamais de réécriture globale. Les nouveautés = nouveaux **scripts d'extension** `yada-addonN` injectés avant `</body>` (greffe sur fonctions globales) + éventuels `<style id="...">` avant `</head>`.

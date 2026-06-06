@@ -7952,5 +7952,103 @@ ${lignes}
 })();
 
 </script>
+
+<script id="yada-addon21">
+/* ============================================================
+   T1 — Clôture de l'exercice : OD de résultat + report des À-Nouveaux
+   Continuité comptable : 1) solder charges/produits (6/7) dans le résultat
+   (120 bénéfice / 129 perte) ; 2) reporter les soldes de bilan (classes 1→5)
+   au 1ᵉ jour de l'exercice suivant. Écritures équilibrées via posterOD.
+   Greffe : carte ajoutée à pageEditions. 100% additif.
+   ============================================================ */
+(function(){
+  if(typeof posterOD!=='function') return;
+  const CPT_BEN='120000000', CPT_PER='129000000';
+  function jPlus(iso,n){ const d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+  /* soldes par compte (clé c9) sur une plage de dates, pour des classes données */
+  function soldesPlage(classes, d0, d1){
+    const acc={};
+    (db.ecritures||[]).forEach(e=>{ if(d0 && e.date<d0) return; if(d1 && e.date>d1) return;
+      (e.lignes||[]).forEach(l=>{ const cl=String(l.compte)[0]; if(classes.indexOf(cl)<0) return;
+        const k=c9(l.compte); const a=acc[k]||(acc[k]={d:0,c:0,lib:l.lib||COMPTES[l.compte]||COMPTES[k]||k});
+        a.d+=(+l.debit||0); a.c+=(+l.credit||0); }); });
+    return acc;
+  }
+  function libResultat(){ return 'OD RÉSULTAT '+db.societe.exoDebut.slice(0,4); }
+  function anStart(){ return jPlus(db.societe.exoFin,1); }
+  function libAN(){ return 'À-NOUVEAUX '+anStart().slice(0,4); }
+  window.t1ResultatPoste=function(){ return (db.ecritures||[]).some(e=>(e.libelle||'').indexOf(libResultat())>=0); };
+  window.t1ANPoste=function(){ return (db.ecritures||[]).some(e=>(e.libelle||'').indexOf(libAN())>=0); };
+
+  window.t1ResultatLignes=function(){
+    const s=db.societe; const acc=soldesPlage(['6','7'], s.exoDebut, s.exoFin);
+    const lignes=[]; let prod=0, charge=0;
+    Object.keys(acc).sort().forEach(k=>{ const a=acc[k]; const solde=r2(a.d-a.c); if(Math.abs(solde)<0.005) return;
+      if(solde>0) lignes.push({compte:k, lib:'Solde '+(a.lib||k), debit:0, credit:solde});   // charge → on crédite pour solder
+      else lignes.push({compte:k, lib:'Solde '+(a.lib||k), debit:-solde, credit:0});           // produit → on débite pour solder
+      if(k[0]==='7') prod+=r2(a.c-a.d); else charge+=r2(a.d-a.c);
+    });
+    const res=r2(prod-charge);
+    if(res>0) lignes.push({compte:CPT_BEN, lib:"Résultat de l'exercice (bénéfice)", debit:0, credit:res});
+    else if(res<0) lignes.push({compte:CPT_PER, lib:"Résultat de l'exercice (perte)", debit:-res, credit:0});
+    return {lignes, prod:r2(prod), charge:r2(charge), res};
+  };
+  window.t1ANLignes=function(){
+    const acc=soldesPlage(['1','2','3','4','5'], null, db.societe.exoFin);
+    const lignes=[]; let td=0, tc=0;
+    Object.keys(acc).sort().forEach(k=>{ const a=acc[k]; const sd=r2(a.d-a.c); if(Math.abs(sd)<0.005) return;
+      lignes.push({compte:k, lib:'À-nouveau '+(a.lib||k), debit:sd>0?sd:0, credit:sd<0?-sd:0});
+      td+=sd>0?sd:0; tc+=sd<0?-sd:0; });
+    return {lignes, td:r2(td), tc:r2(tc)};
+  };
+
+  window.t1GenererResultat=function(){
+    if(t1ResultatPoste()) return toast('OD de résultat déjà générée pour '+db.societe.exoDebut.slice(0,4));
+    const R=t1ResultatLignes(); if(!R.lignes.length) return toast('Aucun compte de charge/produit à solder');
+    posterOD({date:db.societe.exoFin, libelle:libResultat(), lignes:R.lignes, journal:'OD'});
+    save(); render(); toast('OD de résultat générée — '+(R.res>=0?'bénéfice ':'perte ')+eur(Math.abs(R.res)));
+  };
+  window.t1GenererAN=function(){
+    if(!t1ResultatPoste()) return toast("Générez d'abord l'OD de résultat (sinon les à-nouveaux ne s'équilibrent pas)");
+    if(t1ANPoste()) return toast('À-nouveaux déjà reportés pour '+anStart().slice(0,4));
+    const A=t1ANLignes(); if(!A.lignes.length) return toast('Aucun solde de bilan à reporter');
+    if(Math.abs(A.td-A.tc)>0.01) return toast('Report déséquilibré ('+eur(A.td)+' vs '+eur(A.tc)+') — vérifiez le résultat');
+    posterOD({date:anStart(), libelle:libAN(), lignes:A.lignes, journal:'OD'});
+    save(); render(); toast('À-nouveaux '+anStart().slice(0,4)+' reportés ('+eur(A.td)+')');
+  };
+  window.t1SupprimerCloture=function(){
+    if(!confirm("Supprimer l'OD de résultat et les à-nouveaux générés pour cet exercice ?")) return;
+    const libs=[libResultat(), libAN()];
+    const ids=(db.ecritures||[]).filter(e=>libs.some(l=>(e.libelle||'').indexOf(l)>=0)).map(e=>e.id);
+    db.ecritures=db.ecritures.filter(e=>ids.indexOf(e.id)<0);
+    db.odiv=(db.odiv||[]).filter(o=>!libs.some(l=>(o.libelle||'').indexOf(l)>=0));
+    save(); render(); toast('Clôture annulée — écritures retirées');
+  };
+
+  window.t1Card=function(){
+    const R=t1ResultatLignes(); const A=t1ANLignes();
+    const resPoste=t1ResultatPoste(), anPoste=t1ANPoste();
+    const eqAN=Math.abs(A.td-A.tc)<0.01;
+    return `<div class="card"><h2>Clôture de l'exercice & report des à‑nouveaux</h2>
+      <div class="sub">Continuité comptable : 1) solder les comptes de charges/produits dans le résultat (120 bénéfice / 129 perte) ; 2) reporter les soldes de bilan (classes 1→5) au 1ᵉ jour de l'exercice suivant (${anStart().slice(0,4)}). Écritures équilibrées générées en journal OD.</div>
+      <div class="grid g3" style="margin-bottom:10px">
+        <div class="kpi green"><div class="lbl">Produits (classe 7)</div><div class="val cre">${eur(R.prod)}</div></div>
+        <div class="kpi red"><div class="lbl">Charges (classe 6)</div><div class="val deb">${eur(R.charge)}</div></div>
+        <div class="kpi blue"><div class="lbl">Résultat ${db.societe.exoDebut.slice(0,4)}</div><div class="val">${eur(R.res)}</div><div class="meta">${R.res>=0?'bénéfice (120)':'perte (129)'}</div></div>
+      </div>
+      <div class="right" style="gap:8px;flex-wrap:wrap">
+        ${resPoste?`<span class="balance-ok" style="margin-right:auto">✓ OD de résultat générée (${db.societe.exoFin.slice(0,4)})</span>`
+                  :`<button class="btn btn-pri" style="margin-right:auto" onclick="t1GenererResultat()">1 · Générer l'OD de résultat ${db.societe.exoFin.slice(0,4)}</button>`}
+        ${anPoste?`<span class="balance-ok">✓ À‑nouveaux ${anStart().slice(0,4)} reportés</span>`
+                 :`<button class="btn btn-gold" ${resPoste?'':'disabled'} onclick="t1GenererAN()">2 · Reporter les à‑nouveaux ${anStart().slice(0,4)}</button>`}
+        ${(resPoste||anPoste)?`<button class="btn btn-ghost btn-sm" onclick="t1SupprimerCloture()">Annuler la clôture</button>`:''}
+      </div>
+      <div class="hint">Report d'ouverture N+1 : Σ débit ${eur(A.td)} = Σ crédit ${eur(A.tc)} ${eqAN?'✓ équilibré':'(générez le résultat avant)'}. Les à‑nouveaux apparaissent dans l'exercice ${anStart().slice(0,4)} (Consultation, Journal, Balance).</div>
+    </div>`;
+  };
+  if(typeof pageEditions==='function'){ const _p=pageEditions; pageEditions=function(){ return _p()+t1Card(); }; }
+})();
+</script>
+
 </body>
 </html>
