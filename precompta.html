@@ -1635,6 +1635,8 @@ body[data-page="coffre"] .card:hover,body[data-page="coffre"] .kpi:hover,body[da
 #sec-lock .sec-btn:hover{filter:brightness(1.07)}
 #sec-lock .sec-link{display:inline-block;margin-top:12px;color:#7fc0ff;font-size:12px;cursor:pointer;background:none;border:none;text-decoration:underline}
 #sec-lock .sec-err{color:#ff9d8f;font-size:12.5px;min-height:16px;margin-bottom:6px}
+#sec-lock .sec-remember{display:flex;align-items:center;gap:8px;color:#9fb8d8;font-size:13px;margin:2px 0 12px;cursor:pointer}
+#sec-lock .sec-remember input{width:auto;margin:0;accent-color:#5fb0ff}
 #sec-lock .sec-lbl{font-size:12px;color:#9fb8d8;margin:4px 0 4px}
 </style>
 <style id="ui-polish">
@@ -8802,7 +8804,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v56 · nouveaux clients & fournisseurs ✨';
+    b.textContent='YADA · v57 · connexion auto (appareil de confiance) ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -8828,6 +8830,8 @@ ${lignes}
   window.__secLocked=false; var secTimer=null;
   function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
   function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+  function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+  var KR='yada-remember';
   function ssGet(k){ try{ return sessionStorage.getItem(k); }catch(e){ return null; } }
   function ssSet(k,v){ try{ sessionStorage.setItem(k,v); }catch(e){} }
   function ssDel(k){ try{ sessionStorage.removeItem(k); }catch(e){} }
@@ -8854,6 +8858,7 @@ ${lignes}
       +'<div class="sec-err" id="sec-err"></div>'
       +'<input id="sec-email" type="email" placeholder="Identifiant (e-mail)" autocomplete="username" onkeydown="if(event.key===\'Enter\'){var p=document.getElementById(\'sec-pwd\');if(p)p.focus();}">'
       +'<input id="sec-pwd" type="password" placeholder="Mot de passe" autocomplete="current-password" onkeydown="if(event.key===\'Enter\')secEssayer()">'
+      +'<label class="sec-remember"><input type="checkbox" id="sec-remember" '+(lsGet(KR)===CHOICE?'checked':'')+'> Rester connecté sur cet appareil</label>'
       +'<button class="sec-btn" onclick="secEssayer()">Se connecter</button>'
       +'<div style="margin-top:12px;display:flex;justify-content:space-between"><button class="sec-link" onclick="secRetour()">← Changer d\'espace</button><button class="sec-link" onclick="secAide()">Identifiants oubliés ?</button></div></div>';
     o.classList.add('show'); setTimeout(function(){ var i=document.getElementById('sec-email'); if(i)i.focus(); },30);
@@ -8865,7 +8870,8 @@ ${lignes}
       if(db&&db.cabinet&&db.cabinet.dossiers){ var d=db.cabinet.dossiers.find(function(x){return x.id===CLIENT_DOSSIER;}); if(d) return d.id; }
       if(db&&db.activeId&&db.dossiersData&&db.dossiersData[db.activeId]) return db.activeId;
       if(db&&db.cabinet&&db.cabinet.dossiers&&db.cabinet.dossiers[0]) return db.cabinet.dossiers[0].id; }catch(e){} return null; }
-  function secOuvrir(role){ ssSet('yada-role', role); window.sessionRole=role; window.selClientMode=(role==='client');
+  function secOuvrir(role, remember){ ssSet('yada-role', role); window.sessionRole=role; window.selClientMode=(role==='client');
+    if(remember===true) lsSet(KR, role); else if(remember===false) lsDel(KR);
     /* on rend la page de destination SOUS l'écran de connexion, puis on retire l'écran : aucune page intermédiaire visible */
     if(role==='client'){ var id=clientDossierId(); if(id && typeof choisirDossierClient==='function'){ choisirDossierClient(id); } else if(typeof render==='function'){ current='client'; render(); } }
     else if(typeof render==='function'){ render(); }
@@ -8875,15 +8881,16 @@ ${lignes}
     var pw=(document.getElementById('sec-pwd')||{}).value||'';
     if(!em||!pw){ if(e)e.textContent='Renseignez l\'identifiant et le mot de passe.'; return; }
     var rec=(CHOICE==='client')?CLI:CAB; var h=await sha(rec.salt+em+SEP+pw);
-    if(h===rec.hash){ return secOuvrir(CHOICE); }
+    var rem=!!((document.getElementById('sec-remember')||{}).checked);
+    if(h===rec.hash){ return secOuvrir(CHOICE, rem); }
     if(e)e.textContent='Identifiants incorrects pour l\'espace '+(CHOICE==='cabinet'?'Cabinet':'Client')+'.';
     var p=document.getElementById('sec-pwd'); if(p){p.value='';p.focus();}
   };
   window.secAide=function(){ alert('Identifiants gérés par le cabinet.\n\nEspace Cabinet et Espace Client ont des identifiants distincts. Contactez le cabinet pour les obtenir ou les réinitialiser.'); };
-  window.secVerrouiller=function(){ ssDel('yada-role'); CHOICE=null; window.sessionRole='cabinet'; window.selClientMode=false; try{ connecte=false; }catch(e){} secAfficher(); };
+  window.secVerrouiller=function(){ ssDel('yada-role'); lsDel(KR); CHOICE=null; window.sessionRole='cabinet'; window.selClientMode=false; try{ connecte=false; }catch(e){} secAfficher(); };
   window.secSetDelay=function(v){ lsSet(KD,String(v)); secResetTimer(); if(typeof toast==='function')toast('Verrouillage auto : '+(v==0?'désactivé':v+' min')); };
   function unlocked(){ return !!ssGet('yada-role'); }
-  function secResetTimer(){ if(secTimer){clearTimeout(secTimer);secTimer=null;} var d=secDelay(); if(d>0 && !secLocked() && unlocked()){ secTimer=setTimeout(window.secVerrouiller, d*60000); } }
+  function secResetTimer(){ if(secTimer){clearTimeout(secTimer);secTimer=null;} var d=secDelay(); if(d>0 && !secLocked() && unlocked() && !lsGet(KR)){ secTimer=setTimeout(window.secVerrouiller, d*60000); } }
   ['mousemove','keydown','click','touchstart','scroll'].forEach(function(ev){ document.addEventListener(ev, function(){ if(!secLocked()) secResetTimer(); }, {passive:true}); });
   if(typeof pageParametrage==='function'){ var _pp=pageParametrage; pageParametrage=function(){
     var delaySel='<select onchange="secSetDelay(this.value)">'+[['5','5 min'],['10','10 min'],['15','15 min'],['30','30 min'],['0','Désactivé']].map(function(o){return '<option value="'+o[0]+'" '+(String(secDelay())===o[0]?'selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';
@@ -8894,8 +8901,14 @@ ${lignes}
       +'<div class="field"><label>&nbsp;</label><button class="btn btn-ghost" onclick="secVerrouiller()">🔒 Se déconnecter</button></div></div></div>'; }; }
   function addSideBtn(){ try{ var foot=document.querySelector('.side-foot'); if(foot && !document.getElementById('sec-side-btn')){ var b=document.createElement('button'); b.id='sec-side-btn'; b.textContent='🔒 Déconnexion'; b.onclick=window.secVerrouiller; foot.insertBefore(b, foot.firstChild.nextSibling); } }catch(e){} }
   if(typeof render==='function'){ var _r=render; render=function(){ var x=_r.apply(this,arguments); addSideBtn(); return x; }; }
-  function boot(){ var role=ssGet('yada-role'); if(role==='cabinet'||role==='client'){ CHOICE=role; window.sessionRole=role; window.selClientMode=(role==='client'); secResetTimer();
-      if(role==='client'){ var id=clientDossierId(); if(id && typeof choisirDossierClient==='function') choisirDossierClient(id); } } else { CHOICE=null; secAfficher(); } }
+  function boot(){ var role=ssGet('yada-role'); var auto=false;
+    if(!(role==='cabinet'||role==='client')){ var rem=lsGet(KR); if(rem==='cabinet'||rem==='client'){ role=rem; auto=true; ssSet('yada-role', role); } }
+    if(role==='cabinet'||role==='client'){ CHOICE=role; window.sessionRole=role; window.selClientMode=(role==='client'); secResetTimer();
+      if(role==='client'){ var id=clientDossierId(); if(id && typeof choisirDossierClient==='function') choisirDossierClient(id); }
+      else if(auto && typeof render==='function'){ try{ render(); }catch(e){} }
+      if(auto && typeof toast==='function') setTimeout(function(){ toast('Connecté automatiquement ('+(role==='cabinet'?'Cabinet':'Client')+') — appareil de confiance'); },200);
+    } else { CHOICE=null; secAfficher(); } }
+  window.__secBoot=boot;
   if(document.body) boot(); else document.addEventListener('DOMContentLoaded', boot);
 })();
 </script>
