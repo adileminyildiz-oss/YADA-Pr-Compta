@@ -33,8 +33,8 @@
 
 ## Le projet
 App de **pré-comptabilité française** (style Sage) en **un seul fichier `precompta.html`** autonome, **hors-ligne**, tout en français. Logique + UI dans des `<script>`. 3 thèmes (`noir` défaut, `liquid-clair`, `liquid-teinte`). Écran de connexion + portefeuille multi-dossiers. 2 démos : **AMA** (`d-ama`), **SCI DU 42** (`d-sci42`).
-État actuel : ~655 Ko, 24 `<script>`, **23 modules d'extension** (`yada-addon` → `yada-addon23`), 23 entrées de navigation.
-Derniers ajouts (quick wins, addons 21→23) : ouvrir/joindre K-bis & Statuts dans la fiche société ; pastille compteur sur le menu « Assistant IA » ; sélecteur d'exercice visible dans l'en-tête de page.
+État actuel : ~660 Ko, 26 `<script>`, **25 modules d'extension** (`yada-addon` → `yada-addon25`), 23 entrées de navigation.
+Derniers ajouts (addons 21→25) : ouvrir/joindre K-bis & Statuts dans la fiche société ; pastille compteur sur le menu « Assistant IA » ; sélecteur d'exercice visible dans l'en-tête ; GED dossier (dépôt glisser-déposer de vrais fichiers, `db.parametres.pieces`) ; filtre/tri dans l'éditeur d'écritures Sage.
 
 ## Règles de travail (IMPÉRATIF)
 1. **Ajouter par-dessus l'existant sans rien casser.** Édition chirurgicale, jamais de réécriture globale. Les nouveautés = nouveaux **scripts d'extension** `yada-addonN` injectés avant `</body>` (greffe sur fonctions globales) + éventuels `<style id="...">` avant `</head>`.

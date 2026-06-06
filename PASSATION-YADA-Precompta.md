@@ -94,6 +94,8 @@ Application web de **pré‑comptabilité française** « **YADA / Précompta** 
 - **Suppression de dossier** (addon17) — `dossiersGestionCard()` dans la page Dossier + `supprimerDossier(id)` (gère le dossier actif → retour accueil).
 - **Panneau IA fournisseurs embarqué** (addon18) — `iaFournisseursCard()` greffé en bas d'`pageAchats`.
 - **Espace Client** (addon19, page `client`) — `pageEspaceClient()` : chiffres clés + trésorerie, dépôt de pièces (`dashRoute`), mes devis & factures, `relancesCard()`, suivi par client (`ecTresorerie/ecEncoursParClient`).
+- **GED — dépôt glisser-déposer de vrais fichiers** (addon24, dans `pageEspaceClient`) — carte « Pièces du dossier (GED) » : zone de drop réelle (`gedDrop/gedFile`) qui stocke les PDF/photos en dataURL dans `db.parametres.pieces` (persisté + isolé par dossier), liste avec `gedVoir/gedTelecharger/gedSupprimer`. Fiabilise aussi les zones de dépôt du tableau de bord (`dashDrop/dashFile` archivent réellement le fichier).
+- **Éditeur Sage — filtre / tri** (addon25, greffe `ecEcritures`+`ecRender`) — barre `.ec-filtbar` injectée sous la barre d'outils : champ de filtre plein texte (date/journal/pièce/compte/libellé/lettre via `ecSetFiltre`) + tri par date (`ecToggleSort`). Filtre réinitialisé à l'ouverture d'un compte.
 - **Pièces légales — ouvrir/joindre K-bis & Statuts** (addon21, dans `pageInfoSociete`) — carte « Pièces légales du dossier » : `ouvrirKbis()/ouvrirStatuts()` (visualisation du PDF stocké en dataURL via `window.open`+iframe) et `joindreKbis()/joindreStatuts()` (FileReader → `db.societe.kbisPdf/statutsPdf`). Insérée juste avant la carte « Enregistrer ».
 - **Pastille compteur menu « Assistant IA »** (addon22, greffe `buildNav`) — badge `.ia-badge` ajouté sur l'entrée IA du menu, comptant les `db.propositions` au statut `a_valider`.
 - **Sélecteur d'exercice visible** (addon23, greffe `head()`) — encart `.exo-sel` dans l'en-tête de page (Exercice AAAA + dates), boutons ‹/› reliés à `exPrecedent()/exSuivant()`.
@@ -104,12 +106,12 @@ Application web de **pré‑comptabilité française** « **YADA / Précompta** 
 ## 8. Pistes proposées (non faites)
 - Accès **« mode Client » séparé** (connexion dédiée n'affichant que l'Espace Client).
 - Messagerie client ↔ cabinet + liste « pièces demandées / manquantes ».
-- Dépôt **glisser‑déposer** de vrais fichiers (PDF/photos) stockés dans le dossier.
-- Lettrage interactif (colonne L) dans l'éditeur Sage ; filtre/tri dans sa barre d'outils.
+- Lettrage interactif (colonne L) dans l'éditeur Sage.
 - Variante **IA en ligne réelle** (lecture PDF/photo via API + clé) pour pré‑remplir automatiquement.
 - Cas FEC inverse (N → ouvrir aussi N‑1 pour les À‑nouveaux).
 
 > ✅ **Faits (quick wins, addons 21→23)** : bouton « Ouvrir/Joindre K‑bis & Statuts » dans la fiche société · pastille compteur sur l'entrée « Assistant IA » du menu · sélecteur d'exercice visible dans l'en‑tête.
+> ✅ **Faits (confort, addons 24→25)** : dépôt glisser‑déposer de vrais fichiers (GED dossier) · filtre/tri dans la barre d'outils de l'éditeur Sage.
 
 ## 9. À dire en début de nouvelle conversation
 > « Je reprends le projet YADA/Précompta (fichier unique `precompta.html` ci‑joint). Voici le document de passation. Continue en repartant de MON fichier, par ajouts chirurgicaux sans rien casser, en validant via node --check + Playwright sur les 2 démos. »
