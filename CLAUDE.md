@@ -33,8 +33,7 @@
 
 ## Le projet
 App de **pré-comptabilité française** (style Sage) en **un seul fichier `precompta.html`** autonome, **hors-ligne**, tout en français. Logique + UI dans des `<script>`. 3 thèmes (`noir` défaut, `liquid-clair`, `liquid-teinte`). Écran de connexion + portefeuille multi-dossiers. 2 démos : **AMA** (`d-ama`), **SCI DU 42** (`d-sci42`).
-État actuel : ~665 Ko, 28 `<script>`, **27 modules d'extension** (`yada-addon` → `yada-addon27`), 23 entrées de navigation.
-Derniers ajouts (addons 21→27) : ouvrir/joindre K-bis & Statuts ; pastille compteur sur le menu « Assistant IA » ; sélecteur d'exercice visible ; GED dossier (`db.parametres.pieces`) ; filtre/tri dans l'éditeur Sage ; **mode Client séparé** (`window.sessionRole`, navigation réduite) ; **messagerie client↔cabinet** + pièces demandées (`db.parametres.messages`/`demandes`).
+État actuel : ~652 Ko, 21 `<script>`, **20 modules d'extension** (`yada-addon` → `yada-addon20`), 23 entrées de navigation.
 
 ## Règles de travail (IMPÉRATIF)
 1. **Ajouter par-dessus l'existant sans rien casser.** Édition chirurgicale, jamais de réécriture globale. Les nouveautés = nouveaux **scripts d'extension** `yada-addonN` injectés avant `</body>` (greffe sur fonctions globales) + éventuels `<style id="...">` avant `</head>`.
@@ -46,7 +45,6 @@ Derniers ajouts (addons 21→27) : ouvrir/joindre K-bis & Statuts ; pastille com
    - balises `</head>`/`</body>`/`</html>` uniques ;
    - **rendu réel via Playwright** (Chromium) sur les 2 démos : parcourir les modules, capturer pageerror/console, vérifier que **toutes les écritures sont équilibrées** (Σ débit = Σ crédit).
    - Pré-requis test : `npm i -g playwright && npx playwright install chromium`.
-   - **Repli si Chromium indisponible (réseau bloqué)** : `npm i jsdom && node test-rendu.cjs` — exécute réellement tous les scripts, parcourt les 23 modules sur les 2 démos, teste les addons et vérifie l'équilibre comptable. (42 contrôles ; doit afficher « 0 échoués ».)
 
 ## Architecture
 - `render()` lit `current`, pose `document.body.dataset.page=current`, puis appelle le module via un objet de **dispatch réévalué à chaque rendu**. Réassigner `pageX = function(){…}` fonctionne → pattern de greffe : `const _p=pageX; pageX=function(){ return _p()+complement(); }`.
