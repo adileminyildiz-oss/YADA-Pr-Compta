@@ -1709,6 +1709,13 @@ body[data-page="client"] .mod-wrap .card:last-child{margin-bottom:0}
 body[data-page="client"] .mod-wrap table{margin-top:6px}
 /* tuiles de raccourcis un peu plus hautes pour respirer */
 body[data-page="client"] .ec-tile{padding:22px 14px}
+/* Disposition 2 colonnes (Facturation client & Factures fournisseurs) */
+.cli-2col{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;margin-top:4px}
+.cli-2col .cli-col{min-width:0}
+.cli-2col .cli-col>.card{margin-bottom:22px}
+.cli-2col .cli-col>.card:last-child{margin-bottom:0}
+.cli-col-h{font-family:'Fraunces',serif;font-weight:600;font-size:15px;opacity:.85;margin:0 2px 12px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+@media(max-width:1000px){.cli-2col{grid-template-columns:1fr;gap:0}.cli-2col .cli-col+.cli-col{margin-top:8px}}
 /* Tableau de bord Cabinet : hero + raccourcis (même esprit que l'Espace Client) */
 body[data-page="dash"] #ec-hero{margin-bottom:22px}
 body[data-page="dash"] .ec-shortcuts{margin-bottom:26px}
@@ -8804,7 +8811,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v57 · connexion auto (appareil de confiance) ✨';
+    b.textContent='YADA · v58 · factures client/fourn. en 2 colonnes ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -9048,11 +9055,13 @@ ${lignes}
   }
   window.pageFacturationClient=function(){ if(typeof catInit==='function')catInit();
     var out=head('Mes factures clients','Créez une facture en quelques secondes, déposez vos factures existantes, suivez vos ventes et retrouvez les factures envoyées.');
-    out+=faClientCreer();
-    out+=depotFacturesCard('vente','📤 Déposer une facture client','Glissez-déposez vos factures de vente déjà établies (PDF/photo) : elles sont conservées dans le dossier et consultables par votre cabinet.');
-    out+=faClientRecentes();
-    try{ out+=suiviFacturesVente(); }catch(e){}
-    try{ out+=listeFacturesEnvoyees(); }catch(e){}
+    var left=faClientCreer()
+      +depotFacturesCard('vente','📤 Déposer une facture client','Glissez-déposez vos factures de vente déjà établies (PDF/photo) : elles sont conservées dans le dossier et consultables par votre cabinet.');
+    var right=faClientRecentes();
+    try{ right+=suiviFacturesVente(); }catch(e){}
+    try{ right+=listeFacturesEnvoyees(); }catch(e){}
+    out+='<div class="cli-2col"><div class="cli-col"><div class="cli-col-h">✍️ Actions</div>'+left+'</div>'
+       +'<div class="cli-col"><div class="cli-col-h">📊 Suivi & historique</div>'+right+'</div></div>';
     return out;
   };
 
@@ -9094,9 +9103,10 @@ ${lignes}
   }
   window.pageAchatsClient=function(){
     var out=head('Mes factures fournisseurs','Déposez vos factures fournisseurs, retrouvez les dernières reçues et leur détail : HT, TVA, TTC et statut.');
-    out+=depotFacturesCard('achat','📤 Déposer une facture fournisseur','Glissez-déposez les factures reçues de vos fournisseurs (PDF/photo) : votre cabinet les récupère pour comptabilisation.');
-    out+=achatsClientRecentes();
-    out+=achatsClientDetail();
+    var left=depotFacturesCard('achat','📤 Déposer une facture fournisseur','Glissez-déposez les factures reçues de vos fournisseurs (PDF/photo) : votre cabinet les récupère pour comptabilisation.');
+    var right=achatsClientRecentes()+achatsClientDetail();
+    out+='<div class="cli-2col"><div class="cli-col"><div class="cli-col-h">📥 Dépôt</div>'+left+'</div>'
+       +'<div class="cli-col"><div class="cli-col-h">📊 Suivi & détail</div>'+right+'</div></div>';
     return out;
   };
 
