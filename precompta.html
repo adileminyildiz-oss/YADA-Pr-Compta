@@ -8802,7 +8802,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v55 · nouveaux fournisseurs marqués ✨';
+    b.textContent='YADA · v56 · nouveaux clients & fournisseurs ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -9290,7 +9290,7 @@ ${lignes}
   window.ficheRemplir=function(id){ var f=fstore().find(function(x){return x.id===id;}); if(!f)return;
     var d=dstore().find(function(x){return x.id===f.depotId;});
     document.getElementById('modal-c').innerHTML=
-      '<h2 style="margin-top:0">📝 Fiche d\'information fournisseur</h2>'
+      '<h2 style="margin-top:0">📝 Fiche d\'information '+(f.type==='client'?'client':'fournisseur')+'</h2>'
       +'<div class="sub">Saisissez le <b>SIRET</b> puis « Compléter » : raison sociale, adresse et n° TVA sont récupérés automatiquement depuis l\'annuaire officiel des entreprises'+(d?(' (facture « '+v(d.nom)+' »)'):'')+'. Transmis à votre cabinet.</div>'
       +'<div class="row g2"><div class="field"><label>SIRET (14 chiffres)</label><input id="fi-siret" value="'+v(f.siret)+'" placeholder="ex. 552 081 317 00024"></div>'
       +'<div class="field" style="align-self:end"><button class="btn btn-gold" style="width:100%" onclick="ficheCompletSiret()">🔎 Compléter via le SIRET</button></div></div>'
@@ -9332,53 +9332,58 @@ ${lignes}
   };
   window.ficheVoir=function(id){ var f=fstore().find(function(x){return x.id===id;}); if(!f)return;
     var L=function(k,val){ return '<div class="cp-row"><span>'+k+'</span><div>'+(val||'—')+'</div></div>'; };
-    document.getElementById('modal-c').innerHTML='<h2 style="margin-top:0">📝 Fiche fournisseur — '+v(f.raison||'(à compléter)')+'</h2>'
+    document.getElementById('modal-c').innerHTML='<h2 style="margin-top:0">📝 Fiche '+(f.type==='client'?'client':'fournisseur')+' — '+v(f.raison||'(à compléter)')+'</h2>'
       +L('Raison sociale',v(f.raison))+L('SIRET',v(f.siret))+L('N° TVA',v(f.tvaIntra))+L('E-mail',v(f.email))+L('Téléphone',v(f.tel))+L('IBAN',v(f.iban))+L('Adresse',v((f.adresse||'')+(f.cp||f.ville?(', '+(f.cp||'')+' '+(f.ville||'')):'')))
-      +'<div class="right" style="margin-top:10px"><button class="btn btn-ghost" onclick="closeModal()">Fermer</button>'+(f.statut==='remplie'?(' <button class="btn btn-pri" onclick="ficheValider(\''+id+'\')">✔ Valider &amp; créer le fournisseur</button>'):'')+'</div>';
+      +'<div class="right" style="margin-top:10px"><button class="btn btn-ghost" onclick="closeModal()">Fermer</button>'+(f.statut==='remplie'?(' <button class="btn btn-pri" onclick="ficheValider(\''+id+'\')">✔ Valider &amp; créer le '+(f.type==='client'?'client':'fournisseur')+'</button>'):'')+'</div>';
     document.getElementById('modal').classList.add('show');
   };
   /* Validation cabinet → création du fournisseur + rattachement au dépôt */
   window.ficheValider=function(id){ var f=fstore().find(function(x){return x.id===id;}); if(!f)return;
     if(f.statut!=='remplie')return toast('La fiche n\'est pas encore remplie par le client.');
     var adr=((f.adresse||'')+((f.cp||f.ville)?(', '+(f.cp||'')+' '+(f.ville||'')):'')).trim();
-    var t={ id:uid(), type:'fournisseur', categorie:'societe', nom:f.raison, compteContre:'606000', compteTVA:'44566',
+    var isCli=(f.type==='client');
+    var t={ id:uid(), type:isCli?'client':'fournisseur', categorie:'societe', nom:f.raison,
+      compteContre:isCli?'706000':'606000', compteTVA:isCli?'44571':'44566',
       taux:20, compteAux:null, email:f.email||'', tel:f.tel||'', siret:f.siret||'', tvaIntra:f.tvaIntra||'', iban:f.iban||'', adresse:adr,
       nouveau:true, origine:'client', dateAjout:todayStr() };
-    db.tiers.push(t); try{ t.compteAux=genAux('fournisseur',t.nom); }catch(e){}
+    db.tiers.push(t); try{ t.compteAux=genAux(t.type,t.nom); }catch(e){}
     f.statut='validee'; f.tiersId=t.id;
     var d=dstore().find(function(x){return x.id===f.depotId;}); if(d){ d.tiersId=t.id; d.tiersInconnu=false; }
-    save(); if(typeof closeModal==='function')closeModal(); toast('✅ Fournisseur « '+t.nom+' » créé. Vous pouvez comptabiliser le dépôt.'); render();
+    save(); if(typeof closeModal==='function')closeModal(); toast('✅ '+(isCli?'Client':'Fournisseur')+' « '+t.nom+' » créé. Vous pouvez comptabiliser le dépôt.'); render();
   };
 
+  function lblTier(type){ return type==='client'?'client':'fournisseur'; }
   /* Liste des fiches côté CLIENT (proposition à remplir) */
-  function fichesClientCard(){
-    var fs=fstore().filter(function(f){return f.type==='fournisseur' && f.statut!=='validee';});
+  function fichesClientCard(type){ type=type||'fournisseur';
+    var fs=fstore().filter(function(f){return f.type===type && f.statut!=='validee';});
     if(!fs.length) return '';
     var rows=fs.map(function(f){ var d=dstore().find(function(x){return x.id===f.depotId;});
       var st=f.statut==='remplie'?'<span class="tag t-part">transmise — en attente cabinet</span>':'<span class="tag t-att">à remplir</span>';
       var btn=f.statut==='remplie'?'<button class="btn btn-ghost btn-xs" onclick="ficheRemplir(\''+f.id+'\')">Modifier</button>':'<button class="btn btn-gold btn-xs" onclick="ficheRemplir(\''+f.id+'\')">✍ Remplir la fiche</button>';
-      return '<div class="ged-it dep-dup"><span>📝</span><span class="ged-nm">'+(f.raison||(d?d.nom:'Nouveau fournisseur'))+'</span>'+st+'<span>'+btn+'</span></div>';
+      return '<div class="ged-it dep-dup"><span>📝</span><span class="ged-nm">'+(f.raison||(d?d.nom:'Nouveau '+lblTier(type)))+'</span>'+st+'<span>'+btn+'</span></div>';
     }).join('');
-    return '<div class="card"><h2>📝 Fiches fournisseur à compléter</h2><div class="sub">Un fournisseur inconnu a été détecté sur une facture déposée : complétez sa fiche d\'information pour votre cabinet.</div>'+rows+'</div>';
+    return '<div class="card"><h2>📝 Fiches '+lblTier(type)+' à compléter</h2><div class="sub">Un '+lblTier(type)+' inconnu a été détecté : complétez sa fiche d\'information pour votre cabinet.</div>'+rows+'</div>';
   }
   /* Liste des fiches côté CABINET (à valider) */
-  function fichesCabinetCard(){
-    var fs=fstore().filter(function(f){return f.type==='fournisseur' && f.statut!=='validee';});
+  function fichesCabinetCard(type){ type=type||'fournisseur';
+    var fs=fstore().filter(function(f){return f.type===type && f.statut!=='validee';});
     if(!fs.length) return '';
     var rows=fs.map(function(f){ var d=dstore().find(function(x){return x.id===f.depotId;});
       var det=f.statut==='remplie'?('<span class="ged-mt">'+[f.siret?('SIRET '+f.siret):'',f.email,f.ville].filter(Boolean).join(' · ')+'</span>'):'';
       var st=f.statut==='remplie'?'<span class="tag t-part">remplie — à valider</span>':'<span class="tag t-att">en attente du client</span>';
       var act=f.statut==='remplie'?'<button class="btn btn-gold btn-xs" onclick="ficheValider(\''+f.id+'\')">✔ Valider &amp; créer</button> <button class="btn btn-ghost btn-xs" onclick="ficheVoir(\''+f.id+'\')">Voir</button>':'';
-      return '<div class="ged-it '+(f.statut==='remplie'?'dep-ok':'dep-dup')+'"><span>📝</span><span class="ged-nm">'+(f.raison||(d?d.nom:'Nouveau fournisseur'))+'</span>'+st+det+'<span>'+act+'</span></div>';
+      return '<div class="ged-it '+(f.statut==='remplie'?'dep-ok':'dep-dup')+'"><span>📝</span><span class="ged-nm">'+(f.raison||(d?d.nom:'Nouveau '+lblTier(type)))+'</span>'+st+det+'<span>'+act+'</span></div>';
     }).join('');
     var nb=fs.filter(function(f){return f.statut==='remplie';}).length;
-    var ban=nb?'<div class="dep-notif">🔔 '+nb+' fiche(s) fournisseur à valider</div>':'';
-    return '<div class="card"><h2>📝 Nouveaux fournisseurs (fiches d\'information)</h2><div class="sub">Un fournisseur inconnu détecté sur une facture déposée : le client complète la fiche, validez-la pour créer le fournisseur puis comptabilisez le dépôt.</div>'+ban+rows+'</div>';
+    var ban=nb?'<div class="dep-notif">🔔 '+nb+' fiche(s) '+lblTier(type)+' à valider</div>':'';
+    return '<div class="card"><h2>📝 Nouveaux '+lblTier(type)+'s (fiches d\'information)</h2><div class="sub">Un '+lblTier(type)+' inconnu détecté : le client complète la fiche, validez-la pour créer le '+lblTier(type)+'.</div>'+ban+rows+'</div>';
   }
 
-  /* Greffes : client (page achats simplifiée) + cabinet (page achats complète) */
-  if(typeof window.pageAchatsClient==='function'){ var _pac=window.pageAchatsClient; window.pageAchatsClient=function(){ return fichesClientCard()+_pac(); }; }
-  if(typeof pageAchats==='function'){ var _pa=pageAchats; pageAchats=function(){ var h=_pa(); if((window.sessionRole||'cabinet')!=='client') h+=fichesCabinetCard(); return h; }; }
+  /* Greffes : fournisseurs (Achats) + clients (Facturation), côté client & cabinet */
+  if(typeof window.pageAchatsClient==='function'){ var _pac=window.pageAchatsClient; window.pageAchatsClient=function(){ return fichesClientCard('fournisseur')+_pac(); }; }
+  if(typeof window.pageFacturationClient==='function'){ var _pfc=window.pageFacturationClient; window.pageFacturationClient=function(){ return fichesClientCard('client')+_pfc(); }; }
+  if(typeof pageAchats==='function'){ var _pa=pageAchats; pageAchats=function(){ var h=_pa(); if((window.sessionRole||'cabinet')!=='client') h+=fichesCabinetCard('fournisseur'); return h; }; }
+  if(typeof pageFacturation==='function'){ var _pf=pageFacturation; pageFacturation=function(){ var h=_pf(); if((window.sessionRole||'cabinet')!=='client') h+=fichesCabinetCard('client'); return h; }; }
 })();
 </script>
 <script id="yada-addon46">
@@ -9606,7 +9611,12 @@ ${lignes}
         +depotsListe('achat','client')+'</div>';
     }
     /* vente : dépôt fichier simple */
+    var selCli='';
+    if(cat==='vente'){ var clients=(db.tiers||[]).filter(function(t){return t.type==='client';});
+      var copts='<option value="">— Sélectionner (ou laisser : client inconnu) —</option>'+clients.map(function(t){return '<option value="'+t.id+'">'+t.nom+'</option>';}).join('')+'<option value="__inconnu__">➕ Client inconnu / nouveau</option>';
+      selCli='<div class="field" style="margin-bottom:10px"><label>Client (facultatif)</label><select id="dep-client-vente">'+copts+'</select><div class="hint">Client inconnu ? Une fiche d\'information sera demandée puis validée par le cabinet.</div></div>'; }
     return '<div class="card"><h2>'+titre+'</h2><div class="sub">'+sub+' Chaque dépôt notifie votre cabinet ; un doublon s\'affiche en rouge. La comptabilisation est validée par le cabinet.</div>'
+      +selCli
       +'<div class="ged-drop" onclick="factPick(\''+cat+'\')" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="factDrop(event,\''+cat+'\')">'
       +'<div style="font-size:24px">⬆</div><div style="font-weight:700">Déposez vos factures ici</div><div class="hint">ou cliquez — PDF, JPG, PNG</div>'
       +'<input type="file" id="fdep-'+cat+'" hidden multiple accept=".pdf,.jpg,.jpeg,.png,image/*" onchange="factFile(event,\''+cat+'\')"></div>'
@@ -9715,7 +9725,12 @@ ${lignes}
         +'<input type="file" id="fdep-achat" hidden multiple accept=".pdf,.jpg,.jpeg,.png,image/*" onchange="factFile(event,\'achat\')"></div>'
         +depotsListe('achat','client')+'</div>';
     }
+    var selCli='';
+    if(cat==='vente'){ var clients=(db.tiers||[]).filter(function(t){return t.type==='client';});
+      var copts='<option value="">— Sélectionner (ou laisser : client inconnu) —</option>'+clients.map(function(t){return '<option value="'+t.id+'">'+t.nom+'</option>';}).join('')+'<option value="__inconnu__">➕ Client inconnu / nouveau</option>';
+      selCli='<div class="field" style="margin-bottom:10px"><label>Client (facultatif)</label><select id="dep-client-vente">'+copts+'</select><div class="hint">Client inconnu ? Une fiche d\'information sera demandée puis validée par le cabinet.</div></div>'; }
     return '<div class="card"><h2>'+titre+'</h2><div class="sub">'+sub+' Chaque dépôt notifie votre cabinet ; un doublon s\'affiche en rouge. La comptabilisation est validée par le cabinet.</div>'
+      +selCli
       +'<div class="ged-drop" onclick="factPick(\''+cat+'\')" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="factDrop(event,\''+cat+'\')">'
       +'<div style="font-size:24px">⬆</div><div style="font-weight:700">Déposez vos factures ici</div><div class="hint">ou cliquez — PDF, JPG, PNG</div>'
       +'<input type="file" id="fdep-'+cat+'" hidden multiple accept=".pdf,.jpg,.jpeg,.png,image/*" onchange="factFile(event,\''+cat+'\')"></div>'
@@ -9800,7 +9815,9 @@ ${lignes}
       var dup=gstore().some(function(p){return p.cat===cat && normName(p.nom)===normName(nom);});
       var piece={ id:uid(), nom:nom, mime:file.type||'', taille:file.size||0, data:dataUrl, date:todayStr(), cat:cat }; gstore().push(piece);
       var tiersId='', inconnu=false;
-      if(cat==='achat'){ var selv=(document.getElementById('dep-four-achat')||{}).value||''; if(selv && selv!=='__inconnu__') tiersId=selv; else inconnu=true; }
+      var selId=(cat==='achat')?'dep-four-achat':'dep-client-vente';
+      var selv=(document.getElementById(selId)||{}).value||'';
+      if(selv && selv!=='__inconnu__') tiersId=selv; else inconnu=true;
       var dep={ id:uid(), cat:cat, fichierId:piece.id, nom:nom, date:todayStr(), statut:'deposee',
         doublon:!!dup, doublonRaison:dup?('Fichier « '+nom+' » déjà déposé dans le dossier'):'',
         tiersId:tiersId, tiersInconnu:inconnu, numero:'', dateFacture:'', htBrut:0, remise:0, taux:20,
@@ -9818,9 +9835,10 @@ ${lignes}
       }
       dstore().push(dep);
       nstore().push({ id:uid(), date:todayStr(), cat:cat, depotId:dep.id, nom:nom, doublon:dep.doublon, lu:false });
-      if(inconnu){ var fiche={ id:uid(), type:'fournisseur', depotId:dep.id, statut:'a_remplir', date:todayStr(), raison:'', siret:'', tvaIntra:'', adresse:'', cp:'', ville:'', email:'', tel:'', iban:'', tiersId:null }; fstore().push(fiche); dep.ficheId=fiche.id; }
+      if(inconnu){ var fiche={ id:uid(), type:(cat==='achat'?'fournisseur':'client'), depotId:dep.id, statut:'a_remplir', date:todayStr(), raison:'', siret:'', tvaIntra:'', adresse:'', cp:'', ville:'', email:'', tel:'', iban:'', tiersId:null }; fstore().push(fiche); dep.ficheId=fiche.id; }
       save();
       if(cat==='achat') toast('Facture lue ('+dep.lecture+') — TTC '+eur(dep.ttc)+'. À valider par le cabinet.');
+      else toast('Facture déposée'+(inconnu?' — client inconnu : remplissez la fiche':'')+'. À valider par le cabinet.');
       res(true);
     })().catch(function(e){ toast('Erreur de lecture du fichier'); res(false); });
   }); };
