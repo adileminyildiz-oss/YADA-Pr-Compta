@@ -72,6 +72,8 @@ Feuille de route : voir **`ROADMAP.md`** (finalisation par module).
 
 - **`yada-addon59`** : **Sauvegarde automatique + indicateur** — `save()` (déjà appelé après chaque action) est enveloppé pour afficher un indicateur **« 💾 Enregistré ✓ HH:MM:SS »** (bas-gauche, `#yada-save-ind`) à chaque mise à jour ; filet de sécurité : sauvegarde **avant fermeture** (`beforeunload`) + **périodique** (60 s). Données dans `localStorage` (`yada-db`).
 
+- **`yada-addon63` (format mobile client)** : sur mobile (Espace Client), **barre d'onglets en bas** centrée sur les 2 actions — **🏠 Accueil / 🧾 Créer (facturation) / 📥 Déposer (achats)** (`#m-tabbar`, reconstruite à chaque `render`, état actif sur `current`, visible via `body[data-role=client]` + media ≤820px). Cadrage mobile soigné (style `mobile-ui`) : lignes de facture `.li-row` en **carte empilée** (désignation pleine largeur, Qté/PU/TVA/Total + ✕), libellés `Qté`/`PU HT` ajoutés, anti-zoom iOS (`font-size:16px`), anti-débordement (`overflow-x:hidden`), `padding-bottom` pour la barre. Combiné à addon62 (mobile = client uniquement).
+
 ## Règles de travail (IMPÉRATIF)
 1. **Ajouter par-dessus l'existant sans rien casser.** Édition chirurgicale, jamais de réécriture globale. Les nouveautés = nouveaux **scripts d'extension** `yada-addonN` injectés avant `</body>` (greffe sur fonctions globales) + éventuels `<style id="...">` avant `</head>`.
 2. **Numéros de ligne instables** → toujours re-chercher les ancres (grep) avant d'éditer.

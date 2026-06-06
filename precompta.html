@@ -1785,10 +1785,36 @@ body[data-theme="noir"] #ec-hero.cab-hero{background:linear-gradient(120deg,#1c5
   /* boutons repères : compacts */
   #yada-ver{font-size:9.5px;padding:3px 7px;opacity:.6}
   #yada-install{bottom:64px}
+  /* anti-débordement global + anti-zoom iOS */
+  html,body{max-width:100%;overflow-x:hidden}
+  input,select,textarea{font-size:16px!important}
+  /* lignes de facture : carte empilée propre (plus de débordement) */
+  .li-head{display:none}
+  .li-row{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;padding:11px;border:1px solid var(--line);border-radius:11px;background:var(--paper-2,rgba(127,127,127,.05))}
+  .li-row>input:first-child{grid-column:1 / -1}
+  .li-row>button{grid-column:1 / -1;justify-self:end;min-width:44px}
+  .right{flex-wrap:wrap}
+  .right .btn{flex:1 1 auto}
+  .ec-hero-hi{font-size:20px}
+  h2{font-size:18px}
 }
 @media(max-width:480px){
   .grid.g4{grid-template-columns:1fr}
   #m-topbar .m-title small{display:none}
+}
+/* ====== Format mobile « Espace Client » : barre d'onglets bas (2 actions clés) ====== */
+#m-tabbar{display:none}
+@media(max-width:820px){
+  body[data-role="client"] #m-tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:10035;height:62px;
+    background:linear-gradient(0deg,#08111e,#0f2138);border-top:1px solid rgba(95,176,255,.3);box-shadow:0 -4px 18px rgba(0,0,0,.4)}
+  body[data-role="client"] #m-tabbar button{flex:1;background:none;border:none;color:#9fb8d8;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:3px;font:600 11px system-ui,sans-serif;cursor:pointer;padding:6px 2px}
+  body[data-role="client"] #m-tabbar button .ic{font-size:21px;line-height:1}
+  body[data-role="client"] #m-tabbar button.active{color:#fff}
+  body[data-role="client"] #m-tabbar button.active .ic{transform:translateY(-1px)}
+  body[data-role="client"] #m-tabbar button.act-strong{color:#46d39a}
+  body[data-role="client"] main{padding-bottom:74px}
+  body[data-role="client"] #yada-install,body[data-role="client"] #yada-save-ind{bottom:72px}
 }
 </style>
 </head>
@@ -8861,7 +8887,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v62 · mobile = client + install QR ✨';
+    b.textContent='YADA · v63 · format mobile client ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -9064,11 +9090,11 @@ ${lignes}
     var liRows=faLignes.map(function(l,i){ var lht=r2((+l.qte||0)*(+l.pu||0));
       return '<div class="li-row">'
         +'<input id="li-desc-'+i+'" value="'+(l.desc||'').replace(/"/g,'&quot;')+'" placeholder="Prestation / produit" oninput="faMaj()">'
-        +'<input id="li-qte-'+i+'" type="number" value="'+l.qte+'" oninput="faMaj()">'
-        +'<input id="li-pu-'+i+'" type="number" value="'+l.pu+'" oninput="faMaj()">'
-        +'<select id="li-taux-'+i+'" onchange="faMaj()">'+[20,10,5.5,0].map(function(x){return '<option '+(x==l.taux?'selected':'')+'>'+x+'</option>';}).join('')+'</select>'
-        +'<input value="'+eur(lht)+'" disabled style="background:#f3efe6">'
-        +'<button class="btn btn-ghost btn-sm" onclick="faDelLigne('+i+')">✕</button></div>'; }).join('');
+        +'<input id="li-qte-'+i+'" type="number" value="'+l.qte+'" placeholder="Qté" aria-label="Quantité" oninput="faMaj()">'
+        +'<input id="li-pu-'+i+'" type="number" value="'+l.pu+'" placeholder="PU HT" aria-label="Prix unitaire HT" oninput="faMaj()">'
+        +'<select id="li-taux-'+i+'" aria-label="Taux TVA" onchange="faMaj()">'+[20,10,5.5,0].map(function(x){return '<option value="'+x+'" '+(x==l.taux?'selected':'')+'>TVA '+x+'%</option>';}).join('')+'</select>'
+        +'<input value="'+eur(lht)+'" disabled aria-label="Total HT" style="background:#f3efe6">'
+        +'<button class="btn btn-ghost btn-sm" onclick="faDelLigne('+i+')" aria-label="Supprimer la ligne">✕</button></div>'; }).join('');
     var t=faTotaux();
     return '<div class="card fa-cli-creer"><h2>🧾 Créer une facture</h2>'
       +'<div class="sub">Choisissez le client, ajoutez vos lignes, validez. C\'est tout.</div>'
@@ -10080,6 +10106,24 @@ ${lignes}
     var x=document.getElementById('mob-prop-x'); if(x) x.onclick=function(){ ls('yada-mob-prop','1'); var n=document.getElementById('mob-prop'); if(n)n.remove(); };
   }
   setTimeout(banner, 1500);
+})();
+</script>
+<script id="yada-addon63">
+/* Format mobile Espace Client : barre d'onglets bas centrée sur les 2 actions
+   (Créer une facture client / Déposer une facture fournisseur) + Accueil. */
+(function(){
+  if(typeof render!=='function') return;
+  function tabbar(){
+    var el=document.getElementById('m-tabbar');
+    if(!el){ if(!document.body) return; el=document.createElement('div'); el.id='m-tabbar'; document.body.appendChild(el); }
+    var cur=(typeof current!=='undefined')?current:'';
+    var tabs=[['client','🏠','Accueil',''],['facturation','🧾','Créer','act-strong'],['achats','📥','Déposer','act-strong']];
+    el.innerHTML=tabs.map(function(t){
+      return '<button class="'+(cur===t[0]?'active ':'')+t[3]+'" onclick="current=\''+t[0]+'\';render()"><span class="ic">'+t[1]+'</span>'+t[2]+'</button>';
+    }).join('');
+  }
+  var _r=render; render=function(){ var x=_r.apply(this,arguments); try{ tabbar(); }catch(e){} return x; };
+  if(document.body) tabbar(); else document.addEventListener('DOMContentLoaded', tabbar);
 })();
 </script>
 </body>
