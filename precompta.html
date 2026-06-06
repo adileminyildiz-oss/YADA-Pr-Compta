@@ -8781,7 +8781,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v49 · montants exacts en compta ✨';
+    b.textContent='YADA · v50 · lecture auto, cabinet valide ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -9612,6 +9612,73 @@ ${lignes}
       }
       return row;
     }).join('');
+  };
+})();
+</script>
+<script id="yada-addon50">
+/* Lecture automatique de la facture déposée (achat) : le système « saisit » les
+   montants (TTC lu du fichier → HT et TVA calculés) et pré-remplit la
+   comptabilisation ; le cabinet n'a plus qu'à VALIDER. Hors-ligne : lecture
+   simulée (montant détecté dans le nom du fichier, sinon valeur simulée). */
+(function(){
+  if(typeof render!=='function') return;
+  function gstore(){ if(!db.parametres)db.parametres={}; if(!Array.isArray(db.parametres.pieces))db.parametres.pieces=[]; return db.parametres.pieces; }
+  function dstore(){ if(!db.parametres)db.parametres={}; if(!Array.isArray(db.parametres.depots))db.parametres.depots=[]; return db.parametres.depots; }
+  function nstore(){ if(!db.parametres)db.parametres={}; if(!Array.isArray(db.parametres.notifsDepot))db.parametres.notifsDepot=[]; return db.parametres.notifsDepot; }
+  function fstore(){ if(!db.parametres)db.parametres={}; if(!Array.isArray(db.parametres.fichesTiers))db.parametres.fichesTiers=[]; return db.parametres.fichesTiers; }
+  function normName(n){ return String(n||'').trim().toLowerCase(); }
+
+  /* Extraction simulée des montants depuis le fichier (nom de fichier) */
+  function extractFromFile(nom){
+    var base=String(nom||'').replace(/\.[a-z0-9]+$/i,'');
+    var ttc=0; var mDec=base.match(/(\d{1,7}[.,]\d{2})(?!\d)/);
+    if(mDec){ ttc=parseFloat(mDec[1].replace(',','.')); }
+    else { var nums=(base.match(/\d{2,7}/g)||[]).map(Number); if(nums.length){ ttc=Math.max.apply(null,nums); } }
+    if(!ttc || ttc<=0){ var h=0; for(var i=0;i<base.length;i++){ h=(h*31+base.charCodeAt(i))>>>0; } ttc=r2(60+(h%1900)+((h%100)/100)); }
+    var numero=''; var mN=base.match(/\b((?:fac|inv|fa|f)[-_ ]?[a-z0-9]*\d[a-z0-9-]*)\b/i);
+    if(mN){ numero=mN[1].replace(/[ _]/g,'').toUpperCase(); }
+    return { ttc:r2(ttc), numero:numero, taux:20 };
+  }
+
+  /* Dépôt : le système lit et saisit les montants (achat) */
+  window.factDepotAdd=function(file,cat){ return new Promise(function(res){ var r=new FileReader();
+    r.onload=function(){ try{
+      var nom=file.name;
+      var dup=gstore().some(function(p){return p.cat===cat && normName(p.nom)===normName(nom);});
+      var piece={ id:uid(), nom:nom, mime:file.type||'', taille:file.size||0, data:r.result, date:todayStr(), cat:cat };
+      gstore().push(piece);
+      var tiersId='', inconnu=false;
+      if(cat==='achat'){ var selv=(document.getElementById('dep-four-achat')||{}).value||''; if(selv && selv!=='__inconnu__') tiersId=selv; else inconnu=true; }
+      var dep={ id:uid(), cat:cat, fichierId:piece.id, nom:nom, date:todayStr(), statut:'deposee',
+        doublon:!!dup, doublonRaison:dup?('Fichier « '+nom+' » déjà déposé dans le dossier'):'',
+        tiersId:tiersId, tiersInconnu:inconnu, numero:'', dateFacture:'', htBrut:0, remise:0, taux:20,
+        ht:0, tva:0, ttc:0, ecritureId:null, factureId:null, ficheId:null, auto:false };
+      if(cat==='achat'){ var ex=extractFromFile(nom); var net=r2(ex.ttc/(1+ex.taux/100)); var tva=r2(ex.ttc-net);
+        dep.numero=ex.numero; dep.dateFacture=todayStr(); dep.taux=ex.taux; dep.ht=net; dep.tva=tva; dep.ttc=ex.ttc; dep.auto=true; }
+      dstore().push(dep);
+      nstore().push({ id:uid(), date:todayStr(), cat:cat, depotId:dep.id, nom:nom, doublon:dep.doublon, lu:false });
+      if(inconnu){ var fiche={ id:uid(), type:'fournisseur', depotId:dep.id, statut:'a_remplir', date:todayStr(), raison:'', siret:'', tvaIntra:'', adresse:'', cp:'', ville:'', email:'', tel:'', iban:'', tiersId:null }; fstore().push(fiche); dep.ficheId=fiche.id; }
+      save(); res(true);
+    }catch(e){ toast('Fichier trop volumineux'); res(false); } };
+    r.onerror=function(){res(false);}; r.readAsDataURL(file); }); };
+
+  /* Carte de dépôt client : achat = dépôt fichier (lecture auto) ; vente = dépôt fichier */
+  window.depotFacturesCard=function(cat,titre,sub){
+    if(cat==='achat'){
+      var fourns=(db.tiers||[]).filter(function(t){return t.type==='fournisseur';});
+      var opts='<option value="">— Sélectionner (ou laisser : fournisseur inconnu) —</option>'+fourns.map(function(t){return '<option value="'+t.id+'">'+t.nom+'</option>';}).join('')+'<option value="__inconnu__">➕ Fournisseur inconnu / nouveau</option>';
+      return '<div class="card"><h2>'+titre+'</h2><div class="sub">'+sub+' Déposez simplement la facture : le système lit automatiquement le montant TTC et calcule la TVA et le HT. Le cabinet n\'a plus qu\'à valider la saisie (après comparaison avec le fichier).</div>'
+        +'<div class="field" style="margin-bottom:10px"><label>Fournisseur (facultatif)</label><select id="dep-four-achat">'+opts+'</select></div>'
+        +'<div class="ged-drop" onclick="factPick(\'achat\')" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="factDrop(event,\'achat\')">'
+        +'<div style="font-size:24px">⬆</div><div style="font-weight:700">Déposez la facture ici</div><div class="hint">ou cliquez — PDF, JPG, PNG · lecture automatique des montants</div>'
+        +'<input type="file" id="fdep-achat" hidden multiple accept=".pdf,.jpg,.jpeg,.png,image/*" onchange="factFile(event,\'achat\')"></div>'
+        +depotsListe('achat','client')+'</div>';
+    }
+    return '<div class="card"><h2>'+titre+'</h2><div class="sub">'+sub+' Chaque dépôt notifie votre cabinet ; un doublon s\'affiche en rouge. La comptabilisation est validée par le cabinet.</div>'
+      +'<div class="ged-drop" onclick="factPick(\''+cat+'\')" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="factDrop(event,\''+cat+'\')">'
+      +'<div style="font-size:24px">⬆</div><div style="font-weight:700">Déposez vos factures ici</div><div class="hint">ou cliquez — PDF, JPG, PNG</div>'
+      +'<input type="file" id="fdep-'+cat+'" hidden multiple accept=".pdf,.jpg,.jpeg,.png,image/*" onchange="factFile(event,\''+cat+'\')"></div>'
+      +depotsListe(cat,'client')+'</div>';
   };
 })();
 </script>
