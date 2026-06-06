@@ -8093,5 +8093,106 @@ ${lignes}
 })();
 </script>
 
+<script id="yada-addon23">
+/* ============================================================
+   T4 — États de synthèse : Bilan + Compte de résultat
+   Calculés depuis les soldes (comptes normalisés c9). Le compte de résultat
+   est calculé HORS « OD RÉSULTAT » (valable avant comme après clôture).
+   Le bilan est toujours équilibré (Actif = Passif), le résultat non encore
+   affecté en 120/129 étant ajouté en capitaux propres. Greffe : carte +
+   états imprimables dans la page Éditions. 100% additif.
+   ============================================================ */
+(function(){
+  if(typeof pageEditions!=='function' || typeof sageNum!=='function') return;
+  const S=()=>db.societe;
+  function soldes(classes, d0, d1, excludeLib){
+    const acc={};
+    (db.ecritures||[]).forEach(e=>{ if(d0&&e.date<d0)return; if(d1&&e.date>d1)return;
+      if(excludeLib && (e.libelle||'').indexOf(excludeLib)>=0) return;
+      (e.lignes||[]).forEach(l=>{ const cl=String(l.compte)[0]; if(classes.indexOf(cl)<0)return;
+        const k=c9(l.compte); const a=acc[k]||(acc[k]={d:0,c:0,lib:l.lib||COMPTES[l.compte]||COMPTES[k]||k});
+        a.d+=(+l.debit||0); a.c+=(+l.credit||0); }); });
+    return acc;
+  }
+  function netCredit(code){ let n=0; (db.ecritures||[]).forEach(e=>{ if(e.date>S().exoFin)return;
+    (e.lignes||[]).forEach(l=>{ if(c9(l.compte)===code) n+=(+l.credit||0)-(+l.debit||0); }); }); return r2(n); }
+
+  function etatCR(){
+    const acc=soldes(['6','7'], S().exoDebut, S().exoFin, 'OD RÉSULTAT');
+    const prod=[], charge=[]; let tp=0,tc=0;
+    Object.keys(acc).sort().forEach(k=>{ const a=acc[k];
+      if(k[0]==='7'){ const v=r2(a.c-a.d); if(Math.abs(v)>0.005){ prod.push({k,lib:a.lib,v}); tp+=v; } }
+      else { const v=r2(a.d-a.c); if(Math.abs(v)>0.005){ charge.push({k,lib:a.lib,v}); tc+=v; } } });
+    return {prod, charge, tp:r2(tp), tc:r2(tc), res:r2(tp-tc)};
+  }
+  function etatBilan(){
+    const acc=soldes(['1','2','3','4','5'], null, S().exoFin);
+    const actif=[], passif=[]; let ta=0,tp=0;
+    Object.keys(acc).sort().forEach(k=>{ const a=acc[k]; const sd=r2(a.d-a.c); if(Math.abs(sd)<0.005)return;
+      if(sd>0){ actif.push({k,lib:a.lib,v:sd}); ta+=sd; } else { passif.push({k,lib:a.lib,v:-sd}); tp+=(-sd); } });
+    const cr=etatCR();
+    const resDejaBooked=r2(netCredit('120000000')+netCredit('129000000'));
+    const resAjout=r2(cr.res-resDejaBooked);
+    const totP=r2(tp + (Math.abs(resAjout)>0.005?resAjout:0));
+    return {actif, passif, ta:r2(ta), tp:r2(tp), totP, res:cr.res, resAjout};
+  }
+
+  function crDocHTML(){
+    const C=etatCR(); const f=v=>sageNum(v);
+    const ch=C.charge.map(x=>`<tr><td class="l cpt">${x.k}</td><td class="l">${x.lib}</td><td>${f(x.v)}</td></tr>`).join('');
+    const pr=C.prod.map(x=>`<tr><td class="l cpt">${x.k}</td><td class="l">${x.lib}</td><td>${f(x.v)}</td></tr>`).join('');
+    return `<div class="doc-page">
+      <div class="doc-h1"><span class="doc-soc">${S().raison}</span><span>page</span></div>
+      <div class="doc-title">COMPTE DE RÉSULTAT</div>${docEnteteCourte()}
+      <table class="doc-t"><thead><tr><th class="l">Compte</th><th class="l">CHARGES (classe 6)</th><th>Montant</th></tr></thead><tbody>${ch||'<tr><td colspan=3 style="text-align:center;padding:8px">—</td></tr>'}
+        <tr class="tg"><td></td><td class="l">Total des charges</td><td>${f(C.tc)}</td></tr></tbody></table>
+      <table class="doc-t" style="margin-top:14px"><thead><tr><th class="l">Compte</th><th class="l">PRODUITS (classe 7)</th><th>Montant</th></tr></thead><tbody>${pr||'<tr><td colspan=3 style="text-align:center;padding:8px">—</td></tr>'}
+        <tr class="tg"><td></td><td class="l">Total des produits</td><td>${f(C.tp)}</td></tr></tbody></table>
+      <div class="doc-res">${C.res>=0?'Bénéfice':'Perte'} de l'exercice : ${f(Math.abs(C.res))} Euros</div>
+      <div class="doc-foot">${S().raison}</div></div>`;
+  }
+  function bilanDocHTML(){
+    const B=etatBilan(); const f=v=>sageNum(v);
+    const arows=B.actif.map(x=>`<tr><td class="l cpt">${x.k}</td><td class="l">${x.lib}</td><td>${f(x.v)}</td></tr>`).join('');
+    let prows=B.passif.map(x=>`<tr><td class="l cpt">${x.k}</td><td class="l">${x.lib}</td><td>${f(x.v)}</td></tr>`).join('');
+    if(Math.abs(B.resAjout)>0.005) prows+=`<tr><td class="l"></td><td class="l"><b>Résultat de l'exercice (à affecter)</b></td><td>${f(B.resAjout)}</td></tr>`;
+    return `<div class="doc-page">
+      <div class="doc-h1"><span class="doc-soc">${S().raison}</span><span>page</span></div>
+      <div class="doc-title">BILAN</div>${docEnteteCourte()}
+      <table class="doc-t"><thead><tr><th class="l">Compte</th><th class="l">ACTIF</th><th>Net</th></tr></thead><tbody>${arows||'<tr><td colspan=3 style="text-align:center;padding:8px">—</td></tr>'}
+        <tr class="tg"><td></td><td class="l">TOTAL ACTIF</td><td>${f(B.ta)}</td></tr></tbody></table>
+      <table class="doc-t" style="margin-top:14px"><thead><tr><th class="l">Compte</th><th class="l">PASSIF</th><th>Net</th></tr></thead><tbody>${prows||'<tr><td colspan=3 style="text-align:center;padding:8px">—</td></tr>'}
+        <tr class="tg"><td></td><td class="l">TOTAL PASSIF</td><td>${f(B.totP)}</td></tr></tbody></table>
+      <div class="doc-res">${Math.abs(B.ta-B.totP)<0.01?'Bilan équilibré ✓ (Actif = Passif)':'⚠ Écart de bilan : '+f(Math.abs(B.ta-B.totP))}</div>
+      <div class="doc-foot">${S().raison}</div></div>`;
+  }
+  window.t4Afficher=function(kind){
+    const html=kind==='bilan'?bilanDocHTML():crDocHTML();
+    try{ lastDocHTML='<div class="doc">'+html+'</div>'; }catch(e){}
+    const pv=document.getElementById('doc-preview'); if(pv) pv.innerHTML='<div class="doc">'+html+'</div>';
+    toast(kind==='bilan'?'Bilan généré':'Compte de résultat généré');
+  };
+  window.t4Card=function(){
+    const C=etatCR(); const B=etatBilan(); const eq=Math.abs(B.ta-B.totP)<0.01;
+    return `<div class="card"><h2>États de synthèse — Bilan & Compte de résultat</h2>
+      <div class="sub">Calculés depuis les soldes (comptes normalisés c9). Le compte de résultat est établi hors « OD RÉSULTAT » (valable avant comme après clôture). Le bilan est équilibré : le résultat non encore affecté en 120/129 est ajouté en capitaux propres.</div>
+      <div class="grid g3" style="margin-bottom:10px">
+        <div class="kpi green"><div class="lbl">Total produits (7)</div><div class="val cre">${eur(C.tp)}</div></div>
+        <div class="kpi red"><div class="lbl">Total charges (6)</div><div class="val deb">${eur(C.tc)}</div></div>
+        <div class="kpi blue"><div class="lbl">Résultat</div><div class="val">${eur(C.res)}</div></div>
+      </div>
+      <div class="docbar">
+        <button class="btn btn-gold" onclick="t4Afficher('cr')">Générer le compte de résultat</button>
+        <button class="btn btn-gold" onclick="t4Afficher('bilan')">Générer le bilan</button>
+        <span style="margin-left:auto"></span>
+        <button class="btn btn-pri" onclick="imprimerDoc()">🖶 Imprimer / PDF</button>
+      </div>
+      <div class="hint">Total actif ${eur(B.ta)} · total passif ${eur(B.totP)} — ${eq?'équilibré ✓':'écart à vérifier'}.</div>
+    </div>`;
+  };
+  const _p=pageEditions; pageEditions=function(){ return _p()+t4Card(); };
+})();
+</script>
+
 </body>
 </html>
