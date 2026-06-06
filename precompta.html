@@ -8781,7 +8781,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v51 · lecture PDF réelle ✨';
+    b.textContent='YADA · v52 · OCR images prêt ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -9767,9 +9767,11 @@ ${lignes}
       if(cat==='achat'){
         var amounts=null, src='';
         var isPdf=/pdf/i.test(file.type||'')||/\.pdf$/i.test(nom);
+        var isImg=/image\//i.test(file.type||'')||/\.(jpe?g|png|gif|webp|bmp|tiff?)$/i.test(nom);
         if(isPdf && ab){ try{ var txt=await pdfExtractText(ab); amounts=pdfParseAmounts(txt); if(amounts)src='lecture PDF'; }catch(e){} }
+        if(!amounts && isImg && typeof window.ocrImage==='function'){ try{ var otxt=await window.ocrImage(file,dataUrl); if(otxt){ var oa=pdfParseAmounts(otxt); if(oa){ amounts=oa; src='OCR image'; } } }catch(e){} }
         if(!amounts){ var ex=extractFromFile(nom); amounts={ttc:ex.ttc,taux:ex.taux,numero:ex.numero,tva:null,ht:null};
-          src=isPdf?'nom de fichier (PDF non lisible)':(/\.(jpe?g|png|gif|webp)$/i.test(nom)?'nom de fichier (image — OCR indisponible hors-ligne)':'nom de fichier'); }
+          src=isPdf?'nom de fichier (PDF non lisible)':(isImg?'nom de fichier (OCR image indisponible)':'nom de fichier'); }
         var taux=amounts.taux||20; var ttc=amounts.ttc; var net=r2(ttc/(1+taux/100)); var tva=r2(ttc-net);
         dep.numero=amounts.numero||''; dep.dateFacture=todayStr(); dep.taux=taux; dep.ht=net; dep.tva=tva; dep.ttc=ttc; dep.auto=true; dep.lecture=src;
       }
@@ -9780,6 +9782,47 @@ ${lignes}
       if(cat==='achat') toast('Facture lue ('+dep.lecture+') — TTC '+eur(dep.ttc)+'. À valider par le cabinet.');
       res(true);
     })().catch(function(e){ toast('Erreur de lecture du fichier'); res(false); });
+  }); };
+})();
+</script>
+<script id="yada-addon52">
+/* OCR des images / scans — prêt pour le réseau. Charge Tesseract.js à la
+   demande (CDN) lorsqu'une image est déposée ET que le réseau est disponible ;
+   sinon repli automatique (lecture par nom de fichier, addon51). 100% optionnel
+   et non bloquant pour l'usage hors-ligne. */
+(function(){
+  if(typeof render!=='function') return;
+  function ocrCfg(){ if(!db.parametres)db.parametres={}; if(!db.parametres.ocr)db.parametres.ocr={enabled:true,lang:'fra',cdn:'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'}; return db.parametres.ocr; }
+  window.ocrConfig=ocrCfg;
+  window.ocrSetEnabled=function(v){ ocrCfg().enabled=!!v; save(); toast('OCR images '+(v?'activé':'désactivé')); };
+
+  var _loading=null;
+  function loadTesseract(){
+    if(window.Tesseract) return Promise.resolve(window.Tesseract);
+    if(_loading) return _loading;
+    _loading=new Promise(function(resolve,reject){
+      try{
+        var s=document.createElement('script'); s.async=true; s.src=ocrCfg().cdn;
+        s.onload=function(){ window.Tesseract?resolve(window.Tesseract):reject(new Error('Tesseract non chargé')); };
+        s.onerror=function(){ reject(new Error('réseau indisponible')); };
+        document.head.appendChild(s);
+        setTimeout(function(){ if(!window.Tesseract) reject(new Error('délai dépassé')); }, 20000);
+      }catch(e){ reject(e); }
+    });
+    _loading.catch(function(){ _loading=null; }); // permettre une nouvelle tentative
+    return _loading;
+  }
+
+  /* Point d'accroche appelé par le dépôt (addon51) pour les images */
+  window.ocrImage=function(file,dataUrl){ return new Promise(function(resolve){
+    var c=ocrCfg();
+    if(c.enabled===false) return resolve(null);
+    if(typeof navigator!=='undefined' && navigator.onLine===false){ toast('OCR image : hors-ligne → lecture par nom de fichier'); return resolve(null); }
+    toast('Lecture OCR de l\'image en cours…');
+    loadTesseract().then(function(T){
+      return T.recognize(dataUrl||file, c.lang||'fra');
+    }).then(function(r){ resolve((r&&r.data&&r.data.text)||null); })
+      .catch(function(e){ toast('OCR image indisponible ('+(e&&e.message||'erreur')+') → repli nom de fichier'); resolve(null); });
   }); };
 })();
 </script>
