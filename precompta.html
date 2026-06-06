@@ -1634,6 +1634,44 @@ body[data-page="coffre"] .card:hover,body[data-page="coffre"] .kpi:hover,body[da
 #sec-lock .sec-err{color:#ff9d8f;font-size:12.5px;min-height:16px;margin-bottom:6px}
 #sec-lock .sec-lbl{font-size:12px;color:#9fb8d8;margin:4px 0 4px}
 </style>
+<style id="ui-polish">
+/* ===== Rafraîchissement visuel (additif, sûr) — n'affecte pas les écrans logiciel Sage ===== */
+/* garde-fous anti-débordement (disposition) */
+html,body{max-width:100%;overflow-x:hidden}
+main:not(.fullbleed) .card,main:not(.fullbleed) .kpi,.mod-wrap .card,.dash-wrap .card{max-width:100%}
+.mod-wrap .card,.dash-wrap .card{overflow-x:auto}
+.modal-b{overflow-x:auto}
+@keyframes yfx-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes yfx-pop{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes yfx-fade{from{opacity:0}to{opacity:1}}
+/* entrée douce de l'écran de connexion */
+#sec-lock .sec-card{animation:yfx-pop .38s cubic-bezier(.2,1.15,.3,1) both}
+#sec-lock .sec-btn{transition:transform .12s ease,filter .15s ease,box-shadow .2s ease}
+#sec-lock .sec-btn:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(47,109,176,.45)}
+#sec-lock .sec-btn:active{transform:translateY(0) scale(.98)}
+@media (prefers-reduced-motion: no-preference){
+  /* entrée des modules à chaque navigation (classe posée par addon39) */
+  main.yfx-anim{animation:yfx-fade .25s ease both}
+  main.yfx-anim .card,main.yfx-anim .kpi,main.yfx-anim .cp-k,main.yfx-anim .rg-kpi{animation:yfx-in .34s ease both}
+  main.yfx-anim .grid>*{animation:yfx-in .40s ease both}
+  /* léger décalé (stagger) sur les 4 premières cartes */
+  main.yfx-anim .grid>*:nth-child(2){animation-delay:.04s}
+  main.yfx-anim .grid>*:nth-child(3){animation-delay:.08s}
+  main.yfx-anim .grid>*:nth-child(4){animation-delay:.12s}
+}
+/* retour tactile boutons (tous thèmes) */
+.btn{transition:transform .12s ease,filter .15s ease,box-shadow .18s ease}
+.btn:active{transform:translateY(1px) scale(.985)}
+/* survol doux des cartes/KPI hors pages "figées" et hors écrans logiciel */
+main:not(.fullbleed) .card{transition:transform .18s ease,box-shadow .18s ease}
+.dash-wrap .kpi,.dash-wrap .card{transition:transform .18s ease,box-shadow .2s ease}
+.dash-wrap .kpi:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(0,0,0,.18)}
+/* liens & lignes : transition discrète */
+tr{transition:background .15s ease}
+.nav-btn{transition:background .18s ease,transform .18s ease,color .18s ease}
+/* toast un peu plus présent */
+.toast{box-shadow:0 14px 38px rgba(0,0,0,.4)}
+</style>
 </head>
 <body data-theme="noir">
 <div class="layout">
@@ -8686,7 +8724,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v38 · espaces 🔒';
+    b.textContent='YADA · v39 · interface ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -8750,9 +8788,10 @@ ${lignes}
       if(db&&db.activeId&&db.dossiersData&&db.dossiersData[db.activeId]) return db.activeId;
       if(db&&db.cabinet&&db.cabinet.dossiers&&db.cabinet.dossiers[0]) return db.cabinet.dossiers[0].id; }catch(e){} return null; }
   function secOuvrir(role){ ssSet('yada-role', role); window.sessionRole=role; window.selClientMode=(role==='client');
-    secCacher(); if(typeof toast==='function') toast(role==='cabinet'?'Espace Cabinet ✓':'Espace Client ✓');
-    if(role==='client'){ var id=clientDossierId(); if(id && typeof choisirDossierClient==='function'){ choisirDossierClient(id); return; } if(typeof render==='function'){ current='client'; render(); return; } }
-    if(typeof render==='function') render(); }
+    /* on rend la page de destination SOUS l'écran de connexion, puis on retire l'écran : aucune page intermédiaire visible */
+    if(role==='client'){ var id=clientDossierId(); if(id && typeof choisirDossierClient==='function'){ choisirDossierClient(id); } else if(typeof render==='function'){ current='client'; render(); } }
+    else if(typeof render==='function'){ render(); }
+    secCacher(); if(typeof toast==='function') toast(role==='cabinet'?'Espace Cabinet ✓':'Espace Client ✓'); }
   window.secEssayer=async function(){ if(!CHOICE){ secAfficher(); return; } var e=document.getElementById('sec-err');
     var em=(document.getElementById('sec-email')||{}).value||''; em=em.trim().toLowerCase();
     var pw=(document.getElementById('sec-pwd')||{}).value||'';
@@ -8783,5 +8822,16 @@ ${lignes}
 })();
 </script>
 
+<script id="yada-addon39">
+/* Effet d'entrée à chaque changement de page (classe yfx-anim re-déclenchée). Respecte prefers-reduced-motion via CSS. */
+(function(){
+  if(typeof render!=='function') return;
+  var last=null; var _r=render;
+  render=function(){ var x=_r.apply(this,arguments);
+    try{ if(typeof current!=='undefined' && current!==last){ last=current; var m=document.getElementById('main');
+      if(m){ m.classList.remove('yfx-anim'); void m.offsetWidth; m.classList.add('yfx-anim'); } } }catch(e){}
+    return x; };
+})();
+</script>
 </body>
 </html>
