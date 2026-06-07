@@ -2865,31 +2865,36 @@ body[data-theme="liquid-teinte"] .sg-app .lx-soldee,body[data-theme="liquid-tein
 body[data-theme="liquid-teinte"] .sg-app .balance-ko,body[data-theme="liquid-teinte"] .lx-app .balance-ko,body[data-theme="liquid-teinte"] .rb-app .balance-ko,
 body[data-theme="liquid-teinte"] .sg-app .lx-ouvert,body[data-theme="liquid-teinte"] .lx-app .lx-ouvert,body[data-theme="liquid-teinte"] .rb-app .lx-ouvert{ color:#ff9a9a !important; }
 </style>
-<style id="nav-pills">
-/* ===== Barre latérale — style « pills » aéré (même structure verticale) ===== */
-aside nav .nav-btn{
-  padding:9px 10px !important; margin:1px 6px !important; border-radius:12px !important;
-  gap:11px !important; font-size:13.5px !important; align-items:center;
-  border:1px solid transparent !important;
+<style id="nav-elegant">
+/* ===== Barre latérale — design épuré et élégant =====
+   Préfixe body[data-theme] pour passer devant les styles de thème. */
+body[data-theme] aside nav{ padding-top:2px; }
+body[data-theme] aside nav .nav-btn{
+  padding:9px 12px !important; margin:1px 8px !important; border-radius:9px !important;
+  gap:12px !important; font-size:13.5px !important; font-weight:500 !important;
+  border:1px solid transparent !important; position:relative !important; color:#b7c2ab !important;
+  transition:background .15s ease, color .15s ease !important; transform:none !important;
 }
-/* Icône en pastille */
-aside nav .nav-btn .ico{
-  width:28px !important; height:28px; min-width:28px; border-radius:8px;
-  display:inline-flex !important; align-items:center; justify-content:center;
-  background:rgba(155,239,0,.10); color:#aef36a !important; font-size:14px;
-  border:1px solid rgba(155,239,0,.18); opacity:1 !important;
-  transition:background .18s, color .18s, box-shadow .18s;
+body[data-theme] aside nav .nav-btn .ico{
+  width:18px !important; min-width:18px; text-align:center; font-size:15px;
+  background:none !important; border:none !important; color:#8b9a7a !important;
+  opacity:1 !important; box-shadow:none !important; transition:color .15s ease;
 }
-aside nav .nav-btn:hover{ transform:translateX(2px); }
-aside nav .nav-btn:hover .ico{ background:rgba(155,239,0,.22); color:#c4ff3d !important; }
-/* Élément actif : ligne discrète + pastille d'icône pleine */
-aside nav .nav-btn.active{ background:rgba(155,239,0,.12) !important; color:#eafbcf !important; box-shadow:none !important; }
-aside nav .nav-btn.active .ico{ background:linear-gradient(135deg,#9bef00,#6fb800) !important; color:#16210a !important; border-color:#9bef00 !important; box-shadow:0 0 12px rgba(155,239,0,.45); }
-/* En-têtes de section : séparateur + espacement aéré */
-aside nav .nav-sec{ margin:12px 12px 4px !important; padding:10px 2px 6px !important; border-top:1px solid rgba(255,255,255,.07); }
-aside nav .nav-sec:first-child{ border-top:none !important; margin-top:2px !important; }
-/* Groupe repliable : items espacés */
-aside nav .nav-group{ display:flex; flex-direction:column; gap:2px; }
+body[data-theme] aside nav .nav-btn:hover{ background:rgba(255,255,255,.05) !important; color:#f3f7ec !important; transform:none !important; }
+body[data-theme] aside nav .nav-btn:hover .ico{ color:#c4ff3d !important; }
+body[data-theme] aside nav .nav-btn.active{ background:rgba(155,239,0,.10) !important; color:#eafbcf !important; font-weight:600 !important; box-shadow:none !important; border:1px solid transparent !important; }
+body[data-theme] aside nav .nav-btn.active .ico{ color:#9bef00 !important; background:none !important; box-shadow:none !important; }
+body[data-theme] aside nav .nav-btn.active::before{
+  content:"" !important; position:absolute; left:0; top:7px; bottom:7px; width:3px;
+  border-radius:0 3px 3px 0; background:linear-gradient(180deg,#9bef00,#6fb800);
+}
+body[data-theme] aside nav .nav-sec{
+  margin:15px 14px 4px !important; padding:0 2px 2px !important; border-top:none !important;
+  font-size:10px !important; letter-spacing:.15em !important; color:#737e60 !important;
+}
+body[data-theme] aside nav .nav-sec:first-child{ margin-top:6px !important; }
+body[data-theme] aside nav .nav-sec .nav-caret{ opacity:.5; }
+body[data-theme] aside nav .nav-group{ display:flex; flex-direction:column; gap:1px; }
 </style>
 </head>
 <body data-theme="noir">
@@ -9962,7 +9967,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v95 · noir & lime';
+    b.textContent='YADA · v96 · noir & lime';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#c4ff3d,#6fb800);color:#16210a;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
