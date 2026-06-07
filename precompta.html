@@ -3169,6 +3169,30 @@ body[data-theme] .mod-wrap .inv table td, body[data-theme] .mfac-doc .inv table 
   body[data-role="client"] .mod-wrap .inv td::before{ content:none !important; display:none !important; }
 }
 </style>
+<style id="dl-prop">
+/* Proposition de téléchargement de l'application (PC + mobile) */
+#yada-dl-banner{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:99990;
+  display:flex;align-items:center;gap:11px;max-width:94vw;
+  background:linear-gradient(120deg,#0f2138,#121212);color:#fff;border:1px solid rgba(155,239,0,.45);
+  border-radius:13px;padding:10px 14px;box-shadow:0 12px 34px rgba(0,0,0,.5);font:600 13px system-ui,sans-serif}
+#yada-dl-banner .dl-b-ic{font-size:18px;color:#c4ff3d}
+#yada-dl-banner .dl-b-txt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#yada-dl-banner .dl-b-go{background:linear-gradient(120deg,#c4ff3d,#6fb800);color:#16210a;border:none;
+  border-radius:9px;padding:7px 13px;font-weight:800;cursor:pointer;white-space:nowrap;
+  box-shadow:0 4px 14px rgba(111,184,0,.4)}
+#yada-dl-banner .dl-b-go:hover{filter:brightness(1.06)}
+#yada-dl-banner .dl-b-x{background:none;border:none;color:#9aa49a;cursor:pointer;font-size:18px;line-height:1;padding:0 2px}
+.dl-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+.dl-grid .dl-card{border:1px solid rgba(155,239,0,.28);border-radius:13px;padding:14px;
+  background:linear-gradient(160deg,rgba(155,239,0,.06),rgba(0,0,0,.04))}
+.dl-grid .dl-card h3{margin:6px 0 8px;font-size:15px}
+.dl-grid .dl-ic{font-size:26px}
+@media(max-width:820px){
+  .dl-grid{grid-template-columns:1fr}
+  body[data-role="client"] #yada-dl-banner{bottom:calc(74px + env(safe-area-inset-bottom));
+    left:8px;right:8px;transform:none;max-width:none}
+}
+</style>
 </head>
 <body data-theme="noir">
 <div class="layout">
@@ -10240,7 +10264,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v126 · noir & lime';
+    b.textContent='YADA · v127 · noir & lime';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#c4ff3d,#6fb800);color:#16210a;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -11505,7 +11529,7 @@ ${lignes}
     return _pp()+'<div class="card"><h2>Installer l\'application</h2>'
       +'<div class="sub">YADA peut s\'installer comme une application de bureau (PWA), avec une icône et un fonctionnement hors-ligne.</div>'
       +'<div class="hint">• <b>Chrome / Edge</b> : icône « Installer » dans la barre d\'adresse, ou menu ⋮ → « Installer YADA ».<br>• <b>Bouton ci-dessous</b> si proposé par le navigateur.<br>• <b>Safari (Mac)</b> : Fichier → « Ajouter au Dock ».<br>• Une fois installée, elle s\'ouvre dans sa propre fenêtre et fonctionne sans connexion.</div>'
-      +'<div class="right" style="gap:8px"><button class="btn btn-ghost" onclick="mobileInstallModal()">Installer sur mobile (QR code)</button><button class="btn btn-pri" onclick="(function(){var b=document.getElementById(\'yada-install\'); if(b){b.click();} else { toast(\'Utilisez l\\\'icône « Installer » de la barre d\\\'adresse (Chrome/Edge) ou le menu du navigateur.\'); }})()">⤓ Installer maintenant</button></div></div>'; }; }
+      +'<div class="right" style="gap:8px"><button class="btn btn-pri" onclick="(function(){ if(typeof telechargerApp===\'function\'){ telechargerApp(); } else if(typeof mobileInstallModal===\'function\'){ mobileInstallModal(); } })()">⤓ Télécharger / Installer (PC &amp; mobile)</button></div></div>'; }; }
 })();
 </script>
 <script id="yada-addon62">
@@ -11902,6 +11926,70 @@ ${lignes}
     pageFacturation=function(){ var h=_pf(); return isCab()? split(h, /Cr\u00e9er|\u00c9mettre|Catalogue|saisie rapide/i) : h; }; }
   if(typeof pageAchats==='function'){ var _pa=pageAchats;
     pageAchats=function(){ var h=_pa(); return isCab()? split(h, /Capture|Saisir|Nouvelle|Importer|Autoliquidation|saisie/i) : h; }; }
+})();
+</script>
+<script id="yada-addon74">
+/* Proposition de TÉLÉCHARGEMENT de l'application — sur PC ET sur mobile.
+   Modale unifiée (installer sur cet ordinateur + QR mobile) + bannière (1 fois),
+   libellé adapté à la plateforme. Remplace l'ancienne bannière PC→mobile (addon62). */
+(function(){
+  if(typeof document==='undefined') return;
+  function lg(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+  function ls(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+  function isMobile(){ try{ return window.matchMedia && window.matchMedia('(max-width:820px)').matches; }catch(e){ return false; } }
+  function standalone(){ try{ return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone===true; }catch(e){ return false; } }
+  function appUrl(){ try{ if(location && /^https?:/.test(location.protocol)) return location.origin+location.pathname; }catch(e){} return 'https://adileminyildiz-oss.github.io/Yada-precompta/'; }
+
+  /* Capturer le prompt natif d'installation (Android/Chrome/Edge) pour la modale */
+  window.addEventListener('beforeinstallprompt', function(e){ try{ e.preventDefault(); }catch(_){ } window.__yadaDeferred=e; });
+  window.addEventListener('appinstalled', function(){ window.__yadaDeferred=null; ls('yada-dl-prop','1'); var n=document.getElementById('yada-dl-banner'); if(n)n.remove(); if(typeof toast==='function') toast('YADA installé ✓'); });
+
+  window.yadaInstallPC=function(){
+    var d=window.__yadaDeferred, b=document.getElementById('yada-install');
+    if(d){ d.prompt(); d.userChoice.then(function(){ window.__yadaDeferred=null; var x=document.getElementById('yada-install'); if(x)x.remove(); var n=document.getElementById('yada-dl-banner'); if(n){ ls('yada-dl-prop','1'); n.remove(); } }); }
+    else if(b){ b.click(); }
+    else if(typeof toast==='function'){ toast('Utilisez l’icône « Installer » de la barre d’adresse (Chrome/Edge) ou le menu du navigateur.'); }
+  };
+
+  /* Modale unifiée — accessible des deux plateformes */
+  window.telechargerApp=function(){
+    var url=appUrl();
+    var qr='https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=2&data='+encodeURIComponent(url);
+    var mc=document.getElementById('modal-c'); if(!mc) return;
+    mc.innerHTML=
+      '<h2 style="margin-top:0">Télécharger l’application YADA</h2>'
+      +'<div class="sub">Installez YADA comme une vraie application — icône dédiée, ouverture en plein écran et fonctionnement hors-ligne.</div>'
+      +'<div class="dl-grid">'
+        +'<div class="dl-card"><div class="dl-ic">💻</div><h3>Sur cet ordinateur</h3>'
+          +'<div class="hint"><b>Chrome / Edge</b> : icône « Installer » dans la barre d’adresse, ou menu ⋮ → « Installer YADA ».<br><b>Safari (Mac)</b> : Fichier → « Ajouter au Dock ».</div>'
+          +'<button class="btn btn-pri" style="margin-top:10px;width:100%" onclick="yadaInstallPC()">⤓ Installer sur le PC</button></div>'
+        +'<div class="dl-card"><div class="dl-ic">📱</div><h3>Sur mobile</h3>'
+          +'<div style="text-align:center;margin:6px 0"><img src="'+qr+'" width="160" height="160" alt="QR code" style="background:#fff;border-radius:12px;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,.25)" onerror="this.style.display=\'none\';var n=document.getElementById(\'dl-qrfb\');if(n)n.style.display=\'block\'"><div id="dl-qrfb" style="display:none" class="hint">QR indisponible hors-ligne — copiez le lien ci-dessous.</div></div>'
+          +'<div class="hint"><b>Android</b> : menu ⋮ → « Installer l’application ».<br><b>iPhone</b> : Partager → « Sur l’écran d’accueil ».</div></div>'
+      +'</div>'
+      +'<div class="field" style="margin-top:6px"><label>Lien de l’application</label><input id="dl-url" value="'+String(url).replace(/"/g,'&quot;')+'" readonly onclick="this.select()"></div>'
+      +'<div class="right" style="margin-top:8px;gap:8px"><button class="btn btn-ghost" onclick="closeModal()">Fermer</button> <button class="btn btn-pri" onclick="(function(){var i=document.getElementById(\'dl-url\');if(!i)return;i.select();try{document.execCommand(\'copy\')}catch(e){} try{navigator.clipboard&&navigator.clipboard.writeText(i.value)}catch(e){} if(typeof toast===\'function\')toast(\'Lien copié ✓\');})()">Copier le lien</button></div>';
+    var md=document.getElementById('modal'); if(md) md.classList.add('show');
+  };
+
+  /* Bannière une fois — PC ET mobile, libellé adapté */
+  function banner(){
+    if(standalone()) return;                 /* déjà installée */
+    if(lg('yada-dl-prop')) return;
+    if(document.getElementById('yada-dl-banner')||!document.body) return;
+    var mob=isMobile();
+    var b=document.createElement('div'); b.id='yada-dl-banner';
+    b.innerHTML='<span class="dl-b-ic">⤓</span><span class="dl-b-txt">'
+      +(mob?'Ajoutez YADA à votre écran d’accueil':'Téléchargez l’application YADA')+'</span>'
+      +'<button class="dl-b-go">'+(mob?'Installer':'Télécharger')+'</button>'
+      +'<button class="dl-b-x" aria-label="Fermer">×</button>';
+    document.body.appendChild(b);
+    var g=b.querySelector('.dl-b-go'); if(g) g.onclick=function(){ window.telechargerApp(); };
+    var x=b.querySelector('.dl-b-x'); if(x) x.onclick=function(){ ls('yada-dl-prop','1'); b.remove(); };
+  }
+  /* Neutraliser l'ancienne bannière mobile (addon62) pour éviter un doublon */
+  try{ ls('yada-mob-prop','1'); }catch(e){}
+  setTimeout(banner, 1800);
 })();
 </script>
 </body>
