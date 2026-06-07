@@ -3096,6 +3096,19 @@ body[data-theme] aside nav .nav-group{ display:flex; flex-direction:column; gap:
   .mfac-doc .inv{ background:#fff !important; color:#111 !important; border-radius:12px; padding:14px; overflow:auto; }
 }
 </style>
+<style id="mobile-nav-page">
+/* Mobile : la barre latérale devient une PAGE plein écran fixe (sans glissement) */
+@media(max-width:820px){
+  aside{
+    width:100vw !important; max-width:none !important; left:0 !important; right:0 !important;
+    top:calc(52px + env(safe-area-inset-top)) !important; bottom:0 !important; height:auto !important;
+    transform:none !important; transition:none !important; display:none !important;
+    box-shadow:none !important; border-right:none !important; z-index:10038 !important;
+  }
+  body.nav-open aside{ display:flex !important; }
+  body.nav-open #m-backdrop{ display:none !important; }
+}
+</style>
 </head>
 <body data-theme="noir">
 <div class="layout">
@@ -10167,7 +10180,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v110 · noir & lime';
+    b.textContent='YADA · v111 · noir & lime';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#c4ff3d,#6fb800);color:#16210a;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
