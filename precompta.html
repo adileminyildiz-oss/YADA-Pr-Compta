@@ -3130,6 +3130,39 @@ body[data-theme] button[onclick*="faAddLigne"]{
 body[data-theme] button[onclick*="faAddLigne"]:hover{ filter:brightness(1.05); }
 @media(max-width:820px){ body[data-theme] button[onclick*="faAddLigne"]{ width:100% !important; padding:12px !important; font-size:14px !important; } }
 </style>
+<style id="mach-steps">
+@media(max-width:820px){
+  .mach-bar{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
+  .mach-bar b{ font-size:13.5px; white-space:nowrap; text-align:center; flex:1 1 auto; }
+  .mach-bar .btn{ padding:8px 11px !important; font-size:12.5px !important; white-space:nowrap; flex:0 0 auto; }
+  .mach-cta{ margin-bottom:12px; }
+  /* LISTE : bouton Déposer + suivi ; dépôt masqué */
+  .mach-list .cli-col:first-child{ display:none !important; }
+  /* FORMULAIRE : uniquement le dépôt, plein page fixe */
+  .mach-form .page-head{ display:none !important; }
+  .mach-form > .card{ display:none !important; }
+  .mach-form .cli-2col{ display:block !important; }
+  .mach-form .cli-col:nth-child(2){ display:none !important; }
+  .mach-form .cli-col:first-child .cli-col-h{ display:none !important; }
+  /* FACTURE DÉPOSÉE : uniquement le suivi, plein page fixe */
+  .mach-done .page-head{ display:none !important; }
+  .mach-done > .card{ display:none !important; }
+  .mach-done .cli-2col{ display:block !important; }
+  .mach-done .cli-col:first-child{ display:none !important; }
+  .mach-done .cli-col:nth-child(2) .cli-col-h{ display:none !important; }
+  /* form & done = page fixe plein écran */
+  .mach-form, .mach-done{
+    position:fixed !important; inset:0 !important; z-index:10060 !important;
+    background:#060606 !important; overflow-y:auto !important; overflow-x:hidden !important;
+    -webkit-overflow-scrolling:touch;
+    padding:12px 13px calc(22px + env(safe-area-inset-bottom)) !important;
+  }
+  .mach-form .mach-bar, .mach-done .mach-bar{
+    position:sticky; top:0; z-index:3; margin:-12px -13px 12px; padding:12px 13px;
+    background:rgba(6,6,6,.97); border-bottom:1px solid var(--line);
+  }
+}
+</style>
 </head>
 <body data-theme="noir">
 <div class="layout">
@@ -10201,7 +10234,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v113 · noir & lime';
+    b.textContent='YADA · v114 · noir & lime';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#c4ff3d,#6fb800);color:#16210a;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -11736,8 +11769,10 @@ ${lignes}
       bar='<div class="mfac-bar"><button class="btn btn-ghost btn-sm" onclick="mFacBack()">\u2190 Retour</button><b>Nouvelle facture</b><span style="width:60px"></span></div>';
     } else if(step==='done'){
       var d=(db.docs||[]).filter(function(x){return x.id===window.mFac.docId;})[0];
-      bar='<div class="mfac-bar"><button class="btn btn-ghost btn-sm" onclick="mFacBack()">\u2190 Retour</button><b>Facture cr\u00e9\u00e9e \u2713</b><button class="btn btn-pri btn-sm" onclick="mFacNew()">Nouvelle</button></div>';
-      doc='<div class="mfac-doc">'+((d&&typeof docHTML==='function')?('<div class="inv">'+docHTML(d)+'</div>'):'<div class="empty">Facture introuvable</div>')+'</div>';
+      bar='<div class="mfac-bar"><button class="btn btn-ghost btn-sm" onclick="mFacBack()">\u2190 Retour</button><b>Facture cr\u00e9\u00e9e \u2713</b><span style="width:60px"></span></div>';
+      var envBtn=(d && typeof peutEnvoyer==='function' && peutEnvoyer(d))?'<button class="btn btn-gold" style="flex:1" onclick="mFacEnvoyer()">\u2709 Envoyer au client</button>':'';
+      doc='<div class="mfac-doc">'+((d&&typeof docHTML==='function')?('<div class="inv">'+docHTML(d)+'</div>'):'<div class="empty">Facture introuvable</div>')+'</div>'
+        +'<div class="mfac-actions" style="display:flex;gap:10px;margin-top:14px">'+envBtn+'<button class="btn btn-ghost" style="flex:1" onclick="mFacNew()">Nouvelle facture</button></div>';
     } else {
       bar='<div class="mfac-cta"><button class="btn btn-pri" style="width:100%" onclick="mFacCreate()">\u2795 Cr\u00e9er une facture</button></div>';
     }
@@ -11746,6 +11781,7 @@ ${lignes}
   window.mFacCreate=function(){ window.mFac.step='form'; if(typeof render==='function')render(); window.scrollTo(0,0); };
   window.mFacBack=function(){ window.mFac.step='list'; window.mFac.docId=null; if(typeof render==='function')render(); window.scrollTo(0,0); };
   window.mFacNew=function(){ window.mFac.step='form'; window.mFac.docId=null; if(typeof render==='function')render(); window.scrollTo(0,0); };
+  window.mFacEnvoyer=function(){ if(window.mFac.docId && typeof envoyerDoc==='function'){ envoyerDoc(window.mFac.docId); } };
   if(typeof window.faClientEmettre==='function'){
     var _emit=window.faClientEmettre;
     window.faClientEmettre=function(valider){
@@ -11755,6 +11791,44 @@ ${lignes}
         if(mob() && clientRole()){
           var nw=(db.docs||[]).filter(function(d){return before.indexOf(d.id)<0;});
           if(nw.length){ window.mFac.step='done'; window.mFac.docId=nw[nw.length-1].id; if(typeof render==='function')render(); window.scrollTo(0,0); }
+        }
+      }catch(e){}
+      return r;
+    };
+  }
+})();
+</script>
+<script id="yada-addon72">
+/* Mobile (client) : dépôt facture fournisseur en 2 étapes plein écran fixe. */
+(function(){
+  if(typeof window.pageAchatsClient!=='function') return;
+  function mob(){ try{ return matchMedia('(max-width:820px)').matches; }catch(e){ return (window.innerWidth||1024)<=820; } }
+  function clientRole(){ return document.body.getAttribute('data-role')==='client'; }
+  window.mAch=window.mAch||{step:'list'};
+  var _pac=window.pageAchatsClient;
+  window.pageAchatsClient=function(){
+    var inner=_pac();
+    if(!mob()) return inner;
+    var step=window.mAch.step||'list', bar='';
+    if(step==='form'){
+      bar='<div class="mach-bar"><button class="btn btn-ghost btn-sm" onclick="mAchBack()">\u2190 Retour</button><b>D\u00e9poser une facture</b><span style="width:60px"></span></div>';
+    } else if(step==='done'){
+      bar='<div class="mach-bar"><button class="btn btn-ghost btn-sm" onclick="mAchBack()">\u2190 Retour</button><b>Facture d\u00e9pos\u00e9e \u2713</b><button class="btn btn-pri btn-sm" onclick="mAchNew()">Nouveau</button></div>';
+    } else {
+      bar='<div class="mach-cta"><button class="btn btn-pri" style="width:100%" onclick="mAchCreate()">\u2795 D\u00e9poser une facture fournisseur</button></div>';
+    }
+    return '<div class="mach mach-'+step+'">'+bar+inner+'</div>';
+  };
+  window.mAchCreate=function(){ window.mAch.step='form'; if(typeof render==='function')render(); window.scrollTo(0,0); };
+  window.mAchBack=function(){ window.mAch.step='list'; if(typeof render==='function')render(); window.scrollTo(0,0); };
+  window.mAchNew=function(){ window.mAch.step='form'; if(typeof render==='function')render(); window.scrollTo(0,0); };
+  if(typeof window.factDepotAdd==='function'){
+    var _add=window.factDepotAdd;
+    window.factDepotAdd=function(file,cat){
+      var r=_add.apply(this,arguments);
+      try{
+        if(cat==='achat' && mob() && clientRole()){
+          Promise.resolve(r).then(function(){ if(window.mAch.step==='form'){ window.mAch.step='done'; if(typeof render==='function')render(); window.scrollTo(0,0); } });
         }
       }catch(e){}
       return r;
