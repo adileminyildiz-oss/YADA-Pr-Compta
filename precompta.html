@@ -3094,6 +3094,17 @@ body[data-theme] aside nav .nav-group{ display:flex; flex-direction:column; gap:
   .mfac-done .cli-2col{ display:none !important; }
   .mfac-done > .card{ display:none !important; }
   .mfac-doc .inv{ background:#fff !important; color:#111 !important; border-radius:12px; padding:14px; overflow:auto; }
+  /* Étapes formulaire & facture = PAGE PLEIN ÉCRAN FIXE (ne bouge pas, défilement interne) */
+  .mfac-form, .mfac-done{
+    position:fixed !important; inset:0 !important; z-index:10060 !important;
+    background:#060606 !important; overflow-y:auto !important; overflow-x:hidden !important;
+    -webkit-overflow-scrolling:touch;
+    padding:12px 13px calc(22px + env(safe-area-inset-bottom)) !important;
+  }
+  .mfac-form .mfac-bar, .mfac-done .mfac-bar{
+    position:sticky; top:0; z-index:3; margin:-12px -13px 12px; padding:12px 13px;
+    background:rgba(6,6,6,.97); border-bottom:1px solid var(--line);
+  }
 }
 </style>
 <style id="mobile-nav-page">
@@ -10180,7 +10191,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v111 · noir & lime';
+    b.textContent='YADA · v112 · noir & lime';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#c4ff3d,#6fb800);color:#16210a;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
