@@ -14,6 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --paper:#f6f2e9; --paper-2:#efe9db; --card:#fffdf8; --ink:#1c2a33; --ink-soft:#475862;
@@ -2098,6 +2099,11 @@ body[data-theme="liquid-teinte"] .btn-pri, body[data-theme="liquid-teinte"] .btn
 body[data-theme="liquid-teinte"] .btn-ghost{ background:rgba(255,255,255,.75) !important; color:#1d5b96 !important; border:1px solid #cfdcec !important; border-radius:13px !important; }
 body[data-theme="liquid-teinte"] .ged-it, body[data-theme="liquid-teinte"] .ecr, body[data-theme="liquid-teinte"] .li-row, body[data-theme="liquid-teinte"] .dep-cmp, body[data-theme="liquid-teinte"] .cmp-recap, body[data-theme="liquid-teinte"] .cmp-col, body[data-theme="liquid-teinte"] .da-tot{ background:rgba(47,109,176,.07) !important; color:#1f2a3a !important; border-color:#dbe6f3 !important; }
 body[data-theme="liquid-teinte"] .ged-drop{ border:2px dashed #2f80ff !important; background:rgba(47,128,255,.07) !important; }
+</style>
+<style id="font-skin">
+/* Police unifiée : Inter sur toute l'application */
+body, body *{ font-family:'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important; }
+.num, .kpi .val, input[type="number"]{ font-variant-numeric:tabular-nums; }
 </style>
 </head>
 <body data-theme="noir">
@@ -9170,7 +9176,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v88 · boutons valider bleu saturé ✨';
+    b.textContent='YADA · v89 · police Inter ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
