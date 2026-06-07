@@ -10239,7 +10239,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v123 · noir & lime';
+    b.textContent='YADA · v124 · noir & lime';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#c4ff3d,#6fb800);color:#16210a;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -11857,6 +11857,32 @@ ${lignes}
       return r;
     };
   }
+})();
+</script>
+<script id="yada-addon73">
+/* Espace Cabinet : modules Client (Facturation) & Fournisseur (Achats) repris avec
+   la MÊME mise en page que l'Espace Client (2 colonnes « Actions / Suivi & historique »),
+   en conservant toutes les fonctions du cabinet. Les cartes sont réparties par thème. */
+(function(){
+  function isCab(){ return document.body.getAttribute('data-role')!=='client'; }
+  function split(html, leftKw){
+    var t=document.createElement('div'); t.innerHTML=html;
+    var head='', left='', right='';
+    Array.prototype.forEach.call(t.children, function(el){
+      var cls=String(el.className||'');
+      if(/page-head/.test(cls) || /(^|\s)flow(\s|$)/.test(cls) || /barre-nouveau/.test(cls)){ head+=el.outerHTML; return; }
+      var h=((el.querySelector&&el.querySelector('h2'))||{}).textContent||'';
+      if(leftKw.test(h)) left+=el.outerHTML; else right+=el.outerHTML;
+    });
+    if(!left){ left=right; right=''; } /* repli : éviter une colonne vide */
+    return head
+      +'<div class="cli-2col"><div class="cli-col"><div class="cli-col-h">Actions</div>'+left+'</div>'
+      +'<div class="cli-col"><div class="cli-col-h">Suivi & historique</div>'+right+'</div></div>';
+  }
+  if(typeof pageFacturation==='function'){ var _pf=pageFacturation;
+    pageFacturation=function(){ var h=_pf(); return isCab()? split(h, /Cr\u00e9er|\u00c9mettre|Catalogue|saisie rapide/i) : h; }; }
+  if(typeof pageAchats==='function'){ var _pa=pageAchats;
+    pageAchats=function(){ var h=_pa(); return isCab()? split(h, /Capture|Saisir|Nouvelle|Importer|Autoliquidation|saisie/i) : h; }; }
 })();
 </script>
 </body>
