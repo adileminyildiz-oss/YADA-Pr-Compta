@@ -2371,6 +2371,52 @@ body[data-theme="liquid-clair"] .nav-btn.active,body[data-theme="liquid-teinte"]
 body[data-theme="liquid-clair"] .nav-btn.active .ico,body[data-theme="liquid-teinte"] .nav-btn.active .ico{ color:#9bef00 !important; }
 body[data-theme="liquid-clair"] .cli-col-h,body[data-theme="liquid-teinte"] .cli-col-h{ color:#9bef00 !important; }
 </style>
+<style id="lime-bluefix">
+/* ===== Correctif : tous les éléments restés en BLEU → VERT LIME =====
+   Placé en dernier → gagne la cascade sur la "FINITION NOIR" et les écrans Sage. */
+
+/* Variables d'accent secondaires (seg, theme-switch, lx-comment, etc.) */
+body[data-theme="noir"]{ --n-accent:#9bef00 !important; --n-stroke:#5f7f1a !important; --n-stroke-soft:rgba(155,239,0,.30) !important; }
+
+/* Barres d'accent KPI (étaient bleues) */
+body[data-theme="noir"] .kpi:before,body[data-theme="noir"] .cp-k:before,
+body[data-theme="noir"] .kpi.blue:before{ background:linear-gradient(180deg,#c4ff3d,#6fb800) !important; box-shadow:0 0 12px rgba(155,239,0,.5) !important; }
+
+/* Tags bleus (acompte / banque) → lime */
+body[data-theme="noir"] .t-part,body[data-theme="noir"] .t-bq{ background:rgba(155,239,0,.16) !important; color:#d6ff7a !important; border-color:rgba(155,239,0,.5) !important; }
+
+/* Contrôles segmentés / sélecteur de thème / onglets mensuels (états actifs bleus) */
+body[data-theme="noir"] .seg button.on,body[data-theme="noir"] .cp-mtab.on{ background:linear-gradient(120deg,#6fb800,#4f8a00) !important; color:#16210a !important; border-color:transparent !important; }
+body[data-theme="noir"] .theme-switch button.on{ background:linear-gradient(120deg,#c4ff3d,#6fb800) !important; color:#16210a !important; border-color:transparent !important; }
+body[data-theme="noir"] .cp-mtab .v{ color:#aef36a !important; }
+
+/* Survols de lignes (habillage app, hors écrans logiciel) + liens + petits accents bleus */
+body[data-theme="noir"] main:not(.fullbleed) tr:hover td,
+body[data-theme="noir"] .dash-wrap tr:hover td{ background:rgba(155,239,0,.08) !important; }
+body[data-theme="noir"] .rg-link{ color:#aef36a !important; }
+body[data-theme="noir"] .ecr table td{ border-bottom-color:rgba(155,239,0,.22) !important; }
+body[data-theme="noir"] .tva-just{ background:rgba(155,239,0,.08) !important; border-left-color:#9bef00 !important; }
+body[data-theme="noir"] .cp-od-h{ background:rgba(155,239,0,.10) !important; }
+
+/* Modale : bord bleu → bord sombre/lime */
+body[data-theme="noir"] #modal-c{ background-image:none !important; background:linear-gradient(160deg,#151515,#0a0a0a) !important; border:1px solid #2c2c30 !important; }
+
+/* NB : les écrans "logiciel Sage" (.sg-app/.lx-app/.rb-app — consultation, journal,
+   lettrage) sont une émulation volontaire (fenêtre claire authentique) et ne sont
+   PAS retouchés ici, pour préserver leur lisibilité « façon Sage ». */
+
+/* ===== Thèmes liquid : nappes bleues/roses + liserés bleus résiduels → lime ===== */
+body[data-theme^="liquid"]::before{ background:radial-gradient(circle at 30% 30%,rgba(155,239,0,.10),transparent 70%) !important; }
+body[data-theme^="liquid"]::after{ background:radial-gradient(circle at 60% 40%,rgba(155,239,0,.06),transparent 70%) !important; }
+body[data-theme="liquid-teinte"]::before{ background:radial-gradient(circle at 30% 30%,rgba(155,239,0,.10),transparent 70%) !important; }
+body[data-theme="liquid-teinte"]::after{ background:radial-gradient(circle at 60% 40%,rgba(155,239,0,.06),transparent 70%) !important; }
+/* panneaux/cp/modale/écritures encore en bord bleu (non couverts par duo-lime) */
+body[data-theme="liquid-clair"] .cp-panel,body[data-theme="liquid-clair"] .cp-k,body[data-theme="liquid-clair"] #modal-c,body[data-theme="liquid-clair"] .ecr,
+body[data-theme="liquid-teinte"] .cp-panel,body[data-theme="liquid-teinte"] .cp-k,body[data-theme="liquid-teinte"] #modal-c,body[data-theme="liquid-teinte"] .ecr{
+  background-image:none !important; background:linear-gradient(160deg, rgba(22,22,25,.95), rgba(12,12,14,.96)) !important; border:1px solid #2c2c30 !important; color:#eef0ea !important; }
+/* barre latérale liquid : retire le liseré bleu nuit */
+body[data-theme="liquid-clair"] aside,body[data-theme="liquid-teinte"] aside{ background-image:none !important; }
+</style>
 </head>
 <body data-theme="noir">
 <div class="layout">
