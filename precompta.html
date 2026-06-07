@@ -1047,14 +1047,16 @@ body[data-theme="noir"] .cp-chk,
 body[data-theme="noir"] .search-res,
 body[data-theme="noir"] .tva-just,
 body[data-theme="noir"] .dossier-card{
-  background-image:
-    linear-gradient(var(--nlg-glass), var(--nlg-glass)),
-    linear-gradient(135deg, #2c4a00 0%, #9bef00 45%, rgba(155,239,0,.65) 72%, #2c4a00 100%) !important;
-  background-origin:border-box !important; background-clip:padding-box, border-box !important;
-  border:1.5px solid transparent !important;
-  -webkit-backdrop-filter:blur(20px) saturate(160%); backdrop-filter:blur(20px) saturate(160%);
-  box-shadow:0 1px 1px rgba(155,239,0,.25) inset, 0 16px 44px rgba(0,0,0,.55) !important;
+  background-image:none !important;
+  background:linear-gradient(160deg, #151515, #0a0a0a) !important;
+  border:1px solid #2a2a2a !important;
+  -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px);
+  box-shadow:0 14px 40px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.04) !important;
   border-radius:18px !important;
+}
+body[data-theme="noir"] .dossier-card:hover{
+  border-color:rgba(155,239,0,.5) !important;
+  box-shadow:0 16px 44px rgba(0,0,0,.6), 0 0 22px rgba(155,239,0,.14), inset 0 1px 0 rgba(255,255,255,.05) !important;
 }
 /* reflet supérieur « verre » + viscosité */
 body[data-theme="noir"] .card,
