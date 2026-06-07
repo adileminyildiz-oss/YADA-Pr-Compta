@@ -9936,7 +9936,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v93 · noir & lime (complet)';
+    b.textContent='YADA · v94 · noir & lime';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#c4ff3d,#6fb800);color:#16210a;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -11348,16 +11348,47 @@ ${lignes}
     if(tasks.length){ Promise.all(tasks).then(done, done); setTimeout(done, 4000); }
     else done();
   };
-  function mk(){
-    injectCss();
-    if(document.getElementById('yada-maj-btn')) return;
-    var b=document.createElement('button'); b.id='yada-maj-btn'; b.type='button';
-    b.textContent='⟳ Mettre à jour';
-    b.title='Charger la dernière version du logiciel (vide le cache et recharge)';
-    b.onclick=window.yadaMajNow;
-    document.body.appendChild(b);
+  /* ----- Affichage UNIQUEMENT si une nouvelle version est déployée ----- */
+  var localVer=null, checking=false, lastCheck=0;
+  function getLocalVer(){
+    if(localVer) return localVer;
+    var b=document.getElementById('yada-ver');
+    if(b){ var m=(b.textContent||'').match(/v(\d+)/); if(m){ localVer=m[1]; } }
+    return localVer;
   }
-  if(document.body) mk(); else document.addEventListener('DOMContentLoaded', mk);
+  function showBtn(remoteVer){
+    injectCss();
+    var b=document.getElementById('yada-maj-btn');
+    if(!b){ b=document.createElement('button'); b.id='yada-maj-btn'; b.type='button'; b.onclick=window.yadaMajNow; document.body.appendChild(b); }
+    b.textContent='⟳ Mise à jour disponible'+(remoteVer?(' ('+remoteVer+')'):'');
+    b.title='Une nouvelle version du logiciel est disponible — cliquez pour la charger';
+    b.style.display='';
+  }
+  function check(){
+    if(checking) return;
+    var now=Date.now(); if(now-lastCheck<120000) return; /* throttle 2 min */
+    var lv=getLocalVer(); if(!lv) return;                /* version locale inconnue : on s'abstient */
+    if(navigator.onLine===false) return;
+    if(document.getElementById('yada-maj-btn')) return;  /* déjà signalé */
+    checking=true; lastCheck=now;
+    var url=location.href.split('#')[0].split('?')[0];
+    fetch(url, {cache:'no-store'}).then(function(r){ return r.ok ? r.text() : Promise.reject(); })
+      .then(function(html){
+        var m=html.match(/YADA · v(\d+)/);
+        var rv=m?m[1]:null;
+        if(rv && rv!==lv) showBtn('v'+rv);
+      })
+      .catch(function(){})
+      .then(function(){ checking=false; });
+  }
+  function start(){
+    injectCss(); getLocalVer();
+    setTimeout(check, 3000);
+    window.addEventListener('focus', check);
+    window.addEventListener('online', check);
+    setInterval(check, 15*60*1000);
+  }
+  if(document.body) start(); else document.addEventListener('DOMContentLoaded', start);
 })();
 </script>
 </body>
