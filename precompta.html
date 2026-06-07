@@ -2417,6 +2417,141 @@ body[data-theme="liquid-teinte"] .cp-panel,body[data-theme="liquid-teinte"] .cp-
 /* barre latérale liquid : retire le liseré bleu nuit */
 body[data-theme="liquid-clair"] aside,body[data-theme="liquid-teinte"] aside{ background-image:none !important; }
 </style>
+<style id="sage-dark-lime">
+/* ===== Écrans "logiciel Sage" (consultation / journal / lettrage / rapprochement)
+   ré-habillés en NOIR + VERT LIME (thème noir). Inverse le bloc nlg-redesign
+   "écritures noires sur fond blanc". Placé en dernier → gagne la cascade. ===== */
+
+/* Conteneurs : graphite, liseré lime, texte clair */
+body[data-theme="noir"] .sg-app,
+body[data-theme="noir"] .lx-app,
+body[data-theme="noir"] .rb-app{
+  background:#0c0c0e !important; color:#e7ecde !important;
+  border:1.5px solid rgba(155,239,0,.30) !important;
+  box-shadow:0 0 0 1px rgba(155,239,0,.16), 0 22px 55px rgba(0,0,0,.6) !important;
+}
+/* Texte clair par défaut (on re-colore montants / soldes ensuite) */
+body[data-theme="noir"] .sg-app,  body[data-theme="noir"] .sg-app *,
+body[data-theme="noir"] .lx-app,  body[data-theme="noir"] .lx-app *,
+body[data-theme="noir"] .rb-app,  body[data-theme="noir"] .rb-app *{ color:#e7ecde !important; }
+
+/* Tableaux : fond sombre, lignes lime discrètes */
+body[data-theme="noir"] .sg-tbl,
+body[data-theme="noir"] table.lx,
+body[data-theme="noir"] table.sgj,
+body[data-theme="noir"] table.rb,
+body[data-theme="noir"] table.bj{ background:#0b0b0c !important; }
+body[data-theme="noir"] .sg-tbl td,
+body[data-theme="noir"] table.lx td,
+body[data-theme="noir"] table.sgj td,
+body[data-theme="noir"] table.rb td,
+body[data-theme="noir"] table.bj td{ color:#e7ecde !important; border-bottom-color:rgba(155,239,0,.16) !important; }
+body[data-theme="noir"] .sg-tbl tbody tr:nth-child(even) td,
+body[data-theme="noir"] table.sgj tbody tr:nth-child(even) td,
+body[data-theme="noir"] table.rb tr:nth-child(even) td{ background:rgba(255,255,255,.03) !important; }
+body[data-theme="noir"] .sg-tbl tbody tr:hover td,
+body[data-theme="noir"] table.lx tbody tr:hover td,
+body[data-theme="noir"] table.sgj tbody tr:hover td,
+body[data-theme="noir"] table.rb tr:hover td{ background:rgba(155,239,0,.10) !important; }
+body[data-theme="noir"] .sg-tbl thead th,
+body[data-theme="noir"] table.sgj thead th,
+body[data-theme="noir"] table.bj th{ background:#141414 !important; color:#cdd6c2 !important; border-bottom-color:rgba(155,239,0,.4) !important; }
+
+/* Sélections / lettrage */
+body[data-theme="noir"] .sg-tbl tbody tr.on td,
+body[data-theme="noir"] .sg-tbl tbody tr.on:hover td{ background:#6fb800 !important; color:#16210a !important; }
+body[data-theme="noir"] table.lx tbody tr.sel td,
+body[data-theme="noir"] table.lx tbody tr.sel:hover td{ background:rgba(155,239,0,.20) !important; color:#fff !important; }
+body[data-theme="noir"] table.lx tbody tr.lettre-on td{ background:rgba(155,239,0,.10) !important; }
+body[data-theme="noir"] table.rb tr.rapp td{ background:rgba(70,211,154,.14) !important; }
+
+/* Structure interne : contours lime discrets */
+body[data-theme="noir"] .sg-left,
+body[data-theme="noir"] .sg-col,
+body[data-theme="noir"] .sg-body,
+body[data-theme="noir"] .sg-right{ border-color:rgba(155,239,0,.22) !important; }
+body[data-theme="noir"] .sg-colh{ background:#141414 !important; border-color:rgba(155,239,0,.25) !important; }
+body[data-theme="noir"] .sg-peritem,
+body[data-theme="noir"] .sg-jrnitem{ border-bottom-color:rgba(255,255,255,.06) !important; }
+body[data-theme="noir"] .sg-peritem.on{ background:#6fb800 !important; }
+body[data-theme="noir"] .sg-peritem.on,
+body[data-theme="noir"] .sg-peritem.on *{ color:#16210a !important; }
+body[data-theme="noir"] .sg-jrnitem.on{ background:rgba(155,239,0,.22) !important; }
+body[data-theme="noir"] .sg-tab{ background:#101012 !important; border-color:rgba(155,239,0,.22) !important; }
+body[data-theme="noir"] .sg-tab.on{ background:#1c1c1e !important; border-top:2px solid #9bef00 !important; }
+
+/* Barres menu / outils / statut : graphite */
+body[data-theme="noir"] .sg-menu,
+body[data-theme="noir"] .lx-menu,
+body[data-theme="noir"] .rb-menu{ background:#141414 !important; border-color:rgba(155,239,0,.22) !important; }
+body[data-theme="noir"] .sg-tools{ background:#0e0e10 !important; border-color:rgba(155,239,0,.22) !important; }
+body[data-theme="noir"] .sg-status,
+body[data-theme="noir"] .lx-status,
+body[data-theme="noir"] .lx-foot,
+body[data-theme="noir"] .lx-bar,
+body[data-theme="noir"] .rb-bar{ background:#141414 !important; border-color:rgba(155,239,0,.22) !important; }
+body[data-theme="noir"] .lx-foot .fld .v{ background:#0d0d0d !important; border-color:rgba(155,239,0,.3) !important; }
+body[data-theme="noir"] .lx-comment{ background:#101010 !important; border-top-color:rgba(155,239,0,.22) !important; }
+body[data-theme="noir"] .rb-kv .v{ background:rgba(255,255,255,.05) !important; }
+body[data-theme="noir"] .rb-kv .v.hl{ background:rgba(155,239,0,.14) !important; }
+body[data-theme="noir"] .rb-per .it.on{ background:#6fb800 !important; }
+body[data-theme="noir"] .rb-per .it.on,
+body[data-theme="noir"] .rb-per .it.on *{ color:#16210a !important; }
+
+/* Grilles : fond sombre, lignes lime discrètes */
+body[data-theme="noir"] .sgj-grid,
+body[data-theme="noir"] .sg-grid,
+body[data-theme="noir"] .lx-wrap,
+body[data-theme="noir"] .sg-perlist,
+body[data-theme="noir"] .sg-jrnlist,
+body[data-theme="noir"] .bj-wrap{
+  background-color:#0b0b0c !important;
+  background-image:repeating-linear-gradient(to bottom, transparent 0, transparent 26px, rgba(155,239,0,.12) 26px, rgba(155,239,0,.12) 27px) !important;
+}
+
+/* Champs / menus déroulants internes : sombres + focus lime */
+body[data-theme="noir"] .sg-app input,  body[data-theme="noir"] .sg-app select,
+body[data-theme="noir"] .lx-app input,  body[data-theme="noir"] .lx-app select,  body[data-theme="noir"] .lx-app textarea,
+body[data-theme="noir"] .rb-app input,  body[data-theme="noir"] .rb-app select,  body[data-theme="noir"] .rb-app textarea{
+  background:rgba(255,255,255,.06) !important; color:#e7ecde !important; border:1px solid rgba(155,239,0,.25) !important; }
+body[data-theme="noir"] .sg-dd{ background:#161616 !important; border-color:rgba(155,239,0,.25) !important; }
+body[data-theme="noir"] .sg-dd button:hover,
+body[data-theme="noir"] .sg-dd button:hover *{ background:#6fb800 !important; color:#16210a !important; }
+body[data-theme="noir"] .rb-ctx{ background:#161616 !important; }
+body[data-theme="noir"] .rb-ctx button:hover,
+body[data-theme="noir"] .rb-ctx button:hover *{ background:#6fb800 !important; color:#16210a !important; }
+
+/* Bandeaux de titre (navy "par design") → graphite ; texte reste blanc */
+body[data-theme="noir"] .sg-app .sg-title{ background:#141414 !important; border-bottom:1px solid rgba(155,239,0,.35) !important; }
+body[data-theme="noir"] .sg-app .sg-jrnh{ background:#141414 !important; }
+body[data-theme="noir"] .sg-app .sgj-head,
+body[data-theme="noir"] .sg-app .sgj-tot,
+body[data-theme="noir"] .sg-app .bj-hd,
+body[data-theme="noir"] .sg-app table.bj tr.tot td{ background:#141414 !important; }
+body[data-theme="noir"] .lx-app .lx-title{ background:#141414 !important; }
+body[data-theme="noir"] .lx-app table.lx thead th,
+body[data-theme="noir"] .lx-app table.lx tr.tot td{ background:#141414 !important; }
+body[data-theme="noir"] .rb-app .rb-title{ background:#141414 !important; }
+body[data-theme="noir"] .rb-app table.rb thead th,
+body[data-theme="noir"] .rb-app .rb-foot-tot{ background:#141414 !important; }
+body[data-theme="noir"] .rb-app .rb-jr .h{ background:#141414 !important; }
+
+/* Lignes d'en-tête de classe / totaux à style inline clair → sombre */
+body[data-theme="noir"] .sg-app tr[style*="background:#eef1f4"]{ background:rgba(155,239,0,.10) !important; }
+body[data-theme="noir"] .sg-app tr[style*="background:#f4f4f4"],
+body[data-theme="noir"] .sg-app tr[style*="background:#f7f7f7"]{ background:rgba(255,255,255,.05) !important; }
+
+/* Montants / soldes / sens : couleurs comptables lisibles sur sombre */
+body[data-theme="noir"] .sg-app .sg-amt,
+body[data-theme="noir"] .lx-app .sg-amt,
+body[data-theme="noir"] .rb-app .sg-amt{ color:#ff9a9a !important; }
+body[data-theme="noir"] .sg-app .deb,body[data-theme="noir"] .lx-app .deb,body[data-theme="noir"] .rb-app .deb{ color:#ff9a9a !important; }
+body[data-theme="noir"] .sg-app .cre,body[data-theme="noir"] .lx-app .cre,body[data-theme="noir"] .rb-app .cre{ color:#7fe3b4 !important; }
+body[data-theme="noir"] .sg-app .balance-ok,body[data-theme="noir"] .lx-app .balance-ok,body[data-theme="noir"] .rb-app .balance-ok,
+body[data-theme="noir"] .sg-app .lx-soldee,body[data-theme="noir"] .lx-app .lx-soldee,body[data-theme="noir"] .rb-app .lx-soldee{ color:#7fe3b4 !important; }
+body[data-theme="noir"] .sg-app .balance-ko,body[data-theme="noir"] .lx-app .balance-ko,body[data-theme="noir"] .rb-app .balance-ko,
+body[data-theme="noir"] .sg-app .lx-ouvert,body[data-theme="noir"] .lx-app .lx-ouvert,body[data-theme="noir"] .rb-app .lx-ouvert{ color:#ff9a9a !important; }
+</style>
 </head>
 <body data-theme="noir">
 <div class="layout">
