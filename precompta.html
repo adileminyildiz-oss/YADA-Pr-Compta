@@ -1883,6 +1883,20 @@ body[data-theme="noir"] #ec-hero.cab-hero{background:linear-gradient(120deg,#1c5
   /* badge version : dans la zone vide (droite) de la barre supérieure */
   #yada-ver{ right:10px; left:auto; bottom:auto; top:calc(15px + env(safe-area-inset-top)); opacity:.5; }
 }
+/* ===== Cadrage « plein téléphone » : largeur exacte, zéro débordement ===== */
+@media(max-width:820px){
+  html,body{ width:100%; max-width:100%; margin:0; overflow-x:hidden; }
+  .layout,main,main.fullbleed{ width:100%; max-width:100%; }
+  main.fullbleed .mod-wrap, main.fullbleed .dash-wrap{ max-width:100% !important; width:100% !important; margin:0 !important; }
+  .card,.kpi,.grid,.row,.flow,.ecr,.da-tot,.dep-cmp,.cmp-recap,.li-row{ max-width:100% !important; }
+  .card{ width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  /* tableaux : taille naturelle, défilent DANS la carte si larges (jamais la page) */
+  table{ min-width:auto !important; }
+  img,svg,canvas,iframe,video{ max-width:100% !important; height:auto; }
+  /* la fenêtre de création de facture occupe tout l'écran proprement */
+  #nf-overlay .nf-wrap{ left:0 !important; top:0 !important; width:100vw !important; height:100vh !important; height:100dvh !important; transform:none !important; border-radius:0 !important; }
+  #nf-overlay .nf-form{ padding:14px 12px calc(20px + env(safe-area-inset-bottom)) !important; }
+}
 </style>
 </head>
 <body data-theme="noir">
@@ -8955,7 +8969,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v69 · finition mobile ✨';
+    b.textContent='YADA · v70 · cadrage plein téléphone ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
