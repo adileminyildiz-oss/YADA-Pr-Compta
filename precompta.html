@@ -3120,6 +3120,16 @@ body[data-theme] aside nav .nav-group{ display:flex; flex-direction:column; gap:
   body.nav-open #m-backdrop{ display:none !important; }
 }
 </style>
+<style id="add-ligne-lime">
+/* Bouton « + Ajouter une désignation » en vert lime */
+body[data-theme] button[onclick*="faAddLigne"]{
+  background:linear-gradient(120deg,#c4ff3d,#6fb800) !important; color:#16210a !important;
+  border:1px solid #9bef00 !important; font-weight:700 !important; border-radius:10px !important;
+  box-shadow:0 4px 12px rgba(111,184,0,.30) !important; margin-top:8px;
+}
+body[data-theme] button[onclick*="faAddLigne"]:hover{ filter:brightness(1.05); }
+@media(max-width:820px){ body[data-theme] button[onclick*="faAddLigne"]{ width:100% !important; padding:12px !important; font-size:14px !important; } }
+</style>
 </head>
 <body data-theme="noir">
 <div class="layout">
@@ -4111,7 +4121,7 @@ function pageFacturation(){
       <div class="field"><label>Date d'échéance</label><input type="date" id="fa-ech" value="${todayStr()}"></div>
     </div>
     <div class="field"><label>Lignes de facturation</label>${liHead}${liRows}
-      <button class="btn btn-ghost btn-sm" onclick="faSync();faAddLigne()">+ Ajouter une ligne</button></div>
+      <button class="btn btn-ghost btn-sm" onclick="faSync();faAddLigne()">+ Ajouter une désignation</button></div>
     <div class="ecr" style="margin-top:6px"><div class="ecr-h"><span>Totaux</span><span></span></div>
       <table><tbody>
         <tr><td>Total HT</td><td class="r num">${eur(t.ht)}</td></tr>
@@ -7791,7 +7801,7 @@ function nfFormHTML(){ const clients=db.tiers.filter(t=>t.type==='client'); cons
     </div>
     <div class="field"><label>Devise</label><select id="nf-devise" onchange="nfUpdate()">${NF_DEVISES.map(d=>{const code=d.split(' ')[0];return `<option value="${code}" ${code===s.devise?'selected':''}>${d}</option>`;}).join('')}</select></div>
     <div class="field"><label>Lignes</label><div id="nf-lignes">${nfLignesHTML()}</div>
-      <button class="btn btn-ghost btn-sm" onclick="nfAddLigne()" style="margin-top:6px">+ Ajouter une ligne</button></div>
+      <button class="btn btn-ghost btn-sm" onclick="nfAddLigne()" style="margin-top:6px">+ Ajouter une désignation</button></div>
     <div class="field"><label>Notes (comptable uniquement)</label><textarea id="nf-notes" rows="2" style="width:100%" oninput="nfState.notes=this.value">${s.notes||''}</textarea></div>
     <div class="row g2">
       <div class="field"><label>Remise globale</label><select id="nf-remtype" onchange="nfUpdate()">
@@ -7919,7 +7929,7 @@ function nfFormHTML(){ const clients=db.tiers.filter(t=>t.type==='client'); cons
     </div>
     <div class="field"><label>Devise</label><select id="nf-devise" onchange="nfUpdate()">${NF_DEVISES.map(d=>{const code=d.split(' ')[0];return `<option value="${code}" ${code===s.devise?'selected':''}>${d}</option>`;}).join('')}</select></div>
     <div class="field"><label>Lignes</label><div id="nf-lignes">${nfLignesHTML()}</div>
-      <button class="btn btn-ghost btn-sm" onclick="nfAddLigne()" style="margin-top:8px">+ Ajouter une ligne</button></div>
+      <button class="btn btn-ghost btn-sm" onclick="nfAddLigne()" style="margin-top:8px">+ Ajouter une désignation</button></div>
     <div class="field"><label>Notes (comptable uniquement)</label><textarea id="nf-notes" rows="2" style="width:100%" oninput="nfState.notes=this.value">${s.notes||''}</textarea></div>
     <div class="row g2">
       <div class="field"><label>Remise globale</label><select id="nf-remtype" onchange="nfUpdate()">
@@ -8039,7 +8049,7 @@ function formulaireRapide(){
       <div class="field"><label>Date d'échéance</label><input type="date" id="fa-ech" value="${todayStr()}"></div>
     </div>
     <div class="field"><label>Lignes de facturation</label>${liHead}${liRows}
-      <button class="btn btn-ghost btn-sm" onclick="faSync();faAddLigne()">+ Ajouter une ligne</button></div>
+      <button class="btn btn-ghost btn-sm" onclick="faSync();faAddLigne()">+ Ajouter une désignation</button></div>
     <div class="ecr" style="margin-top:6px"><div class="ecr-h"><span>Totaux</span><span></span></div>
       <table><tbody>
         <tr><td>Total HT</td><td class="r num">${eur(t.ht)}</td></tr>
@@ -8509,7 +8519,7 @@ function ecRender(){
       </tr>`;
     });
     body+=`<tr class="ec-act"><td colspan="11">
-        <button class="ec-bt" onclick="ecAddLine('${e.id}')">+ Ajouter une ligne</button>
+        <button class="ec-bt" onclick="ecAddLine('${e.id}')">+ Ajouter une désignation</button>
         ${ok?'<span class="ec-okk">Soldée ✓</span>':`<button class="ec-bt ec-bt-solde" onclick="ecSolder('${e.id}')">Solder l'écriture</button>`}
       </td></tr>`;
     if(ok) body+=`<tr class="ec-redrow"><td colspan="11"><div class="ec-soldee"></div></td></tr>`;
@@ -10191,7 +10201,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v112 · noir & lime';
+    b.textContent='YADA · v113 · noir & lime';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#c4ff3d,#6fb800);color:#16210a;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -10434,7 +10444,7 @@ ${lignes}
       +'<div class="field" style="align-self:end"><button class="btn btn-gold" style="width:100%" onclick="faClientNewSiret()">Compléter via le SIRET</button></div></div></div>'
       +'<div class="row g3"><div class="field"><label>Date d\'échéance</label><input type="date" id="fa-ech" value="'+todayStr()+'"></div><div></div><div></div></div>'
       +'<div class="field"><label>Lignes</label>'+liHead+liRows
-      +'<button class="btn btn-ghost btn-sm" onclick="faSync();faAddLigne()">+ Ajouter une ligne</button></div>'
+      +'<button class="btn btn-ghost btn-sm" onclick="faSync();faAddLigne()">+ Ajouter une désignation</button></div>'
       +'<div class="ecr" style="margin-top:6px"><div class="ecr-h"><span>Totaux</span><span></span></div>'
       +'<table><tbody>'
       +'<tr><td>Total HT</td><td class="r num">'+eur(t.ht)+'</td></tr>'
