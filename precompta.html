@@ -8734,9 +8734,10 @@ ${lignes}
 (function(){
   if(typeof render!=='function') return;
   window.sessionRole=window.sessionRole||'cabinet'; window.selClientMode=window.selClientMode||false;
-  window.CLIENT_PAGES=['client','facturation','achats','tiers'];
+  window.CLIENT_PAGES=['facturation','achats']; /* client : uniquement génération factures vente + achat */
+  window.CLIENT_HOME='facturation';
   function clientAllowed(p){ return window.CLIENT_PAGES.indexOf(p)>=0; }
-  window.choisirDossierClient=function(id){ if(typeof choisirDossier==='function') choisirDossier(id); window.sessionRole='client'; current='client'; render(); };
+  window.choisirDossierClient=function(id){ if(typeof choisirDossier==='function') choisirDossier(id); window.sessionRole='client'; current=window.CLIENT_HOME; render(); };
   window.quitterEspaceClient=function(){ if(typeof persistActif==='function')persistActif(); connecte=false; if(typeof selRecherche!=='undefined')selRecherche='';
     if(typeof window.secVerrouiller==='function' && window.__secDual){ window.secVerrouiller(); return; }
     window.sessionRole='cabinet'; window.selClientMode=true; render(); };
@@ -8756,7 +8757,7 @@ ${lignes}
     const foot=document.querySelector('.side-foot'); if(foot) foot.querySelectorAll('button').forEach(b=>{ const t=b.textContent||'';
       if(/Exporter|Importer|Réinitialiser/.test(t)) b.style.display=client?'none':'';
       if(/Changer de dossier|Quitter l'espace/.test(t)) b.textContent=client?"⎋ Quitter l'espace client":'⇆ Changer de dossier'; }); }
-  const _r=render; render=function(){ if(connecte&&window.sessionRole==='client'&&!clientAllowed(current)) current='client'; const res=_r.apply(this,arguments); try{applyRole();}catch(e){} return res; };
+  const _r=render; render=function(){ if(connecte&&window.sessionRole==='client'&&!clientAllowed(current)) current=window.CLIENT_HOME||'facturation'; const res=_r.apply(this,arguments); try{applyRole();}catch(e){} return res; };
   if(typeof retourSelectionDossier==='function'){ const _ret=retourSelectionDossier; retourSelectionDossier=function(){ if(window.sessionRole==='client'){ quitterEspaceClient(); return; } return _ret(); }; }
 })();
 </script>
@@ -8887,7 +8888,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v66 · nouveau client dans la création ✨';
+    b.textContent='YADA · v67 · client = factures uniquement ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -8960,7 +8961,7 @@ ${lignes}
   function secOuvrir(role, remember){ ssSet('yada-role', role); window.sessionRole=role; window.selClientMode=(role==='client');
     if(remember===true) lsSet(KR, role); else if(remember===false) lsDel(KR);
     /* on rend la page de destination SOUS l'écran de connexion, puis on retire l'écran : aucune page intermédiaire visible */
-    if(role==='client'){ var id=clientDossierId(); if(id && typeof choisirDossierClient==='function'){ choisirDossierClient(id); } else if(typeof render==='function'){ current='client'; render(); } }
+    if(role==='client'){ var id=clientDossierId(); if(id && typeof choisirDossierClient==='function'){ choisirDossierClient(id); } else if(typeof render==='function'){ current=(window.CLIENT_HOME||'facturation'); render(); } }
     else if(typeof render==='function'){ render(); }
     secCacher(); if(typeof toast==='function') toast(role==='cabinet'?'Espace Cabinet ✓':'Espace Client ✓'); }
   window.secEssayer=async function(){ if(!CHOICE){ secAfficher(); return; } var e=document.getElementById('sec-err');
@@ -10177,7 +10178,7 @@ ${lignes}
     var el=document.getElementById('m-tabbar');
     if(!el){ if(!document.body) return; el=document.createElement('div'); el.id='m-tabbar'; document.body.appendChild(el); }
     var cur=(typeof current!=='undefined')?current:'';
-    var tabs=[['client','🏠','Accueil',''],['facturation','🧾','Créer','act-strong'],['achats','📥','Déposer','act-strong']];
+    var tabs=[['facturation','🧾','Facture client','act-strong'],['achats','📥','Facture fournisseur','act-strong']];
     el.innerHTML=tabs.map(function(t){
       return '<button class="'+(cur===t[0]?'active ':'')+t[3]+'" onclick="current=\''+t[0]+'\';render()"><span class="ic">'+t[1]+'</span>'+t[2]+'</button>';
     }).join('');
