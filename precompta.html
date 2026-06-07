@@ -1969,6 +1969,10 @@ body[data-theme="noir"]{ background:
    #0a0a0a !important; background-attachment:fixed !important; }
 body[data-theme="noir"] .layout{ background:transparent !important; }
 body[data-theme="noir"] main, body[data-theme="noir"] main.fullbleed .mod-wrap, body[data-theme="noir"] main.fullbleed .dash-wrap{ background:transparent !important; color:#eaf0ff !important; }
+/* Page « Sélectionnez un dossier » : EXACTEMENT le même fond que les pages internes
+   des dossiers — on laisse transparaître le fond du body thématisé (au lieu du dégradé
+   teal d'origine), identique sur les 3 thèmes. */
+body[data-theme] .login-wrap{ background:transparent !important; }
 /* cartes = verre dépoli translucide */
 body[data-theme="noir"] .mod-wrap .card, body[data-theme="noir"] .dash-wrap .card, body[data-theme="noir"] .card, body[data-theme="noir"] .cli-col>.card{
   background:linear-gradient(160deg, rgba(255,255,255,.075), rgba(255,255,255,.025)) !important;
@@ -10264,7 +10268,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v127 · noir & lime';
+    b.textContent='YADA · v129 · noir & lime';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#c4ff3d,#6fb800);color:#16210a;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -10489,7 +10493,7 @@ ${lignes}
         +'<div class="li-cell"><span class="li-cl">Qté</span><input id="li-qte-'+i+'" type="number" value="'+l.qte+'" oninput="faMaj()"></div>'
         +'<div class="li-cell"><span class="li-cl">PU HT</span><input id="li-pu-'+i+'" type="number" value="'+l.pu+'" oninput="faMaj()"></div>'
         +'<div class="li-cell"><span class="li-cl">TVA</span><select id="li-taux-'+i+'" onchange="faMaj()">'+[20,10,5.5,0].map(function(x){return '<option value="'+x+'" '+(x==l.taux?'selected':'')+'>'+x+'%</option>';}).join('')+'</select></div>'
-        +'<div class="li-cell"><span class="li-cl">Total HT</span><input value="'+eur(lht)+'" disabled></div>'
+        +'<div class="li-cell"><span class="li-cl">Total HT</span><input id="li-tot-'+i+'" value="'+eur(lht)+'" disabled></div>'
         +'<button class="btn btn-ghost btn-sm li-del" onclick="faDelLigne('+i+')" aria-label="Supprimer la ligne">✕ Supprimer</button></div>'; }).join('');
     var t=faTotaux();
     return '<div class="card fa-cli-creer"><h2>Créer une facture</h2>'
@@ -10510,9 +10514,9 @@ ${lignes}
       +'<button class="btn btn-ghost btn-sm" onclick="faSync();faAddLigne()">+ Ajouter une désignation</button></div>'
       +'<div class="ecr" style="margin-top:6px"><div class="ecr-h"><span>Totaux</span><span></span></div>'
       +'<table><tbody>'
-      +'<tr><td>Total HT</td><td class="r num">'+eur(t.ht)+'</td></tr>'
-      +'<tr><td>Total TVA</td><td class="r num">'+eur(t.tva)+'</td></tr>'
-      +'<tr class="totrow"><td>Total TTC</td><td class="r num">'+eur(t.ttc)+'</td></tr>'
+      +'<tr><td>Total HT</td><td class="r num" id="fa-tot-ht">'+eur(t.ht)+'</td></tr>'
+      +'<tr><td>Total TVA</td><td class="r num" id="fa-tot-tva">'+eur(t.tva)+'</td></tr>'
+      +'<tr class="totrow"><td>Total TTC</td><td class="r num" id="fa-tot-ttc">'+eur(t.ttc)+'</td></tr>'
       +'</tbody></table></div>'
       +'<div id="fa-apercu"></div>'
       +'<div class="right">'
@@ -11800,21 +11804,14 @@ ${lignes}
   window.pageFacturationClient=function(){
     var inner=_pfc();
     if(!mob()) return inner;
-    var step=window.mFac.step||'list', bar='', doc='';
+    var step=window.mFac.step||'list', bar='';
     if(step==='form'){
       bar='<div class="mfac-bar"><button class="btn btn-ghost btn-sm" onclick="mFacBack()">\u2190 Retour</button><b>Nouvelle facture</b><span style="width:60px"></span></div>';
-    } else if(step==='done'){
-      var d=(db.docs||[]).filter(function(x){return x.id===window.mFac.docId;})[0];
-      bar='<div class="mfac-bar"><button class="btn btn-ghost btn-sm" onclick="mFacBack()">\u2190 Retour</button><b>Facture cr\u00e9\u00e9e \u2713</b><span style="width:60px"></span></div>';
-      doc='<div class="mfac-doc">'+((d&&typeof docHTML==='function')?('<div class="inv">'+docHTML(d)+'</div>'):'<div class="empty">Facture introuvable</div>')+'</div>'
-        +'<div class="mfac-actions" style="display:flex;gap:10px;margin-top:14px">'
-        +'<button class="btn btn-gold" style="flex:1" onclick="mFacEnvoyerCabinet()">Envoyer au cabinet</button>'
-        +'<button class="btn btn-ghost" style="flex:1" onclick="mFacAnnuler()">Annuler la facture</button>'
-        +'</div>';
     } else {
+      step='list';
       bar='<div class="mfac-cta"><button class="btn btn-pri" style="width:100%" onclick="mFacCreate()">\u2795 Cr\u00e9er une facture</button></div>';
     }
-    return '<div class="mfac mfac-'+step+'">'+bar+doc+inner+'</div>';
+    return '<div class="mfac mfac-'+step+'">'+bar+inner+'</div>';
   };
   window.mFacCreate=function(){ window.mFac.step='form'; if(typeof render==='function')render(); window.scrollTo(0,0); };
   window.mFacBack=function(){ window.mFac.step='list'; window.mFac.docId=null; if(typeof render==='function')render(); window.scrollTo(0,0); };
@@ -11856,7 +11853,7 @@ ${lignes}
       try{
         if(mob() && clientRole()){
           var nw=(db.docs||[]).filter(function(d){return before.indexOf(d.id)<0;});
-          if(nw.length){ window.mFac.step='done'; window.mFac.docId=nw[nw.length-1].id; if(typeof render==='function')render(); window.scrollTo(0,0); }
+          if(nw.length){ window.mFac.step='list'; window.mFac.docId=null; if(typeof render==='function')render(); window.scrollTo(0,0); }
         }
       }catch(e){}
       return r;
@@ -11990,6 +11987,32 @@ ${lignes}
   /* Neutraliser l'ancienne bannière mobile (addon62) pour éviter un doublon */
   try{ ls('yada-mob-prop','1'); }catch(e){}
   setTimeout(banner, 1800);
+})();
+</script>
+<script id="yada-addon75">
+/* Création de facture (client / mobile) : recalcul LIVE des totaux quand on saisit
+   le montant HT. À chaque frappe (faMaj), on met à jour le Total HT par ligne et
+   les totaux Total HT / Total TVA / Total TTC (TTC = HT + HT×taux/100). */
+(function(){
+  if(typeof window.faMaj!=='function') return;
+  var _maj=window.faMaj;
+  window.faMaj=function(){
+    var r;
+    try{ r=_maj.apply(this,arguments); }
+    catch(e){ try{ if(typeof faSync==='function') faSync(); }catch(_){ } }
+    try{
+      if(typeof faTotaux==='function' && document.getElementById('fa-tot-ttc')){
+        var t=faTotaux();
+        var set=function(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; };
+        set('fa-tot-ht', eur(t.ht)); set('fa-tot-tva', eur(t.tva)); set('fa-tot-ttc', eur(t.ttc));
+        (faLignes||[]).forEach(function(l,i){
+          var el=document.getElementById('li-tot-'+i);
+          if(el) el.value=eur(r2((+l.qte||0)*(+l.pu||0)));
+        });
+      }
+    }catch(e){}
+    return r;
+  };
 })();
 </script>
 </body>
