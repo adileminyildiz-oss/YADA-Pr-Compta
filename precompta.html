@@ -2954,8 +2954,6 @@ body[data-theme] aside nav .nav-group{ display:flex; flex-direction:column; gap:
   position:relative; z-index:0; overflow:hidden;
   transition:transform .16s ease, box-shadow .22s ease, border-color .18s ease, filter .16s ease !important;
 }
-#sec-lock button[onclick*="secChoisir('cabinet')"]::before{ content:"\1F3E2"; font-size:22px; line-height:1; }
-#sec-lock button[onclick*="secChoisir('client')"]::before{ content:"\1F464"; font-size:22px; line-height:1; }
 #sec-lock button[onclick*="secChoisir('cabinet')"]::after,
 #sec-lock button[onclick*="secChoisir('client')"]::after{ content:"\2192"; margin-left:auto; font-size:19px; opacity:.55; transition:transform .2s ease, opacity .2s ease; }
 #sec-lock button[onclick*="secChoisir"]:hover{ transform:translateY(-3px); box-shadow:0 16px 34px rgba(0,0,0,.22); }
@@ -2967,7 +2965,10 @@ body[data-theme] aside nav .nav-group{ display:flex; flex-direction:column; gap:
 
 /* Animation : « entrer dans le bouton » */
 @keyframes secZoom{ 0%{transform:scale(1);opacity:1;} 70%{opacity:1;} 100%{transform:scale(26);opacity:0;} }
-#sec-lock .sec-zooming{ animation:secZoom .5s cubic-bezier(.55,0,.4,1) forwards !important; z-index:10 !important; will-change:transform,opacity; pointer-events:none; }
+#sec-lock .sec-zooming{ animation:secZoom .26s cubic-bezier(.6,0,.35,1) forwards !important; z-index:10 !important; will-change:transform,opacity; pointer-events:none; }
+/* Pendant le zoom : l'écriture (libellé + icône + chevron) disparaît, seul le fond s'agrandit */
+#sec-lock .sec-cta.sec-zooming{ color:transparent !important; text-shadow:none !important; transition:color .05s ease !important; }
+#sec-lock .sec-cta.sec-zooming::before,#sec-lock .sec-cta.sec-zooming::after{ opacity:0 !important; transition:opacity .05s ease !important; }
 #sec-lock .sec-fade{ transition:opacity .28s ease !important; opacity:0 !important; pointer-events:none; }
 @keyframes secFormIn{ from{opacity:0; transform:translateY(16px) scale(.985);} to{opacity:1; transform:none;} }
 #sec-lock .sec-screen.sec-in .sec-body{ animation:secFormIn .44s cubic-bezier(.2,1,.3,1) both; }
@@ -10047,7 +10048,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v100 · noir & lime';
+    b.textContent='YADA · v101 · noir & lime';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#c4ff3d,#6fb800);color:#16210a;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -11520,7 +11521,7 @@ ${lignes}
     setTimeout(function(){
       _choisir(r);
       var sc=document.querySelector('#sec-lock .sec-screen'); if(sc) sc.classList.add('sec-in');
-    }, 460);
+    }, 240);
   };
 })();
 </script>
