@@ -2162,11 +2162,11 @@ tr[onclick],tr[ondblclick],.linkname{cursor:pointer}
    Réoriente le thème "noir" (par défaut) : retire le bleu électrique, met des
    surfaces noir profond dégradées, et passe les boutons/accents en vert lime.
    Placé en dernier → gagne dans la cascade sur app-skin / accent-blue / glass-fx. */
-:root{ --lime:#a3e635; --lime-2:#84cc16; --lime-3:#bef264; }
+:root{ --lime:#9bef00; --lime-2:#6fb800; --lime-3:#c4ff3d; }
 
 /* Variables d'accent du thème : tout l'accent (KPI, liens, liseré) → lime + lignes en gris foncé */
 body[data-theme="noir"]{
-  --gold:#a3e635 !important; --accent:#a3e635 !important; --blue:#a3e635 !important;
+  --gold:#9bef00 !important; --accent:#9bef00 !important; --blue:#9bef00 !important;
   --line:#262626 !important; --line-strong:#363636 !important;
   background:
     radial-gradient(1100px 760px at 50% -12%, #161616 0%, #0c0c0c 46%, #050505 100%),
@@ -2176,7 +2176,7 @@ body[data-theme="noir"]{
 /* Aurore bleue (glass-fx ::before) → halo très sombre + soupçon de lime en bas */
 body[data-theme="noir"]::before{
   background:
-    radial-gradient(58% 48% at 50% 116%, rgba(163,230,53,.14), rgba(163,230,53,.05) 36%, transparent 64%),
+    radial-gradient(58% 48% at 50% 116%, rgba(155,239,0,.14), rgba(155,239,0,.05) 36%, transparent 64%),
     radial-gradient(72% 60% at 50% 122%, rgba(36,36,36,.92), transparent 62%) !important;
   filter:blur(30px) !important;
 }
@@ -2187,7 +2187,7 @@ body[data-theme="noir"] .dash-wrap .card,
 body[data-theme="noir"] .card,
 body[data-theme="noir"] .cli-col>.card{
   background:
-     radial-gradient(130% 120% at 50% 120%, rgba(163,230,53,.05), transparent 55%),
+     radial-gradient(130% 120% at 50% 120%, rgba(155,239,0,.05), transparent 55%),
      linear-gradient(160deg, #151515, #0a0a0a) padding-box,
      linear-gradient(150deg, #2f2f2f, #1a1a1a 55%, #262626) border-box !important;
   border:1px solid transparent !important; color:#eef0ea !important;
@@ -2197,8 +2197,8 @@ body[data-theme="noir"] .cli-col>.card{
 body[data-theme="noir"] .mod-wrap .card:hover,
 body[data-theme="noir"] .dash-wrap .card:hover,
 body[data-theme="noir"] .cli-col>.card:hover{
-  border-color:rgba(163,230,53,.42) !important;
-  box-shadow:0 20px 56px rgba(0,0,0,.76), 0 0 26px rgba(163,230,53,.14), inset 0 1px 0 rgba(255,255,255,.05) !important;
+  border-color:rgba(155,239,0,.42) !important;
+  box-shadow:0 20px 56px rgba(0,0,0,.76), 0 0 26px rgba(155,239,0,.14), inset 0 1px 0 rgba(255,255,255,.05) !important;
 }
 
 /* KPI & tuiles : noir profond, bord gris, accent lime au survol */
@@ -2209,64 +2209,167 @@ body[data-theme="noir"] .ec-tile{
   box-shadow:0 10px 30px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.04) !important;
   animation:none !important;
 }
-body[data-theme="noir"] .ec-tile:hover{ border-color:rgba(163,230,53,.45) !important; box-shadow:0 0 26px rgba(163,230,53,.18) !important; }
+body[data-theme="noir"] .ec-tile:hover{ border-color:rgba(155,239,0,.45) !important; box-shadow:0 0 26px rgba(155,239,0,.18) !important; }
 
 /* Champs : focus lime */
 body[data-theme="noir"] .mod-wrap input:focus,
 body[data-theme="noir"] .mod-wrap select:focus,
 body[data-theme="noir"] #modal-c input:focus,
-body[data-theme="noir"] textarea:focus{ border-color:#a3e635 !important; box-shadow:0 0 0 3px rgba(163,230,53,.18) !important; }
+body[data-theme="noir"] textarea:focus{ border-color:#9bef00 !important; box-shadow:0 0 0 3px rgba(155,239,0,.18) !important; }
 
 /* BOUTONS pleins → VERT LIME */
 body[data-theme="noir"] .btn-pri,
 body[data-theme="noir"] .btn-gold{
-  background:linear-gradient(120deg,#bef264,#84cc16) !important;
-  color:#16210a !important; border:1px solid #a3e635 !important;
-  box-shadow:0 8px 22px rgba(132,204,22,.42), 0 0 16px rgba(163,230,53,.30), inset 0 1px 0 rgba(255,255,255,.35) !important;
+  background:linear-gradient(120deg,#c4ff3d,#6fb800) !important;
+  color:#16210a !important; border:1px solid #9bef00 !important;
+  box-shadow:0 8px 22px rgba(111,184,0,.42), 0 0 16px rgba(155,239,0,.30), inset 0 1px 0 rgba(255,255,255,.35) !important;
   text-shadow:none !important; font-weight:800 !important;
 }
 body[data-theme="noir"] .btn-pri:hover,
 body[data-theme="noir"] .btn-gold:hover{
-  background:linear-gradient(120deg,#caf76f,#9ae600) !important;
-  box-shadow:0 10px 28px rgba(132,204,22,.60), 0 0 24px rgba(163,230,53,.45), inset 0 1px 0 rgba(255,255,255,.40) !important;
+  background:linear-gradient(120deg,#d6ff5c,#aaff00) !important;
+  box-shadow:0 10px 28px rgba(111,184,0,.60), 0 0 24px rgba(155,239,0,.45), inset 0 1px 0 rgba(255,255,255,.40) !important;
 }
 /* boutons fantômes : contour & texte lime discrets */
-body[data-theme="noir"] .btn-ghost{ background:rgba(255,255,255,.04) !important; color:#d8f6a8 !important; border:1px solid #2f2f2f !important; }
-body[data-theme="noir"] .btn-ghost:hover{ border-color:#a3e635 !important; color:#bef264 !important; }
+body[data-theme="noir"] .btn-ghost{ background:rgba(255,255,255,.04) !important; color:#dcffb0 !important; border:1px solid #2f2f2f !important; }
+body[data-theme="noir"] .btn-ghost:hover{ border-color:#9bef00 !important; color:#c4ff3d !important; }
 
 /* Navigation : barre noire, élément actif en lime */
 body[data-theme="noir"] aside{ background:linear-gradient(180deg, #0c0c0c, #050505) !important; border-right:1px solid #222 !important; }
 body[data-theme="noir"] .nav-btn.active{
-  background:linear-gradient(120deg, rgba(163,230,53,.20), rgba(132,204,22,.10)) !important;
-  border:1px solid rgba(163,230,53,.45) !important;
-  box-shadow:0 0 18px rgba(163,230,53,.20), inset 0 0 12px rgba(163,230,53,.08) !important;
+  background:linear-gradient(120deg, rgba(155,239,0,.20), rgba(111,184,0,.10)) !important;
+  border:1px solid rgba(155,239,0,.45) !important;
+  box-shadow:0 0 18px rgba(155,239,0,.20), inset 0 0 12px rgba(155,239,0,.08) !important;
   color:#eafbcf !important;
 }
-body[data-theme="noir"] .nav-btn.active .ico{ color:#a3e635 !important; }
+body[data-theme="noir"] .nav-btn.active .ico{ color:#9bef00 !important; }
 body[data-theme="noir"] .nav-sec{ color:#6f7a5a !important; }
-body[data-theme="noir"] .cli-col-h{ color:#a3e635 !important; }
+body[data-theme="noir"] .cli-col-h{ color:#9bef00 !important; }
 /* logo cube → lime */
-body[data-theme="noir"] aside .brand svg rect{ fill:#a3e635 !important; }
+body[data-theme="noir"] aside .brand svg rect{ fill:#9bef00 !important; }
 body[data-theme="noir"] aside .brand svg path,
 body[data-theme="noir"] aside .brand svg line{ stroke:#0a0f04 !important; }
 
 /* hero (Espace Client / Cabinet) : noir + liseré lime au lieu du bleu/vert */
 body[data-theme="noir"] #ec-hero,
-body[data-theme="noir"] #ec-hero.cab-hero{ background:linear-gradient(120deg,#161616,#070707) !important; border:1px solid rgba(163,230,53,.35) !important; box-shadow:0 14px 38px rgba(0,0,0,.6) !important; }
+body[data-theme="noir"] #ec-hero.cab-hero{ background:linear-gradient(120deg,#161616,#070707) !important; border:1px solid rgba(155,239,0,.35) !important; box-shadow:0 14px 38px rgba(0,0,0,.6) !important; }
 
 /* Tableaux : survol lime très discret */
 body[data-theme="noir"] .dash-wrap tr:hover td,
-body[data-theme="noir"] .mod-wrap tr:hover td{ background:rgba(163,230,53,.06) !important; }
+body[data-theme="noir"] .mod-wrap tr:hover td{ background:rgba(155,239,0,.06) !important; }
 
 /* Barre supérieure mobile en noir */
 body[data-theme="noir"] #m-topbar{ background:linear-gradient(120deg,#0c0c0c,#050505) !important; }
 
 /* ===== Écran de connexion : CTA principal en vert lime ===== */
 #sec-lock .sec-cta:not(.sec-cta-2){
-  background:linear-gradient(120deg,#bef264,#84cc16) !important; color:#16210a !important;
-  box-shadow:0 8px 22px rgba(132,204,22,.35) !important;
+  background:linear-gradient(120deg,#c4ff3d,#6fb800) !important; color:#16210a !important;
+  box-shadow:0 8px 22px rgba(111,184,0,.35) !important;
 }
-#sec-lock .sec-btn{ background:linear-gradient(120deg,#bef264,#84cc16) !important; color:#16210a !important; }
+#sec-lock .sec-btn{ background:linear-gradient(120deg,#c4ff3d,#6fb800) !important; color:#16210a !important; }
+</style>
+<style id="duo-lime">
+/* ===== DUO NOIR + VERT LIME SATURÉ étendu aux thèmes "liquid" =====
+   liquid-clair  = graphite neutre (nuance de noir froide claire)
+   liquid-teinte = noir bleuté profond
+   Tous deux passent en sombre avec accents/boutons en lime saturé.
+   Override de theme-refine (placé après → gagne la cascade). */
+
+/* Fond + variables d'accent (lime) par thème, avec sa propre nuance de noir */
+body[data-theme="liquid-clair"]{
+  background:radial-gradient(1100px 760px at 50% -12%, #1b1b1e 0%, #131315 50%, #0b0b0d 100%), #08080a !important;
+  background-attachment:fixed !important;
+  --ink:#eef0ea !important; --ink-soft:#9aa49a !important;
+  --gold:#9bef00 !important; --accent:#9bef00 !important; --blue:#9bef00 !important;
+  --line:#2b2b30 !important; --line-strong:#3a3a40 !important; color:#eef0ea !important;
+}
+body[data-theme="liquid-teinte"]{
+  background:radial-gradient(1100px 760px at 50% -12%, #0e1620 0%, #080d14 50%, #04070b 100%), #03060a !important;
+  background-attachment:fixed !important;
+  --ink:#e9f0e0 !important; --ink-soft:#94a39a !important;
+  --gold:#9bef00 !important; --accent:#9bef00 !important; --blue:#9bef00 !important;
+  --line:#22303f !important; --line-strong:#2f4255 !important; color:#e9f0e0 !important;
+}
+
+/* Conteneurs : transparents pour laisser voir la nuance de fond + texte clair */
+body[data-theme="liquid-clair"] .layout,body[data-theme="liquid-teinte"] .layout{ background:transparent !important; }
+body[data-theme="liquid-clair"] main,body[data-theme="liquid-clair"] main.fullbleed .mod-wrap,body[data-theme="liquid-clair"] main.fullbleed .dash-wrap,
+body[data-theme="liquid-teinte"] main,body[data-theme="liquid-teinte"] main.fullbleed .mod-wrap,body[data-theme="liquid-teinte"] main.fullbleed .dash-wrap{ background:transparent !important; color:#eef0ea !important; }
+
+/* Titres clairs ; sous-titres gris ; libellés clairs */
+body[data-theme="liquid-clair"] .card h2,body[data-theme="liquid-clair"] .mod-wrap h2,body[data-theme="liquid-clair"] .dash-wrap h2,body[data-theme="liquid-clair"] .page-head h1,
+body[data-theme="liquid-teinte"] .card h2,body[data-theme="liquid-teinte"] .mod-wrap h2,body[data-theme="liquid-teinte"] .dash-wrap h2,body[data-theme="liquid-teinte"] .page-head h1{ color:#f3f7ee !important; }
+body[data-theme="liquid-clair"] .sub,body[data-theme="liquid-clair"] .hint,body[data-theme="liquid-clair"] .mini,body[data-theme="liquid-clair"] .ged-mt,body[data-theme="liquid-clair"] .page-head p,
+body[data-theme="liquid-teinte"] .sub,body[data-theme="liquid-teinte"] .hint,body[data-theme="liquid-teinte"] .mini,body[data-theme="liquid-teinte"] .ged-mt,body[data-theme="liquid-teinte"] .page-head p{ color:#97a596 !important; }
+body[data-theme="liquid-clair"] label,body[data-theme="liquid-teinte"] label{ color:#c3d0bd !important; }
+
+/* Cartes : verre sombre, nuance propre, liseré lime au survol */
+body[data-theme="liquid-clair"] .mod-wrap .card,body[data-theme="liquid-clair"] .dash-wrap .card,body[data-theme="liquid-clair"] .card,body[data-theme="liquid-clair"] .cli-col>.card{
+  background:linear-gradient(160deg, rgba(30,30,33,.94), rgba(16,16,18,.95)) !important; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  border:1px solid #2c2c30 !important; color:#eef0ea !important; border-radius:16px !important;
+  box-shadow:0 16px 44px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.04) !important; }
+body[data-theme="liquid-teinte"] .mod-wrap .card,body[data-theme="liquid-teinte"] .dash-wrap .card,body[data-theme="liquid-teinte"] .card,body[data-theme="liquid-teinte"] .cli-col>.card{
+  background:linear-gradient(160deg, rgba(18,26,38,.92), rgba(10,15,22,.94)) !important; -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px);
+  border:1px solid #233140 !important; color:#e9f0e0 !important; border-radius:18px !important;
+  box-shadow:0 16px 44px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.05) !important; }
+body[data-theme="liquid-clair"] .mod-wrap .card:hover,body[data-theme="liquid-clair"] .dash-wrap .card:hover,body[data-theme="liquid-clair"] .cli-col>.card:hover,
+body[data-theme="liquid-teinte"] .mod-wrap .card:hover,body[data-theme="liquid-teinte"] .dash-wrap .card:hover,body[data-theme="liquid-teinte"] .cli-col>.card:hover{
+  border-color:rgba(155,239,0,.42) !important; box-shadow:0 18px 50px rgba(0,0,0,.6), 0 0 24px rgba(155,239,0,.14) !important; }
+
+/* KPI & tuiles sombres */
+body[data-theme="liquid-clair"] .kpi,body[data-theme="liquid-clair"] .ec-tile,
+body[data-theme="liquid-teinte"] .kpi,body[data-theme="liquid-teinte"] .ec-tile{
+  background:linear-gradient(160deg, #1a1a1d, #0e0e10) !important; border:1px solid #2a2a30 !important; color:#eef0ea !important;
+  box-shadow:0 10px 28px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.04) !important; }
+body[data-theme="liquid-clair"] .kpi .lbl,body[data-theme="liquid-teinte"] .kpi .lbl{ color:#97a596 !important; }
+body[data-theme="liquid-clair"] .kpi .val,body[data-theme="liquid-teinte"] .kpi .val{ color:#f3f7ee !important; }
+body[data-theme="liquid-clair"] .ec-tile:hover,body[data-theme="liquid-teinte"] .ec-tile:hover{ border-color:rgba(155,239,0,.45) !important; box-shadow:0 0 24px rgba(155,239,0,.18) !important; }
+
+/* Champs sombres + focus lime */
+body[data-theme="liquid-clair"] .mod-wrap input,body[data-theme="liquid-clair"] .mod-wrap select,body[data-theme="liquid-clair"] .mod-wrap textarea,body[data-theme="liquid-clair"] .dash-wrap input,body[data-theme="liquid-clair"] .dash-wrap select,body[data-theme="liquid-clair"] #modal-c input,body[data-theme="liquid-clair"] #modal-c select,
+body[data-theme="liquid-teinte"] .mod-wrap input,body[data-theme="liquid-teinte"] .mod-wrap select,body[data-theme="liquid-teinte"] .mod-wrap textarea,body[data-theme="liquid-teinte"] .dash-wrap input,body[data-theme="liquid-teinte"] .dash-wrap select,body[data-theme="liquid-teinte"] #modal-c input,body[data-theme="liquid-teinte"] #modal-c select{
+  background:rgba(255,255,255,.05) !important; color:#eef0ea !important; border:1px solid rgba(255,255,255,.14) !important; border-radius:11px !important; }
+body[data-theme="liquid-clair"] .mod-wrap input:focus,body[data-theme="liquid-clair"] #modal-c input:focus,body[data-theme="liquid-clair"] .mod-wrap select:focus,
+body[data-theme="liquid-teinte"] .mod-wrap input:focus,body[data-theme="liquid-teinte"] #modal-c input:focus,body[data-theme="liquid-teinte"] .mod-wrap select:focus{ border-color:#9bef00 !important; box-shadow:0 0 0 3px rgba(155,239,0,.18) !important; }
+
+/* Tableaux sombres + survol lime discret */
+body[data-theme="liquid-clair"] .mod-wrap table th,body[data-theme="liquid-clair"] .dash-wrap table th,
+body[data-theme="liquid-teinte"] .mod-wrap table th,body[data-theme="liquid-teinte"] .dash-wrap table th{ color:#97a596 !important; border-color:rgba(255,255,255,.10) !important; background:transparent !important; }
+body[data-theme="liquid-clair"] .mod-wrap table td,body[data-theme="liquid-clair"] .dash-wrap table td,
+body[data-theme="liquid-teinte"] .mod-wrap table td,body[data-theme="liquid-teinte"] .dash-wrap table td{ color:#e7ecde !important; border-color:rgba(255,255,255,.07) !important; }
+body[data-theme="liquid-clair"] .mod-wrap tr:hover td,body[data-theme="liquid-clair"] .dash-wrap tr:hover td,
+body[data-theme="liquid-teinte"] .mod-wrap tr:hover td,body[data-theme="liquid-teinte"] .dash-wrap tr:hover td{ background:rgba(155,239,0,.07) !important; }
+
+/* BOUTONS pleins → VERT LIME saturé */
+body[data-theme="liquid-clair"] .btn-pri,body[data-theme="liquid-clair"] .btn-gold,
+body[data-theme="liquid-teinte"] .btn-pri,body[data-theme="liquid-teinte"] .btn-gold{
+  background:linear-gradient(120deg,#c4ff3d,#6fb800) !important; color:#16210a !important; border:1px solid #9bef00 !important; border-radius:12px !important;
+  box-shadow:0 8px 22px rgba(111,184,0,.4), 0 0 16px rgba(155,239,0,.28), inset 0 1px 0 rgba(255,255,255,.35) !important; font-weight:800 !important; }
+body[data-theme="liquid-clair"] .btn-pri:hover,body[data-theme="liquid-clair"] .btn-gold:hover,
+body[data-theme="liquid-teinte"] .btn-pri:hover,body[data-theme="liquid-teinte"] .btn-gold:hover{
+  background:linear-gradient(120deg,#d6ff5c,#aaff00) !important; box-shadow:0 10px 28px rgba(111,184,0,.58), 0 0 24px rgba(155,239,0,.45) !important; }
+body[data-theme="liquid-clair"] .btn-ghost,body[data-theme="liquid-teinte"] .btn-ghost{ background:rgba(255,255,255,.05) !important; color:#dcffb0 !important; border:1px solid #2f2f33 !important; border-radius:12px !important; }
+body[data-theme="liquid-clair"] .btn-ghost:hover,body[data-theme="liquid-teinte"] .btn-ghost:hover{ border-color:#9bef00 !important; color:#c4ff3d !important; }
+
+/* Blocs annexes sombres (dépôts, écritures, comparatifs, lignes facture) */
+body[data-theme="liquid-clair"] .ged-it,body[data-theme="liquid-clair"] .ecr,body[data-theme="liquid-clair"] .li-row,body[data-theme="liquid-clair"] .dep-cmp,body[data-theme="liquid-clair"] .cmp-recap,body[data-theme="liquid-clair"] .cmp-col,body[data-theme="liquid-clair"] .da-tot,
+body[data-theme="liquid-teinte"] .ged-it,body[data-theme="liquid-teinte"] .ecr,body[data-theme="liquid-teinte"] .li-row,body[data-theme="liquid-teinte"] .dep-cmp,body[data-theme="liquid-teinte"] .cmp-recap,body[data-theme="liquid-teinte"] .cmp-col,body[data-theme="liquid-teinte"] .da-tot{
+  background:rgba(255,255,255,.045) !important; color:#eef0ea !important; border:1px solid rgba(255,255,255,.10) !important; }
+body[data-theme="liquid-clair"] .ged-drop,body[data-theme="liquid-teinte"] .ged-drop{ border:2px dashed rgba(155,239,0,.5) !important; background:rgba(155,239,0,.06) !important; color:#eef0ea !important; }
+
+/* Hero (Espace Client/Cabinet) sombre + liseré lime */
+body[data-theme="liquid-clair"] #ec-hero,body[data-theme="liquid-clair"] #ec-hero.cab-hero,
+body[data-theme="liquid-teinte"] #ec-hero,body[data-theme="liquid-teinte"] #ec-hero.cab-hero{ background:linear-gradient(120deg,#161616,#070707) !important; border:1px solid rgba(155,239,0,.35) !important; color:#fff !important; }
+
+/* Barre latérale sombre + élément actif lime */
+body[data-theme="liquid-clair"] aside,body[data-theme="liquid-teinte"] aside{ background:linear-gradient(180deg,#0c0c0c,#050505) !important; border-right:1px solid #222 !important; }
+body[data-theme="liquid-clair"] .nav-btn,body[data-theme="liquid-teinte"] .nav-btn{ color:#c5cfbe !important; }
+body[data-theme="liquid-clair"] .nav-btn:hover,body[data-theme="liquid-teinte"] .nav-btn:hover{ background:rgba(255,255,255,.06) !important; color:#fff !important; }
+body[data-theme="liquid-clair"] .nav-btn.active,body[data-theme="liquid-teinte"] .nav-btn.active{
+  background:linear-gradient(120deg, rgba(155,239,0,.22), rgba(111,184,0,.10)) !important; border:1px solid rgba(155,239,0,.45) !important;
+  box-shadow:0 0 18px rgba(155,239,0,.20) !important; color:#eafbcf !important; }
+body[data-theme="liquid-clair"] .nav-btn.active .ico,body[data-theme="liquid-teinte"] .nav-btn.active .ico{ color:#9bef00 !important; }
+body[data-theme="liquid-clair"] .cli-col-h,body[data-theme="liquid-teinte"] .cli-col-h{ color:#9bef00 !important; }
 </style>
 </head>
 <body data-theme="noir">
