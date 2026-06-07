@@ -10051,7 +10051,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v103 · noir & lime';
+    b.textContent='YADA · v104 · noir & lime';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#c4ff3d,#6fb800);color:#16210a;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -11507,7 +11507,8 @@ ${lignes}
 })();
 </script>
 <script id="yada-addon69">
-/* Page de connexion : animation « entrer dans le bouton » au choix de l'espace */
+/* Page de connexion : « circular reveal » — un cercle part du bouton et s'agrandit
+   en restant rond jusqu'à couvrir tout l'écran, puis le formulaire apparaît (flou->net). */
 (function(){
   if(typeof window.secChoisir!=='function') return;
   var rm=false; try{ rm=window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
@@ -11517,14 +11518,31 @@ ${lignes}
     if(rm || !lock){ return _choisir(r); }
     var sel="button[onclick*=\"secChoisir('"+r+"')\"]";
     var btn=lock.querySelector(sel);
+    var screen=lock.querySelector('.sec-screen');
     var body=lock.querySelector('.sec-body');
-    if(!btn || !body){ return _choisir(r); }
-    Array.prototype.forEach.call(body.children, function(c){ if(c!==btn) c.classList.add('sec-fade'); });
-    btn.classList.add('sec-zooming');
+    if(!btn || !screen){ return _choisir(r); }
+    var rect=btn.getBoundingClientRect();
+    var cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+    var cs=getComputedStyle(btn); var col=cs.backgroundColor;
+    if(!col || col==='rgba(0, 0, 0, 0)' || col==='transparent'){ col=(r==='client')?'#0f1115':'#9bef00'; }
+    var W=window.innerWidth, H=window.innerHeight;
+    var maxR=Math.max(Math.hypot(cx,cy),Math.hypot(W-cx,cy),Math.hypot(cx,H-cy),Math.hypot(W-cx,H-cy));
+    var base=40, scale=(maxR+24)/base;
+    var c=document.createElement('div'); c.className='sec-circle';
+    c.style.cssText='position:fixed;left:'+cx+'px;top:'+cy+'px;width:'+(base*2)+'px;height:'+(base*2)+'px;'
+      +'margin:'+(-base)+'px 0 0 '+(-base)+'px;border-radius:50%;background:'+col+';'
+      +'z-index:100020;transform:scale(0);will-change:transform;pointer-events:none;';
+    lock.appendChild(c);
+    if(body) body.classList.add('sec-fade');
+    requestAnimationFrame(function(){
+      c.style.transition='transform .44s cubic-bezier(.6,0,.35,1)';
+      c.style.transform='scale('+scale+')';
+    });
     setTimeout(function(){
       _choisir(r);
       var sc=document.querySelector('#sec-lock .sec-screen'); if(sc) sc.classList.add('sec-in');
-    }, 240);
+      var cc=lock.querySelector('.sec-circle'); if(cc&&cc.parentNode) cc.parentNode.removeChild(cc);
+    }, 450);
   };
 })();
 </script>
