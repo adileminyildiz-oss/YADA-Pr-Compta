@@ -1954,6 +1954,37 @@ body[data-theme="noir"] #ec-hero.cab-hero{background:linear-gradient(120deg,#1c5
 #sec-lock .sec-ver{ text-align:right; color:#aab2bd; font-size:12px; padding:6px 20px 16px; }
 @media(max-width:820px){ #sec-lock .sec-screen{ max-width:100%; } #sec-lock .sec-hero{ padding-top:calc(54px + env(safe-area-inset-top)); } }
 </style>
+<style id="app-skin">
+/* ===== Thème épuré blanc + noir appliqué à TOUTE l'application (thème par défaut) ===== */
+body[data-theme="noir"]{ background:#eef0f3 !important; }
+body[data-theme="noir"] .layout{ background:#eef0f3 !important; }
+body[data-theme="noir"] main, body[data-theme="noir"] main.fullbleed .mod-wrap, body[data-theme="noir"] main.fullbleed .dash-wrap{ background:#eef0f3 !important; color:#0f1115 !important; }
+/* cartes */
+body[data-theme="noir"] .mod-wrap .card, body[data-theme="noir"] .dash-wrap .card, body[data-theme="noir"] .card, body[data-theme="noir"] .cli-col>.card{ background:#fff !important; border:1px solid #e7e9ee !important; color:#0f1115 !important; box-shadow:0 6px 18px rgba(15,23,42,.06) !important; border-radius:16px !important; }
+body[data-theme="noir"] .card h2, body[data-theme="noir"] .page-head h1, body[data-theme="noir"] .page-head h2, body[data-theme="noir"] .mod-wrap h2, body[data-theme="noir"] .dash-wrap h2{ color:#0f1115 !important; }
+body[data-theme="noir"] .sub, body[data-theme="noir"] .hint, body[data-theme="noir"] .mini, body[data-theme="noir"] .ged-mt, body[data-theme="noir"] .page-head .desc{ color:#6b7280 !important; }
+body[data-theme="noir"] .card label, body[data-theme="noir"] .field label{ color:#374151 !important; }
+/* champs */
+body[data-theme="noir"] .mod-wrap input, body[data-theme="noir"] .mod-wrap select, body[data-theme="noir"] .mod-wrap textarea, body[data-theme="noir"] .dash-wrap input, body[data-theme="noir"] .dash-wrap select, body[data-theme="noir"] #modal-c input, body[data-theme="noir"] #modal-c select, body[data-theme="noir"] #modal-c textarea{ background:#fff !important; color:#0f1115 !important; border:1px solid #e3e6ea !important; border-radius:10px !important; }
+/* tableaux */
+body[data-theme="noir"] .mod-wrap table th, body[data-theme="noir"] .dash-wrap table th{ color:#6b7280 !important; border-color:#eceef2 !important; background:#fff !important; }
+body[data-theme="noir"] .mod-wrap table td, body[data-theme="noir"] .dash-wrap table td{ color:#0f1115 !important; border-color:#f0f1f4 !important; }
+body[data-theme="noir"] .dash-wrap tr:hover td, body[data-theme="noir"] .mod-wrap tr:hover td{ background:#f6f7f9 !important; }
+/* KPI / tuiles / blocs */
+body[data-theme="noir"] .kpi{ background:#fff !important; border:1px solid #e7e9ee !important; color:#0f1115 !important; box-shadow:0 4px 12px rgba(15,23,42,.05) !important; }
+body[data-theme="noir"] .kpi .lbl{ color:#6b7280 !important; } body[data-theme="noir"] .kpi .val{ color:#0f1115 !important; }
+body[data-theme="noir"] .ec-tile{ background:#fff !important; border:1px solid #e7e9ee !important; color:#0f1115 !important; }
+body[data-theme="noir"] .ged-it{ background:#f7f8fa !important; color:#0f1115 !important; }
+body[data-theme="noir"] .ecr, body[data-theme="noir"] .da-tot, body[data-theme="noir"] .dep-cmp, body[data-theme="noir"] .cmp-recap, body[data-theme="noir"] .cmp-col, body[data-theme="noir"] .li-row{ background:#f7f8fa !important; color:#0f1115 !important; border-color:#e7e9ee !important; }
+/* boutons */
+body[data-theme="noir"] .btn-pri, body[data-theme="noir"] .btn-gold{ background:#0f1115 !important; color:#fff !important; border:none !important; border-radius:12px !important; box-shadow:0 6px 16px rgba(15,23,42,.18) !important; }
+body[data-theme="noir"] .btn-ghost{ background:#fff !important; color:#0f1115 !important; border:1px solid #d7dbe2 !important; border-radius:12px !important; }
+body[data-theme="noir"] .ged-drop{ border:2px dashed #0f1115 !important; background:#fafafa !important; color:#0f1115 !important; }
+/* barre latérale : noire (cohérente avec l'en-tête de connexion) */
+body[data-theme="noir"] aside{ background:#000 !important; border-right:1px solid #1a1a1a !important; }
+/* en-tête de page interne (head) lisible */
+body[data-theme="noir"] .page-head, body[data-theme="noir"] .rg{ color:#0f1115 !important; }
+</style>
 </head>
 <body data-theme="noir">
 <div class="layout">
@@ -9025,7 +9056,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v74 · thème épuré unifié (mobile) ✨';
+    b.textContent='YADA · v75 · thème épuré unifié (toute l\'app) ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
