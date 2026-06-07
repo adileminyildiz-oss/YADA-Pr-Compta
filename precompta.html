@@ -2105,6 +2105,58 @@ body[data-theme="liquid-teinte"] .ged-drop{ border:2px dashed #2f80ff !important
 body, body *{ font-family:'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important; }
 .num, .kpi .val, input[type="number"]{ font-variant-numeric:tabular-nums; }
 </style>
+<style id="yada-design-refine">
+/* ===== Raffinement global (additif, multi-thèmes, repli gracieux) =====
+   Ne touche ni à la logique métier ni aux écrans « logiciel » (.sg-app…).
+   N'introduit aucune couleur qui combat les thèmes : variables + survol/focus. */
+
+/* Défilement plus doux dans toute l'app */
+html{scroll-behavior:smooth}
+
+/* Sélection de texte harmonisée à l'accent du thème */
+::selection{background:rgba(91,140,255,.30);color:inherit}
+body[data-theme="liquid-clair"] ::selection,
+body[data-theme="liquid-teinte"] ::selection{background:rgba(47,128,255,.22)}
+
+/* Barres de défilement discrètes et cohérentes (zones de contenu) */
+.mod-wrap,.dash-wrap,.modal-b,.modal,.search-res{scrollbar-width:thin;scrollbar-color:rgba(127,127,127,.35) transparent}
+.mod-wrap::-webkit-scrollbar,.dash-wrap::-webkit-scrollbar,.modal-b::-webkit-scrollbar,.search-res::-webkit-scrollbar{width:10px;height:10px}
+.mod-wrap::-webkit-scrollbar-track,.dash-wrap::-webkit-scrollbar-track,.modal-b::-webkit-scrollbar-track{background:transparent}
+.mod-wrap::-webkit-scrollbar-thumb,.dash-wrap::-webkit-scrollbar-thumb,.modal-b::-webkit-scrollbar-thumb,.search-res::-webkit-scrollbar-thumb{
+  background:rgba(127,127,127,.32);border-radius:7px;border:2px solid transparent;background-clip:padding-box}
+.mod-wrap::-webkit-scrollbar-thumb:hover,.dash-wrap::-webkit-scrollbar-thumb:hover{background:rgba(127,127,127,.52);background-clip:padding-box}
+
+/* Accessibilité : anneau de focus clavier homogène (sans gêner le clic) */
+.btn:focus-visible,.nav-btn:focus-visible,.ec-tile:focus-visible,.linkname:focus-visible,.x:focus-visible{
+  outline:2px solid var(--gold);outline-offset:2px;border-radius:8px}
+
+/* KPI : liseré en dégradé doux (repli auto sur la couleur pleine si color-mix absent) */
+.kpi:before{background:linear-gradient(180deg,var(--gold),color-mix(in srgb,var(--gold) 45%,transparent))}
+.kpi.green:before{background:linear-gradient(180deg,var(--credit),color-mix(in srgb,var(--credit) 45%,transparent))}
+.kpi.red:before{background:linear-gradient(180deg,var(--debit),color-mix(in srgb,var(--debit) 45%,transparent))}
+.kpi.blue:before{background:linear-gradient(180deg,var(--blue),color-mix(in srgb,var(--blue) 45%,transparent))}
+/* Survol KPI homogène partout (pas uniquement sur le tableau de bord) */
+main:not(.fullbleed) .kpi,.mod-wrap .kpi{transition:transform .18s ease,box-shadow .2s ease}
+main:not(.fullbleed) .kpi:hover,.mod-wrap .kpi:hover{transform:translateY(-3px)}
+
+/* Pastilles (tags) : un peu plus nettes et lisibles */
+.tag{line-height:1.7;border:1px solid rgba(0,0,0,.05)}
+
+/* Modale : léger flou de fond + entrée animée (réutilise yfx-pop d'ui-polish) */
+.modal-bg{-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+@media (prefers-reduced-motion: no-preference){
+  .modal-bg.show .modal{animation:yfx-pop .30s cubic-bezier(.2,1.1,.3,1) both}
+}
+
+/* En-tête de page : rythme typographique resserré */
+.page-head h1{letter-spacing:-.015em}
+
+/* État vide : un peu plus discret */
+.empty{opacity:.85}
+
+/* Affordance : curseur main sur les lignes cliquables */
+tr[onclick],tr[ondblclick],.linkname{cursor:pointer}
+</style>
 </head>
 <body data-theme="noir">
 <div class="layout">
