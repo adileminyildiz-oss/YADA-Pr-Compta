@@ -1898,6 +1898,23 @@ body[data-theme="noir"] #ec-hero.cab-hero{background:linear-gradient(120deg,#1c5
   #nf-overlay .nf-form{ padding:14px 12px calc(20px + env(safe-area-inset-bottom)) !important; }
 }
 </style>
+<style id="li-cli-css">
+/* Lignes de facture (écritures) — bureau : grille alignée (cellules transparentes) */
+.li-cli{ grid-template-columns:1fr 72px 92px 86px 104px 110px; align-items:center; }
+.li-cli .li-cell{ display:contents; }
+.li-cli .li-cl{ display:none; }
+.li-cli .li-del{ white-space:nowrap; }
+/* Téléphone : chaque ligne devient un bloc étiqueté qui tient dans l'écran */
+@media(max-width:820px){
+  .li-cli{ display:block !important; padding:12px !important; border:1px solid #20406b !important; border-left:4px solid #e8b84b !important;
+    border-radius:12px !important; background:#0c1c33 !important; margin-bottom:12px !important; }
+  .li-cli > input:first-child{ width:100%; margin-bottom:10px; font-weight:600; }
+  .li-cli .li-cell{ display:flex !important; align-items:center; gap:10px; margin-bottom:8px; }
+  .li-cli .li-cl{ display:inline-block !important; flex:0 0 84px; color:#9fb8d8; font-size:12.5px; }
+  .li-cli .li-cell input, .li-cli .li-cell select{ flex:1; width:auto !important; min-width:0; margin:0 !important; }
+  .li-cli .li-del{ width:100% !important; margin-top:6px; }
+}
+</style>
 </head>
 <body data-theme="noir">
 <div class="layout">
@@ -8969,7 +8986,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v70 · cadrage plein téléphone ✨';
+    b.textContent='YADA · v71 · MAJ cache + écritures mobiles ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
@@ -9170,13 +9187,13 @@ ${lignes}
     var clients=(db.tiers||[]).filter(function(t){return t.type==='client';});
     var liHead='<div class="li-row li-head"><div>Désignation</div><div>Qté</div><div>PU HT</div><div>TVA %</div><div>Total HT</div><div></div></div>';
     var liRows=faLignes.map(function(l,i){ var lht=r2((+l.qte||0)*(+l.pu||0));
-      return '<div class="li-row">'
-        +'<input id="li-desc-'+i+'" value="'+(l.desc||'').replace(/"/g,'&quot;')+'" placeholder="Prestation / produit" oninput="faMaj()">'
-        +'<input id="li-qte-'+i+'" type="number" value="'+l.qte+'" placeholder="Qté" aria-label="Quantité" oninput="faMaj()">'
-        +'<input id="li-pu-'+i+'" type="number" value="'+l.pu+'" placeholder="PU HT" aria-label="Prix unitaire HT" oninput="faMaj()">'
-        +'<select id="li-taux-'+i+'" aria-label="Taux TVA" onchange="faMaj()">'+[20,10,5.5,0].map(function(x){return '<option value="'+x+'" '+(x==l.taux?'selected':'')+'>TVA '+x+'%</option>';}).join('')+'</select>'
-        +'<input value="'+eur(lht)+'" disabled aria-label="Total HT" style="background:#f3efe6">'
-        +'<button class="btn btn-ghost btn-sm" onclick="faDelLigne('+i+')" aria-label="Supprimer la ligne">✕</button></div>'; }).join('');
+      return '<div class="li-row li-cli">'
+        +'<input id="li-desc-'+i+'" value="'+(l.desc||'').replace(/"/g,'&quot;')+'" placeholder="Désignation (prestation / produit)" oninput="faMaj()">'
+        +'<div class="li-cell"><span class="li-cl">Qté</span><input id="li-qte-'+i+'" type="number" value="'+l.qte+'" oninput="faMaj()"></div>'
+        +'<div class="li-cell"><span class="li-cl">PU HT</span><input id="li-pu-'+i+'" type="number" value="'+l.pu+'" oninput="faMaj()"></div>'
+        +'<div class="li-cell"><span class="li-cl">TVA</span><select id="li-taux-'+i+'" onchange="faMaj()">'+[20,10,5.5,0].map(function(x){return '<option value="'+x+'" '+(x==l.taux?'selected':'')+'>'+x+'%</option>';}).join('')+'</select></div>'
+        +'<div class="li-cell"><span class="li-cl">Total HT</span><input value="'+eur(lht)+'" disabled></div>'
+        +'<button class="btn btn-ghost btn-sm li-del" onclick="faDelLigne('+i+')" aria-label="Supprimer la ligne">✕ Supprimer</button></div>'; }).join('');
     var t=faTotaux();
     return '<div class="card fa-cli-creer"><h2>🧾 Créer une facture</h2>'
       +'<div class="sub">Choisissez le client, ajoutez vos lignes, validez. C\'est tout.</div>'
@@ -10177,7 +10194,9 @@ ${lignes}
 (function(){
   try{
     if('serviceWorker' in navigator){
-      window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+      var _swReloaded=false;
+      navigator.serviceWorker.addEventListener('controllerchange', function(){ if(_swReloaded)return; _swReloaded=true; try{ location.reload(); }catch(e){} });
+      window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').then(function(reg){ try{ reg.update(); }catch(e){} }).catch(function(){}); });
     }
   }catch(e){}
   var deferred=null;
