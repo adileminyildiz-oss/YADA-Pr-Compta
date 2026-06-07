@@ -1969,6 +1969,10 @@ body[data-theme="noir"]{ background:
    #0a0a0a !important; background-attachment:fixed !important; }
 body[data-theme="noir"] .layout{ background:transparent !important; }
 body[data-theme="noir"] main, body[data-theme="noir"] main.fullbleed .mod-wrap, body[data-theme="noir"] main.fullbleed .dash-wrap{ background:transparent !important; color:#eaf0ff !important; }
+/* Page « Sélectionnez un dossier » : EXACTEMENT le même fond que les pages internes
+   des dossiers — on laisse transparaître le fond du body thématisé (au lieu du dégradé
+   teal d'origine), identique sur les 3 thèmes. */
+body[data-theme] .login-wrap{ background:transparent !important; }
 /* cartes = verre dépoli translucide */
 body[data-theme="noir"] .mod-wrap .card, body[data-theme="noir"] .dash-wrap .card, body[data-theme="noir"] .card, body[data-theme="noir"] .cli-col>.card{
   background:linear-gradient(160deg, rgba(255,255,255,.075), rgba(255,255,255,.025)) !important;
@@ -10264,7 +10268,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v128 · noir & lime';
+    b.textContent='YADA · v129 · noir & lime';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#c4ff3d,#6fb800);color:#16210a;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
