@@ -2896,43 +2896,6 @@ body[data-theme] aside nav .nav-sec:first-child{ margin-top:6px !important; }
 body[data-theme] aside nav .nav-sec .nav-caret{ opacity:.5; }
 body[data-theme] aside nav .nav-group{ display:flex; flex-direction:column; gap:1px; }
 </style>
-<style id="cab-2col">
-/* ===== Pages cabinet en disposition 2 colonnes (comme la partie client) :
-   Facturation, Achats, TVA, Éditions, Import/Export FEC, Suivi des règlements ===== */
-@media(min-width:1001px){
-  body[data-role="cabinet"][data-page="facturation"] .mod-wrap,
-  body[data-role="cabinet"][data-page="achats"] .mod-wrap,
-  body[data-role="cabinet"][data-page="tva"] .mod-wrap,
-  body[data-role="cabinet"][data-page="editions"] .mod-wrap,
-  body[data-role="cabinet"][data-page="fec"] .mod-wrap,
-  body[data-role="cabinet"][data-page="reglements"] .mod-wrap{ column-count:2; column-gap:22px; }
-
-  body[data-role="cabinet"][data-page="facturation"] .mod-wrap>.page-head,
-  body[data-role="cabinet"][data-page="achats"] .mod-wrap>.page-head,
-  body[data-role="cabinet"][data-page="tva"] .mod-wrap>.page-head,
-  body[data-role="cabinet"][data-page="editions"] .mod-wrap>.page-head,
-  body[data-role="cabinet"][data-page="fec"] .mod-wrap>.page-head,
-  body[data-role="cabinet"][data-page="reglements"] .mod-wrap>.page-head,
-  body[data-role="cabinet"][data-page="facturation"] .mod-wrap>.flow,
-  body[data-role="cabinet"][data-page="achats"] .mod-wrap>.flow,
-  body[data-role="cabinet"][data-page="tva"] .mod-wrap>.flow,
-  body[data-role="cabinet"][data-page="editions"] .mod-wrap>.flow,
-  body[data-role="cabinet"][data-page="fec"] .mod-wrap>.flow,
-  body[data-role="cabinet"][data-page="reglements"] .mod-wrap>.flow,
-  body[data-role="cabinet"][data-page="facturation"] .mod-wrap>.barre-nouveau,
-  body[data-role="cabinet"][data-page="achats"] .mod-wrap>.barre-nouveau{ -webkit-column-span:all; column-span:all; }
-
-  body[data-role="cabinet"][data-page="facturation"] .mod-wrap>.card,
-  body[data-role="cabinet"][data-page="achats"] .mod-wrap>.card,
-  body[data-role="cabinet"][data-page="tva"] .mod-wrap>.card,
-  body[data-role="cabinet"][data-page="editions"] .mod-wrap>.card,
-  body[data-role="cabinet"][data-page="fec"] .mod-wrap>.card,
-  body[data-role="cabinet"][data-page="reglements"] .mod-wrap>.card{
-    -webkit-column-break-inside:avoid; break-inside:avoid; page-break-inside:avoid;
-    display:inline-block; width:100%; margin:0 0 18px;
-  }
-}
-</style>
 <style id="sec-redesign">
 /* ===== Page de connexion : cadre noir pleine largeur + boutons raffinés + animations ===== */
 #sec-lock .sec-screen{ max-width:none !important; }
@@ -10234,7 +10197,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v114 · noir & lime';
+    b.textContent='YADA · v115 · noir & lime';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#c4ff3d,#6fb800);color:#16210a;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
