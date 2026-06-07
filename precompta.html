@@ -2419,6 +2419,40 @@ body[data-theme="liquid-teinte"] .cp-panel,body[data-theme="liquid-teinte"] .cp-
 /* barre latérale liquid : retire le liseré bleu nuit */
 body[data-theme="liquid-clair"] aside,body[data-theme="liquid-teinte"] aside{ background-image:none !important; }
 </style>
+<style id="match-dossier">
+/* ===== Reprend EXACTEMENT le code couleur des cartes de dossier =====
+   pour le fond ET les cartes des modules, sur les 3 thèmes.
+   Fond : transparent → laisse voir le fond (graphite) du body, comme l'écran dossiers.
+   Cartes/KPI/tuiles : fond graphite #151515→#0a0a0a, bord #2a2a2a, survol lime. */
+
+/* Fond identique à l'écran dossiers (fond du body visible partout) */
+body[data-theme="noir"] main,body[data-theme="noir"] main.fullbleed .mod-wrap,body[data-theme="noir"] main.fullbleed .dash-wrap,
+body[data-theme="liquid-clair"] main,body[data-theme="liquid-clair"] main.fullbleed .mod-wrap,body[data-theme="liquid-clair"] main.fullbleed .dash-wrap,
+body[data-theme="liquid-teinte"] main,body[data-theme="liquid-teinte"] main.fullbleed .mod-wrap,body[data-theme="liquid-teinte"] main.fullbleed .dash-wrap{ background:transparent !important; }
+
+/* Cartes / KPI / tuiles = exactement le style des cartes de dossier */
+body[data-theme="noir"] .card,body[data-theme="noir"] .mod-wrap .card,body[data-theme="noir"] .dash-wrap .card,body[data-theme="noir"] .cli-col>.card,body[data-theme="noir"] .kpi,body[data-theme="noir"] .ec-tile,
+body[data-theme="liquid-clair"] .card,body[data-theme="liquid-clair"] .mod-wrap .card,body[data-theme="liquid-clair"] .dash-wrap .card,body[data-theme="liquid-clair"] .cli-col>.card,body[data-theme="liquid-clair"] .kpi,body[data-theme="liquid-clair"] .ec-tile,
+body[data-theme="liquid-teinte"] .card,body[data-theme="liquid-teinte"] .mod-wrap .card,body[data-theme="liquid-teinte"] .dash-wrap .card,body[data-theme="liquid-teinte"] .cli-col>.card,body[data-theme="liquid-teinte"] .kpi,body[data-theme="liquid-teinte"] .ec-tile{
+  background-image:none !important;
+  background:linear-gradient(160deg, #151515, #0a0a0a) !important;
+  border:1px solid #2a2a2a !important;
+  -webkit-backdrop-filter:blur(12px) !important; backdrop-filter:blur(12px) !important;
+  box-shadow:0 14px 40px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.04) !important;
+  border-radius:18px !important;
+  animation:none !important;
+}
+/* Survol = liseré + halo lime (identique aux cartes de dossier) */
+body[data-theme="noir"] .card:hover,body[data-theme="noir"] .mod-wrap .card:hover,body[data-theme="noir"] .dash-wrap .card:hover,body[data-theme="noir"] .cli-col>.card:hover,body[data-theme="noir"] .ec-tile:hover,
+body[data-theme="liquid-clair"] .card:hover,body[data-theme="liquid-clair"] .mod-wrap .card:hover,body[data-theme="liquid-clair"] .dash-wrap .card:hover,body[data-theme="liquid-clair"] .cli-col>.card:hover,body[data-theme="liquid-clair"] .ec-tile:hover,
+body[data-theme="liquid-teinte"] .card:hover,body[data-theme="liquid-teinte"] .mod-wrap .card:hover,body[data-theme="liquid-teinte"] .dash-wrap .card:hover,body[data-theme="liquid-teinte"] .cli-col>.card:hover,body[data-theme="liquid-teinte"] .ec-tile:hover{
+  border-color:rgba(155,239,0,.5) !important;
+  box-shadow:0 16px 44px rgba(0,0,0,.6), 0 0 22px rgba(155,239,0,.14), inset 0 1px 0 rgba(255,255,255,.05) !important;
+}
+/* Retire le balayage/reflet "verre" pour un rendu plat identique aux cartes de dossier */
+body[data-theme="noir"] .mod-wrap .card::after,body[data-theme="noir"] .dash-wrap .card::after,body[data-theme="noir"] .cli-col>.card::after,
+body[data-theme^="liquid"] .card::after,body[data-theme^="liquid"] .kpi::after,body[data-theme^="liquid"] .cp-k::after{ display:none !important; }
+</style>
 <style id="sage-dark-lime">
 /* ===== Écrans "logiciel Sage" (consultation / journal / lettrage / rapprochement)
    ré-habillés en NOIR + VERT LIME (thème noir). Inverse le bloc nlg-redesign
