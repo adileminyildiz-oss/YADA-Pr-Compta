@@ -11212,5 +11212,28 @@ ${lignes}
   if(document.body) tabbar(); else document.addEventListener('DOMContentLoaded', tabbar);
 })();
 </script>
+<script id="yada-addon66">
+/* Bouton de déconnexion dans le menu des dossiers (écran de sélection) */
+(function(){
+  if(typeof ecranSelectionDossier!=='function') return;
+  window.yadaDeconnexion=function(){
+    try{ if(typeof persistActif==='function') persistActif(); }catch(e){}
+    if(typeof window.secVerrouiller==='function'){ window.secVerrouiller(); return; }
+    try{ connecte=false; }catch(e){}
+    if(typeof selRecherche!=='undefined') selRecherche='';
+    try{ render(); }catch(e){ location.reload(); }
+  };
+  var _es=ecranSelectionDossier;
+  ecranSelectionDossier=function(){
+    var h=_es();
+    if(h.indexOf('id="yada-logout-btn"')>=0) return h;
+    var btn='<button id="yada-logout-btn" class="btn btn-ghost" onclick="yadaDeconnexion()" '
+      +'style="margin-left:auto" title="Fermer la session et revenir à l\'écran de connexion">⎋ Se déconnecter</button>';
+    if(h.indexOf('↺ Réinitialiser (démo)</button>')>=0)
+      return h.replace('↺ Réinitialiser (démo)</button>','↺ Réinitialiser (démo)</button>'+btn);
+    return h.replace('<div class="login-actions">','<div class="login-actions">'+btn);
+  };
+})();
+</script>
 </body>
 </html>
