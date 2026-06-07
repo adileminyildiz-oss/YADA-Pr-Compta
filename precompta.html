@@ -3126,43 +3126,6 @@ body[data-theme] button[onclick*="faAddLigne"]:hover{ filter:brightness(1.05); }
   }
 }
 </style>
-<style id="card-shape">
-/* Modules en VERTICAL (une colonne) — seule la FORME des cartes (« palettes ») change :
-   liseré d'accent lime à gauche + coins arrondis distinctifs. Aucun débordement.
-   Préfixe body[data-theme] pour passer devant les styles de cartes du thème. */
-body[data-theme] main:not(.fullbleed) .card,
-body[data-theme] .mod-wrap .card,
-body[data-theme] .dash-wrap .card,
-body[data-theme] .cli-col>.card{
-  border-radius:4px 16px 16px 4px !important;
-  border-left:3px solid rgba(155,239,0,.6) !important;
-  max-width:100% !important;
-}
-.mod-wrap, .dash-wrap{ overflow-x:hidden; }
-body[data-theme] .mod-wrap .card, body[data-theme] .dash-wrap .card{ overflow-x:auto !important; }
-</style>
-<style id="cols-vertical">
-/* Colonnes (cartes réparties en 2 colonnes) MAIS flux vertical : la page défile
-   de haut en bas, aucun débordement horizontal. En-têtes/barres en pleine largeur. */
-@media(min-width:1001px){
-  body[data-role="cabinet"] main.fullbleed .mod-wrap{ column-count:2; column-gap:22px; overflow-x:hidden; }
-  body[data-role="cabinet"][data-page="dash"] .dash-wrap{ column-count:2; column-gap:24px; overflow-x:hidden; }
-  body[data-role="cabinet"] main.fullbleed .mod-wrap>.page-head,
-  body[data-role="cabinet"] main.fullbleed .mod-wrap>.flow,
-  body[data-role="cabinet"] main.fullbleed .mod-wrap>.barre-nouveau,
-  body[data-role="cabinet"] main.fullbleed .mod-wrap>.cli-2col,
-  body[data-role="cabinet"][data-page="dash"] .dash-wrap>.cab-hero,
-  body[data-role="cabinet"][data-page="dash"] .dash-wrap>#ec-hero,
-  body[data-role="cabinet"][data-page="dash"] .dash-wrap>.ec-shortcuts,
-  body[data-role="cabinet"][data-page="dash"] .dash-wrap>.page-head,
-  body[data-role="cabinet"][data-page="dash"] .dash-wrap>.grid{ -webkit-column-span:all; column-span:all; }
-  body[data-role="cabinet"] main.fullbleed .mod-wrap>.card,
-  body[data-role="cabinet"][data-page="dash"] .dash-wrap>.card{
-    -webkit-column-break-inside:avoid; break-inside:avoid; page-break-inside:avoid;
-    display:inline-block; width:100%; max-width:100%; margin:0 0 18px; overflow-x:auto; min-width:0;
-  }
-}
-</style>
 <style id="sec-circle-anim">
 /* Couleur du zoom (cercle de connexion) : dégradé du bouton, animé */
 @keyframes secCircleShift{ 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
@@ -10240,7 +10203,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v120 · noir & lime';
+    b.textContent='YADA · v121 · noir & lime';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#c4ff3d,#6fb800);color:#16210a;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
