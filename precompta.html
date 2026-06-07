@@ -2419,6 +2419,14 @@ body[data-theme="liquid-teinte"] .cp-panel,body[data-theme="liquid-teinte"] .cp-
 /* barre latérale liquid : retire le liseré bleu nuit */
 body[data-theme="liquid-clair"] aside,body[data-theme="liquid-teinte"] aside{ background-image:none !important; }
 </style>
+<style id="nav-collapse">
+/* Sections de menu repliables */
+nav .nav-sec{ cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:8px; user-select:none; }
+nav .nav-sec .nav-caret{ font-size:9px; opacity:.6; transition:transform .2s; }
+nav .nav-sec.collapsed .nav-caret{ transform:rotate(-90deg); }
+nav .nav-sec:hover{ opacity:.85; }
+nav .nav-group.collapsed{ display:none; }
+</style>
 <style id="match-dossier">
 /* ===== Reprend EXACTEMENT le code couleur des cartes de dossier =====
    pour le fond ET les cartes des modules, sur les 3 thèmes.
@@ -3470,8 +3478,8 @@ const PAGES=[
   {id:'societe',ico:'',sec:'Pilotage',lbl:'Sociétés (portefeuille)'},
   {id:'client',ico:'',sec:'Espace Client',lbl:'Espace Client'},
   {id:'tiers',ico:'⊞',sec:'Référentiel',lbl:'Tiers (clients / fournisseurs)'},
-  {id:'facturation',ico:'⤳',sec:'Ventes',lbl:'Facturation client'},
-  {id:'achats',ico:'⎙',sec:'Achats',lbl:'Factures fournisseurs (OCR)'},
+  {id:'facturation',ico:'⤳',sec:'Ventes',lbl:'Client'},
+  {id:'achats',ico:'⎙',sec:'Achats',lbl:'Fournisseur'},
   {id:'compta',ico:'▦',sec:'Comptabilité',lbl:'Consultation des comptes'},
   {id:'chargespaie',ico:'',sec:'Comptabilité',lbl:'Charges et Paie'},
   {id:'journal',ico:'≣',sec:'Comptabilité',lbl:'Journal comptable'},
@@ -11269,6 +11277,44 @@ ${lignes}
       return h.replace('↺ Réinitialiser (démo)</button>','↺ Réinitialiser (démo)</button>'+btn);
     return h.replace('<div class="login-actions">','<div class="login-actions">'+btn);
   };
+})();
+</script>
+<script id="yada-addon67">
+/* Sections de menu repliables (plier/déplier au clic sur le titre) */
+(function(){
+  if(typeof buildNav!=='function') return;
+  var KEY='yada-nav-collapsed';
+  function getCol(){ try{ return JSON.parse(localStorage.getItem(KEY)||'[]'); }catch(e){ return []; } }
+  function setCol(a){ try{ localStorage.setItem(KEY, JSON.stringify(a)); }catch(e){} }
+  function decorate(){
+    var nav=document.getElementById('nav'); if(!nav) return;
+    var secs=nav.querySelectorAll('.nav-sec'); if(!secs.length) return; /* nav client : pas de sections */
+    var collapsed=getCol();
+    Array.prototype.forEach.call(secs, function(sec){
+      var name=(sec.textContent||'').trim();
+      var items=[]; var n=sec.nextSibling;
+      while(n){ if(n.nodeType===1 && n.classList){ if(n.classList.contains('nav-sec')) break; if(n.classList.contains('nav-btn')) items.push(n); } n=n.nextSibling; }
+      var group=document.createElement('div'); group.className='nav-group';
+      sec.parentNode.insertBefore(group, sec.nextSibling);
+      items.forEach(function(it){ group.appendChild(it); });
+      var hasActive=!!group.querySelector('.nav-btn.active');
+      var label=sec.textContent; sec.textContent='';
+      var sp=document.createElement('span'); sp.className='nav-sec-lbl'; sp.textContent=label;
+      var car=document.createElement('span'); car.className='nav-caret'; car.textContent='▾';
+      sec.appendChild(sp); sec.appendChild(car);
+      var isCol=(collapsed.indexOf(name)>=0) && !hasActive; /* la section active reste dépliée */
+      if(isCol){ sec.classList.add('collapsed'); group.classList.add('collapsed'); }
+      sec.onclick=function(){
+        var c=getCol(); var i=c.indexOf(name);
+        var nowCol=!group.classList.contains('collapsed');
+        group.classList.toggle('collapsed', nowCol);
+        sec.classList.toggle('collapsed', nowCol);
+        if(nowCol){ if(i<0) c.push(name); } else { if(i>=0) c.splice(i,1); }
+        setCol(c);
+      };
+    });
+  }
+  var _bn=buildNav; buildNav=function(){ var r=_bn.apply(this,arguments); try{ decorate(); }catch(e){} return r; };
 })();
 </script>
 </body>
