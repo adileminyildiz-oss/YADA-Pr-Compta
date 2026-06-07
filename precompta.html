@@ -3163,6 +3163,12 @@ body[data-theme] .mod-wrap .card, body[data-theme] .dash-wrap .card{ overflow-x:
   }
 }
 </style>
+<style id="sec-circle-anim">
+/* Couleur du zoom (cercle de connexion) : dégradé du bouton, animé */
+@keyframes secCircleShift{ 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+#sec-lock .sec-circle{ animation:secCircleShift 1.1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce){ #sec-lock .sec-circle{ animation:none; } }
+</style>
 </head>
 <body data-theme="noir">
 <div class="layout">
@@ -10234,7 +10240,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v119 · noir & lime';
+    b.textContent='YADA · v120 · noir & lime';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#c4ff3d,#6fb800);color:#16210a;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -11708,13 +11714,18 @@ ${lignes}
     var cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
     var cs=getComputedStyle(btn); var col=cs.backgroundColor;
     if(!col || col==='rgba(0, 0, 0, 0)' || col==='transparent'){ col=(r==='client')?'#0f1115':'#9bef00'; }
+    /* Dégradé repris du bouton (animé) : si le bouton a un dégradé, on le réutilise ;
+       sinon on construit un dégradé à partir de sa couleur. */
+    var grad=(cs.backgroundImage && cs.backgroundImage!=='none')
+      ? cs.backgroundImage
+      : (r==='client' ? 'linear-gradient(120deg,#22252b,#0a0a0a,#16181d)' : 'linear-gradient(120deg,#c4ff3d,#6fb800,#9bef00)');
     var W=window.innerWidth, H=window.innerHeight;
     var maxR=Math.max(Math.hypot(cx,cy),Math.hypot(W-cx,cy),Math.hypot(cx,H-cy),Math.hypot(W-cx,H-cy));
     var base=40, scale=(maxR+24)/base;
     var c=document.createElement('div'); c.className='sec-circle';
     c.style.cssText='position:fixed;left:'+cx+'px;top:'+cy+'px;width:'+(base*2)+'px;height:'+(base*2)+'px;'
-      +'margin:'+(-base)+'px 0 0 '+(-base)+'px;border-radius:50%;background:'+col+';'
-      +'z-index:100020;transform:scale(0);will-change:transform;pointer-events:none;';
+      +'margin:'+(-base)+'px 0 0 '+(-base)+'px;border-radius:50%;background:'+grad+';background-size:240% 240%;'
+      +'z-index:100020;transform:scale(0);will-change:transform,background-position;pointer-events:none;';
     lock.appendChild(c);
     if(body) body.classList.add('sec-fade');
     requestAnimationFrame(function(){
