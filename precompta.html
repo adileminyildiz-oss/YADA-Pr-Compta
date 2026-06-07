@@ -2019,22 +2019,22 @@ body[data-theme="noir"]::before{ content:""; position:fixed; inset:-30%; z-index
   background:
     radial-gradient(38% 40% at 16% 12%, rgba(91,140,255,.55), transparent 60%),
     radial-gradient(34% 36% at 86% 16%, rgba(34,211,238,.42), transparent 60%),
-    radial-gradient(40% 42% at 78% 86%, rgba(163,230,53,.40), transparent 60%),
+    radial-gradient(28% 30% at 82% 88%, rgba(163,230,53,.24), transparent 55%),
     radial-gradient(40% 42% at 12% 84%, rgba(140,80,255,.36), transparent 60%);
   filter:blur(36px); will-change:transform; }
 /* cartes : fond NOIR → BLEU FONCÉ + BORD dégradé bleu→lime intense + reflet lime dans le coin */
 body[data-theme="noir"] .mod-wrap .card, body[data-theme="noir"] .dash-wrap .card, body[data-theme="noir"] .card, body[data-theme="noir"] .cli-col>.card{
-  background:radial-gradient(120% 130% at 100% 0%, rgba(166,255,0,.14), transparent 45%),
-            radial-gradient(120% 130% at 0% 0%, rgba(47,128,255,.16), transparent 45%),
+  background:radial-gradient(55% 55% at 100% 0%, rgba(166,255,0,.10), transparent 38%),
+            radial-gradient(120% 130% at 0% 0%, rgba(47,128,255,.16), transparent 48%),
             linear-gradient(160deg, #02030a, #07142e) padding-box,
-            linear-gradient(135deg, #2f6dff, #36d1dc 40%, #a6ff00) border-box !important;
+            linear-gradient(135deg, #2f6dff, #36d1dc 45%, #a6ff00) border-box !important;
   border:1.6px solid transparent !important; border-radius:18px !important; color:#eaf3ff !important;
-  box-shadow:0 16px 46px rgba(0,0,0,.7), 0 0 28px rgba(166,255,0,.22), 0 0 24px rgba(47,128,255,.20), inset 0 1px 0 rgba(255,255,255,.08) !important; }
+  box-shadow:0 16px 46px rgba(0,0,0,.7), 0 0 12px rgba(166,255,0,.12), 0 0 26px rgba(47,128,255,.22), inset 0 1px 0 rgba(255,255,255,.08) !important; }
 body[data-theme="noir"] .kpi, body[data-theme="noir"] .ec-tile{
-  background:radial-gradient(130% 130% at 100% 0%, rgba(166,255,0,.16), transparent 50%),
+  background:radial-gradient(60% 60% at 100% 0%, rgba(166,255,0,.10), transparent 42%),
             linear-gradient(160deg, #02030a, #08163150) padding-box,
             linear-gradient(135deg, #2f6dff, #a6ff00) border-box !important;
-  border:1.6px solid transparent !important; color:#eaf3ff !important; box-shadow:0 0 22px rgba(166,255,0,.16), inset 0 1px 0 rgba(255,255,255,.07) !important; }
+  border:1.6px solid transparent !important; color:#eaf3ff !important; box-shadow:0 0 12px rgba(166,255,0,.10), 0 0 18px rgba(47,128,255,.16), inset 0 1px 0 rgba(255,255,255,.07) !important; }
 /* navigation active : accent lime */
 body[data-theme="noir"] .nav-btn.active{ background:linear-gradient(120deg, rgba(91,140,255,.20), rgba(163,230,53,.16)) !important; border:1px solid rgba(163,230,53,.5) !important; box-shadow:0 0 20px rgba(163,230,53,.20) !important; color:#fff !important; }
 body[data-theme="noir"] .nav-btn.active .ico{ color:#b6ff3c !important; }
@@ -2045,7 +2045,7 @@ body[data-theme="noir"] .btn-gold{ background:linear-gradient(120deg,#a3e635,#22
 body[data-theme="noir"] .ec-tile:hover{ box-shadow:0 0 30px rgba(163,230,53,.28) !important; }
 @media (prefers-reduced-motion: no-preference){
   @keyframes yadaHalo{ 0%{ transform:translate3d(0,0,0) rotate(0deg) scale(1);} 50%{ transform:translate3d(-3%,2%,0) rotate(7deg) scale(1.10);} 100%{ transform:translate3d(2%,-2%,0) rotate(-5deg) scale(1.05);} }
-  @keyframes yadaPulse{ 0%{ box-shadow:0 16px 46px rgba(0,0,0,.7), 0 0 18px rgba(47,128,255,.16), 0 0 16px rgba(166,255,0,.12), inset 0 1px 0 rgba(255,255,255,.08);} 100%{ box-shadow:0 20px 54px rgba(0,0,0,.72), 0 0 40px rgba(166,255,0,.34), 0 0 30px rgba(47,128,255,.26), inset 0 1px 0 rgba(255,255,255,.12);} }
+  @keyframes yadaPulse{ 0%{ box-shadow:0 16px 46px rgba(0,0,0,.7), 0 0 20px rgba(47,128,255,.18), 0 0 8px rgba(166,255,0,.10), inset 0 1px 0 rgba(255,255,255,.08);} 100%{ box-shadow:0 20px 54px rgba(0,0,0,.72), 0 0 32px rgba(47,128,255,.30), 0 0 14px rgba(166,255,0,.16), inset 0 1px 0 rgba(255,255,255,.12);} }
   body[data-theme="noir"]::before{ animation:yadaHalo 24s ease-in-out infinite alternate; }
   body[data-theme="noir"] .mod-wrap .card, body[data-theme="noir"] .dash-wrap .card, body[data-theme="noir"] .cli-col>.card{ animation:yadaPulse 7s ease-in-out infinite alternate; }
 }
@@ -9159,7 +9159,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v84 · cartes noir/bleu + lime intense ✨';
+    b.textContent='YADA · v85 · vert lime resserré ✨';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:600 11px system-ui,sans-serif;background:rgba(47,109,176,.92);color:#fff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.78;pointer-events:none';
     document.body.appendChild(b); }
