@@ -10368,7 +10368,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v134 · noir & lime';
+    b.textContent='YADA · v135 · noir & lime';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#c4ff3d,#6fb800);color:#16210a;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -12243,7 +12243,17 @@ ${lignes}
 (function(){
   function curTheme(){ return document.body.getAttribute('data-theme')||'noir'; }
   function estJour(){ return curTheme()==='jour'; }
+  /* Visible UNIQUEMENT dans l'espace cabinet / client (connecté), pas sur l'écran
+     de connexion ni la sélection de dossier. */
+  function dansEspace(){
+    try{
+      var gate=document.getElementById('sec-lock');
+      var locked=gate && gate.classList.contains('show');
+      return (typeof connecte!=='undefined' && connecte) && !locked;
+    }catch(e){ return false; }
+  }
   function maj(){ var b=document.getElementById('yada-daynight'); if(!b) return;
+    b.style.display = dansEspace() ? 'flex' : 'none';
     if(estJour()){ b.textContent='☀️'; b.title='Mode jour — cliquer pour passer en mode nuit'; }
     else { b.textContent='🌙'; b.title='Mode nuit — cliquer pour passer en mode jour'; }
   }
