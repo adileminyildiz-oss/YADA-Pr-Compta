@@ -482,10 +482,18 @@
   .docbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
   #print-area{display:none}
   @media print{
-    body *{visibility:hidden!important}
-    #print-area, #print-area *{visibility:visible!important}
-    #print-area{display:block!important;position:absolute;left:0;top:0;width:100%}
-    .doc-page{border:none;box-shadow:none;max-width:none;margin:0;page-break-after:always;padding:10px 14px}
+    /* N'imprimer QUE la zone d'impression : on retire tout le reste du flux
+       (display:none) au lieu de visibility:hidden → plus de pages vides.
+       #print-area reprend un flux normal et se pagine proprement. */
+    body > *{ display:none !important; }
+    #print-area{ display:block !important; position:static !important; left:auto; top:auto; width:auto !important; }
+    .doc{ color:#000 !important; }
+    .doc-page{ border:none !important; box-shadow:none !important; max-width:none !important; margin:0 !important; padding:0 !important; page-break-after:auto; }
+    .doc-page:not(:last-child){ page-break-after:always; }
+    .doc-t tr{ page-break-inside:avoid; }
+    .doc-gl-h{ page-break-inside:avoid; }
+    .inv-page{ border:none !important; box-shadow:none !important; }
+    @page{ size:A4; margin:12mm; }
   }
 
   /* ===== Journal de saisie Banque (style Sage) ===== */
@@ -3331,6 +3339,20 @@ body[data-theme="noir"] .dossier-card:hover{ border-color:#1e90ff !important; bo
 .dc-badge.on{ background:#0b3a78 !important; color:#7fbaff !important; }
 .dc-open{ color:#1e90ff !important; }
 .dc-star.on{ color:#1e90ff !important; }
+</style>
+<style id="doc-readable">
+/* Éditions (Balance, Grand livre, Journaux) : document TOUJOURS lisible et aligné,
+   quel que soit le thème — fond blanc, texte foncé, colonnes nettes, totaux distincts. */
+body[data-theme] .doc-page{ background:#fff !important; }
+body[data-theme] .doc, body[data-theme] .doc *{ color:#1b1b1b !important; }
+.doc-t th, .doc-t td{ border-bottom:1px solid #ececec; }
+.doc-t td:not(.l){ font-variant-numeric:tabular-nums; }
+.doc-t tbody tr:nth-child(odd) td{ background:#fafafa; }
+.doc-t tr.sub td{ background:#eef2f7 !important; }
+.doc-t tr.cls td{ background:#e7edf5 !important; }
+.doc-t tr.tg td{ background:#dde7f3 !important; }
+#doc-preview{ overflow-x:auto; }
+@media print{ .doc-t tbody tr:nth-child(odd) td{ background:transparent !important; } }
 </style>
 </head>
 <body data-theme="noir">
@@ -10409,7 +10431,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v141 · noir & bleu';
+    b.textContent='YADA · v142 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
