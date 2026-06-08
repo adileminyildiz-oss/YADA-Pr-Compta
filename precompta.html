@@ -10409,7 +10409,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v140 · noir & bleu';
+    b.textContent='YADA · v141 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -11841,29 +11841,56 @@ ${lignes}
     b.title='Une nouvelle version du logiciel est disponible — cliquez pour la charger';
     b.style.display='';
   }
+  /* ----- Mise à jour AUTOMATIQUE dès qu'une nouvelle version est déployée ----- */
+  var autoScheduled=false;
+  function isTyping(){ var a=document.activeElement; if(!a) return false;
+    if(a.isContentEditable) return true;
+    var t=a.tagName;
+    if(t==='TEXTAREA') return (a.value||'').length>0;
+    if(t==='INPUT'){ var ty=(a.type||'').toLowerCase();
+      if(ty==='password') return true;            /* ne jamais interrompre une saisie de mot de passe */
+      return (a.value||'').length>0; }            /* champ vide (autofocus) -> on peut mettre a jour */
+    return false; }
+  function vNum(v){ var n=parseInt(v,10); return isNaN(n)?-1:n; }
+  function autoUpdate(rv){
+    if(autoScheduled) return; autoScheduled=true;
+    showBtn('v'+rv);                                   /* repli visible si l'auto échoue */
+    var tried=null; try{ tried=sessionStorage.getItem('yada-maj-tried'); }catch(e){}
+    if(tried===String(rv)){ return; }                  /* déjà tenté pour cette version → on évite la boucle, le bouton reste */
+    if(typeof toast==='function'){ try{ toast('🔄 Nouvelle version v'+rv+' — mise à jour automatique…'); }catch(e){} }
+    var apply=function(){
+      if(isTyping()){ setTimeout(apply, 4000); return; }   /* attendre la fin d'une saisie en cours */
+      try{ sessionStorage.setItem('yada-maj-tried', String(rv)); }catch(e){}
+      window.yadaMajNow();
+    };
+    setTimeout(apply, 2500);
+  }
   function check(){
     if(checking) return;
-    var now=Date.now(); if(now-lastCheck<120000) return; /* throttle 2 min */
+    var now=Date.now(); if(now-lastCheck<60000) return;  /* throttle 1 min */
     var lv=getLocalVer(); if(!lv) return;                /* version locale inconnue : on s'abstient */
     if(navigator.onLine===false) return;
-    if(document.getElementById('yada-maj-btn')) return;  /* déjà signalé */
+    if(autoScheduled) return;                            /* mise à jour déjà programmée */
     checking=true; lastCheck=now;
     var url=location.href.split('#')[0].split('?')[0];
     fetch(url, {cache:'no-store'}).then(function(r){ return r.ok ? r.text() : Promise.reject(); })
       .then(function(html){
         var m=html.match(/YADA · v(\d+)/);
         var rv=m?m[1]:null;
-        if(rv && rv!==lv) showBtn('v'+rv);
+        if(rv && vNum(rv)>vNum(lv)) autoUpdate(rv);       /* version distante plus récente → auto */
       })
       .catch(function(){})
       .then(function(){ checking=false; });
   }
   function start(){
     injectCss(); getLocalVer();
+    /* purge du verrou anti-boucle si la version locale a bien rattrapé la cible */
+    try{ var t=sessionStorage.getItem('yada-maj-tried'); if(t && getLocalVer() && vNum(getLocalVer())>=vNum(t)) sessionStorage.removeItem('yada-maj-tried'); }catch(e){}
     setTimeout(check, 3000);
     window.addEventListener('focus', check);
     window.addEventListener('online', check);
-    setInterval(check, 15*60*1000);
+    document.addEventListener('visibilitychange', function(){ if(!document.hidden) check(); });
+    setInterval(check, 5*60*1000);                        /* re-vérifie toutes les 5 min */
   }
   if(document.body) start(); else document.addEventListener('DOMContentLoaded', start);
 })();
