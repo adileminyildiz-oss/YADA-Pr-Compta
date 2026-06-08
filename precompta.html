@@ -10431,7 +10431,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v142 · noir & bleu';
+    b.textContent='YADA · v143 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -10450,8 +10450,8 @@ ${lignes}
 (function(){
   window.__secDual=true;
   var SEP='##', KD='yada-lock-delay';
-  var CAB={ salt:'bde7c60ed8ebbc65', hash:'c439eeb815469a50d3b3aad73f63759ee5e045689956710fc297f27d2676a87f' };
-  var CLI={ salt:'9fb44c9e64732c08', hash:'281b9f17f7420ac6a1173aa6d0655042d555be7c9eab6d9f4460686c614054ce' };
+  var CAB={ salt:'bde7c60ed8ebbc65', hash:'c439eeb815469a50d3b3aad73f63759ee5e045689956710fc297f27d2676a87f', emailHash:'89e87026dc8b40c116b4132d994445e39aa481ccf9853d24bdd809002087c1f3' };
+  var CLI={ salt:'9fb44c9e64732c08', hash:'281b9f17f7420ac6a1173aa6d0655042d555be7c9eab6d9f4460686c614054ce', emailHash:'43c0ac40fffb9fb4259289371d72b3f62a9527e4c0f6431f95dbdc353ff557e5' };
   var CLIENT_DOSSIER='d-ama'; /* dossier exclusif du portail Client */
   var CHOICE=null; var secStep=1; var secEmail='';
   window.__secLocked=false; var secTimer=null;
@@ -10511,9 +10511,20 @@ ${lignes}
     o.innerHTML=html;
     o.classList.add('show'); setTimeout(function(){ var i=document.getElementById(secStep===2?'sec-pwd':'sec-email'); if(i)i.focus(); },30);
   }
-  window.secEtape1=function(){ var i=document.getElementById('sec-email'); var v=(i&&i.value||'').trim();
+  window.secEtape1=async function(){ var i=document.getElementById('sec-email'); var v=(i&&i.value||'').trim();
     var e=document.getElementById('sec-err');
     if(!v){ if(e)e.textContent='Renseignez votre identifiant.'; if(i)i.focus(); return; }
+    /* L'identifiant doit être CORRECT avant d'accéder au mot de passe :
+       on compare l'empreinte salée de l'identifiant à celle attendue pour l'espace. */
+    var rec=(CHOICE==='client')?CLI:CAB;
+    if(rec && rec.emailHash){
+      var eh=await sha(rec.salt+v.toLowerCase());
+      if(eh!==rec.emailHash){
+        if(e)e.textContent='Identifiant incorrect pour l\'espace '+(CHOICE==='cabinet'?'Cabinet':'Client')+'.';
+        if(i){ try{ i.focus(); i.select(); }catch(_){} }
+        return;                                   /* on RESTE à l'étape 1 : pas de champ mot de passe */
+      }
+    }
     secEmail=v; secStep=2; secAfficher(); };
   window.secEtapeRetour=function(){ secStep=1; secAfficher(); };
   window.secChoisir=function(r){ CHOICE=(isMobile()?'client':r); secStep=1; secAfficher(); };
