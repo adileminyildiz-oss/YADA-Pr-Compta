@@ -10432,7 +10432,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v144 · noir & bleu';
+    b.textContent='YADA · v145 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -10564,8 +10564,8 @@ ${lignes}
       +'<div class="sub">Deux espaces avec <b>identifiants distincts</b> (Cabinet / Client). À l\'ouverture : choix de l\'espace puis connexion par e-mail + mot de passe (empreinte SHA-256 salée embarquée, clair absent du source). Verrouillage automatique par inactivité. Sécurité côté navigateur : dissuasive. Pour changer les identifiants, demandez au cabinet (redéploiement).</div>'
       +'<div class="row g3" style="align-items:flex-end"><div class="field"><label>Espace courant</label><div class="kv2 ok">'+(window.sessionRole==='client'?'Espace Client':'Espace Cabinet')+'</div></div>'
       +'<div class="field"><label>Verrouillage auto (inactivité)</label>'+delaySel+'</div>'
-      +'<div class="field"><label>&nbsp;</label><button class="btn btn-ghost" onclick="secVerrouiller()">Se déconnecter</button></div></div></div>'; }; }
-  function addSideBtn(){ try{ var foot=document.querySelector('.side-foot'); if(foot && !document.getElementById('sec-side-btn')){ var b=document.createElement('button'); b.id='sec-side-btn'; b.textContent='Déconnexion'; b.onclick=window.secVerrouiller; foot.insertBefore(b, foot.firstChild.nextSibling); } }catch(e){} }
+      +'<div class="field"><label>&nbsp;</label><button class="btn btn-ghost" onclick="(window.secDeconnexion||window.secVerrouiller)()">Se déconnecter</button></div></div></div>'; }; }
+  function addSideBtn(){ try{ var foot=document.querySelector('.side-foot'); if(foot && !document.getElementById('sec-side-btn')){ var b=document.createElement('button'); b.id='sec-side-btn'; b.textContent='Déconnexion'; b.onclick=function(){ (window.secDeconnexion||window.secVerrouiller)(); }; foot.insertBefore(b, foot.firstChild.nextSibling); } }catch(e){} }
   if(typeof render==='function'){ var _r=render; render=function(){ var x=_r.apply(this,arguments); addSideBtn(); return x; }; }
   function boot(){ var role=ssGet('yada-role'); var auto=false;
     if(isMobile() && role==='cabinet') role=null; /* mobile : pas d'accès cabinet */
@@ -11773,6 +11773,7 @@ ${lignes}
   if(typeof ecranSelectionDossier!=='function') return;
   window.yadaDeconnexion=function(){
     try{ if(typeof persistActif==='function') persistActif(); }catch(e){}
+    if(typeof window.secDeconnexion==='function'){ window.secDeconnexion(); return; }
     if(typeof window.secVerrouiller==='function'){ window.secVerrouiller(); return; }
     try{ connecte=false; }catch(e){}
     if(typeof selRecherche!=='undefined') selRecherche='';
@@ -12408,6 +12409,35 @@ ${lignes}
     'body .side-foot button.sf-discard{ color:#ffd9b0 !important; border-color:rgba(255,150,60,.45) !important; }'
     +'body .side-foot button.sf-discard:hover{ background:rgba(255,140,40,.18) !important; }';
     document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon81">
+/* Fin de session : à chaque déconnexion MANUELLE, demander à l'utilisateur de
+   valider l'enregistrement avant de quitter (la déconnexion auto par inactivité
+   reste silencieuse). */
+(function(){
+  function lock(){ if(typeof window.secVerrouiller==='function') window.secVerrouiller(); }
+  window.secDeconnexion=function(){
+    var mc=document.getElementById('modal-c'), md=document.getElementById('modal');
+    if(!mc||!md){ try{ if(typeof save==='function') save(); }catch(e){} lock(); return; }
+    var heure=''; try{ var d=new Date(); var z=function(n){return (n<10?'0':'')+n;}; heure=z(d.getHours())+':'+z(d.getMinutes()); }catch(e){}
+    mc.innerHTML='<h2 style="margin-top:0">Fin de session</h2>'
+      +'<div class="sub">Vous êtes sur le point de quitter la session. Souhaitez-vous <b>enregistrer vos modifications</b> avant de vous déconnecter ?</div>'
+      +'<div class="hint" style="margin-top:6px">Vos données sont conservées sur cet appareil. Cliquez sur « Enregistrer et quitter » pour valider la sauvegarde'+(heure?(' ('+heure+')'):'')+'.</div>'
+      +'<div class="right" style="gap:8px;margin-top:16px">'
+        +'<button class="btn btn-ghost" onclick="closeModal()">Annuler</button>'
+        +'<button class="btn btn-pri" id="sec-save-quit">💾 Enregistrer et quitter</button>'
+      +'</div>';
+    md.classList.add('show');
+    var bq=document.getElementById('sec-save-quit');
+    if(bq) bq.onclick=function(){
+      try{ if(typeof save==='function') save(); }catch(e){}
+      try{ if(window.__yadaMarkSaved) window.__yadaMarkSaved(); }catch(e){}
+      try{ if(typeof toast==='function') toast('Session enregistrée ✓'); }catch(e){}
+      try{ if(typeof closeModal==='function') closeModal(); }catch(e){}
+      lock();
+    };
+  };
 })();
 </script>
 </body>
