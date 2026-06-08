@@ -10293,7 +10293,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v130 · noir & lime';
+    b.textContent='YADA · v131 · noir & lime';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#c4ff3d,#6fb800);color:#16210a;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -12038,6 +12038,59 @@ ${lignes}
     }catch(e){}
     return r;
   };
+})();
+</script>
+<script id="yada-addon76">
+/* Paramétrage : RÉINITIALISATION COMPTABLE en un clic — supprime toutes les données
+   comptables de la société active (écritures, factures, règlements, banque & relevés,
+   documents/pièces déposées, immos/emprunts/crédit-bails/locations/véhicules, paie,
+   import FEC, numérotation, propositions IA, relances). Conserve : société, tiers,
+   plan comptable, journaux et paramètres. Double confirmation, action irréversible. */
+(function(){
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
+  function nomSociete(){ try{ return (db.societe && (db.societe.raison||db.societe.dossierNom)) || 'cette société'; }catch(e){ return 'cette société'; } }
+
+  window.purgeComptaSociete=function(){
+    var nom=nomSociete();
+    if(!confirm('⚠️ Supprimer TOUTES les données comptables de « '+nom+' » ?\n\n'
+      +'Seront définitivement effacés : écritures, factures, règlements, banque & relevés, '
+      +'documents et pièces déposées (GED), immobilisations / emprunts / crédit-bails / locations / véhicules, '
+      +'paie, journal d\'import FEC, numérotation, propositions IA et relances.\n\n'
+      +'Sont conservés : la société, les tiers, le plan comptable et les journaux.\n\n'
+      +'Cette action est IRRÉVERSIBLE — exportez une sauvegarde JSON avant si besoin.')) return;
+    if(!confirm('Dernière confirmation : effacer définitivement les données comptables de « '+nom+' » ?')) return;
+    try{
+      ['ecritures','factures','reglements','banque','odiv','releves','docs','demandesFactures',
+       'fecLog','immos','emprunts','creditbails','locations','vehicules'].forEach(function(k){ db[k]=[]; });
+      if(typeof paieDefaut==='function') db.paie=paieDefaut(); else db.paie={salaries:[]};
+      db.seq={};
+      if(Array.isArray(db.propositions)) db.propositions=[];
+      if(db.relances && typeof db.relances==='object') db.relances={};
+      if(db.parametres){ ['pieces','depots','notifsDepot','fichesTiers','messages','demandes'].forEach(function(k){
+        if(Array.isArray(db.parametres[k])) db.parametres[k]=[]; }); }
+      if(typeof save==='function') save();
+      if(typeof toast==='function') toast('Données comptables de « '+nom+' » supprimées ✓');
+      if(typeof render==='function') render();
+    }catch(e){ if(typeof toast==='function') toast('Erreur : '+((e&&e.message)||e)); }
+  };
+
+  if(typeof pageParametrage==='function'){
+    var _ppPurge=pageParametrage;
+    pageParametrage=function(){
+      var html=_ppPurge();
+      var card='<div class="card" id="purge-compta" style="border:1.5px solid #c0392b;background:rgba(192,57,43,.06)">'
+        +'<h2 style="color:#e74c3c">🗑️ Réinitialiser la comptabilité</h2>'
+        +'<div class="sub">Supprime en un clic <b>toutes les données comptables</b> de « '+esc(nomSociete())+' » : '
+        +'écritures, factures, règlements, banque &amp; relevés, documents et pièces déposées, '
+        +'immobilisations / emprunts, paie, import FEC, numérotation, propositions IA et relances. '
+        +'La <b>société</b>, les <b>tiers</b>, le <b>plan comptable</b> et les <b>journaux</b> sont conservés. '
+        +'<b>Action irréversible</b> — pensez à exporter une sauvegarde JSON avant.</div>'
+        +'<div class="right"><button class="btn" style="background:#c0392b;color:#fff;border:none" '
+        +'onclick="purgeComptaSociete()">Supprimer toutes les données comptables</button></div></div>';
+      return html+card;
+    };
+  }
 })();
 </script>
 </body>
