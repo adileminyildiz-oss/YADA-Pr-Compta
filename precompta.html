@@ -1968,7 +1968,7 @@ body #sec-lock{ background:
    radial-gradient(760px 760px at 50% 122%, rgba(30,144,255,.12), transparent 62%),
    #0a0a0a !important; }
 body #sec-lock .sec-screen{ background:transparent !important; }
-body #sec-lock .sec-hero{ background:linear-gradient(160deg,#1b3300,#0a0a0a) !important; color:#fff !important; }
+body #sec-lock .sec-hero{ background:linear-gradient(160deg,#0a2a66,#05080d) !important; color:#fff !important; }
 body #sec-lock .sec-logo, body #sec-lock .sec-logo small{ color:#fff !important; }
 body #sec-lock .sec-body h2{ color:#eaf0ff !important; }
 body #sec-lock .sec-p{ color:#9aa49a !important; }
@@ -2971,6 +2971,32 @@ body[data-theme] aside nav .nav-group{ display:flex; flex-direction:column; gap:
 @media (prefers-reduced-motion: reduce){
   #sec-lock .sec-zooming{ animation:none !important; }
   #sec-lock .sec-screen.sec-in .sec-body{ animation:none !important; }
+}
+</style>
+<style id="sec-split">
+/* ===== Nouvelle disposition de l'entrée : écran SCINDÉ (marque à gauche / formulaire à droite) ===== */
+#sec-lock .sec-tagline, #sec-lock .sec-points{ display:none; }      /* masqués par défaut (mobile) */
+@media(min-width:821px){
+  #sec-lock .sec-screen{ flex-direction:row !important; max-width:none !important; width:100% !important; min-height:100vh !important; position:relative; background:transparent !important; }
+  /* Panneau MARQUE (gauche) */
+  #sec-lock .sec-hero{ flex:0 0 46% !important; min-height:100vh !important; clip-path:none !important; border-radius:0 !important;
+    display:flex !important; flex-direction:column !important; justify-content:center !important; align-items:flex-start !important;
+    text-align:left !important; padding:0 5vw !important;
+    background:radial-gradient(760px 520px at 18% 12%, rgba(30,144,255,.40), transparent 60%), linear-gradient(160deg,#0a2a66,#05080d) !important;
+    border-right:1px solid rgba(30,144,255,.25) !important; }
+  #sec-lock .sec-hero .sec-logo{ font-size:64px !important; }
+  #sec-lock .sec-tagline{ display:block; color:#cfe0ff; font-family:'Fraunces',serif; font-weight:600; font-size:23px; margin-top:18px; max-width:430px; line-height:1.32; }
+  #sec-lock .sec-points{ display:block; list-style:none; padding:0; margin:30px 0 0; }
+  #sec-lock .sec-points li{ color:#9fb6d8; font-size:15px; padding:8px 0 8px 28px; position:relative; }
+  #sec-lock .sec-points li::before{ content:"→"; position:absolute; left:0; color:#1e90ff; font-weight:800; }
+  /* Panneau FORMULAIRE (droite) */
+  #sec-lock .sec-body{ flex:1 1 auto !important; max-width:none !important; margin:0 !important;
+    display:flex !important; flex-direction:column !important; justify-content:center !important; align-items:center !important;
+    padding:0 6% !important; background:#0b0b0e !important; }
+  #sec-lock .sec-body > *{ width:100% !important; max-width:400px !important; }
+  #sec-lock .sec-body h2{ text-align:left !important; margin:6px 0 4px !important; font-size:30px !important; color:#eaf0ff !important; }
+  #sec-lock .sec-p{ text-align:left !important; margin:0 0 20px !important; }
+  #sec-lock .sec-ver{ position:absolute !important; bottom:14px; right:18px; color:#6f7a8f !important; }
 }
 </style>
 <style id="mobile-polish">
@@ -10383,7 +10409,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v136 · noir & bleu';
+    b.textContent='YADA · v137 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -10426,7 +10452,11 @@ ${lignes}
   function isMobile(){ try{ if(window.matchMedia) return window.matchMedia('(max-width:820px)').matches; }catch(e){} return (window.innerWidth||1024)<=820; }
   window.__secMobile=isMobile;
   function secVerTxt(){ try{ var b=document.getElementById('yada-ver'); if(b&&b.textContent) return b.textContent.replace('YADA · ',''); }catch(e){} return 'YADA · Précompta'; }
-  function secHero(){ return '<div class="sec-hero"><div class="sec-logo">YADA<small>Précompta</small></div></div>'; }
+  function secHero(){ return '<div class="sec-hero">'
+    +'<div class="sec-logo">YADA<small>Précompta</small></div>'
+    +'<div class="sec-tagline">La pré-comptabilité, simplifiée.</div>'
+    +'<ul class="sec-points"><li>Facturation, achats &amp; TVA</li><li>Écritures, FEC &amp; éditions</li><li>Espace client sécurisé</li></ul>'
+    +'</div>'; }
   function secAfficher(){ var o=el(); window.__secLocked=true;
     var mob=isMobile();
     if(mob) CHOICE='client'; /* sur mobile : seul l'Espace Client est accessible */
