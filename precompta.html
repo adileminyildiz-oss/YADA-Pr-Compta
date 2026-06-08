@@ -3222,6 +3222,71 @@ body[data-theme] .mod-wrap .inv table td, body[data-theme] .mfac-doc .inv table 
     left:8px;right:8px;transform:none;max-width:none}
 }
 </style>
+<style id="theme-jour">
+/* ===== MODE JOUR — fond blanc + BLEU SATURÉ distinct, barre latérale NOIRE
+   (même esprit/effet que le mode nuit lime). Rouge/vert comptables inchangés. ===== */
+body[data-theme="jour"]{
+  --paper:#ffffff; --paper-2:#eef4ff; --card:#ffffff; --ink:#0e1726; --ink-soft:#5b6b82;
+  --line:#d8e4f6; --line-strong:#bcd0ee; --accent:#0a84ff; --gold:#0a6bdf; --blue:#0a84ff;
+  background:
+    radial-gradient(900px 620px at 8% -10%, rgba(10,132,255,.14), transparent 60%),
+    radial-gradient(820px 600px at 114% 4%, rgba(10,132,255,.10), transparent 60%),
+    radial-gradient(760px 760px at 50% 122%, rgba(10,132,255,.07), transparent 62%),
+    #ffffff !important; background-attachment:fixed !important; color:#0e1726 !important;
+}
+body[data-theme="jour"] .layout{ background:transparent !important; }
+body[data-theme="jour"] main,
+body[data-theme="jour"] main.fullbleed .mod-wrap,
+body[data-theme="jour"] main.fullbleed .dash-wrap{ background:transparent !important; color:#0e1726 !important; }
+/* Barre latérale NOIRE (comme le mode nuit) + accents bleus */
+body[data-theme="jour"] aside{ background:linear-gradient(180deg,#0a0a0a,#05080d) !important; border-right:1.5px solid #0a84ff !important; color:#e9eef6 !important; }
+body[data-theme="jour"] .brand{ color:#ffffff !important; }
+body[data-theme="jour"] .brand small{ color:#9fb3cc !important; }
+body[data-theme="jour"] .nav-sec{ color:#6f86a8 !important; }
+body[data-theme="jour"] .nav-btn{ color:#cdd9ea !important; }
+body[data-theme="jour"] .nav-btn:hover{ background:rgba(10,132,255,.16) !important; color:#ffffff !important; }
+body[data-theme="jour"] .nav-btn.active{ background:linear-gradient(120deg,#0a84ff,#0060df) !important; color:#fff !important; border:1px solid #4da3ff !important; }
+body[data-theme="jour"] aside .brand svg rect{ fill:#0a84ff !important; }
+body[data-theme="jour"] aside .brand svg text{ fill:#ffffff !important; }
+body[data-theme="jour"] aside .brand svg path, body[data-theme="jour"] aside .brand svg line{ stroke:#04121f !important; }
+body[data-theme="jour"] .side-foot button{ color:#cdd9ea !important; }
+/* Contenu : titres foncés, textes secondaires */
+body[data-theme="jour"] .page-head h1, body[data-theme="jour"] .card h2, body[data-theme="jour"] .kpi .val{ color:#0b1220 !important; }
+body[data-theme="jour"] .sub, body[data-theme="jour"] .hint, body[data-theme="jour"] .mini,
+body[data-theme="jour"] .page-head p, body[data-theme="jour"] .kpi .lbl,
+body[data-theme="jour"] label, body[data-theme="jour"] th{ color:#5b6b82 !important; }
+/* Cartes & KPI blanches, bord bleu léger */
+body[data-theme="jour"] .card, body[data-theme="jour"] .mod-wrap .card,
+body[data-theme="jour"] .dash-wrap .card, body[data-theme="jour"] .cli-col>.card,
+body[data-theme="jour"] .kpi{ background:#ffffff !important; border:1px solid rgba(10,132,255,.22) !important;
+  box-shadow:0 1px 2px rgba(10,40,90,.05),0 10px 30px rgba(10,40,90,.07) !important; color:#0e1726 !important; }
+/* Boutons : BLEU saturé (effet équivalent au lime) */
+body[data-theme="jour"] .btn-pri{ background:linear-gradient(120deg,#0a84ff,#0060df) !important; color:#fff !important; }
+body[data-theme="jour"] .btn-gold{ background:linear-gradient(120deg,#0a84ff,#0060df) !important; color:#fff !important; }
+body[data-theme="jour"] .btn-ghost{ background:#ffffff !important; color:#0b4ea8 !important; border:1px solid rgba(10,132,255,.45) !important; }
+body[data-theme="jour"] .btn-ghost:hover{ background:rgba(10,132,255,.08) !important; }
+/* Liens / accents bleus */
+body[data-theme="jour"] a, body[data-theme="jour"] .rg-link{ color:#0a6bdf !important; }
+body[data-theme="jour"] .rg-link:hover{ color:#0044aa !important; }
+/* Champs */
+body[data-theme="jour"] input, body[data-theme="jour"] select, body[data-theme="jour"] textarea{ background:#ffffff !important; color:#0e1726 !important; border:1px solid rgba(10,40,90,.20) !important; }
+body[data-theme="jour"] input:focus, body[data-theme="jour"] select:focus, body[data-theme="jour"] textarea:focus{ border-color:#0a84ff !important; outline:none; }
+/* Tables : survol bleuté, séparateurs bleus */
+body[data-theme="jour"] td, body[data-theme="jour"] th{ border-bottom-color:rgba(10,132,255,.18) !important; }
+body[data-theme="jour"] tr:hover td{ background:rgba(10,132,255,.07) !important; }
+body[data-theme="jour"] .seg button.on{ background:linear-gradient(120deg,#0a84ff,#0060df) !important; color:#fff !important; }
+/* En-tête « hero » (tableau de bord cabinet & espace client) en BLEU */
+body[data-theme="jour"] #ec-hero,
+body[data-theme="jour"] #ec-hero.cab-hero{ background:linear-gradient(120deg,#0a84ff,#0050c8) !important; border:1px solid #4da3ff !important; box-shadow:0 14px 38px rgba(10,80,200,.30) !important; color:#fff !important; }
+body[data-theme="jour"] #ec-hero .ec-hero-hi, body[data-theme="jour"] #ec-hero .ec-hero-sub{ color:#fff !important; }
+/* Bouton bascule Jour / Nuit (lune ☾ / soleil ☀) */
+#yada-daynight{ position:fixed; top:12px; right:14px; z-index:100020; width:42px; height:42px; border-radius:50%;
+  border:1.5px solid rgba(155,239,0,.55); background:rgba(10,10,10,.88); color:#fff; font-size:19px; line-height:1; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; box-shadow:0 6px 18px rgba(0,0,0,.45); transition:transform .12s, filter .15s; }
+#yada-daynight:hover{ filter:brightness(1.12); transform:scale(1.06); }
+body[data-theme="jour"] #yada-daynight{ border-color:#0a84ff; background:#ffffff; color:#0a6bdf; box-shadow:0 6px 18px rgba(10,40,90,.22); }
+@media(max-width:820px){ #yada-daynight{ top:8px; right:10px; width:40px; height:40px; font-size:18px; } }
+</style>
 </head>
 <body data-theme="noir">
 <div class="layout">
@@ -10303,7 +10368,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v133 · noir & lime';
+    b.textContent='YADA · v134 · noir & lime';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#c4ff3d,#6fb800);color:#16210a;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -12170,6 +12235,29 @@ ${lignes}
       return html+card;
     };
   }
+})();
+</script>
+<script id="yada-addon78">
+/* Bascule JOUR / NUIT — bouton rond : 🌙 (lune) en mode nuit, ☀️ (soleil) en mode jour.
+   Nuit = thème noir+lime (inchangé) ; Jour = thème « jour » (blanc + bleu saturé, barre latérale noire). */
+(function(){
+  function curTheme(){ return document.body.getAttribute('data-theme')||'noir'; }
+  function estJour(){ return curTheme()==='jour'; }
+  function maj(){ var b=document.getElementById('yada-daynight'); if(!b) return;
+    if(estJour()){ b.textContent='☀️'; b.title='Mode jour — cliquer pour passer en mode nuit'; }
+    else { b.textContent='🌙'; b.title='Mode nuit — cliquer pour passer en mode jour'; }
+  }
+  window.toggleJourNuit=function(){
+    var t=estJour()?'noir':'jour';
+    if(typeof setTheme==='function') setTheme(t); else { document.body.setAttribute('data-theme',t); try{ localStorage.setItem('yada-theme',t); }catch(e){} }
+    maj();
+  };
+  function inject(){ if(document.getElementById('yada-daynight')||!document.body) return;
+    var b=document.createElement('button'); b.id='yada-daynight'; b.setAttribute('aria-label','Basculer jour / nuit');
+    b.onclick=window.toggleJourNuit; document.body.appendChild(b); maj();
+  }
+  if(document.body) inject(); else document.addEventListener('DOMContentLoaded', inject);
+  if(typeof render==='function'){ var _r=render; render=function(){ var x=_r.apply(this,arguments); try{ maj(); }catch(e){} return x; }; }
 })();
 </script>
 </body>
