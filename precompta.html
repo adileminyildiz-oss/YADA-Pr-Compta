@@ -3967,17 +3967,27 @@ function cabinetApercu(){
     <div id="rg-portfolio">${cabinetTable(liste)}</div>
   </div>`;
 }
+/* Comptage RÉEL des factures d'un dossier (interactif avec les données) :
+   pour le dossier actif on lit les données vives (db.factures), sinon le dataset stocké. */
+function factCountDossier(id){
+  let facs;
+  if(id===db.activeId && Array.isArray(db.factures)) facs=db.factures;
+  else { const ds=db.dossiersData&&db.dossiersData[id]; facs=(ds&&ds.factures)||[]; }
+  let fourn=0, client=0;
+  facs.forEach(f=>{ if(f.type==='achat') fourn++; else if(f.type==='vente') client++; });
+  return {fourn, client};
+}
 function cabinetTable(liste){
-  const rows=liste.map(d=>`<tr>
+  const rows=liste.map(d=>{ const fc=factCountDossier(d.id); return `<tr>
     <td><b>${d.nom}</b> <span class="mini">${d.forme||''}${d.siren?(' · SIREN '+d.siren):''}${d.ville?(' · '+d.ville):''}${d.activite?(' · '+d.activite):''}</span></td>
-    <td class="r num">${d.factFourn||0}</td>
-    <td class="r num">${d.factClient||0}</td>
+    <td class="r num">${fc.fourn}</td>
+    <td class="r num">${fc.client}</td>
     <td class="r num">${d.docsManquants||0}</td>
     <td><span class="rg-link" onclick="ouvrirDossierCabinet('${d.id}')">Accéder à ${d.portail||'Qonto'}</span></td>
     <td class="r" style="white-space:nowrap">
       <button class="btn btn-gold btn-sm" onclick="ouvrirDossierCabinet('${d.id}')">Ouvrir</button>
       <span class="rg-star ${d.favori?'on':''}" onclick="toggleFavoriDossier('${d.id}')" title="Favori" style="cursor:pointer;margin-left:6px">${d.favori?'★':'☆'}</span></td>
-  </tr>`).join('');
+  </tr>`; }).join('');
   return `<table><thead><tr><th>Nom de l'entreprise</th><th class="r">Fact. fournisseur</th><th class="r">Fact. client</th><th class="r">Docs manquants</th><th>Portail client</th><th></th></tr></thead>
     <tbody>${rows||'<tr><td colspan=6 class=empty>Aucune entreprise — créez un dossier dans « Société &amp; création du dossier »</td></tr>'}</tbody></table>`;
 }
@@ -10293,7 +10303,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v132 · noir & lime';
+    b.textContent='YADA · v133 · noir & lime';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#c4ff3d,#6fb800);color:#16210a;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
