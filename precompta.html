@@ -10409,7 +10409,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v137 · noir & bleu';
+    b.textContent='YADA · v138 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -11885,13 +11885,11 @@ ${lignes}
     if(!btn || !screen){ return _choisir(r); }
     var rect=btn.getBoundingClientRect();
     var cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
-    var cs=getComputedStyle(btn); var col=cs.backgroundColor;
-    if(!col || col==='rgba(0, 0, 0, 0)' || col==='transparent'){ col=(r==='client')?'#0f1115':'#1e90ff'; }
-    /* Dégradé repris du bouton (animé) : si le bouton a un dégradé, on le réutilise ;
-       sinon on construit un dégradé à partir de sa couleur. */
-    var grad=(cs.backgroundImage && cs.backgroundImage!=='none')
-      ? cs.backgroundImage
-      : (r==='client' ? 'linear-gradient(120deg,#22252b,#0a0a0a,#16181d)' : 'linear-gradient(120deg,#5ab0ff,#0a64d6,#1e90ff)');
+    /* Couleur du zoom : bleu TRÈS FONCÉ (navy) pour le Cabinet, sombre pour le Client.
+       On n'utilise plus le dégradé clair du bouton afin d'obtenir un bleu profond. */
+    var grad=(r==='client')
+      ? 'linear-gradient(120deg,#1a1d22,#0a0a0a,#141619)'
+      : 'linear-gradient(125deg,#0c2b5e,#06163a,#030e24)';
     var W=window.innerWidth, H=window.innerHeight;
     var maxR=Math.max(Math.hypot(cx,cy),Math.hypot(W-cx,cy),Math.hypot(cx,H-cy),Math.hypot(W-cx,H-cy));
     var base=40, scale=(maxR+24)/base;
