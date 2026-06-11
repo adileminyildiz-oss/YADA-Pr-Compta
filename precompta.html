@@ -10532,7 +10532,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v152 · noir & bleu';
+    b.textContent='YADA · v153 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -12855,6 +12855,64 @@ ${lignes}
     if(typeof save==='function')save(); if(typeof toast==='function')toast('Kilométrage enregistré ✓'); if(typeof render==='function')render();
   };
   window.fkSuppKm=function(id){ var s=kmstore(); var i=s.findIndex(function(x){return x.id===id;}); if(i>=0)s.splice(i,1); if(typeof save==='function')save(); if(typeof render==='function')render(); };
+})();
+</script>
+<script id="yada-addon84">
+/* Module TVA : saisie de LIGNES DE TVA manuelles (régularisations) à générer dans la
+   comptabilité. L'utilisateur ajoute des lignes (compte de TVA, débit/crédit), puis
+   génère une écriture OD équilibrée (équilibrage automatique sur un compte de contrepartie). */
+(function(){
+  if(typeof window.pageTVA!=='function') return;
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];}); }
+  function store(){ if(!db.parametres)db.parametres={}; return (db.parametres.tvaManuel=db.parametres.tvaManuel||[]); }
+  var TVA_CPT=[['445660000','TVA déductible sur ABS'],['445620000','TVA déductible sur immobilisations'],
+    ['445710000','TVA collectée'],['445510000','TVA à décaisser'],['445670000','Crédit de TVA à reporter'],
+    ['445810000','TVA à régulariser / en attente'],['445870000','TVA sur factures à établir']];
+  var CONTRE=[['471000000',"Compte d'attente"],['658000000','Charges diverses de gestion'],['758000000','Produits divers de gestion'],['512000000','Banque']];
+
+  function card(){
+    var L=store();
+    var sd=r2(L.reduce(function(a,l){return a+(+l.debit||0);},0)), sc=r2(L.reduce(function(a,l){return a+(+l.credit||0);},0)), ec=r2(sd-sc);
+    var rows=L.map(function(l){ return '<tr><td class="num">'+c9(l.compte)+'</td><td>'+esc(l.lib||'')+'</td>'
+        +'<td class="r num">'+(l.debit?eur(l.debit):'')+'</td><td class="r num">'+(l.credit?eur(l.credit):'')+'</td>'
+        +'<td class="r"><button class="btn btn-ghost btn-xs" onclick="tvaMDel(\''+l.id+'\')">✕</button></td></tr>'; }).join('');
+    return '<div class="card"><h2>Lignes de TVA à comptabiliser (saisie manuelle)</h2>'
+      +'<div class="sub">Ajoutez des lignes de TVA (régularisations, TVA sur immobilisations, acomptes…) puis générez l\'écriture <b>OD</b> dans la comptabilité. L\'équilibre est complété automatiquement sur le compte de contrepartie choisi.</div>'
+      +'<div class="row g4" style="align-items:end">'
+        +'<div class="field"><label>Compte de TVA</label><select id="tvam-cpt">'+TVA_CPT.map(function(c){return '<option value="'+c[0]+'">'+c9(c[0])+' — '+c[1]+'</option>';}).join('')+'</select></div>'
+        +'<div class="field"><label>Libellé</label><input id="tvam-lib" placeholder="ex. Régularisation TVA"></div>'
+        +'<div class="field"><label>Débit</label><input id="tvam-deb" type="number" step="0.01" placeholder="0,00"></div>'
+        +'<div class="field"><label>Crédit</label><input id="tvam-cre" type="number" step="0.01" placeholder="0,00"></div>'
+      +'</div><div class="right"><button class="btn btn-ghost" onclick="tvaMAdd()">+ Ajouter la ligne</button></div>'
+      +(L.length?('<table class="fk-t"><thead><tr><th>Compte</th><th>Libellé</th><th class="r">Débit</th><th class="r">Crédit</th><th></th></tr></thead><tbody>'+rows
+          +'<tr class="fk-tot"><td colspan="2">Totaux</td><td class="r num">'+eur(sd)+'</td><td class="r num">'+eur(sc)+'</td><td></td></tr></tbody></table>'
+          +'<div class="sub" style="margin-top:6px">Écart à équilibrer : <b style="color:'+(Math.abs(ec)<0.005?'#86e0aa':'#ffd27a')+'">'+eur(Math.abs(ec))+'</b>'+(Math.abs(ec)<0.005?' (équilibré ✓)':' — sera porté sur le compte de contrepartie')+'</div>')
+        :'<div class="hint">Aucune ligne. Ajoutez au moins une ligne de TVA.</div>')
+      +'<div class="row g3" style="align-items:end;margin-top:10px"><div class="field"><label>Compte de contrepartie (équilibrage)</label><select id="tvam-contre">'+CONTRE.map(function(c){return '<option value="'+c[0]+'">'+c9(c[0])+' — '+c[1]+'</option>';}).join('')+'</select></div>'
+        +'<div class="field"><label>Date de l\'écriture</label><input id="tvam-date" type="date" value="'+todayStr()+'"></div>'
+        +'<div class="field" style="align-self:end"><button class="btn btn-pri" style="width:100%" onclick="tvaMGenerer()"'+(L.length?'':' disabled')+'>⚙️ Générer l\'écriture (OD)</button></div></div>'
+      +'</div>';
+  }
+  window.tvaMAdd=function(){ var g=function(x){var e=document.getElementById(x);return e?e.value:'';};
+    var cpt=g('tvam-cpt'); var deb=parseFloat(g('tvam-deb'))||0, cre=parseFloat(g('tvam-cre'))||0;
+    if(!cpt){ if(typeof toast==='function')toast('Choisissez un compte de TVA.'); return; }
+    if(deb<=0 && cre<=0){ if(typeof toast==='function')toast('Saisissez un montant au débit ou au crédit.'); return; }
+    store().push({ id:uid(), compte:cpt, lib:(g('tvam-lib').trim()||COMPTES[cpt]||cpt), debit:r2(deb), credit:r2(cre) });
+    if(typeof save==='function')save(); if(typeof render==='function')render();
+  };
+  window.tvaMDel=function(id){ var s=store(); var i=s.findIndex(function(x){return x.id===id;}); if(i>=0)s.splice(i,1); if(typeof save==='function')save(); if(typeof render==='function')render(); };
+  window.tvaMGenerer=function(){ var L=store(); if(!L.length){ if(typeof toast==='function')toast('Aucune ligne à générer.'); return; }
+    var sd=r2(L.reduce(function(a,l){return a+(+l.debit||0);},0)), sc=r2(L.reduce(function(a,l){return a+(+l.credit||0);},0)), ec=r2(sd-sc);
+    var contre=(document.getElementById('tvam-contre')||{}).value||'471000000';
+    var date=(document.getElementById('tvam-date')||{}).value||todayStr();
+    if(!confirm('Générer l\'écriture OD avec ces '+L.length+' ligne(s) de TVA ?'+(Math.abs(ec)>=0.005?('\n\nUn équilibrage de '+eur(Math.abs(ec))+' sera porté sur '+c9(contre)+'.'):''))) return;
+    var lignes=L.map(function(l){ return {compte:l.compte, lib:l.lib, debit:l.debit, credit:l.credit}; });
+    if(Math.abs(ec)>=0.005){ if(ec>0) lignes.push({compte:contre,lib:'Équilibrage TVA',debit:0,credit:ec}); else lignes.push({compte:contre,lib:'Équilibrage TVA',debit:r2(-ec),credit:0}); }
+    posterOD({ date:date, libelle:'TVA — régularisation manuelle', lignes:lignes, journal:'OD' });
+    db.parametres.tvaManuel=[]; if(typeof save==='function')save();
+    if(typeof toast==='function')toast('Écriture de TVA générée ✓ (journal OD).'); if(typeof render==='function')render();
+  };
+  var _ptva=window.pageTVA; window.pageTVA=function(){ var h=_ptva.apply(this,arguments); try{ h+=card(); }catch(e){} return h; };
 })();
 </script>
 </body>
