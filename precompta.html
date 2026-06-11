@@ -3407,6 +3407,7 @@ body[data-theme] .doc, body[data-theme] .doc *{ color:#1b1b1b !important; }
 .fk-t tr.fk-tot td{ font-weight:700; border-top:2px solid var(--line-strong); background:rgba(30,144,255,.08); }
 body[data-theme="noir"] .fk-t tr.fk-tot td{ background:rgba(30,144,255,.12); }
 .fk-warn{ margin-top:10px; padding:12px 14px; border-radius:10px; background:rgba(224,160,32,.10); border:1px solid rgba(224,160,32,.4); color:#ffd27a; font-size:13.5px; }
+.fk-ok2{ color:#86e0aa; font-weight:700; font-size:12px; }
 </style>
 </head>
 <body data-theme="noir">
@@ -10490,7 +10491,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v149 · noir & bleu';
+    b.textContent='YADA · v150 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -12688,14 +12689,37 @@ ${lignes}
   function vehicules(){ return (db.immos||[]).filter(function(im){ try{ return c9(im.compte)==='218200000'; }catch(e){ return false; } }); }
   function vehName(v){ return v.numero||v.nature||v.modele||'Véhicule'; }
   function piece(id){ try{ return (db.parametres&&db.parametres.pieces||[]).find(function(p){return p.id===id;}); }catch(e){ return null; } }
+  function cvStore(){ if(!db.parametres)db.parametres={}; return (db.parametres.fkCV=db.parametres.fkCV||{}); }
+  function cvOf(v){ var c=cvStore()[v.id]; return c?+c:5; }
+  /* Barème kilométrique (voiture) — indemnité = f(puissance fiscale, distance annuelle). Indicatif. */
+  function baremeKm(cv,d){ cv=+cv||5; d=+d||0;
+    var B={3:[[5000,0.529,0],[20000,0.316,1065],[1e9,0.370,0]],4:[[5000,0.606,0],[20000,0.340,1330],[1e9,0.407,0]],
+      5:[[5000,0.636,0],[20000,0.357,1395],[1e9,0.427,0]],6:[[5000,0.665,0],[20000,0.374,1457],[1e9,0.447,0]],
+      7:[[5000,0.697,0],[20000,0.394,1515],[1e9,0.470,0]]};
+    var key=cv<=3?3:(cv>=7?7:cv); var rows=B[key];
+    for(var i=0;i<rows.length;i++){ if(d<=rows[i][0]) return r2(d*rows[i][1]+rows[i][2]); }
+    return r2(d*rows[rows.length-1][1]);
+  }
+  window.fkSetCV=function(vid,cv){ cvStore()[vid]=+cv||0; if(typeof save==='function')save(); if(typeof render==='function')render(); };
+  /* Génération de l'écriture du carburant : 606 (HT) + 44566 (TVA déd.) = 512 (TTC) */
+  window.fkGenererEcriture=function(id){ var r=cstore().find(function(x){return x.id===id;}); if(!r) return;
+    if(r.ecritureId){ if(typeof toast==='function')toast('Écriture déjà générée.'); return; }
+    if(!(r.ht>0||r.ttc>0)){ if(typeof toast==='function')toast('Montants manquants — examinez le reçu.'); return; }
+    if(!confirm('Générer l\'écriture comptable du carburant ?\n\nHT '+eur(r.ht)+' (606100000) + TVA '+eur(r.tva)+' (445660000) = TTC '+eur(r.ttc)+' (512000000 — payé).')) return;
+    var lignes=[{compte:'606100000',lib:'Carburant '+(r.fournisseur||''),debit:r.ht,credit:0}];
+    if(r.tva>0) lignes.push({compte:'445660000',lib:'TVA déductible carburant',debit:r.tva,credit:0});
+    lignes.push({compte:'512000000',lib:'Règlement carburant '+(r.fournisseur||''),debit:0,credit:r.ttc});
+    var ecr=posterOD({ date:r.date||todayStr(), libelle:'Carburant '+(r.fournisseur||'')+(r.date?(' du '+frDate(r.date)):''), lignes:lignes, journal:'OD' });
+    r.ecritureId=ecr.id; if(typeof save==='function')save(); if(typeof toast==='function')toast('Écriture carburant générée ✓ (journal OD).'); if(typeof render==='function')render();
+  };
 
   window.pageFraisKm=function(){
     var vehs=vehicules(); var carb=cstore(), km=kmstore();
     var head1=(typeof head==='function')?head('Frais kilométriques & carburant','Reçus de gasoil (lecture IA, revue reçu/infos), total déversé dans le carburant, et kilométrage manuel par véhicule. Un véhicule doit être immobilisé (compte 218200000) pour être un véhicule de société.'):'';
     var vehCard='<div class="card"><h2>🚗 Véhicules de société (immobilisations)</h2>'
       +'<div class="sub">Un véhicule doit être enregistré dans les <b>Immobilisations</b> au compte <b>218200000 — Matériel de transport</b> pour saisir des frais kilométriques. Il est alors considéré comme <b>véhicule de société</b>.</div>'
-      +(vehs.length?('<table class="fk-t"><thead><tr><th>Véhicule</th><th>Compte</th></tr></thead><tbody>'
-          +vehs.map(function(v){ return '<tr><td><b>'+esc(vehName(v))+'</b></td><td class="num">'+c9(v.compte)+'</td></tr>'; }).join('')+'</tbody></table>')
+      +(vehs.length?('<table class="fk-t"><thead><tr><th>Véhicule</th><th>Compte</th><th>Puissance fiscale</th></tr></thead><tbody>'
+          +vehs.map(function(v){ return '<tr><td><b>'+esc(vehName(v))+'</b></td><td class="num">'+c9(v.compte)+'</td><td><input type="number" min="1" max="20" value="'+cvOf(v)+'" style="width:74px" onchange="fkSetCV(\''+v.id+'\',this.value)"> CV</td></tr>'; }).join('')+'</tbody></table>')
         :'<div class="fk-warn">⚠️ Aucun véhicule en immobilisations. <button class="btn btn-pri btn-sm" onclick="current=\'immos\';render()">Aller aux Immobilisations</button> pour enregistrer le véhicule (compte 218200000 — Matériel de transport).</div>')
       +'</div>';
     if(!vehs.length) return head1+vehCard;
@@ -12704,7 +12728,7 @@ ${lignes}
     var recRows=carb.map(function(r){ var v=vehs.find(function(x){return x.id===r.vehiculeId;});
       return '<tr><td>'+(r.date?frDate(r.date):'—')+'</td><td>'+esc(r.fournisseur||'—')+'</td><td>'+esc(v?vehName(v):'—')+'</td>'
         +'<td class="num">'+eur(r.ht||0)+'</td><td class="num">'+eur(r.tva||0)+'</td><td class="num">'+eur(r.ttc||0)+'</td>'
-        +'<td><button class="btn btn-ghost btn-xs" onclick="fkRevue(\''+r.id+'\')">Examiner</button> <button class="btn btn-ghost btn-xs" onclick="fkSuppRecu(\''+r.id+'\')">✕</button></td></tr>'; }).join('');
+        +'<td>'+(r.ecritureId?'<span class="fk-ok2">✓ écriture</span>':'<button class="btn btn-ghost btn-xs" onclick="fkGenererEcriture(\''+r.id+'\')">⚙️ Générer</button>')+' <button class="btn btn-ghost btn-xs" onclick="fkRevue(\''+r.id+'\')">Examiner</button> <button class="btn btn-ghost btn-xs" onclick="fkSuppRecu(\''+r.id+'\')">✕</button></td></tr>'; }).join('');
     var tHt=r2(carb.reduce(function(a,r){return a+(+r.ht||0);},0)), tTva=r2(carb.reduce(function(a,r){return a+(+r.tva||0);},0)), tTtc=r2(carb.reduce(function(a,r){return a+(+r.ttc||0);},0));
     var recCard='<div class="card"><h2>⛽ Reçus de gasoil (carburant)</h2>'
       +'<div class="sub">Déposez un reçu : l\'IA lit la date et les montants HT / TVA / TTC. Examinez (reçu à gauche, informations à droite), complétez le fournisseur, puis enregistrez.</div>'
@@ -12730,7 +12754,16 @@ ${lignes}
       +(km.length?('<table class="fk-t" style="margin-top:10px"><thead><tr><th>Date</th><th>Véhicule</th><th class="r">Km</th><th>Motif</th><th></th></tr></thead><tbody>'+kmRows+totRows+'</tbody></table>')
         :'<div class="hint" style="margin-top:8px">Aucun kilométrage enregistré.</div>')
       +'</div>';
-    return head1+vehCard+recCard+kmCard;
+    /* Indemnité kilométrique (barème) */
+    var vehsKm=vehs.filter(function(v){return totByVeh[v.id];});
+    var indemRows=vehsKm.map(function(v){ var cv=cvOf(v), d=totByVeh[v.id], ind=baremeKm(cv,d);
+      return '<tr><td>'+esc(vehName(v))+'</td><td class="num">'+cv+' CV</td><td class="num">'+d+' km</td><td class="num">'+eur(ind)+'</td></tr>'; }).join('');
+    var totInd=r2(vehsKm.reduce(function(a,v){ return a+baremeKm(cvOf(v),totByVeh[v.id]); },0));
+    var indemCard=vehsKm.length?('<div class="card"><h2>🧮 Indemnité kilométrique (barème)</h2>'
+      +'<div class="sub">Calcul <b>indicatif</b> selon le barème kilométrique voiture : indemnité = f(puissance fiscale, distance annuelle). Renseignez la puissance fiscale (CV) du véhicule ci-dessus. À vérifier selon le barème en vigueur.</div>'
+      +'<table class="fk-t"><thead><tr><th>Véhicule</th><th class="r">Puissance</th><th class="r">Km</th><th class="r">Indemnité</th></tr></thead><tbody>'
+      +indemRows+'<tr class="fk-tot"><td colspan="3">Total indemnité kilométrique</td><td class="num">'+eur(totInd)+'</td></tr></tbody></table></div>'):'';
+    return head1+vehCard+recCard+kmCard+indemCard;
   };
 
   window.fkAjouterRecu=function(input){ var file=input&&input.files&&input.files[0]; if(!file) return;
