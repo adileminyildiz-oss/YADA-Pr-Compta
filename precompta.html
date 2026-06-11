@@ -3391,6 +3391,10 @@ body[data-theme] .doc, body[data-theme] .doc *{ color:#1b1b1b !important; }
 #fact-review .fr-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 #fact-review .fr-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
 #fact-review .fr-note{ font-size:12px; color:#9fb0c6; margin-top:12px; }
+#fact-review .fr-detect{ font-size:12px; color:#9fb0c6; margin:8px 2px 0; padding:7px 10px; border-radius:8px; background:rgba(30,144,255,.08); border:1px solid rgba(30,144,255,.25); }
+#fact-review .fr-detect b{ color:#cfe0ff; }
+#fact-review .fr-ok{ color:#86e0aa; font-weight:700; }
+#fact-review .fr-ko{ color:#ffd27a; font-weight:700; }
 @media(max-width:820px){ #fact-review .fr-body{ grid-template-columns:1fr; } #fact-review .fr-left{ height:42vh; } }
 </style>
 </head>
@@ -10471,7 +10475,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v147 · noir & bleu';
+    b.textContent='YADA · v148 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -11588,7 +11592,11 @@ ${lignes}
     if(mc) conditions=mc[0].replace(/\s+/g,' ').trim();
     else { var mm2=low.match(/comptant|à\s*r[ée]ception|a\s*r[ée]ception|à\s*la\s*commande|paiement\s*immédiat/); if(mm2) conditions=mm2[0]; }
     if(!conditions){ var ci=low.indexOf('conditions'); if(ci>=0){ var seg=T.slice(ci, ci+60).split(/[\n\r]/)[0].replace(/conditions\s*(de\s*r[èe]glement)?\s*[:\-]?\s*/i,'').trim(); if(seg.length>2 && seg.length<48) conditions=seg; } }
-    return { ttc:r2(ttc), tva:(tva!=null?r2(tva):null), ht:(ht!=null?r2(ht):null), taux:taux, numero:numero, dateEmission:emission, echeance:echeance, conditions:conditions };
+    /* --- Identifiants du tiers : SIRET / SIREN / n° TVA intracommunautaire --- */
+    var siret=''; var ms=low.match(/siret\s*[:.]?\s*((?:\d[ .]?){14})/); if(ms) siret=ms[1].replace(/\D/g,'');
+    if(!siret){ var msi=low.match(/siren\s*[:.]?\s*((?:\d[ .]?){9})/); if(msi) siret=msi[1].replace(/\D/g,''); }
+    var tvaIntra=''; var mv=T.match(/\bFR\s?[0-9A-Z]{2}\s?\d{3}\s?\d{3}\s?\d{3}\b/i); if(mv) tvaIntra=mv[0].replace(/\s/g,'').toUpperCase();
+    return { ttc:r2(ttc), tva:(tva!=null?r2(tva):null), ht:(ht!=null?r2(ht):null), taux:taux, numero:numero, dateEmission:emission, echeance:echeance, conditions:conditions, siret:siret, tvaIntra:tvaIntra };
   }
 
   /* --- Dépôt : lecture réelle du PDF puis repli --- */
@@ -11623,7 +11631,11 @@ ${lignes}
         var taux=amounts.taux||20; var ttc=amounts.ttc; var net=r2(ttc/(1+taux/100)); var tva=r2(ttc-net);
         dep.numero=amounts.numero||''; dep.dateEmission=amounts.dateEmission||todayStr(); dep.dateFacture=dep.dateEmission;
         dep.echeance=amounts.echeance||''; dep.conditions=amounts.conditions||'';
+        dep.siret=amounts.siret||''; dep.tvaIntra=amounts.tvaIntra||'';
         dep.taux=taux; dep.ht=net; dep.tva=tva; dep.ttc=ttc; dep.auto=true; dep.lecture=src;
+        /* Rapprochement automatique du fournisseur via SIRET / n° TVA détecté */
+        if(!dep.tiersId && typeof window.factMatchTiers==='function'){ var mt=window.factMatchTiers(dep.siret,dep.tvaIntra,'fournisseur');
+          if(mt){ dep.tiersId=mt.id; dep.tiersInconnu=false; dep.rapproche=true; } }
       }
       dstore().push(dep);
       nstore().push({ id:uid(), date:todayStr(), cat:cat, depotId:dep.id, nom:nom, doublon:dep.doublon, lu:false });
@@ -12505,6 +12517,18 @@ ${lignes}
   function depots(cat){ try{ return (db.parametres&&db.parametres.depots||[]).filter(function(d){ return d.cat===cat && d.statut!=='refusee'; }); }catch(e){ return []; } }
   function piece(id){ try{ return (db.parametres&&db.parametres.pieces||[]).find(function(p){return p.id===id;}); }catch(e){ return null; } }
   function tiersOf(d){ return d.tiersId? db.tiers.find(function(t){return t.id===d.tiersId;}) : null; }
+  /* Rapprochement d'un tiers par SIRET/SIREN ou n° TVA intracommunautaire */
+  function dig(s){ return String(s||'').replace(/\D/g,''); }
+  function siren9(s){ var d=dig(s); return d.length>=9?d.slice(0,9):d; }
+  function normTva(s){ return String(s||'').replace(/\s/g,'').toUpperCase(); }
+  window.factMatchTiers=function(siret,tvaIntra,type){
+    var s9=siren9(siret), tv=normTva(tvaIntra);
+    if(!s9 && !tv) return null;
+    return (db.tiers||[]).find(function(t){ if(type && t.type!==type) return false;
+      if(s9 && siren9(t.siret)===s9) return true;
+      if(tv && t.tvaIntra && normTva(t.tvaIntra)===tv) return true;
+      return false; }) || null;
+  };
   function stage(d){ if(d.statut==='comptabilisee') return 'gen'; if(d.statut==='enregistree') return 'enr'; return 'new'; }
   function eur2(v){ return (typeof eur==='function')?eur(v):(Number(v||0).toFixed(2)+' €'); }
 
@@ -12565,6 +12589,7 @@ ${lignes}
       +'<div class="fr-body"><div class="fr-left">'+fileHtml(d)+'</div>'
       +'<div class="fr-right"><h3>Informations extraites par l\'IA <span class="fr-hint">— comparez avec la facture, corrigez si besoin</span></h3>'
         +'<label class="fr-l">'+(cat==='achat'?'Fournisseur':'Client')+'</label>'+tiersSelect(d,cat)
+        +((d.siret||d.tvaIntra)?('<div class="fr-detect">Identifiants détectés : '+(d.siret?('SIRET <b>'+esc(d.siret)+'</b>'):'')+(d.tvaIntra?((d.siret?' · ':'')+'TVA <b>'+esc(d.tvaIntra)+'</b>'):'')+' — '+(d.tiersId?'<span class="fr-ok">'+(cat==='achat'?'fournisseur':'client')+' rapproché ✓</span>':'<span class="fr-ko">non rapproché : sélectionnez le tiers</span>')+'</div>'):'')
         +'<div class="fr-grid">'
           +'<div><label class="fr-l">N° de facture</label><input id="fr-num" value="'+esc(d.numero||'')+'"></div>'
           +'<div><label class="fr-l">Taux TVA (%)</label><input id="fr-taux" type="number" value="'+(d.taux!=null?d.taux:20)+'" oninput="factRecalc()"></div>'
