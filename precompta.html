@@ -8895,15 +8895,40 @@ function ecRender(){
 function ecGet(id){ return db.ecritures.find(e=>e.id===id); }
 function ecSetDate(id,v){ const e=ecGet(id); if(e){ e.date=v; ecRender(); } }
 function ecSetPiece(id,v){ const e=ecGet(id); if(e){ e.piece=v; ecRender(); } }
+/* Un compte de tiers (401/411) n'est utilisable que s'il est : collectif (401/411000000),
+   un compte auxiliaire d'un tiers existant, ou présent dans le plan comptable. */
+function ecCompteTiersUtilisable(nv){
+  var c=c9(nv); if(c.slice(0,3)!=='401' && c.slice(0,3)!=='411') return true;  // pas un compte de tiers → OK ici
+  if(c==='401000000' || c==='411000000') return true;                          // collectif
+  if((db.tiers||[]).some(function(t){ return t.compteAux && c9(t.compteAux)===c; })) return true; // auxiliaire d'un tiers
+  if(COMPTES[nv]!==undefined || COMPTES[c]!==undefined) return true;           // dans le plan
+  if((db.plan||[]).some(function(p){ return c9(p.code)===c; })) return true;
+  return false;
+}
 function ecSetLine(id,i,field,v){ const e=ecGet(id); if(!e||!e.lignes[i])return; const l=e.lignes[i];
   if(field==='debit'||field==='credit'){ l[field]=r2(+v||0); }
-  else if(field==='compte'){ l.compte=String(v).trim(); if(!l.lib || l.lib==='—'){ l.lib=COMPTES[l.compte]||l.lib||''; } }
+  else if(field==='compte'){
+    var nv=String(v).trim();
+    /* Compte de tiers inexistant / inutilisable → message d'erreur + on supprime la saisie. */
+    if(nv && !ecCompteTiersUtilisable(nv)){
+      if(typeof toast==='function') toast('Compte de tiers '+c9(nv)+' inutilisable ou non créé — créez d\'abord le tiers / le compte.');
+      ecRender();   /* la ligne reprend son compte précédent (la saisie invalide est annulée) */
+      return;
+    }
+    l.compte=nv; if(!l.lib || l.lib==='—'){ l.lib=COMPTES[l.compte]||l.lib||''; }
+  }
   else { l[field]=v; }
   ecRender();
 }
 function ecAddLine(id){ const e=ecGet(id); if(!e)return; e.lignes.push({compte:'', lib:'', debit:0, credit:0}); ecRender(); }
 function ecDelLine(id,i){ const e=ecGet(id); if(!e)return; e.lignes.splice(i,1); if(!e.lignes.length) e.lignes.push({compte:'',lib:'',debit:0,credit:0}); ecRender(); }
-function ecSolder(id){ const e=ecGet(id); if(!e)return; const t=ecTot(e);
+function ecSolder(id){ const e=ecGet(id); if(!e)return;
+  /* Une ligne ne peut pas s'enregistrer sans compte (compte de tiers obligatoire si renseigné). */
+  const vide=(e.lignes||[]).find(function(l){ return !(l.compte||'').trim() && ((+l.debit||0)!==0 || (+l.credit||0)!==0); });
+  if(vide){ toast('Compte obligatoire : une ligne mouvementée n\'a pas de numéro de compte.'); return; }
+  const tiersInvalide=(e.lignes||[]).find(function(l){ return (l.compte||'').trim() && !ecCompteTiersUtilisable(l.compte); });
+  if(tiersInvalide){ toast('Compte de tiers '+c9(tiersInvalide.compte)+' inutilisable — corrigez la ligne avant d\'enregistrer.'); return; }
+  const t=ecTot(e);
   if(Math.abs(t.diff)<0.005){ save(); ecRender(); toast('Écriture soldée ✓'); return; }
   ecNotifSolde(id, t.diff);
 }
@@ -10546,7 +10571,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v156 · noir & bleu';
+    b.textContent='YADA · v157 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
