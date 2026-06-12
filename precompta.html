@@ -10586,7 +10586,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v167 · noir & bleu';
+    b.textContent='YADA · v168 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -13074,6 +13074,22 @@ ${lignes}
     });
     return out;
   }
+  /* Navigation : passer au Fournisseur / Client (ou compte général) suivant / précédent. */
+  function clSiblings(){
+    var t=tiersDe(window.clCode);
+    if(t){ return db.tiers.filter(function(x){ return x.type===t.type && ((typeof auxLignes==='function'?auxLignes(x):[]).length>0); })
+        .map(function(x){ return sageCode(x); }).sort(); }
+    var g=(typeof sgGeneraux==='function')?sgGeneraux((typeof sgPer!=='undefined')?sgPer:null):[];
+    return g.filter(function(a){ return a.n>0; }).map(function(a){ return a.code9; }).sort();
+  }
+  window.clNav=function(sens){
+    var list=clSiblings(); if(list.length<2) return;
+    var i=list.indexOf(window.clCode);
+    i=(i<0?0:(i+sens+list.length)%list.length);
+    window.clCode=list[i]; clRender();
+    if(typeof toast==='function'){ var t=tiersDe(window.clCode);
+      toast(t?((t.type==='client'?'Client':'Fournisseur')+' : '+t.nom):('Compte '+window.clCode)); }
+  };
   function clRender(){
     var ov=document.getElementById('cl-overlay'); if(!ov) return;
     if(!window.clCode){ window.clFermer(); return; }
@@ -13099,11 +13115,18 @@ ${lignes}
     }).join('');
     var sF=r2(TD-TC); var sens=Math.abs(sF)<0.005?'S':(sF>0?'D':'C');
     var dossier=(db.societe&&db.societe.dossierNom)||'YADA';
+    var typeLbl=t?(t.type==='client'?'Client':'Fournisseur'):'Compte';
+    var sibs=clSiblings(); var si=sibs.indexOf(window.clCode);
+    var navlbl=(si>=0&&sibs.length>1)?(typeLbl+' '+(si+1)+' / '+sibs.length):'';
+    var navDis=(sibs.length>1)?'':' disabled';
     ov.innerHTML='<div class="lx-app cl-app">'
       +'<div class="lx-title">'+dossier+' — Compte '+code+(nom?(' ('+nom+')'):'')+' · lecture seule'
         +'<span class="cl-x" onclick="clFermer()" title="Fermer la page">✕</span></div>'
       +'<div class="lx-bar">'
         +'<button class="btn btn-ghost btn-sm" onclick="clFermer()">Fermer</button>'
+        +'<span class="cl-navwrap"><button class="btn btn-ghost btn-sm cl-nav" onclick="clNav(-1)"'+navDis+' title="'+typeLbl+' précédent (↑)">▲</button>'
+        +'<button class="btn btn-ghost btn-sm cl-nav" onclick="clNav(1)"'+navDis+' title="'+typeLbl+' suivant (↓)">▼</button>'
+        +(navlbl?'<span class="cl-navlbl">'+navlbl+'</span>':'')+'</span>'
         +'<span class="cl-hint">Lignes en lecture seule — <b>clic droit</b> sur une ligne puis « <b>Journal</b> » pour modifier dans le journal.</span>'
         +'<span style="margin-left:auto">Solde du compte : <b>'+sageNum(Math.abs(sF))+' '+sens+'</b></span></div>'
       +'<div class="lx-wrap"><table class="lx"><thead><tr>'
@@ -13137,11 +13160,23 @@ ${lignes}
   if(document.addEventListener){
     document.addEventListener('click', function(){ clMenuClose(); });
     document.addEventListener('scroll', function(){ clMenuClose(); }, true);
+    /* flèches ↑ / ↓ : compte (fournisseur / client) précédent / suivant quand le compte est ouvert */
+    document.addEventListener('keydown', function(ev){
+      var ov=document.getElementById('cl-overlay'); if(!ov||!ov.classList.contains('show')) return;
+      if(ev.target && /INPUT|TEXTAREA|SELECT/.test(ev.target.tagName)) return;
+      if(ev.key==='ArrowUp'){ window.clNav(-1); ev.preventDefault(); }
+      else if(ev.key==='ArrowDown'){ window.clNav(1); ev.preventDefault(); }
+    });
   }
   /* styles de l'overlay (réutilise .lx-app / table.lx déjà thémés) */
   try{ var st=document.createElement('style'); st.id='cl-mod'; st.textContent=
     '#cl-overlay{position:fixed;inset:0;z-index:70;display:none;background:rgba(4,8,16,.45)}'
     +'#cl-overlay.show{display:block}'
+    +'#cl-overlay .lx-bar .cl-navwrap{display:inline-flex;align-items:center;gap:4px;margin-left:8px}'
+    +'#cl-overlay .cl-nav{padding:3px 10px;font-weight:700;line-height:1}'
+    +'#cl-overlay .cl-nav[disabled]{opacity:.4;cursor:not-allowed}'
+    +'#cl-overlay .cl-navlbl{font-size:12px;color:#33506e;margin-left:4px;font-weight:600;white-space:nowrap}'
+    +'body[data-theme="noir"] #cl-overlay .cl-navlbl{color:#bcd6f5}'
     +'#cl-overlay .lx-app{height:100vh;margin:0;border:none;border-radius:0;display:flex;flex-direction:column}'
     +'#cl-overlay table.lx tbody tr{cursor:context-menu}'
     +'#cl-overlay table.lx tbody tr:hover td{background:#f3f7fb}'
