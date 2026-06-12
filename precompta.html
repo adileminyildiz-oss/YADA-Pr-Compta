@@ -3597,14 +3597,15 @@ function calcMontants(base, taux, baseEst){
 }
 function genEcriture(f){
   const t=db.tiers.find(x=>x.id===f.tiersId); const lignes=[];
+  // Ordre de saisie imposé : 1) tiers (401/411), 2) TVA, 3) charge (achat) / produit (vente)
   if(f.type==='achat'){
-    lignes.push({compte:f.compteContre, lib:COMPTES[f.compteContre]||'Charge', debit:f.ht, credit:0});
-    lignes.push({compte:f.compteTVA, lib:COMPTES[f.compteTVA], debit:f.tva, credit:0});
     lignes.push({compte:'401', lib:'Fournisseur '+(t?t.nom:''), debit:0, credit:f.ttc});
+    lignes.push({compte:f.compteTVA, lib:COMPTES[f.compteTVA], debit:f.tva, credit:0});
+    lignes.push({compte:f.compteContre, lib:COMPTES[f.compteContre]||'Charge', debit:f.ht, credit:0});
   } else {
     lignes.push({compte:'411', lib:'Client '+(t?t.nom:''), debit:f.ttc, credit:0});
-    lignes.push({compte:f.compteContre, lib:COMPTES[f.compteContre]||'Produit', debit:0, credit:f.ht});
     lignes.push({compte:f.compteTVA, lib:COMPTES[f.compteTVA], debit:0, credit:f.tva});
+    lignes.push({compte:f.compteContre, lib:COMPTES[f.compteContre]||'Produit', debit:0, credit:f.ht});
   }
   return { id:uid(), factureId:f.id, date:f.date, journal:f.type==='achat'?'ACH':'VTE', libelle:f.numero+' · '+(t?t.nom:''), lignes };
 }
@@ -10543,7 +10544,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v154 · noir & bleu';
+    b.textContent='YADA · v155 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
