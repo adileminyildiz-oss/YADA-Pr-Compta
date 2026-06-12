@@ -8831,7 +8831,14 @@ function ouvrirEcrituresCompte(code){
     ov.innerHTML='<div class="ec-win" id="ec-win"></div>'; document.body.appendChild(ov); }
   ecRender(); ov.classList.add('show');
 }
-function ecFermer(){ const ov=document.getElementById('ec-overlay'); if(ov) ov.classList.remove('show'); render(); }
+function ecFermer(){
+  /* Empêcher la fermeture tant qu'une ligne mouvementée n'a pas de compte saisi. */
+  try{ var manque=(typeof ecEcritures==='function'?ecEcritures():[]).some(function(e){
+      return (e.lignes||[]).some(function(l){ return (((+l.debit||0)!==0)||((+l.credit||0)!==0)) && !(l.compte||'').trim(); }); });
+    if(manque){ if(typeof toast==='function') toast('Renseignez un compte sur chaque ligne avant de fermer la page de saisie.'); return; }
+  }catch(e){}
+  const ov=document.getElementById('ec-overlay'); if(ov) ov.classList.remove('show'); render();
+}
 
 function ecRender(){
   const win=document.getElementById('ec-win'); if(!win) return;
@@ -8854,7 +8861,7 @@ function ecRender(){
         <td class="ec-c">${first?`<input class="ec-i ec-date" type="date" value="${ecAttr(e.date)}" onchange="ecSetDate('${e.id}',this.value)">`:''}</td>
         <td class="ec-c ec-jrn">${first?(e.journal||''):''}</td>
         <td class="ec-l">${first?`<input class="ec-i" value="${ecAttr(ecPiece(e))}" onchange="ecSetPiece('${e.id}',this.value)">`:''}</td>
-        <td class="ec-l"><input class="ec-i ec-cpt" value="${ecAttr(l.compte)}" autocomplete="off" oninput="ecSuggest(this,'${e.id}',${i})" onblur="ecSuggClose()" onchange="ecSetLine('${e.id}',${i},'compte',this.value)"></td>
+        <td class="ec-l"><input class="ec-i ec-cpt" value="${ecAttr(l.compte)}" autocomplete="off" onfocus="this.select()" onmouseup="return false" oninput="ecSuggest(this,'${e.id}',${i})" onblur="ecSuggClose()" onchange="ecSetLine('${e.id}',${i},'compte',this.value)"></td>
         <td class="ec-l"><input class="ec-i" value="${ecAttr(l.lib)}" onchange="ecSetLine('${e.id}',${i},'lib',this.value)"></td>
         <td class="ec-n"><input class="ec-i ec-num" type="number" step="0.01" value="${l.debit||''}" onchange="ecSetLine('${e.id}',${i},'debit',this.value)"></td>
         <td class="ec-n"><input class="ec-i ec-num" type="number" step="0.01" value="${l.credit||''}" onchange="ecSetLine('${e.id}',${i},'credit',this.value)"></td>
@@ -10571,7 +10578,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v158 · noir & bleu';
+    b.textContent='YADA · v159 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
