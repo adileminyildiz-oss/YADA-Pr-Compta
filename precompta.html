@@ -10586,7 +10586,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v168 · noir & bleu';
+    b.textContent='YADA · v169 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -13223,6 +13223,194 @@ ${lignes}
     +'.sg-app .sg-win .sg-wbtn:hover{background:rgba(255,255,255,.22)}'
     +'body[data-theme="noir"] main.fullbleed .sg-app.sg-reduit{box-shadow:0 16px 48px rgba(0,0,0,.6);border-color:#1e90ff}';
     document.head.appendChild(st); }catch(e){}
+})();
+</script>
+
+<script id="yada-addon89">
+/* ============================================================
+   GESTIONNAIRE DE FENÊTRES (façon Sage) — déplaçable / redimensionnable /
+   réductible (▢) / ouvrable sur un autre écran (⧉ pop-out).
+   Cible les 4 fenêtres : Consultation des comptes (.sg-app), Compte
+   auxiliaire (#main .lx-app), Grand-livre lecture seule (#cl-overlay .lx-app),
+   Éditeur d'écritures (#ec-overlay .ec-win).
+   - barre de titre → déplacer ; coin bas-droite → redimensionner ;
+     ▢ → fenêtre flottante réduite ↔ plein écran ; ⧉ → nouvelle fenêtre navigateur.
+   Géométrie mémorisée (localStorage 'yada-wm'). 100% additif (réapplication
+   après chaque rendu via greffes sur render/ecRender/ouvrirCompteLecture/clNav).
+   ============================================================ */
+(function(){
+  var WM={ KEY:'yada-wm', st:{ sg:{}, lx:{}, cl:{}, ec:{} } };
+  try{ var saved=JSON.parse(localStorage.getItem(WM.KEY)||'null'); if(saved){ ['sg','lx','cl','ec'].forEach(function(k){ if(saved[k]) WM.st[k]=saved[k]; }); } }catch(e){}
+  /* md (modales = sous-pages) = état éphémère, non persisté */
+  function wmSave(){ try{ localStorage.setItem(WM.KEY, JSON.stringify({sg:WM.st.sg,lx:WM.st.lx,cl:WM.st.cl,ec:WM.st.ec})); }catch(e){} }
+  function wmDefault(){ var vw=window.innerWidth||1200, vh=window.innerHeight||800;
+    var w=Math.min(1040, vw-80), h=Math.min(640, vh-100);
+    return {x:Math.round((vw-w)/2), y:Math.round((vh-h)/2), w:w, h:h}; }
+
+  function wmTargets(){
+    return [
+      {k:'sg', el:document.querySelector('.sg-app'),               title:'.sg-title',     overlay:null},
+      {k:'lx', el:document.querySelector('#main .lx-app'),         title:'.lx-title',     overlay:null},
+      {k:'cl', el:document.querySelector('#cl-overlay .lx-app'),   title:'.lx-title',     overlay:document.getElementById('cl-overlay')},
+      {k:'ec', el:document.querySelector('#ec-overlay .ec-win'),   title:'.ec-titlebar',  overlay:document.getElementById('ec-overlay')},
+      {k:'md', el:document.querySelector('#modal.show #modal-c'),  title:'.modal-h',      overlay:document.getElementById('modal')}
+    ].filter(function(t){ return t.el; });
+  }
+  function wmFind(k){ var a=wmTargets(); for(var i=0;i<a.length;i++){ if(a[i].k===k) return a[i]; } return null; }
+  function wmActive(k, el){ return k==='sg' ? el.classList.contains('sg-reduit') : !!(WM.st[k]&&WM.st[k].float); }
+
+  function wmEnsureGeom(k, el){
+    var st=WM.st[k]||(WM.st[k]={});
+    if(st.w==null){
+      if(k==='sg'||k==='md'){ var r=el.getBoundingClientRect(); st.x=Math.round(r.left); st.y=Math.round(r.top); st.w=Math.round(r.width); st.h=Math.round(r.height); }
+      else { var d=wmDefault(); st.x=d.x; st.y=d.y; st.w=d.w; st.h=d.h; }
+    }
+    return st;
+  }
+  function wmApplyGeom(t){
+    var el=t.el, k=t.k;
+    if(wmActive(k, el)){
+      var st=wmEnsureGeom(k, el);
+      el.classList.add('wm-float');
+      el.style.position='fixed'; el.style.margin='0';
+      el.style.left=Math.round(st.x)+'px'; el.style.top=Math.round(st.y)+'px';
+      el.style.width=Math.round(st.w)+'px'; el.style.height=Math.round(st.h)+'px';
+      el.style.zIndex='120';
+      if(t.overlay) t.overlay.classList.add('wm-floating');
+    } else {
+      el.classList.remove('wm-float');
+      ['position','left','top','width','height','margin','zIndex'].forEach(function(p){ el.style[p]=''; });
+      if(t.overlay) t.overlay.classList.remove('wm-floating');
+    }
+  }
+
+  /* ---- déplacement ---- */
+  var drag=null;
+  function dragStart(ev, k){
+    if(ev.button!==0) return;
+    var tg=ev.target;
+    if(tg.closest('button,.wm-ctrls,.sg-win,.ec-winbtn')||tg.classList.contains('cl-x')||/INPUT|SELECT|TEXTAREA/.test(tg.tagName)) return;
+    var t=wmFind(k); if(!t||!wmActive(k, t.el)) return;
+    var st=wmEnsureGeom(k, t.el);
+    drag={k:k, sx:ev.clientX, sy:ev.clientY, ox:st.x, oy:st.y};
+    ev.preventDefault();
+    document.addEventListener('mousemove', dragMove); document.addEventListener('mouseup', dragEnd);
+  }
+  function dragMove(ev){ if(!drag) return; var st=WM.st[drag.k]; var vw=window.innerWidth, vh=window.innerHeight;
+    st.x=Math.max(-(st.w-160), Math.min(vw-60, drag.ox+(ev.clientX-drag.sx)));
+    st.y=Math.max(0, Math.min(vh-40, drag.oy+(ev.clientY-drag.sy)));
+    var t=wmFind(drag.k); if(t) wmApplyGeom(t);
+  }
+  function dragEnd(){ document.removeEventListener('mousemove', dragMove); document.removeEventListener('mouseup', dragEnd); drag=null; wmSave(); }
+
+  /* ---- redimensionnement ---- */
+  var rz=null;
+  function rzStart(ev, k){ ev.preventDefault(); ev.stopPropagation();
+    var t=wmFind(k); if(!t) return; var st=wmEnsureGeom(k, t.el);
+    rz={k:k, sx:ev.clientX, sy:ev.clientY, ow:st.w, oh:st.h};
+    document.addEventListener('mousemove', rzMove); document.addEventListener('mouseup', rzEnd);
+  }
+  function rzMove(ev){ if(!rz) return; var st=WM.st[rz.k];
+    st.w=Math.max(360, rz.ow+(ev.clientX-rz.sx)); st.h=Math.max(220, rz.oh+(ev.clientY-rz.sy));
+    var t=wmFind(rz.k); if(t) wmApplyGeom(t);
+  }
+  function rzEnd(){ document.removeEventListener('mousemove', rzMove); document.removeEventListener('mouseup', rzEnd); rz=null; wmSave(); }
+
+  /* ---- réduction (▢) ---- */
+  window.wmToggle=function(k){
+    if(k==='sg'){ if(typeof sgToggleReduit==='function') sgToggleReduit(); return; }
+    var st=WM.st[k]||(WM.st[k]={}); st.float=!st.float; if(st.float) wmEnsureGeom(k,(wmFind(k)||{}).el||document.body);
+    wmSave(); var t=wmFind(k); if(t) wmApplyGeom(t);
+    if(typeof toast==='function') toast(st.float?'Fenêtre flottante — glissez la barre de titre, redimensionnez par le coin':'Fenêtre plein écran');
+  };
+
+  /* ---- ouvrir sur un autre écran (pop-out) ---- */
+  window.wmPop=function(k){
+    var t=wmFind(k); if(!t){ return; }
+    var st=WM.st[k]||{}; var w=Math.round(st.w||1040), h=Math.round(st.h||660);
+    var win=window.open('', 'yada_'+k+'_'+Date.now(), 'width='+w+',height='+h+',menubar=no,toolbar=no');
+    if(!win){ if(typeof toast==='function') toast('Pop-up bloqué — autorisez les fenêtres pour cet onglet'); return; }
+    var styles=''; document.querySelectorAll('style,link[rel="stylesheet"]').forEach(function(s){ styles+=s.outerHTML; });
+    var theme=document.body.getAttribute('data-theme')||'';
+    var parts=['<!doctype html><html><head><meta charset="utf-8"><title>YADA — fenêtre</title>', styles,
+      '<style>html,body{margin:0;height:100%}',
+      '.sg-app,.lx-app,.ec-win{position:static!important;left:auto!important;top:auto!important;right:auto!important;bottom:auto!important;width:100%!important;height:100vh!important;margin:0!important;border-radius:0!important;box-shadow:none!important}',
+      '.wm-ctrls,.wm-resize{display:none!important}</style></head><body data-theme="', theme, '">',
+      t.el.outerHTML, '</body></html>'];
+    win.document.open(); win.document.write(parts.join('')); win.document.close();
+    if(typeof toast==='function') toast('Fenêtre ouverte — glissez-la sur votre autre écran (vue)');
+  };
+
+  /* ---- injection des contrôles + handles + réapplication géométrie ---- */
+  function ctrlAnchor(k, titleEl){
+    if(k==='sg') return {parent:titleEl.querySelector('.sg-win'), mode:'prepend'};
+    if(k==='ec') return {parent:titleEl.querySelector('.ec-winbtn'), mode:'prepend'};
+    if(k==='cl'){ var x=titleEl.querySelector('.cl-x'); if(x) return {parent:titleEl, before:x, mode:'before'}; }
+    if(k==='md'){ var mx=titleEl.querySelector('.x'); if(mx) return {parent:titleEl, before:mx, mode:'before'}; }
+    var sp=titleEl.querySelector('span'); return {parent:sp||titleEl, mode:'prepend'};
+  }
+  function mkBtn(label, title, fn){ var b=document.createElement('button'); b.className='wm-b'; b.type='button'; b.textContent=label; b.title=title;
+    b.addEventListener('click', function(ev){ ev.stopPropagation(); fn(); }); return b; }
+  function wmEnhance(t){
+    var el=t.el, k=t.k, titleEl=el.querySelector(t.title);
+    /* contrôle par contenu (les modales réutilisent le même #modal-c en changeant d'innerHTML) */
+    if(titleEl && !titleEl.querySelector('.wm-ctrls')){
+      var ctr=document.createElement('span'); ctr.className='wm-ctrls';
+      if(k!=='sg') ctr.appendChild(mkBtn('▢','Réduire / fenêtre flottante', function(){ window.wmToggle(k); }));
+      ctr.appendChild(mkBtn('⧉','Ouvrir sur un autre écran', function(){ window.wmPop(k); }));
+      var a=ctrlAnchor(k, titleEl);
+      try{
+        if(a.mode==='before' && a.before) a.parent.insertBefore(ctr, a.before);
+        else if(a.parent) a.parent.insertBefore(ctr, a.parent.firstChild);
+        else titleEl.appendChild(ctr);
+      }catch(e){ titleEl.appendChild(ctr); }
+      titleEl.classList.add('wm-drag');
+      titleEl.addEventListener('mousedown', function(ev){ dragStart(ev, k); });
+    }
+    if(!el.querySelector(':scope > .wm-resize')){
+      var handle=document.createElement('div'); handle.className='wm-resize'; handle.title='Redimensionner';
+      handle.addEventListener('mousedown', function(ev){ rzStart(ev, k); });
+      el.appendChild(handle);
+    }
+    wmApplyGeom(t);
+  }
+  function wmApply(){ try{ wmTargets().forEach(wmEnhance); }catch(e){} }
+  window.wmApply=wmApply;
+  function wmHook(){ if(window.requestAnimationFrame) requestAnimationFrame(wmApply); else setTimeout(wmApply, 0); }
+
+  /* greffes : réappliquer après chaque (re)rendu des fenêtres */
+  function wrap(name){ var o=window[name]; if(typeof o!=='function') return;
+    window[name]=function(){ var r=o.apply(this, arguments); wmHook(); return r; }; }
+  wrap('render'); wrap('ecRender'); wrap('ouvrirCompteLecture'); wrap('clNav');
+
+  /* styles */
+  try{ var st=document.createElement('style'); st.id='wm-mod'; st.textContent=
+    '.wm-ctrls{display:inline-flex;gap:6px;align-items:center;margin:0 4px}'
+    +'.wm-b{cursor:pointer;border:none;background:rgba(255,255,255,.18);color:inherit;border-radius:5px;padding:1px 7px;font-size:12px;line-height:1.5;font-family:inherit}'
+    +'.wm-b:hover{background:rgba(255,255,255,.34)}'
+    +'.wm-drag{cursor:move;user-select:none}'
+    +'.wm-resize{position:absolute;right:0;bottom:0;width:18px;height:18px;cursor:nwse-resize;display:none;z-index:6;'
+      +'background:linear-gradient(135deg,transparent 0 45%,rgba(120,120,120,.55) 45% 55%,transparent 55% 64%,rgba(120,120,120,.55) 64% 74%,transparent 74%)}'
+    +'.wm-float>.wm-resize,.sg-app.sg-reduit>.wm-resize{display:block}'
+    +'.wm-float{box-shadow:0 18px 52px rgba(0,0,0,.5);border-radius:9px;overflow:hidden}'
+    +'main.fullbleed .lx-app.wm-float{border:1px solid #6f6f6f}'
+    +'#cl-overlay.wm-floating,#ec-overlay.wm-floating{background:transparent;pointer-events:none}'
+    +'#cl-overlay.wm-floating .lx-app,#ec-overlay.wm-floating .ec-win{pointer-events:auto}'
+    +'body[data-theme="noir"] .wm-resize{background:linear-gradient(135deg,transparent 0 45%,rgba(30,144,255,.6) 45% 55%,transparent 55% 64%,rgba(30,144,255,.6) 64% 74%,transparent 74%)}';
+    document.head.appendChild(st); }catch(e){}
+  /* sous-pages (modales) : ré-enhancer à l'ouverture/fermeture de #modal — état remis à zéro à la fermeture */
+  try{
+    var mo=new MutationObserver(function(){
+      var modal=document.getElementById('modal');
+      if(modal && !modal.classList.contains('show')) WM.st.md={};
+      wmHook();
+    });
+    var mEl=document.getElementById('modal'), mC=document.getElementById('modal-c');
+    if(mEl) mo.observe(mEl, {attributes:true, attributeFilter:['class']});
+    if(mC)  mo.observe(mC,  {childList:true});
+  }catch(e){}
+  /* première application (si une fenêtre est déjà à l'écran) */
+  wmHook();
 })();
 </script>
 </body>
