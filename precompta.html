@@ -5349,9 +5349,11 @@ function sgJournaux(per){
 /* Grille du journal sélectionné dans la Consultation (style "Journal OD PAIE") */
 function sgJournalGrid(code, per){
   const noms={ACH:'HA ACHATS',VTE:'VT VENTES',BQ:'BQ BANQUE',ODP:'OD PAIE',OD:'OD OPERATIONS DIVERSES'};
-  // écritures du journal sur le mois sélectionné (ou tout l'exercice si pas de mois)
+  // HA (ACH) et VT (VTE) : cumul du début d'année jusqu'au mois sélectionné.
+  // Tous les autres journaux (OD, OD TVA, BQ, OD PAIE…) : UNIQUEMENT le mois sélectionné.
+  const cumul=(code==='ACH'||code==='VTE');
   let ecr=db.ecritures.filter(e=>e.journal===code);
-  if(per) ecr=ecr.filter(e=>ym(e.date)<=per); // cumul du début jusqu'au mois sélectionné
+  if(per) ecr=ecr.filter(e=> cumul ? ym(e.date)<=per : ym(e.date)===per);
   ecr=ecr.sort((a,b)=>a.date<b.date?-1:(a.date>b.date?1:0));
   let td=0,tc=0; const rows=ecr.map(e=>{ const jour=e.date.slice(8,10); const piece=e.libelle.split(' · ')[0]; const lib=(e.libelle.split(' · ')[1]||e.libelle);
     return e.lignes.map(l=>{ td+=l.debit; tc+=l.credit;
@@ -5360,7 +5362,7 @@ function sgJournalGrid(code, per){
   }).join('');
   const ok=Math.abs(r2(td-tc))<0.005;
   return `<div class="sgj-wrap">
-    <div class="sgj-head">Journal ${noms[code]||code}${per?(' — cumul au '+per.slice(5)+'/'+per.slice(0,4)):''}</div>
+    <div class="sgj-head">Journal ${noms[code]||code}${per?(cumul?(' — cumul au '+per.slice(5)+'/'+per.slice(0,4)):(' — mois '+per.slice(5)+'/'+per.slice(0,4))):''}</div>
     <div class="sgj-grid"><table class="sgj">
       <thead><tr><th style="width:40px">J</th><th style="width:120px" class="l">Compte</th><th style="width:24px">I</th><th style="width:90px" class="l">Pièce</th><th class="l">Libellé</th><th class="r">Débit</th><th class="r">Crédit</th></tr></thead>
       <tbody>${rows||'<tr><td colspan=7 style="padding:18px;text-align:center;color:#888">Aucune écriture sur ce journal pour la période</td></tr>'}</tbody>
@@ -10544,7 +10546,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v155 · noir & bleu';
+    b.textContent='YADA · v156 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
