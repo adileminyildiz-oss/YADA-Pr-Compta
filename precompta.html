@@ -6050,9 +6050,16 @@ function pageCompta(){
     let comptes=sgComptes(sgTab, sgPer);
     if(cmpMode==='mouvements') comptes=comptes.filter(c=>c.n>0);
     if(cmpMode==='alpha') comptes=comptes.slice().sort((a,b)=>(a.lib||'').localeCompare(b.lib||''));
-    rows=comptes.map(c=>`<tr class="${c.code===sgRow?'on':''}" onclick="sgSelRow('${c.code}')" ondblclick="ouvrirEcrituresCompte('${c.code}')" style="cursor:pointer" title="Double-clic : éditer les écritures du compte">
-        <td>${c.code}</td><td>${c.lib} (${c.n})</td>
-        <td class="sg-amt">${c.sens==='S'?'':sageNum(c.solde)}</td><td class="sg-sens">${c.sens}</td></tr>`).join('')
+    /* Comptes de tiers (Fournisseurs divers / Clients divers) : le n° est cliquable et ouvre
+       le compte en LECTURE SEULE (grand-livre du tiers). Les autres onglets gardent l'éditeur au double-clic. */
+    const estAux=(sgTab==='fourn'||sgTab==='clients');
+    rows=comptes.map(c=> estAux
+      ? `<tr class="sg-tier ${c.code===sgRow?'on':''}" onclick="ouvrirCompteLecture('${c.code}')" style="cursor:pointer" title="Cliquer : ouvrir le compte (lecture seule) — clic droit sur une ligne pour aller au journal">
+          <td class="sg-tier-code">${c.code}</td><td>${c.lib} (${c.n})</td>
+          <td class="sg-amt">${c.sens==='S'?'':sageNum(c.solde)}</td><td class="sg-sens">${c.sens}</td></tr>`
+      : `<tr class="${c.code===sgRow?'on':''}" onclick="sgSelRow('${c.code}')" ondblclick="ouvrirEcrituresCompte('${c.code}')" style="cursor:pointer" title="Double-clic : éditer les écritures du compte">
+          <td>${c.code}</td><td>${c.lib} (${c.n})</td>
+          <td class="sg-amt">${c.sens==='S'?'':sageNum(c.solde)}</td><td class="sg-sens">${c.sens}</td></tr>`).join('')
       || '<tr><td colspan="4" style="padding:22px;text-align:center;color:#9a9a9a">Aucun compte mouvementé dans cette catégorie</td></tr>';
   }
   const res=resultatPer(sgPer);
@@ -10579,7 +10586,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v164 · noir & bleu';
+    b.textContent='YADA · v165 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -13026,6 +13033,115 @@ ${lignes}
     +'#ec-sugg .ec-sg-it:hover{background:#e8f1fc !important}'
     +'#ec-sugg .ec-sg-it b{font-family:"IBM Plex Mono",monospace;color:#0a3d7a !important;min-width:96px}'
     +'#ec-sugg .ec-sg-it span,#ec-sugg .ec-sg-it b *{color:#555555 !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+
+<script id="yada-addon87">
+/* ============================================================
+   CONSULTATION DES COMPTES — comptes de tiers cliquables → grand-livre LECTURE SEULE
+   - Dans « Fournisseurs divers » / « Clients divers », le n° de compte est cliquable.
+   - Un clic ouvre le compte du tiers en LECTURE SEULE (toutes les écritures qui
+     ont utilisé son compte collectif 401/411), présenté façon Sage (cf. capture).
+   - Les lignes ne sont PAS modifiables. Pour modifier : CLIC DROIT sur une ligne →
+     « Journal » → redirection vers l'éditeur d'écritures (le journal). Le compte en
+     lecture reste ouvert : on ne le ferme QU'AVEC le bouton de fermeture.
+   - Valable pour TOUS les comptes fournisseurs et clients enregistrés & utilisés.
+   100% additif (overlay propre #cl-overlay, aucune modification des données).
+   ============================================================ */
+(function(){
+  window.clCode=null;
+  function tiersDe(code){ try{ return db.tiers.find(function(x){ return sageCode(x)===code; }); }catch(e){ return null; } }
+  window.ouvrirCompteLecture=function(code){
+    var t=tiersDe(code);
+    if(!t){ if(typeof toast==='function') toast('Compte de tiers introuvable'); return; }
+    window.clCode=code;
+    var ov=document.getElementById('cl-overlay');
+    if(!ov){ ov=document.createElement('div'); ov.id='cl-overlay'; document.body.appendChild(ov); }
+    clRender(); ov.classList.add('show');
+  };
+  window.clFermer=function(){ var ov=document.getElementById('cl-overlay'); if(ov) ov.classList.remove('show'); clMenuClose(); };
+  window.clMenuClose=function(){ var m=document.getElementById('cl-ctx'); if(m) m.classList.remove('show'); };
+  function clRender(){
+    var ov=document.getElementById('cl-overlay'); if(!ov) return;
+    var t=tiersDe(window.clCode); if(!t){ window.clFermer(); return; }
+    var code=sageCode(t);
+    var lignes=(typeof auxLignes==='function')?auxLignes(t):[];
+    var solde=0, TD=0, TC=0;
+    var rows=lignes.map(function(l){
+      solde=r2(solde+l.debit-l.credit); TD+=l.debit; TC+=l.credit;
+      var jnl=l.journal==='ACH'?'HA':(l.journal==='VTE'?'VT':l.journal);
+      return '<tr oncontextmenu="return clMenu(event,\''+l.ecritureId+'\')" title="Clic droit : ouvrir dans le journal pour modifier">'
+        +'<td class="bang">'+(l.lettre?'':'!')+'</td>'
+        +'<td class="l">'+frDate(l.date)+'</td>'
+        +'<td class="l">'+jnl+'</td>'
+        +'<td class="l"></td>'
+        +'<td class="l cpt">'+String(l.piece||'').slice(0,18)+'</td>'
+        +'<td class="l">'+(l.lib||'')+'</td>'
+        +'<td>'+(l.debit?sageNum(l.debit):'')+'</td>'
+        +'<td>'+(l.credit?sageNum(l.credit):'')+'</td>'
+        +'<td class="solde">'+sageNum(Math.abs(solde))+' '+(solde>=0?'D':'C')+'</td>'
+        +'<td class="lettre">'+(l.lettre||'')+'</td></tr>';
+    }).join('');
+    var sF=r2(TD-TC); var sens=Math.abs(sF)<0.005?'S':(sF>0?'D':'C');
+    var dossier=(db.societe&&db.societe.dossierNom)||'YADA';
+    ov.innerHTML='<div class="lx-app cl-app">'
+      +'<div class="lx-title">'+dossier+' — Compte '+code+' ('+(t.nom||'')+') · lecture seule'
+        +'<span class="cl-x" onclick="clFermer()" title="Fermer la page">✕</span></div>'
+      +'<div class="lx-bar">'
+        +'<button class="btn btn-ghost btn-sm" onclick="clFermer()">Fermer</button>'
+        +'<span class="cl-hint">Lignes en lecture seule — <b>clic droit</b> sur une ligne puis « <b>Journal</b> » pour modifier dans le journal.</span>'
+        +'<span style="margin-left:auto">Solde du compte : <b>'+sageNum(Math.abs(sF))+' '+sens+'</b></span></div>'
+      +'<div class="lx-wrap"><table class="lx"><thead><tr>'
+        +'<th class="l">!</th><th class="l">Date</th><th class="l">Jnl</th><th class="l">I</th><th class="l">Pièce</th><th class="l">Libellé</th>'
+        +'<th>Débit</th><th>Crédit</th><th>Solde</th><th>L</th></tr></thead>'
+        +'<tbody>'+(rows||'<tr><td colspan="10" style="text-align:center;padding:30px;color:#999">Aucune écriture sur ce compte</td></tr>')+'</tbody>'
+      +'</table></div>'
+      +'<div class="lx-tot" style="display:grid;grid-template-columns:60px 90px 70px 1fr 320px 150px 150px 130px 30px">'
+        +'<div></div><div></div><div></div><div></div><div class="l">Totaux du compte</div>'
+        +'<div>'+sageNum(TD)+'</div><div>'+sageNum(TC)+'</div><div>'+sageNum(Math.abs(sF))+' '+sens+'</div><div></div></div>'
+      +'</div>';
+  }
+  window.clRender=clRender;
+  window.clMenu=function(ev, eid){
+    ev.preventDefault(); ev.stopPropagation();
+    var m=document.getElementById('cl-ctx');
+    if(!m){ m=document.createElement('div'); m.id='cl-ctx'; document.body.appendChild(m); }
+    m.innerHTML='<button onclick="clVersJournal(\''+eid+'\')">📓 Journal — modifier l\'écriture</button>';
+    m.style.left=Math.min(ev.clientX, (window.innerWidth||1000)-210)+'px';
+    m.style.top=Math.min(ev.clientY, (window.innerHeight||700)-70)+'px';
+    m.classList.add('show');
+    return false;
+  };
+  window.clVersJournal=function(eid){
+    clMenuClose();
+    /* Redirection vers le journal (éditeur d'écritures façon Sage) — le compte en lecture reste ouvert. */
+    if(typeof ouvrirEcrituresCompte==='function') ouvrirEcrituresCompte(window.clCode);
+    if(typeof toast==='function') toast('Redirection vers le journal — modification possible');
+  };
+  /* la liste contextuelle se referme à tout clic / défilement ordinaire */
+  if(document.addEventListener){
+    document.addEventListener('click', function(){ clMenuClose(); });
+    document.addEventListener('scroll', function(){ clMenuClose(); }, true);
+  }
+  /* styles de l'overlay (réutilise .lx-app / table.lx déjà thémés) */
+  try{ var st=document.createElement('style'); st.id='cl-mod'; st.textContent=
+    '#cl-overlay{position:fixed;inset:0;z-index:70;display:none;background:rgba(4,8,16,.45)}'
+    +'#cl-overlay.show{display:block}'
+    +'#cl-overlay .lx-app{height:100vh;margin:0;border:none;border-radius:0;display:flex;flex-direction:column}'
+    +'#cl-overlay table.lx tbody tr{cursor:context-menu}'
+    +'#cl-overlay table.lx tbody tr:hover td{background:#f3f7fb}'
+    +'#cl-overlay .lx-title .cl-x{cursor:pointer;font-weight:700;padding:0 6px;border-radius:6px}'
+    +'#cl-overlay .lx-title .cl-x:hover{background:rgba(255,255,255,.18)}'
+    +'#cl-overlay .lx-bar .cl-hint{font-size:12px;color:#33506e;margin-left:14px}'
+    +'#cl-ctx{position:fixed;z-index:120;display:none;background:#fff;border:1px solid #b8cbe6;border-radius:9px;box-shadow:0 12px 30px rgba(10,40,90,.28);padding:5px;min-width:190px}'
+    +'#cl-ctx.show{display:block}'
+    +'#cl-ctx button{display:block;width:100%;text-align:left;background:none;border:none;padding:9px 12px;font:inherit;cursor:pointer;border-radius:6px;color:#10243a}'
+    +'#cl-ctx button:hover{background:#e8f1fc}'
+    +'body[data-theme="noir"] #cl-overlay .lx-bar .cl-hint{color:#bcd6f5}'
+    +'body[data-theme="noir"] #cl-ctx{background:#13202c;border-color:#1e90ff}'
+    +'body[data-theme="noir"] #cl-ctx button{color:#eaf2ff}'
+    +'body[data-theme="noir"] #cl-ctx button:hover{background:rgba(30,144,255,.18)}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
