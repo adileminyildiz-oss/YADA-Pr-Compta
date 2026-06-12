@@ -8854,7 +8854,7 @@ function ecRender(){
         <td class="ec-c">${first?`<input class="ec-i ec-date" type="date" value="${ecAttr(e.date)}" onchange="ecSetDate('${e.id}',this.value)">`:''}</td>
         <td class="ec-c ec-jrn">${first?(e.journal||''):''}</td>
         <td class="ec-l">${first?`<input class="ec-i" value="${ecAttr(ecPiece(e))}" onchange="ecSetPiece('${e.id}',this.value)">`:''}</td>
-        <td class="ec-l"><input class="ec-i ec-cpt" value="${ecAttr(l.compte)}" onchange="ecSetLine('${e.id}',${i},'compte',this.value)"></td>
+        <td class="ec-l"><input class="ec-i ec-cpt" value="${ecAttr(l.compte)}" autocomplete="off" oninput="ecSuggest(this,'${e.id}',${i})" onblur="ecSuggClose()" onchange="ecSetLine('${e.id}',${i},'compte',this.value)"></td>
         <td class="ec-l"><input class="ec-i" value="${ecAttr(l.lib)}" onchange="ecSetLine('${e.id}',${i},'lib',this.value)"></td>
         <td class="ec-n"><input class="ec-i ec-num" type="number" step="0.01" value="${l.debit||''}" onchange="ecSetLine('${e.id}',${i},'debit',this.value)"></td>
         <td class="ec-n"><input class="ec-i ec-num" type="number" step="0.01" value="${l.credit||''}" onchange="ecSetLine('${e.id}',${i},'credit',this.value)"></td>
@@ -10571,7 +10571,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v157 · noir & bleu';
+    b.textContent='YADA · v158 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -12952,6 +12952,56 @@ ${lignes}
     if(typeof toast==='function')toast('Écriture de TVA générée ✓ (journal OD).'); if(typeof render==='function')render();
   };
   var _ptva=window.pageTVA; window.pageTVA=function(){ var h=_ptva.apply(this,arguments); try{ h+=card(); }catch(e){} return h; };
+})();
+</script>
+<script id="yada-addon85">
+/* Autocomplétion des comptes dans l'éditeur d'écritures : en saisissant un préfixe
+   (401, 401A, 445, 6, 7…), liste sous le champ les comptes disponibles utilisables
+   (tiers auxiliaires au format Sage type 401DIVE, comptes de TVA, charges, produits). */
+(function(){
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];}); }
+  function familles(c){ var t3=c.slice(0,3); return (t3==='401'||t3==='411'||c.slice(0,2)==='44'||c.charAt(0)==='6'||c.charAt(0)==='7'); }
+  function ecAllAccounts(){
+    var arr=[], seen={};
+    /* tiers auxiliaires : code réel (compteAux) + code Sage (401DIVE) + nom */
+    (db.tiers||[]).forEach(function(t){ if(t.compteAux){ var code=c9(t.compteAux); var sage=(typeof sageCode==='function')?sageCode(t):code;
+      arr.push({code:code, sage:sage, lib:t.nom||''}); seen[code]=1; } });
+    /* plan : comptes de tiers collectifs, TVA (44), charges (6), produits (7) */
+    var src=(db.plan&&db.plan.length)? db.plan.map(function(p){return [c9(p.code), p.lib||COMPTES[p.code]||''];})
+      : Object.keys(COMPTES).map(function(c){return [c9(c), COMPTES[c]];});
+    src.forEach(function(p){ var c=p[0]; if(seen[c])return; if(familles(c)){ arr.push({code:c, sage:'', lib:p[1]||''}); seen[c]=1; } });
+    return arr;
+  }
+  window.ecSuggClose=function(){ setTimeout(function(){ var b=document.getElementById('ec-sugg'); if(b)b.remove(); }, 150); };
+  window.ecSuggest=function(inp, eId, i){
+    var q=(inp.value||'').trim().toUpperCase();
+    var old=document.getElementById('ec-sugg'); if(old) old.remove();
+    if(q.length<1) return;
+    var matches=ecAllAccounts().filter(function(a){
+      return (a.code && a.code.toUpperCase().indexOf(q)===0) || (a.sage && a.sage.toUpperCase().indexOf(q)===0);
+    });
+    matches.sort(function(a,b){ return (a.sage||a.code)<(b.sage||b.code)?-1:1; });
+    matches=matches.slice(0,14);
+    if(!matches.length) return;
+    var box=document.createElement('div'); box.id='ec-sugg'; box.className='ec-sugg';
+    box.innerHTML=matches.map(function(a){ return '<div class="ec-sg-it" data-code="'+esc(a.code)+'"><b>'+esc(a.sage||a.code)+'</b><span>'+esc(a.lib||'')+'</span></div>'; }).join('');
+    var r=inp.getBoundingClientRect();
+    box.style.cssText='position:fixed;left:'+Math.round(r.left)+'px;top:'+Math.round(r.bottom+2)+'px;min-width:'+Math.max(Math.round(r.width),280)+'px;';
+    document.body.appendChild(box);
+    box.querySelectorAll('.ec-sg-it').forEach(function(it){ it.addEventListener('mousedown', function(ev){ ev.preventDefault();
+      var code=it.getAttribute('data-code'); inp.value=code; var b=document.getElementById('ec-sugg'); if(b)b.remove();
+      if(typeof ecSetLine==='function') ecSetLine(eId, +i, 'compte', code); }); });
+  };
+  /* fermer la liste si on clique/défile ailleurs */
+  document.addEventListener('scroll', function(){ var b=document.getElementById('ec-sugg'); if(b)b.remove(); }, true);
+  /* style injecté */
+  try{ var st=document.createElement('style'); st.textContent=
+    '.ec-sugg{position:fixed;z-index:100040;max-height:280px;overflow:auto;background:#fff;border:1px solid #9fbce0;border-radius:8px;box-shadow:0 10px 30px rgba(10,40,90,.25);font-family:system-ui,sans-serif;font-size:12.5px}'
+    +'.ec-sg-it{display:flex;gap:10px;align-items:baseline;padding:7px 11px;cursor:pointer;border-bottom:1px solid #eef1f5}'
+    +'.ec-sg-it:hover{background:#e8f1fc}'
+    +'.ec-sg-it b{font-family:"IBM Plex Mono",monospace;color:#0a3d7a;min-width:96px}'
+    +'.ec-sg-it span{color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}';
+    document.head.appendChild(st); }catch(e){}
 })();
 </script>
 </body>
