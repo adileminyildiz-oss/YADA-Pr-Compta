@@ -6116,6 +6116,8 @@ function pageCompta(){
           <button onclick="journalSelectionne(null)">Tous les journaux</button>
         </div></span><span class="mi" onclick="event.stopPropagation();toggleMenu('sg-compte')">Compte
         <div class="sg-dd" id="sg-compte">
+          <button onclick="closeMenus();ecNouvelleOperation('OD')">Saisir une opération…</button>
+          <div class="sep"></div>
           <button onclick="cmpOuvrir()">Ouvrir le compte…</button>
           <button onclick="cmpInfos()">Informations complémentaires…</button>
           <div class="sep"></div>
@@ -8811,6 +8813,8 @@ function ecMatch(lcompte, code){
 var ecTiersId=null;
 function ecResolveTiers(code){ return db.tiers.find(t=> sageCode(t)===code || (t.compteAux && (t.compteAux===code || c9(t.compteAux)===c9(code))) ) || null; }
 function ecEcritures(){
+  /* Mode « Nouvelle opération » : on n'affiche que l'écriture en cours de saisie. */
+  if(window.ecNewId){ var en=db.ecritures.find(function(x){ return x.id===window.ecNewId; }); return en?[en]:[]; }
   let list;
   if(ecTiersId){
     const ids=new Set();
@@ -8833,6 +8837,7 @@ function ecAccountLabel(){
 }
 
 function ouvrirEcrituresCompte(code){
+  window.ecNewId=null;   /* sortir d'un éventuel mode « nouvelle opération » */
   ecCode=code||''; ecTiersId=(ecResolveTiers(code)||{}).id||null;
   let ov=document.getElementById('ec-overlay');
   if(!ov){ ov=document.createElement('div'); ov.id='ec-overlay'; ov.className='ec-ov';
@@ -8840,6 +8845,13 @@ function ouvrirEcrituresCompte(code){
   ecRender(); ov.classList.add('show');
 }
 function ecFermer(){
+  /* Mode « nouvelle opération » : fermer = abandonner la saisie (on retire le brouillon). */
+  if(window.ecNewId){
+    var _i=db.ecritures.findIndex(function(e){ return e.id===window.ecNewId; });
+    if(_i>=0) db.ecritures.splice(_i,1);
+    window.ecNewId=null;
+    var _ov=document.getElementById('ec-overlay'); if(_ov) _ov.classList.remove('show'); render(); return;
+  }
   /* Empêcher la fermeture tant qu'une ligne mouvementée n'a pas de compte saisi. */
   try{ var manque=(typeof ecEcritures==='function'?ecEcritures():[]).some(function(e){
       return (e.lignes||[]).some(function(l){ return (((+l.debit||0)!==0)||((+l.credit||0)!==0)) && !(l.compte||'').trim(); }); });
@@ -10586,7 +10598,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v170 · noir & bleu';
+    b.textContent='YADA · v171 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -13124,6 +13136,7 @@ ${lignes}
         +'<span class="cl-x" onclick="clFermer()" title="Fermer la page">✕</span></div>'
       +'<div class="lx-bar">'
         +'<button class="btn btn-ghost btn-sm" onclick="clFermer()">Fermer</button>'
+        +'<button class="btn btn-gold btn-sm" onclick="ecNouvelleOperation(\'OD\')" title="Saisir une nouvelle opération (même interface)">＋ Saisir une opération</button>'
         +'<span class="cl-navwrap"><button class="btn btn-ghost btn-sm cl-nav" onclick="clNav(-1)"'+navDis+' title="'+typeLbl+' précédent (↑)">▲</button>'
         +'<button class="btn btn-ghost btn-sm cl-nav" onclick="clNav(1)"'+navDis+' title="'+typeLbl+' suivant (↓)">▼</button>'
         +(navlbl?'<span class="cl-navlbl">'+navlbl+'</span>':'')+'</span>'
@@ -13416,6 +13429,113 @@ ${lignes}
   }catch(e){}
   /* première application (si une fenêtre est déjà à l'écran) */
   wmHook();
+})();
+</script>
+
+<script id="yada-addon90">
+/* ============================================================
+   SAISIE D'UNE OPÉRATION — même interface que l'éditeur d'écritures.
+   Bouton « ＋ Saisir une opération » (Consultation → menu Compte, et barre du
+   grand-livre lecture seule) → ouvre l'ÉDITEUR D'ÉCRITURES en CRÉATION :
+   choix du journal (OD/BQ/HA/VT/OD TVA/OD Paie), date, pièce, lignes
+   (compte + autocomplétion, libellé, débit, crédit), contrôle Σ débit = Σ crédit,
+   puis « Valider l'opération » → écriture comptable. « Annuler » retire le brouillon.
+   Réutilise 100% l'éditeur existant (#ec-overlay) via window.ecNewId.
+   ============================================================ */
+(function(){
+  window.ecNewId = window.ecNewId || null;
+  var EC_JOURNAUX=[
+    {code:'OD',   lib:'OD — Opérations diverses'},
+    {code:'BQ',   lib:'BQ — Banque'},
+    {code:'ACH',  lib:'HA — Achats'},
+    {code:'VTE',  lib:'VT — Ventes'},
+    {code:'ODTVA',lib:'OD TVA'},
+    {code:'ODP',  lib:'OD Paie'}
+  ];
+  function uniqId(){ return (typeof uid==='function')?uid():('ec'+Date.now()+Math.random().toString(16).slice(2,6)); }
+  function jPiece(j){ try{ if(typeof nextNum==='function') return nextNum(j); }catch(e){} return j+'-'+Date.now().toString().slice(-5); }
+
+  window.ecNouvelleOperation=function(journal){
+    journal=journal||'OD';
+    var piece=jPiece(journal);
+    var e={ id:uniqId(), journal:journal,
+      date:(typeof todayStr==='function'?todayStr():new Date().toISOString().slice(0,10)),
+      piece:piece, libelle:piece+' · Saisie manuelle',
+      lignes:[{compte:'',lib:'',debit:0,credit:0},{compte:'',lib:'',debit:0,credit:0}] };
+    db.ecritures.push(e); window.ecNewId=e.id;
+    try{ ecCode=''; ecTiersId=null; }catch(_){}
+    var ov=document.getElementById('ec-overlay');
+    if(!ov){ ov=document.createElement('div'); ov.id='ec-overlay'; ov.className='ec-ov';
+      ov.innerHTML='<div class="ec-win" id="ec-win"></div>'; document.body.appendChild(ov); }
+    if(typeof ecRender==='function') ecRender();
+    ov.classList.add('show');
+  };
+  window.ecNewSetJournal=function(v){ var e=ecGet(window.ecNewId); if(e){ e.journal=v; ecRender(); } };
+
+  window.ecValiderOperation=function(){
+    var e=ecGet(window.ecNewId); if(!e){ return; }
+    var jr=document.getElementById('ec-new-jrn'), dt=document.getElementById('ec-new-date'), pc=document.getElementById('ec-new-piece');
+    if(jr) e.journal=jr.value; if(dt&&dt.value) e.date=dt.value; if(pc!=null) e.piece=pc.value;
+    /* retire les lignes totalement vides */
+    e.lignes=(e.lignes||[]).filter(function(l){ return (l.compte||'').trim() || (+l.debit||0)!==0 || (+l.credit||0)!==0; });
+    if(!e.lignes.length){ if(typeof toast==='function') toast('Saisissez au moins une ligne.'); e.lignes.push({compte:'',lib:'',debit:0,credit:0}); ecRender(); return; }
+    var sansCompte=e.lignes.find(function(l){ return !(l.compte||'').trim() && ((+l.debit||0)!==0||(+l.credit||0)!==0); });
+    if(sansCompte){ if(typeof toast==='function') toast('Compte obligatoire sur chaque ligne mouvementée.'); return; }
+    var t=ecTot(e);
+    if(Math.abs(t.diff)>=0.005){ if(typeof ecNotifSolde==='function') ecNotifSolde(window.ecNewId, t.diff);
+      else if(typeof toast==='function') toast('Écriture non équilibrée (Σ débit ≠ Σ crédit).'); return; }
+    if(!e.libelle) e.libelle=(e.piece||'')+' · Saisie';
+    window.ecNewId=null;
+    if(typeof save==='function') save();
+    var ov=document.getElementById('ec-overlay'); if(ov) ov.classList.remove('show');
+    if(typeof render==='function') render();
+    if(typeof toast==='function') toast('Opération enregistrée ✓ — '+(e.journal||'')+' '+(e.piece||''));
+  };
+  window.ecAnnulerOperation=function(){
+    var idx=db.ecritures.findIndex(function(e){ return e.id===window.ecNewId; });
+    if(idx>=0) db.ecritures.splice(idx,1);
+    window.ecNewId=null;
+    var ov=document.getElementById('ec-overlay'); if(ov) ov.classList.remove('show');
+    if(typeof render==='function') render();
+    if(typeof toast==='function') toast('Saisie annulée');
+  };
+
+  /* barre de saisie (journal/date/pièce + valider/annuler) injectée dans l'éditeur en création */
+  function ecInjectNewBar(){
+    var sage=document.querySelector('#ec-overlay .ec-sage'); if(!sage) return;
+    var e=ecGet(window.ecNewId); if(!e){ return; }
+    /* titre */
+    try{ var ttl=sage.querySelector('.ec-titlebar > span'); if(ttl){ var dossier=(db.societe&&db.societe.dossierNom)||'YADA';
+      ttl.textContent=dossier+' — Saisie d\'une opération ('+(e.journal||'OD')+') — Comptabilité'; } }catch(_){}
+    if(sage.querySelector('.ec-newbar')) return;
+    var bar=document.createElement('div'); bar.className='ec-newbar';
+    bar.innerHTML='<b>Saisie d\'une opération</b>'
+      +'<label>Journal <select id="ec-new-jrn">'+EC_JOURNAUX.map(function(j){ return '<option value="'+j.code+'"'+(e.journal===j.code?' selected':'')+'>'+j.lib+'</option>'; }).join('')+'</select></label>'
+      +'<label>Date <input type="date" id="ec-new-date" value="'+(e.date||'')+'"></label>'
+      +'<label>Pièce <input id="ec-new-piece" value="'+String(e.piece||'').replace(/"/g,'&quot;')+'"></label>'
+      +'<span style="flex:1"></span>'
+      +'<button class="ec-bt ec-bt-solde" id="ec-new-valid">Valider l\'opération</button>'
+      +'<button class="ec-bt" id="ec-new-cancel">Annuler</button>';
+    var anchor=sage.querySelector('.ec-toolbar')||sage.querySelector('.ec-menubar')||sage.querySelector('.ec-titlebar');
+    if(anchor && anchor.parentNode) anchor.parentNode.insertBefore(bar, anchor.nextSibling); else sage.appendChild(bar);
+    bar.querySelector('#ec-new-jrn').addEventListener('change', function(){ window.ecNewSetJournal(this.value); });
+    bar.querySelector('#ec-new-date').addEventListener('change', function(){ if(typeof ecSetDate==='function') ecSetDate(window.ecNewId, this.value); });
+    bar.querySelector('#ec-new-piece').addEventListener('change', function(){ if(typeof ecSetPiece==='function') ecSetPiece(window.ecNewId, this.value); });
+    bar.querySelector('#ec-new-valid').addEventListener('click', window.ecValiderOperation);
+    bar.querySelector('#ec-new-cancel').addEventListener('click', window.ecAnnulerOperation);
+  }
+  /* greffe : après chaque rendu de l'éditeur, injecter la barre si on est en création */
+  if(typeof ecRender==='function'){ var _ecr=ecRender; ecRender=function(){ var r=_ecr.apply(this, arguments); if(window.ecNewId){ try{ ecInjectNewBar(); }catch(e){} } return r; }; }
+
+  try{ var st=document.createElement('style'); st.id='ec-newop-mod'; st.textContent=
+    '.ec-newbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:9px 14px;background:#10243a;color:#eaf2ff;border-bottom:1px solid #20415f;font-size:12.5px}'
+    +'.ec-newbar b{color:#9fd0ff;letter-spacing:.02em}'
+    +'.ec-newbar label{display:flex;align-items:center;gap:6px;color:#cfe0f5}'
+    +'.ec-newbar select,.ec-newbar input{font:inherit;font-size:12.5px;padding:4px 7px;border-radius:6px;border:1px solid #2c4f70;background:#0c1a2a;color:#eaf2ff}'
+    +'.ec-newbar .ec-bt{cursor:pointer;border:none;border-radius:6px;padding:6px 12px;font:inherit;font-weight:600;background:#24405d;color:#eaf2ff}'
+    +'.ec-newbar .ec-bt-solde{background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#fff}'
+    +'.ec-newbar .ec-bt:hover{filter:brightness(1.08)}';
+    document.head.appendChild(st); }catch(e){}
 })();
 </script>
 </body>
