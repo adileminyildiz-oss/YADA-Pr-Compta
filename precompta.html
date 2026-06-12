@@ -6065,9 +6065,9 @@ function pageCompta(){
   const res=resultatPer(sgPer);
   const resTxt=(res>=0?'Bénéfice':'Perte')+' : '+sageNum(res)+' E';
   const finPer=sgPer?(function(){ const [y,m]=sgPer.split('-').map(Number); const dj=new Date(y, m, 0).getDate(); return String(dj).padStart(2,'0')+'/'+String(m).padStart(2,'0')+'/'+y; })():'31/12/'+year;
-  return `<div class="sg-app">
+  return `<div class="sg-app ${window.sgReduit?'sg-reduit':''}">
     <div class="sg-title">${(db.societe&&db.societe.dossierNom)||'PRÉCOMPTA'} 01/${year.slice(2)}-12/${year.slice(2)} (E) — Comptabilité
-      <span class="sg-win">─ ▢ ✕</span></div>
+      <span class="sg-win"><span class="sg-wbtn" title="Réduire la fenêtre" onclick="event.stopPropagation();sgReduireFenetre()">─</span><span class="sg-wbtn" title="${window.sgReduit?'Agrandir (plein écran)':'Réduire la fenêtre'}" onclick="event.stopPropagation();sgToggleReduit()">${window.sgReduit?'▣':'▢'}</span><span class="sg-wbtn" title="Fermer" onclick="event.stopPropagation();fileFermer()">✕</span></span></div>
     <div class="sg-menu"><span class="mi" onclick="event.stopPropagation();toggleFichier()">Fichier
         <div class="sg-dd" id="sg-fichier">
           <button onclick="fileEnregistrer()">Enregistrer</button>
@@ -10586,7 +10586,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v165 · noir & bleu';
+    b.textContent='YADA · v166 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -13142,6 +13142,37 @@ ${lignes}
     +'body[data-theme="noir"] #cl-ctx{background:#13202c;border-color:#1e90ff}'
     +'body[data-theme="noir"] #cl-ctx button{color:#eaf2ff}'
     +'body[data-theme="noir"] #cl-ctx button:hover{background:rgba(30,144,255,.18)}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+
+<script id="yada-addon88">
+/* ============================================================
+   CONSULTATION DES COMPTES — fenêtre réductible (bouton ▢)
+   Le bouton ▢ de la barre de titre bascule la fenêtre de Consultation
+   (les 6 onglets : Comptes Généraux, Fournisseurs divers, Fournisseurs
+   d'immobilisations, Clients divers, Retenue de Garantie, Personnel)
+   entre PLEIN ÉCRAN et une FENÊTRE RÉDUITE centrée. État mémorisé.
+   100% additif (classe .sg-reduit sur .sg-app + CSS).
+   ============================================================ */
+(function(){
+  try{ window.sgReduit = (localStorage.getItem('yada-sg-reduit')==='1'); }catch(e){ window.sgReduit=false; }
+  window.sgToggleReduit=function(){
+    window.sgReduit=!window.sgReduit;
+    try{ localStorage.setItem('yada-sg-reduit', window.sgReduit?'1':'0'); }catch(e){}
+    if(typeof render==='function') render();
+    if(typeof toast==='function') toast(window.sgReduit?'Fenêtre réduite — clic sur ▣ pour agrandir':'Fenêtre agrandie (plein écran)');
+  };
+  /* le bouton ─ réduit aussi la fenêtre (s'il est déjà réduit, ne fait rien) */
+  window.sgReduireFenetre=function(){ if(!window.sgReduit) window.sgToggleReduit(); };
+  /* styles : fenêtre réduite centrée, fond visible autour */
+  try{ var st=document.createElement('style'); st.id='sg-reduit-mod'; st.textContent=
+    'main.fullbleed{overflow:auto}'
+    +'main.fullbleed .sg-app.sg-reduit{height:min(640px,calc(100vh - 72px));width:min(1040px,calc(100vw - 64px));'
+      +'margin:36px auto;border:1px solid #6f6f6f;border-radius:9px;box-shadow:0 16px 48px rgba(0,0,0,.40);overflow:hidden}'
+    +'.sg-app .sg-win .sg-wbtn{cursor:pointer;padding:0 4px;border-radius:4px;display:inline-block}'
+    +'.sg-app .sg-win .sg-wbtn:hover{background:rgba(255,255,255,.22)}'
+    +'body[data-theme="noir"] main.fullbleed .sg-app.sg-reduit{box-shadow:0 16px 48px rgba(0,0,0,.6);border-color:#1e90ff}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
