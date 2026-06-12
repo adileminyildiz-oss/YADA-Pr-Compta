@@ -10578,7 +10578,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v160 · noir & bleu';
+    b.textContent='YADA · v161 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -13009,6 +13009,41 @@ ${lignes}
     +'#ec-sugg .ec-sg-it b{font-family:"IBM Plex Mono",monospace;color:#0a3d7a !important;min-width:96px}'
     +'#ec-sugg .ec-sg-it span,#ec-sugg .ec-sg-it b *{color:#555555 !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}';
     document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon86">
+/* Régularisation de contraste système : garantit que le texte est lisible sur son fond
+   (fond clair → texte foncé ; fond foncé/bleu → texte blanc). N'agit QUE sur le texte
+   réellement illisible (faible contraste) afin de préserver les couleurs voulues
+   (rouge débit, vert crédit, liens, accents). */
+(function(){
+  function pRGB(s){ var m=String(s||'').match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/); return m?{r:+m[1],g:+m[2],b:+m[3],a:m[4]!==undefined?+m[4]:1}:null; }
+  function lum(c){ var a=[c.r,c.g,c.b].map(function(v){v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);}); return 0.2126*a[0]+0.7152*a[1]+0.0722*a[2]; }
+  function ratio(a,b){ var hi=Math.max(a,b),lo=Math.min(a,b); return (hi+0.05)/(lo+0.05); }
+  function hasText(el){ for(var i=0;i<el.childNodes.length;i++){ var n=el.childNodes[i]; if(n.nodeType===3 && n.nodeValue && n.nodeValue.trim()) return true; } return false; }
+  var ROOTS=['#ec-sugg','#ec-overlay','#fact-review','#modal-c','#print-area','#sec-lock','#main'];
+  var MAX=6000;
+  function run(){
+    var count=0;
+    for(var r=0;r<ROOTS.length;r++){ var root=document.querySelector(ROOTS[r]); if(!root) continue;
+      var stack=[[root,{r:255,g:255,b:255,a:1}]];
+      while(stack.length){ if(count++>MAX) return; var it=stack.pop(); var el=it[0], pbg=it[1];
+        if(!el||el.nodeType!==1) continue; var tag=el.tagName; if(tag==='SCRIPT'||tag==='STYLE'||tag==='SVG'||tag==='svg'||tag==='IMG'||tag==='CANVAS') continue;
+        var cs=getComputedStyle(el); var bgc=pRGB(cs.backgroundColor);
+        var bg=(bgc && bgc.a>=0.6)?bgc:pbg;
+        if(hasText(el)){ var col=pRGB(cs.color);
+          if(col && ratio(lum(col),lum(bg))<2.2){ el.style.setProperty('color', lum(bg)>0.45?'#111111':'#ffffff', 'important'); }
+        }
+        var ch=el.children; for(var i=ch.length-1;i>=0;i--) stack.push([ch[i],bg]);
+      }
+    }
+  }
+  var raf=null; function schedule(){ if(raf)cancelAnimationFrame(raf); raf=requestAnimationFrame(function(){ raf=null; try{ run(); }catch(e){} }); }
+  window.yadaFixContrast=schedule;
+  if(typeof render==='function'){ var _r=render; render=function(){ var x=_r.apply(this,arguments); schedule(); return x; }; }
+  document.addEventListener('input', schedule, true);
+  document.addEventListener('focusin', schedule, true);
+  setTimeout(schedule, 250);
 })();
 </script>
 </body>
