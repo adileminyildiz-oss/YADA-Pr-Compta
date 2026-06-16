@@ -10598,7 +10598,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v171 · noir & bleu';
+    b.textContent='YADA · v172 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -13535,6 +13535,77 @@ ${lignes}
     +'.ec-newbar .ec-bt{cursor:pointer;border:none;border-radius:6px;padding:6px 12px;font:inherit;font-weight:600;background:#24405d;color:#eaf2ff}'
     +'.ec-newbar .ec-bt-solde{background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#fff}'
     +'.ec-newbar .ec-bt:hover{filter:brightness(1.08)}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+
+<script id="yada-addon91">
+/* ============================================================
+   ÉDITEUR D'ÉCRITURES — refonte NOIR & BLEU, lisible et épurée.
+   Unique surface de saisie : « Modifier l'écriture » (clic droit → Journal),
+   double-clic sur un compte, ET « Saisir une opération » (addon90) partagent
+   tous le même éditeur #ec-overlay/.ec-sage → un seul restyle s'applique partout.
+   - Fond noir, accents bleus (#1e90ff/#5ab0ff) sur les touches actives.
+   - Tout le texte lisible (clair sur noir), débit/crédit/solde contrastés.
+   - Simplicité : barres décoratives (menu façon Windows + glyphes) masquées ;
+     la barre de filtre reste (utile). 100% additif (CSS surchargeant l'ancien).
+   ============================================================ */
+(function(){
+  try{ var st=document.createElement('style'); st.id='ec-noir-mod'; st.textContent=
+    /* cadre */
+    '#ec-overlay .ec-win{border:1px solid #1e90ff !important;box-shadow:0 30px 80px rgba(0,0,0,.72) !important}'
+    +'.ec-sage{background:#0b1118 !important;color:#eaf2ff !important}'
+    /* barre de titre */
+    +'.ec-sage .ec-titlebar{background:linear-gradient(#10243a,#0a1626) !important;color:#eaf2ff !important;border-bottom:1px solid #1e90ff !important}'
+    +'.ec-sage .ec-titlebar span,.ec-sage .ec-titlebar b{color:#eaf2ff !important;-webkit-text-fill-color:#eaf2ff !important}'
+    +'.ec-sage .ec-winbtn i{color:#cfe0f5 !important}'
+    +'.ec-sage .ec-winbtn i.x{color:#ff9a9a !important}'
+    /* simplicité : on masque le menu décoratif et la barre d\'icônes */
+    +'.ec-sage .ec-menubar{display:none !important}'
+    +'.ec-sage .ec-toolbar{display:none !important}'
+    /* barre de filtre (conservée) en noir & bleu */
+    +'.ec-sage .ec-filtbar{background:#0c1a2a !important;border-bottom:1px solid #16212e !important}'
+    +'.ec-sage .ec-filtbar .ec-flbl{color:#9fb6d0 !important}'
+    +'.ec-sage .ec-filtbar .ec-flinp,.ec-sage .ec-filtbar .ec-flbtn{background:#0b1118 !important;border:1px solid #24405d !important;color:#eaf2ff !important}'
+    /* tableau */
+    +'.ec-sage .ec-tablewrap{background:#0b1118 !important}'
+    +'.ec-sage .ec-table th{background:#10243a !important;color:#cfe0f5 !important;border-right:1px solid #1c3a57 !important;border-bottom:1px solid #1e90ff !important}'
+    +'.ec-sage .ec-r td{border-bottom:1px solid #16212e !important;color:#eaf2ff !important}'
+    +'.ec-sage .ec-r.ec-other td{color:#b9c6d6 !important}'
+    +'.ec-sage .ec-r.ec-mine{background:rgba(30,144,255,.12) !important}'
+    +'.ec-sage .ec-r.ec-mine td{color:#ffffff !important;font-weight:600}'
+    +'.ec-sage .ec-table tbody tr:hover td{background:rgba(30,144,255,.10) !important}'
+    /* sélection de lettrage cohérente en bleu translucide */
+    +'.ec-sage .ec-table tbody tr.ec-lsel td{background:rgba(30,144,255,.20) !important}'
+    +'.ec-sage .ec-table tbody tr.ec-lsel:hover td{background:rgba(30,144,255,.28) !important}'
+    +'.ec-sage .ec-table tbody tr.ec-lsel td,.ec-sage .ec-table tbody tr.ec-lsel td input,.ec-sage .ec-table tbody tr.ec-lsel td select{color:#eaf2ff !important;-webkit-text-fill-color:#eaf2ff !important}'
+    +'.ec-sage .ec-table tbody tr.ec-lsel td:first-child{box-shadow:inset 4px 0 0 #1e90ff !important}'
+    /* accents colorés lisibles sur noir */
+    +'.ec-sage .ec-jrn{color:#5ab0ff !important;-webkit-text-fill-color:#5ab0ff !important}'
+    +'.ec-sage .ec-lettre{color:#5ab0ff !important;-webkit-text-fill-color:#5ab0ff !important}'
+    +'.ec-sage .ec-solde{color:#ff9a9a !important;-webkit-text-fill-color:#ff9a9a !important}'
+    /* SAISIE : champs en texte clair sur fond sombre, focus bleu (surcharge l\'ancien texte noir) */
+    +'.ec-sage input,.ec-sage select,.ec-sage textarea,.ec-sage .ec-i{color:#eaf2ff !important;-webkit-text-fill-color:#eaf2ff !important;background:transparent !important;border:1px solid transparent !important}'
+    +'.ec-sage .ec-i:hover{border-color:#24405d !important}'
+    +'.ec-sage .ec-i:focus{background:#0c1a2a !important;border-color:#1e90ff !important;box-shadow:0 0 0 2px rgba(30,144,255,.28) !important}'
+    +'.ec-sage input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.85)}'
+    /* ligne d\'actions + boutons */
+    +'.ec-sage .ec-act td{background:#0c1a2a !important;border-bottom:1px solid #16212e !important}'
+    +'.ec-sage .ec-bt{background:#16304a !important;border:1px solid #2a557e !important;color:#eaf2ff !important}'
+    +'.ec-sage .ec-bt:hover{background:#1d3e5e !important}'
+    +'.ec-sage .ec-bt-solde{background:linear-gradient(120deg,#5ab0ff,#0a64d6) !important;border:none !important;color:#ffffff !important}'
+    +'.ec-sage .ec-del{background:#3a1a1a !important;color:#ff9a9a !important}'
+    +'.ec-sage .ec-okk{color:#7fe3b4 !important}'
+    +'.ec-sage .ec-soldee{border-top-color:#1e90ff !important}'
+    /* totaux + pied + statut */
+    +'.ec-sage .ec-totbar{background:#10243a !important;color:#ffffff !important;border-top:1px solid #1e90ff !important}'
+    +'.ec-sage .ec-totbar *{color:#ffffff !important;-webkit-text-fill-color:#ffffff !important}'
+    +'.ec-sage .ec-fields{background:#0c1a2a !important;border-top:1px solid #16212e !important}'
+    +'.ec-sage .ec-fields label{color:#9fb6d0 !important;-webkit-text-fill-color:#9fb6d0 !important}'
+    +'.ec-sage .ec-fields input{background:#0b1118 !important;border:1px solid #24405d !important;color:#eaf2ff !important;-webkit-text-fill-color:#eaf2ff !important}'
+    +'.ec-sage .ec-status{background:#0a1422 !important;border-top:1px solid #16212e !important;color:#9fb6d0 !important}'
+    +'.ec-sage .ec-status *{color:#9fb6d0 !important;-webkit-text-fill-color:#9fb6d0 !important}'
+    +'.ec-sage .ec-brand{color:#cfe0f5 !important}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
