@@ -10626,7 +10626,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v176 · noir & bleu';
+    b.textContent='YADA · v177 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -13935,6 +13935,114 @@ ${lignes}
     +'body[data-theme="noir"] .sg-app .bj-saisie input,body[data-theme="noir"] .sg-app .bj-saisie select{background:#0c1a2a !important;color:#eaf2ff !important;-webkit-text-fill-color:#eaf2ff !important;border:1px solid #24405d !important}'
     +'body[data-theme="noir"] .sg-app table.bj td.deb{color:#ff9a9a !important;-webkit-text-fill-color:#ff9a9a !important}'
     +'body[data-theme="noir"] .sg-app table.bj td.bang{background:#10384a !important;color:#ff9a9a !important}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+
+<script id="yada-addon96">
+/* ============================================================
+   PLAN COMPTABLE — création des comptes Charges / Produits / TVA demandés
+   (s'ils n'existent pas) + comptes de tiers par nature (401GASO00 Gasoil,
+   401REST00 Restaurant). + ligne ROUGE entre une écriture soldée et la suivante
+   dans l'éditeur (Journal d'achat HA / journaux éditables).
+   100% additif : enrichit COMPTES + PCG_COMPLET + db.plan (si déjà peuplé),
+   crée 2 tiers fournisseurs « par nature » si absents. Idempotent.
+   ============================================================ */
+(function(){
+  var SUP=[
+    /* Charges */
+    ['601000000','ACHATS STOCKES - MATIERES PREMIERES'],
+    ['606000000','ACHATS NON STOCKES - MATIERES & FOURNITURES'],
+    ['615000000','ENTRETIEN ET REPARATIONS'],
+    ['615200000','ENTRETIEN ET REPARATIONS SUR BIENS IMMOBILIERS'],
+    ['615500000','ENTRETIEN ET REPARATIONS SUR BIENS MOBILIERS'],
+    ['615600000','MAINTENANCE'],
+    ['616000000',"PRIMES D'ASSURANCES"],
+    ['616100000','MULTIRISQUES'],
+    ['616200000','ASSURANCE OBLIGATOIRE DOMMAGE CONSTRUCTION'],
+    ['622600000','HONORAIRES'],
+    ['622700000',"FRAIS D'ACTES ET DE CONTENTIEUX"],
+    ['623000000','PUBLICITE'],
+    ['623100000','ANNONCES ET INSERTIONS'],
+    ['625100000','VOYAGES ET DEPLACEMENTS'],
+    ['625600000','MISSIONS'],
+    /* Produits */
+    ['701000000','VENTES DE PRODUITS FINIS'],
+    ['704000000','TRAVAUX'],
+    ['705000000','ETUDES'],
+    ['706000000','PRESTATIONS DE SERVICES'],
+    ['707000000','VENTES DE MARCHANDISES'],
+    ['707020000','VENTES DE MARCHANDISES 5,5%'],
+    ['707030000','VENTES DE MARCHANDISES HORS UE'],
+    ['707040000','VENTES DE MARCHANDISES UE'],
+    ['707055000','VENTES DE MARCHANDISES 20%'],
+    ['707060000','VENTES DE MARCHANDISES DOM-TOM'],
+    /* TVA collectée / assimilées / régul */
+    ['445711000','TVA COLLECTEE 2,1%'],
+    ['445712000','TVA COLLECTEE 5,5%'],
+    ['445713000','TVA COLLECTEE 8%'],
+    ['445716000','TVA COLLECTEE 10%'],
+    ['445717000','TVA COLLECTEE 20%'],
+    ['445780000','TAXES ASSIMILEES A LA TVA'],
+    ['445800000','TVA A REGULARISER'],
+    ['445810000','ACOMPTES DE TVA - REGIME SIMPLIFIE'],
+    ['445830000','REMBOURSEMENT DE TVA DEMANDE'],
+    ['445670000','CREDIT DE TVA A REPORTER'],
+    /* TVA déductible */
+    ['445661000','TVA DEDUCTIBLE 2,1%'],
+    ['445662000','TVA DEDUCTIBLE 5,5%'],
+    ['445663000','TVA DEDUCTIBLE 8%'],
+    ['445666000','TVA DEDUCTIBLE 10%'],
+    ['445667000','TVA DEDUCTIBLE 20%'],
+    /* TVA sur immobilisations */
+    ['445621000','TVA SUR IMMOBILISATIONS 2,1%'],
+    ['445622000','TVA SUR IMMOBILISATIONS 5,5%'],
+    ['445623000','TVA SUR IMMOBILISATIONS 8%'],
+    ['445626000','TVA SUR IMMOBILISATIONS 10%'],
+    ['445627000','TVA SUR IMMOBILISATIONS 20%']
+  ];
+  /* Comptes de tiers fournisseurs « par nature » */
+  var TIERS_NAT=[
+    {nom:'GASOIL',     compteAux:'401GASO00', compteContre:'606000000', compteTVA:'445660000', taux:20},
+    {nom:'RESTAURANT', compteAux:'401REST00', compteContre:'625700000', compteTVA:'445660000', taux:20}
+  ];
+  function ensurePlan(){
+    try{
+      /* 1) libellés dans COMPTES (objet mutable) */
+      if(typeof COMPTES!=='undefined'){ SUP.forEach(function(p){ if(COMPTES[p[0]]===undefined) COMPTES[p[0]]=p[1]; }); }
+      /* 2) plan de référence PCG_COMPLET (si présent) */
+      if(typeof PCG_COMPLET!=='undefined' && PCG_COMPLET.push){
+        var seen={}; PCG_COMPLET.forEach(function(p){ seen[p[0]]=1; });
+        SUP.forEach(function(p){ if(!seen[p[0]]) PCG_COMPLET.push([p[0], p[1]]); });
+      }
+      /* 3) plan du dossier (UNIQUEMENT s'il est déjà peuplé, pour ne pas casser le repli COMPTES) */
+      function addToPlan(plan){ if(!plan || !plan.length) return; var have={}; plan.forEach(function(p){ try{ have[c9(p.code)]=1; }catch(e){} });
+        SUP.forEach(function(p){ if(!have[p[0]]) plan.push({code:p[0], lib:p[1]}); }); }
+      if(typeof db!=='undefined' && db){ addToPlan(db.plan);
+        if(db.dossiersData) Object.keys(db.dossiersData).forEach(function(k){ var ds=db.dossiersData[k]; if(ds&&ds.plan) addToPlan(ds.plan); }); }
+    }catch(e){}
+  }
+  function ensureTiersNature(){
+    try{ if(typeof db==='undefined'||!db||!db.tiers) return;
+      TIERS_NAT.forEach(function(tn){
+        var ex=db.tiers.some(function(t){ return t.compteAux && c9(t.compteAux)===c9(tn.compteAux); }
+          ) || db.tiers.some(function(t){ return (t.nom||'').toUpperCase()===tn.nom; });
+        if(!ex){ db.tiers.push({ id:(typeof uid==='function'?uid():'t'+Date.now()+Math.random().toString(16).slice(2,5)),
+          type:'fournisseur', nom:tn.nom, compteAux:tn.compteAux, compteContre:tn.compteContre, compteTVA:tn.compteTVA, taux:tn.taux,
+          nature:true }); }
+      });
+    }catch(e){}
+  }
+  function ensureAll(){ ensurePlan(); ensureTiersNature(); }
+  ensureAll();
+  /* re-jouer après chaque chargement de dossier (les données changent) */
+  if(typeof window.chargerDossier==='function'){ var _cd=window.chargerDossier; window.chargerDossier=function(){ var r=_cd.apply(this,arguments); try{ ensureAll(); }catch(e){} return r; }; }
+  if(typeof window.seed==='function'){ var _sd=window.seed; window.seed=function(){ var r=_sd.apply(this,arguments); try{ ensureAll(); }catch(e){} return r; }; }
+
+  /* Ligne ROUGE entre une écriture soldée et la suivante (Journal d'achat HA éditable). */
+  try{ var st=document.createElement('style'); st.id='ec-soldee-rouge'; st.textContent=
+    '.ec-sage .ec-redrow .ec-soldee{border-top:3px solid #e1342c !important;height:0;margin:0}'
+    +'.ec-sage .ec-redrow td{padding:0 !important}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
