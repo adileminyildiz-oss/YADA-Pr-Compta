@@ -10633,7 +10633,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v178 · noir & bleu';
+    b.textContent='YADA · v179 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -14118,6 +14118,159 @@ ${lignes}
     +'.sgj-edit:hover{filter:brightness(1.08)}'
     +'#ac-nature-hint{color:#1e90ff;font-weight:600}'
     +'body[data-theme="noir"] #ac-nature-hint{color:#7fb0ff}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+
+<script id="yada-addon98">
+/* ============================================================
+   SUIVI DES RÈGLEMENTS — 2 onglets Clients / Fournisseurs, montants impayés,
+   retard (jours) & temps de paiement restant, date du dernier paiement,
+   ALERTE après 3 impayés en retard (« ne plus traiter avec ce tiers ») avec
+   montant impayé, dernier paiement et factures non réglées en pièces jointes ;
+   alerte affichée aussi À LA RÉCEPTION/CRÉATION d'une facture pour ce tiers.
+   100% additif : override pageReglements + hook posterFacture.
+   ============================================================ */
+(function(){
+  if(typeof window.pageReglements!=='function') return;
+  window.regOnglet = window.regOnglet || 'client';
+  var SEUIL_IMPAYES = 3;
+  function joursEntre(a,b){ try{ return Math.round((new Date(b+'T00:00:00') - new Date(a+'T00:00:00'))/86400000); }catch(e){ return 0; } }
+  function regSens(){ return window.regOnglet==='fournisseur' ? 'a_payer' : 'a_encaisser'; }
+
+  /* lignes de règlement (non soldées) pour un sens, enrichies retard/délai */
+  function regLignes(sens){
+    var today=(typeof todayStr==='function'?todayStr():new Date().toISOString().slice(0,10));
+    return (db.reglements||[]).filter(function(r){ return r.sens===sens && r.statut!=='regle'; }).map(function(r){
+      var f=(db.factures||[]).find(function(x){ return x.id===r.factureId; }); if(!f) return null;
+      var t=(db.tiers||[]).find(function(x){ return x.id===f.tiersId; });
+      var ech=r.echeance||f.date; var j=joursEntre(ech, today);
+      return { r:r, f:f, t:t, tiersId:f.tiersId, ech:ech, retard:(j>0?j:0), reste:(j<0?-j:0), enRetard:j>0, restant:r2(+r.restant||0) };
+    }).filter(Boolean);
+  }
+  /* dernier paiement d'un tiers (règlement soldé le plus récent) */
+  function dernierPaiement(tid){
+    var ds=(db.reglements||[]).filter(function(r){ var f=(db.factures||[]).find(function(x){return x.id===r.factureId;}); return f && f.tiersId===tid && r.statut==='regle'; })
+      .map(function(r){ return r.datePaiement || (function(){ var f=(db.factures||[]).find(function(x){return x.id===r.factureId;}); return f?f.date:''; })(); })
+      .filter(Boolean).sort();
+    return ds.length?ds[ds.length-1]:null;
+  }
+  /* synthèse d'alerte impayés pour un tiers (réutilisable) */
+  window.tiersAlerteImpayes=function(tid){
+    var t=(db.tiers||[]).find(function(x){ return x.id===tid; }); if(!t) return {alerte:false};
+    var sens=t.type==='fournisseur'?'a_payer':'a_encaisser';
+    var L=regLignes(sens).filter(function(x){ return x.tiersId===tid; });
+    var retards=L.filter(function(x){ return x.enRetard; });
+    var montant=r2(L.reduce(function(s,x){ return s+x.restant; },0));
+    return { alerte: retards.length>=SEUIL_IMPAYES, nbRetard:retards.length, type:t.type, nom:t.nom,
+      montant:montant, dernier:dernierPaiement(tid), factures:L };
+  };
+  window.regSetOnglet=function(o){ window.regOnglet=o; if(typeof render==='function') render(); };
+
+  function voirFac(f){ try{ if(f.type==='achat' && typeof voirFactureAchat==='function'){ voirFactureAchat(f.id); return; }
+    if(f.ecritureId && typeof ouvrirCompteLecture==='function'){} }catch(e){}
+    if(typeof toast==='function') toast('Facture '+(f.numero||'')+' — '+eur(f.ttc)); }
+  window.regVoirFacture=function(fid){ var f=(db.factures||[]).find(function(x){return x.id===fid;}); if(f) voirFac(f); };
+
+  /* modale d'alerte « ne plus traiter » */
+  window.regAlerteModal=function(tid){
+    var a=window.tiersAlerteImpayes(tid); if(!a || !a.nom) return;
+    var motCible=a.type==='fournisseur'?'ce fournisseur':'ce client';
+    var pj=a.factures.map(function(x){
+      return '<tr><td class="num">'+(x.f.numero||'')+'</td><td>'+frDate(x.f.date)+'</td><td>'+frDate(x.ech)+'</td>'
+        +'<td class="r num">'+eur(x.restant)+'</td><td>'+(x.enRetard?('<span style="color:#ff9a9a;font-weight:700">'+x.retard+' j de retard</span>'):(x.reste+' j restants'))+'</td>'
+        +'<td class="r"><button class="btn btn-ghost btn-sm" onclick="regVoirFacture(\''+x.f.id+'\')">📎 Voir</button></td></tr>';
+    }).join('');
+    var c=document.getElementById('modal-c'); if(!c) return;
+    c.innerHTML='<div class="modal-h"><h3>⚠ Alerte impayés — '+(a.type==='fournisseur'?'Fournisseur':'Client')+' '+esc(a.nom)+'</h3><button class="x" onclick="closeModal()">×</button></div>'
+      +'<div class="modal-b reg-alert">'
+      +'<div class="reg-alert-banner">🚫 <b>Ne plus traiter avec '+motCible+'</b> — <b>'+a.nbRetard+'</b> factures impayées en retard.</div>'
+      +'<div class="reg-alert-kv"><span>Montant impayé total</span><b>'+eur(a.montant)+'</b>'
+        +'<span>Date du dernier paiement</span><b>'+(a.dernier?frDate(a.dernier):'— aucun paiement')+'</b></div>'
+      +'<h4 style="margin:14px 0 6px">Factures non réglées (pièces jointes)</h4>'
+      +'<table class="reg-t"><thead><tr><th>Pièce</th><th>Date</th><th>Échéance</th><th class="r">Restant</th><th>Retard</th><th></th></tr></thead><tbody>'+(pj||'<tr><td colspan=6 class=empty>—</td></tr>')+'</tbody></table>'
+      +'</div>';
+    document.getElementById('modal').classList.add('show');
+  };
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];}); }
+
+  /* override de la page Suivi des règlements */
+  window.pageReglements=function(){
+    var sens=regSens(); var estClient=window.regOnglet==='client';
+    var L=regLignes(sens);
+    /* groupage par tiers */
+    var grp={}; L.forEach(function(x){ (grp[x.tiersId]=grp[x.tiersId]||[]).push(x); });
+    var totImpaye=r2(L.reduce(function(s,x){return s+x.restant;},0));
+    var totRetard=r2(L.filter(function(x){return x.enRetard;}).reduce(function(s,x){return s+x.restant;},0));
+    var nbAlertes=Object.keys(grp).filter(function(tid){ return window.tiersAlerteImpayes(tid).alerte; }).length;
+
+    var blocs=Object.keys(grp).map(function(tid){
+      var lignes=grp[tid]; var t=(db.tiers||[]).find(function(x){return x.id===tid;}); var a=window.tiersAlerteImpayes(tid);
+      var sousTotal=r2(lignes.reduce(function(s,x){return s+x.restant;},0));
+      var rows=lignes.sort(function(p,q){return (p.ech<q.ech?-1:1);}).map(function(x){
+        return '<tr class="'+(x.enRetard?'reg-late':'')+'"><td class="num">'+(x.f.numero||'')+'</td><td>'+frDate(x.f.date)+'</td><td>'+frDate(x.ech)+'</td>'
+          +'<td class="r num">'+eur(x.f.ttc)+'</td><td class="r num">'+eur(x.r.regle)+'</td><td class="r num">'+eur(x.restant)+'</td>'
+          +'<td>'+(x.enRetard?('<span class="reg-retard">'+x.retard+' j de retard</span>'):('<span class="reg-reste">dans '+x.reste+' j</span>'))+'</td>'
+          +'<td>'+statutTag(x.r)+'</td>'
+          +'<td class="r" style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="marquerRegle(\''+x.r.id+'\')">Validé ✓</button> <button class="btn btn-ghost btn-sm" onclick="regVoirFacture(\''+x.f.id+'\')">📎</button></td></tr>';
+      }).join('');
+      return '<div class="reg-bloc '+(a.alerte?'reg-bloc-alert':'')+'">'
+        +'<div class="reg-bloc-h"><span class="reg-bloc-nom">'+(estClient?'Client':'Fournisseur')+' · <b>'+esc(t?t.nom:'?')+'</b></span>'
+          +'<span class="reg-bloc-tot">Impayé : <b>'+eur(sousTotal)+'</b> · dernier paiement '+(a.dernier?frDate(a.dernier):'—')+'</span></div>'
+        +(a.alerte?('<div class="reg-bloc-alert-msg">🚫 <b>Ne plus traiter avec ce '+(estClient?'client':'fournisseur')+'</b> — '+a.nbRetard+' impayés en retard · '+eur(a.montant)+' · dernier paiement '+(a.dernier?frDate(a.dernier):'aucun')+' <button class="btn btn-ghost btn-sm" onclick="regAlerteModal(\''+tid+'\')">Voir le détail & pièces</button></div>'):'')
+        +'<table class="reg-t"><thead><tr><th>Pièce</th><th>Date</th><th>Échéance</th><th class="r">TTC</th><th class="r">Réglé</th><th class="r">Restant</th><th>Délai / retard</th><th>Statut</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>'
+        +'</div>';
+    }).join('') || '<div class="card"><div class="empty">Aucun règlement '+(estClient?'à encaisser':'à payer')+' en cours.</div></div>';
+
+    return head('Suivi des règlements','Suivi des règlements émis (fournisseurs) et reçus (clients) à partir des factures. Montants impayés, retard, délai restant, et alerte après '+SEUIL_IMPAYES+' impayés.')+
+      '<div class="card reg-card"><div class="reg-tabs">'
+        +'<button class="reg-tab '+(estClient?'on':'')+'" onclick="regSetOnglet(\'client\')">👤 Clients (à encaisser)</button>'
+        +'<button class="reg-tab '+(!estClient?'on':'')+'" onclick="regSetOnglet(\'fournisseur\')">🏭 Fournisseurs (à payer)</button>'
+      +'</div>'
+      +'<div class="reg-kpis"><div class="reg-k"><div class="l">Total impayé</div><div class="v">'+eur(totImpaye)+'</div></div>'
+        +'<div class="reg-k red"><div class="l">Dont en retard</div><div class="v">'+eur(totRetard)+'</div></div>'
+        +'<div class="reg-k '+(nbAlertes?'red':'')+'"><div class="l">'+(estClient?'Clients':'Fournisseurs')+' en alerte (≥'+SEUIL_IMPAYES+' impayés)</div><div class="v">'+nbAlertes+'</div></div></div>'
+      +blocs+'</div>';
+  };
+
+  /* mémoriser la date de paiement (pour « date du dernier paiement ») */
+  if(typeof window.marquerRegle==='function'){
+    var _mr=window.marquerRegle;
+    window.marquerRegle=function(id){ try{ var r=(db.reglements||[]).find(function(x){return x.id===id;}); if(r) r.datePaiement=(typeof todayStr==='function'?todayStr():new Date().toISOString().slice(0,10)); }catch(e){} return _mr.apply(this, arguments); };
+  }
+
+  /* hook : à la création/réception d'une facture, alerte si le tiers est « à ne plus traiter » */
+  if(typeof window.posterFacture==='function'){
+    var _pf=window.posterFacture;
+    window.posterFacture=function(){ var f=_pf.apply(this, arguments);
+      try{ var tid=f&&f.tiersId; if(tid){ var a=window.tiersAlerteImpayes(tid);
+        if(a && a.alerte){ setTimeout(function(){ try{ window.regAlerteModal(tid); }catch(e){} }, 60); } } }catch(e){}
+      return f; };
+  }
+
+  try{ var st=document.createElement('style'); st.id='reg-mod'; st.textContent=
+    '.reg-tabs{display:flex;gap:8px;margin-bottom:14px}'
+    +'.reg-tab{cursor:pointer;border:1px solid #24405d;background:#16304a;color:#eaf2ff;border-radius:9px;padding:8px 16px;font:inherit;font-weight:600}'
+    +'.reg-tab.on{background:linear-gradient(120deg,#5ab0ff,#0a64d6);border:none;color:#fff}'
+    +'.reg-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}'
+    +'.reg-k{background:rgba(30,144,255,.06);border:1px solid rgba(30,144,255,.25);border-radius:12px;padding:12px 14px}'
+    +'.reg-k.red{background:rgba(255,90,80,.08);border-color:rgba(255,120,100,.4)}'
+    +'.reg-k .l{font-size:11.5px;color:#9fb6d0;text-transform:uppercase;letter-spacing:.03em}'
+    +'.reg-k .v{font-size:20px;font-weight:800;margin-top:3px}'
+    +'.reg-k.red .v{color:#ff9a9a}'
+    +'.reg-bloc{border:1px solid #1c2c3e;border-radius:12px;margin-bottom:14px;overflow:hidden}'
+    +'.reg-bloc-alert{border-color:#ff6a5a;box-shadow:0 0 0 1px rgba(255,106,90,.4)}'
+    +'.reg-bloc-h{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 14px;background:#10243a}'
+    +'.reg-bloc-nom{font-size:13px}.reg-bloc-tot{font-size:12px;color:#9fb6d0}'
+    +'.reg-bloc-alert-msg{background:rgba(255,90,80,.14);color:#ffd0c8;padding:8px 14px;font-size:12.5px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid rgba(255,106,90,.3)}'
+    +'.reg-t{width:100%;border-collapse:collapse;font-size:12.5px}'
+    +'.reg-t th{text-align:left;color:#9fb6d0;font-weight:600;font-size:11px;padding:6px 10px;border-bottom:1px solid #1c2c3e}'
+    +'.reg-t th.r{text-align:right}.reg-t td{padding:5px 10px;border-bottom:1px solid #14202e}.reg-t td.r{text-align:right}.reg-t td.num{font-family:"IBM Plex Mono",monospace}'
+    +'.reg-t tr.reg-late td{background:rgba(255,90,80,.06)}'
+    +'.reg-retard{color:#ff9a9a;font-weight:700}.reg-reste{color:#7fe3b4}'
+    +'.reg-alert-banner{background:rgba(255,90,80,.16);color:#ffd0c8;border:1px solid rgba(255,106,90,.4);border-radius:10px;padding:11px 14px;font-size:14px;margin-bottom:12px}'
+    +'.reg-alert-kv{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px;margin-bottom:6px}'
+    +'.reg-alert-kv span{color:#9fb6d0}.reg-alert-kv b{font-weight:700}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
