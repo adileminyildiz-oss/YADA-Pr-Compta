@@ -5383,7 +5383,8 @@ function sgJournalGrid(code, per){
   }).join('');
   const ok=Math.abs(r2(td-tc))<0.005;
   return `<div class="sgj-wrap">
-    <div class="sgj-head">Journal ${noms[code]||code}${per?(cumul?(' — cumul au '+per.slice(5)+'/'+per.slice(0,4)):(' — mois '+per.slice(5)+'/'+per.slice(0,4))):''}</div>
+    <div class="sgj-head">Journal ${noms[code]||code}${per?(cumul?(' — cumul au '+per.slice(5)+'/'+per.slice(0,4)):(' — mois '+per.slice(5)+'/'+per.slice(0,4))):''}
+      <button class="sgj-edit" onclick="ouvrirJournalEditable('${code}','${per||''}')" title="Éditer les écritures de ce journal sur le mois (éditeur façon Sage)">✎ Éditer le journal du mois</button></div>
     <div class="sgj-grid"><table class="sgj">
       <thead><tr><th style="width:40px">J</th><th style="width:120px" class="l">Compte</th><th style="width:24px">I</th><th style="width:90px" class="l">Pièce</th><th class="l">Libellé</th><th class="r">Débit</th><th class="r">Crédit</th></tr></thead>
       <tbody>${rows||'<tr><td colspan=7 style="padding:18px;text-align:center;color:#888">Aucune écriture sur ce journal pour la période</td></tr>'}</tbody>
@@ -8835,6 +8836,10 @@ function ecResolveTiers(code){ return db.tiers.find(t=> sageCode(t)===code || (t
 function ecEcritures(){
   /* Mode « Nouvelle opération » : on n'affiche que l'écriture en cours de saisie. */
   if(window.ecNewId){ var en=db.ecritures.find(function(x){ return x.id===window.ecNewId; }); return en?[en]:[]; }
+  /* Mode « Journal du mois » (ex. HA Achats) : toutes les écritures du journal sur le mois. */
+  if(window.ecJournalFiltre){ var jf=window.ecJournalFiltre;
+    return db.ecritures.filter(function(e){ return e.journal===jf.journal && (!jf.mois || ym(e.date)===jf.mois); })
+      .slice().sort(function(a,b){ return a.date<b.date?-1:(a.date>b.date?1:0); }); }
   let list;
   if(ecTiersId){
     const ids=new Set();
@@ -8858,6 +8863,7 @@ function ecAccountLabel(){
 
 function ouvrirEcrituresCompte(code){
   window.ecNewId=null;   /* sortir d'un éventuel mode « nouvelle opération » */
+  window.ecJournalFiltre=null;   /* sortir du mode « journal du mois » */
   ecCode=code||''; ecTiersId=(ecResolveTiers(code)||{}).id||null;
   let ov=document.getElementById('ec-overlay');
   if(!ov){ ov=document.createElement('div'); ov.id='ec-overlay'; ov.className='ec-ov';
@@ -8877,6 +8883,7 @@ function ecFermer(){
       return (e.lignes||[]).some(function(l){ return (((+l.debit||0)!==0)||((+l.credit||0)!==0)) && !(l.compte||'').trim(); }); });
     if(manque){ if(typeof toast==='function') toast('Renseignez un compte sur chaque ligne avant de fermer la page de saisie.'); return; }
   }catch(e){}
+  window.ecJournalFiltre=null;   /* sortir du mode « journal du mois » */
   const ov=document.getElementById('ec-overlay'); if(ov) ov.classList.remove('show'); render();
 }
 
@@ -10626,7 +10633,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v177 · noir & bleu';
+    b.textContent='YADA · v178 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -14043,6 +14050,74 @@ ${lignes}
   try{ var st=document.createElement('style'); st.id='ec-soldee-rouge'; st.textContent=
     '.ec-sage .ec-redrow .ec-soldee{border-top:3px solid #e1342c !important;height:0;margin:0}'
     +'.ec-sage .ec-redrow td{padding:0 !important}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+
+<script id="yada-addon97">
+/* ============================================================
+   (1) Journal d'achat HA (et autres) ÉDITABLE par mois : bouton « ✎ Éditer le
+       journal du mois » dans la Consultation → ouvre l'éditeur façon Sage filtré
+       sur le journal + mois (toutes les écritures du journal, éditables).
+   (2) Reconnaissance auto à la saisie d'achat : gasoil → 401GASO00,
+       restaurant/fast-food/boissons → 401REST00 (sélection auto du fournisseur).
+   100% additif.
+   ============================================================ */
+(function(){
+  /* (1) ouverture éditeur en mode « journal du mois » */
+  window.ouvrirJournalEditable=function(journal, mois){
+    window.ecJournalFiltre={ journal:journal, mois:mois||'' };
+    window.ecNewId=null; try{ ecCode=''; ecTiersId=null; }catch(_){}
+    var ov=document.getElementById('ec-overlay');
+    if(!ov){ ov=document.createElement('div'); ov.id='ec-overlay'; ov.className='ec-ov'; ov.innerHTML='<div class="ec-win" id="ec-win"></div>'; document.body.appendChild(ov); }
+    if(typeof ecRender==='function') ecRender(); ov.classList.add('show');
+    if(typeof toast==='function') toast('Journal '+journal+(mois?(' '+mois.slice(5)+'/'+mois.slice(0,4)):'')+' — édition');
+  };
+  /* titre de l'éditeur en mode journal */
+  if(typeof ecRender==='function'){ var _r=ecRender; ecRender=function(){ var x=_r.apply(this, arguments);
+    try{ if(window.ecJournalFiltre){ var sp=document.querySelector('#ec-overlay .ec-sage .ec-titlebar > span');
+      if(sp){ var jf=window.ecJournalFiltre; var noms={ACH:'HA ACHATS',VTE:'VT VENTES',BQ:'BQ BANQUE',ODP:'OD PAIE',ODTVA:'OD TVA',OD:'OD OPERATIONS DIVERSES'};
+        var dossier=(db.societe&&db.societe.dossierNom)||'YADA';
+        sp.textContent=dossier+' — Journal '+(noms[jf.journal]||jf.journal)+(jf.mois?(' — '+jf.mois.slice(5)+'/'+jf.mois.slice(0,4)):'')+' (édition)'; } } }catch(e){} return x; }; }
+
+  /* (2) reconnaissance par nature → fournisseur générique (401GASO00 / 401REST00) */
+  window.reconnaitreNatureTiersId=function(text){
+    var T=(text||'').toUpperCase(); if(!T.trim()) return null;
+    function has(){ for(var i=0;i<arguments.length;i++){ if(T.indexOf(arguments[i])>=0) return true; } return false; }
+    var nom=null;
+    if(has('GASOIL','GAZOLE','GAZOIL','CARBURANT','DIESEL','ESSENCE','STATION','TOTAL','ESSO','SHELL','AVIA','SP95','SP98','PLEIN','PETROL','FUEL')) nom='GASOIL';
+    else if(has('RESTAU','RESTO','FAST','FOOD','MCDO','MC DO','BURGER','KEBAB','PIZZ','BRASSERIE','CAFE','CAFÉ','SNACK','BOISSON','TRAITEUR','SUSHI','TACOS','SANDWICH')) nom='RESTAURANT';
+    if(!nom) return null;
+    var t=(db.tiers||[]).find(function(x){ return (x.nom||'').toUpperCase()===nom && x.type==='fournisseur'; });
+    return t?t.id:null;
+  };
+  window.acReconnaitreNature=function(text){
+    var hint=document.getElementById('ac-nature-hint');
+    var id=window.reconnaitreNatureTiersId(text);
+    if(id){ var sel=document.getElementById('ac-four'); var t=(db.tiers||[]).find(function(x){return x.id===id;});
+      if(sel){ sel.value=id; }
+      if(typeof majAc==='function'){ try{ majAc(); }catch(e){} }
+      if(hint&&t) hint.innerHTML='✓ Reconnu : <b>'+t.nom+'</b> → compte de tiers <b>'+(t.compteAux||'')+'</b> (charge '+(t.compteContre||'')+')';
+    } else if(hint){ hint.textContent=''; }
+  };
+  /* greffe : champ « Désignation / nature » dans la saisie d'achat */
+  if(typeof window.pageAchats==='function'){
+    var _pa=window.pageAchats; window.pageAchats=function(){ var h=_pa.apply(this, arguments);
+      try{ var champ='<div class="row g3"><div class="field" style="grid-column:1/-1"><label>🔎 Désignation / nature (reconnaissance auto → compte de tiers)</label>'
+        +'<input id="ac-nature" placeholder="ex : gasoil / plein station, restaurant, fast-food, boissons…" oninput="acReconnaitreNature(this.value)">'
+        +'<div id="ac-nature-hint" class="mini" style="margin-top:4px"></div></div></div>';
+        h=h.replace('<div id="ac-apercu"></div>', champ+'<div id="ac-apercu"></div>');
+      }catch(e){}
+      return h; };
+  }
+
+  try{ var st=document.createElement('style'); st.id='jrn-edit-mod'; st.textContent=
+    '.sgj-head{display:flex;align-items:center;justify-content:space-between;gap:12px}'
+    +'.sgj-edit{cursor:pointer;border:none;border-radius:7px;padding:5px 12px;font:inherit;font-size:12px;font-weight:600;'
+      +'background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#fff !important}'
+    +'.sgj-edit:hover{filter:brightness(1.08)}'
+    +'#ac-nature-hint{color:#1e90ff;font-weight:600}'
+    +'body[data-theme="noir"] #ac-nature-hint{color:#7fb0ff}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
