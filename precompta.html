@@ -5028,7 +5028,7 @@ function pageRappro(){
     return `<div class="it ${m===rapMois?'on':''}" onclick="rapSetMois('${m}')">${lbl}</div>`; }).join('');
   // colonne journaux/comptes 512 + relevés existants
   const jrCol=comptes.map(c=>{ const rel=releveDe(c.code, rapMois); const sel=c.code===rapCompte;
-    return `<div class="cpt ${sel?'on':''}" onclick="rapSetCompte('${c.code}')">▸ ${c9(c.code)} - ${c.lib}</div>`+
+    return `<div class="cpt ${sel?'on':''}" onclick="rapSetCompte('${c.code}')" oncontextmenu="rapCtxCompte(event,'${c.code}')" title="Clic droit : créer un relevé de rapprochement sur ce compte">▸ ${c9(c.code)} - ${c.lib}</div>`+
       (rel?`<div class="rel ${sel?'on':''}" oncontextmenu="rapCtx(event,'${c.code}')" onclick="rapSetCompte('${c.code}')">Relevé BQ au ${frDate(rel.dateFin)}${rel.verrouille?' ':''}</div>`:'');
   }).join('');
   const rel=releveDe(rapCompte, rapMois);
@@ -5085,23 +5085,29 @@ function pageRappro(){
   let grille='';
   if(rel){
     const st=rapStats(rel); const rappSet=new Set(rel.rap||[]);
-    const rows=st.lignes.map(l=>{ const on=rappSet.has(l.ecritureId);
-      return `<tr class="${on?'rapp':''}"><td class="l">${frDate(l.date)}</td><td class="l cpt">${c9(l.compte)}</td>
+    /* Une écriture rapprochée DISPARAÎT de la liste de travail (on n'affiche que les non rapprochées).
+       Clic sur la ligne = rapprocher cette écriture (une seule à la fois). */
+    const visibles=st.lignes.filter(l=>!rappSet.has(l.ecritureId));
+    const nbRap=st.lignes.length-visibles.length;
+    const rows=visibles.map(l=>{
+      return `<tr class="rb-row" onclick="rapToggle('${l.ecritureId}')" title="Cliquer : rapprocher cette écriture (elle disparaît une fois rapprochée)"><td class="l">${frDate(l.date)}</td><td class="l cpt">${c9(l.compte)}</td>
         <td class="l">${l.piece}</td><td class="l">${l.lib}</td>
         <td>${l.debit?sageNum(l.debit):''}</td><td>${l.credit?sageNum(l.credit):''}</td>
-        <td class="chk"><input type="checkbox" ${on?'checked':''} ${rel.verrouille?'disabled':''} onchange="rapToggle('${l.ecritureId}')"></td>
+        <td class="chk"><input type="checkbox" ${rel.verrouille?'disabled':''} onclick="event.stopPropagation()" onchange="rapToggle('${l.ecritureId}')"></td>
         <td class="l"></td></tr>`; }).join('');
+    const toutRap=visibles.length===0 && st.lignes.length>0;
     grille=`<div class="rb-bar">
         <button class="btn btn-ghost btn-sm" onclick="rapToutRapprocher()" ${rel.verrouille?'disabled':''}>Tout rapprocher</button>
         <button class="btn btn-ghost btn-sm" onclick="rapToutDerapprocher()" ${rel.verrouille?'disabled':''}>Tout dérapprocher</button>
         <button class="btn btn-ghost btn-sm" onclick="rapImprimer()">Justificatif</button>
+        <span class="rb-rapcount">✓ ${nbRap} rapprochée(s) · ${visibles.length} à rapprocher</span>
         <span class="rb-ecart ${Math.abs(st.ecartAJustifier)<0.005?'lx-soldee':'lx-ouvert'}">
-          ${Math.abs(st.ecartAJustifier)<0.005?'✓ Rapproché — soldé':('● Reste à rapprocher : '+eur(st.ecartAJustifier))} 
+          ${Math.abs(st.ecartAJustifier)<0.005?'✓ Rapproché — soldé':('● Écart restant : '+eur(st.ecartAJustifier))}
           &nbsp;·&nbsp; Solde comptable ${eur(st.soldeCompta)} / bancaire ${eur(st.soldeBancaire)}</span>
       </div>
       <div class="rb-grid"><table class="rb">
       <thead><tr><th class="l">Date</th><th class="l">Cpte</th><th class="l">Pièce</th><th class="l">Libellé</th><th>Débit</th><th>Crédit</th><th class="chk">Rap.</th><th class="l">Au</th></tr></thead>
-      <tbody>${rows||'<tr><td colspan=8 class="l" style="padding:20px;color:#888">Aucune écriture bancaire sur ce mois</td></tr>'}</tbody></table></div>`;
+      <tbody>${rows||('<tr><td colspan=8 class="l" style="padding:20px;color:'+(toutRap?'#7fe3b4':'#888')+'">'+(toutRap?'✓ Toutes les écritures du mois sont rapprochées.':'Aucune écriture bancaire sur ce mois')+'</td></tr>')}</tbody></table></div>`;
   } else {
     grille=`<div class="rb-grid"><div style="padding:30px;color:#888;text-align:center">Créez le relevé de rapprochement pour afficher les écritures du mois.</div></div>`;
   }
@@ -10606,7 +10612,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v174 · noir & bleu';
+    b.textContent='YADA · v175 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -13786,6 +13792,78 @@ ${lignes}
     +'.ec-table tbody tr.ec-act td{padding:7px 10px 12px !important}'
     +'.ec-table tbody tr.ec-redrow td{padding:0 !important}'
     +'.ec-table tbody tr.ec-redrow .ec-soldee{border-top:1px dashed #24405d !important;height:0;margin:0}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+
+<script id="yada-addon94">
+/* ============================================================
+   RAPPROCHEMENT BANCAIRE — clic droit sur le compte 512 → créer le relevé,
+   écritures rapprochées qui disparaissent (solde/écart live), + refonte
+   couleurs NOIR & BLEU lisible (Rapprochement) ; boutons or → bleu (Saisie
+   banque + Rapprochement). 100% additif (fonctions + CSS).
+   ============================================================ */
+(function(){
+  window.rapCloseCtxCpt=function(){ var m=document.getElementById('rb-ctx-cpt'); if(m) m.classList.remove('show'); };
+  window.rapCtxCompte=function(e, compte){ e.preventDefault(); e.stopPropagation();
+    try{ rapCompte=compte; }catch(_){}
+    var existe=(typeof releveDe==='function')?releveDe(compte, rapMois):null;
+    var m=document.getElementById('rb-ctx-cpt'); if(!m){ m=document.createElement('div'); m.id='rb-ctx-cpt'; document.body.appendChild(m); }
+    m.innerHTML = existe
+      ? '<button onclick="rapOuvrirReleve()">📄 Ouvrir le relevé de rapprochement</button>'
+      : '<button onclick="rapCreerReleveRapide()">📄 Créer le relevé de rapprochement</button>';
+    m.style.left=Math.min(e.clientX,(window.innerWidth||1000)-250)+'px';
+    m.style.top=Math.min(e.clientY,(window.innerHeight||700)-60)+'px';
+    m.classList.add('show'); return false;
+  };
+  window.rapOuvrirReleve=function(){ window.rapCloseCtxCpt(); if(typeof render==='function') render(); };
+  window.rapCreerReleveRapide=function(){ window.rapCloseCtxCpt();
+    if(typeof releveDe==='function' && releveDe(rapCompte, rapMois)){ if(typeof toast==='function')toast('Un relevé existe déjà pour ce compte/mois.'); if(typeof render==='function')render(); return; }
+    var djour=dernierJourMois(rapMois); var dateFin=rapMois+'-'+String(djour).padStart(2,'0');
+    var solde=(typeof soldeComptable512==='function')?soldeComptable512(rapCompte,rapMois):0;
+    if(!db.releves)db.releves=[];
+    db.releves.push({id:uid(),compte:rapCompte,mois:rapMois,dateFin:dateFin,solde:r2(solde),commentaire:'',rap:[],justifs:[],verrouille:false});
+    if(typeof save==='function')save(); if(typeof render==='function')render();
+    if(typeof toast==='function')toast('Relevé de rapprochement créé au '+frDate(dateFin));
+  };
+  if(document.addEventListener){
+    document.addEventListener('click', function(){ window.rapCloseCtxCpt(); });
+    document.addEventListener('scroll', function(){ window.rapCloseCtxCpt(); }, true);
+  }
+  try{ var st=document.createElement('style'); st.id='rb-noir-mod'; st.textContent=
+    /* corps en noir, texte clair (surcharge des anciennes règles claires) */
+    'body[data-theme="noir"] .rb-app{background:#0b1118 !important;color:#eaf2ff !important}'
+    +'body[data-theme="noir"] .rb-app,body[data-theme="noir"] .rb-app *{color:#eaf2ff !important;-webkit-text-fill-color:#eaf2ff !important}'
+    +'body[data-theme="noir"] .rb-app .rb-top,body[data-theme="noir"] .rb-app .rb-per,body[data-theme="noir"] .rb-app .rb-jr,body[data-theme="noir"] .rb-app .rb-panel,body[data-theme="noir"] .rb-app .rb-tabs,body[data-theme="noir"] .rb-app .rb-bar,body[data-theme="noir"] .rb-app .rb-grid,body[data-theme="noir"] .rb-app .rb-kv,body[data-theme="noir"] .rb-app .rb-create{background:transparent !important;border-color:#16212e !important}'
+    /* bandeaux navy + accent bleu */
+    +'body[data-theme="noir"] .rb-app .rb-title{background:linear-gradient(#10243a,#0a1626) !important;border-bottom:1px solid #1e90ff !important}'
+    +'body[data-theme="noir"] .rb-app .rb-menu{background:#0c1a2a !important;border-bottom:1px solid #16212e !important}'
+    +'body[data-theme="noir"] .rb-app table.rb thead th,body[data-theme="noir"] .rb-app .rb-foot-tot,body[data-theme="noir"] .rb-app .rb-jr .h,body[data-theme="noir"] .rb-app .rb-per .h{background:#10243a !important;color:#cfe0f5 !important}'
+    +'body[data-theme="noir"] .rb-app table.rb td{border-color:#16212e !important;background:transparent !important}'
+    /* éléments sélectionnés en bleu */
+    +'body[data-theme="noir"] .rb-app .rb-per .it.on,body[data-theme="noir"] .rb-app .rb-jr .cpt.on,body[data-theme="noir"] .rb-app .rb-jr .rel.on,body[data-theme="noir"] .rb-app .rb-tab.on{background:rgba(30,144,255,.20) !important;color:#fff !important}'
+    +'body[data-theme="noir"] .rb-app .rb-tab.on{border-bottom:2px solid #1e90ff !important}'
+    /* champs lisibles sur noir */
+    +'body[data-theme="noir"] .rb-app input,body[data-theme="noir"] .rb-app select,body[data-theme="noir"] .rb-app textarea{background:#0c1a2a !important;color:#eaf2ff !important;-webkit-text-fill-color:#eaf2ff !important;border:1px solid #24405d !important}'
+    /* lignes cliquables (rapprocher) */
+    +'.rb-app table.rb tbody tr.rb-row{cursor:pointer}'
+    +'body[data-theme="noir"] .rb-app table.rb tbody tr.rb-row:hover td{background:rgba(30,144,255,.16) !important}'
+    +'.rb-rapcount{color:#7fe3b4 !important;-webkit-text-fill-color:#7fe3b4 !important;font-weight:700;margin-left:10px;font-size:12px}'
+    /* couleurs comptables + statuts lisibles sur noir */
+    +'body[data-theme="noir"] .rb-app .deb{color:#ff9a9a !important;-webkit-text-fill-color:#ff9a9a !important}'
+    +'body[data-theme="noir"] .rb-app .cre{color:#7fe3b4 !important;-webkit-text-fill-color:#7fe3b4 !important}'
+    +'body[data-theme="noir"] .rb-app .lx-soldee,body[data-theme="noir"] .rb-app .balance-ok,body[data-theme="noir"] .rb-app .rb-ecart.lx-soldee{color:#7fe3b4 !important;-webkit-text-fill-color:#7fe3b4 !important}'
+    +'body[data-theme="noir"] .rb-app .lx-ouvert,body[data-theme="noir"] .rb-app .balance-ko,body[data-theme="noir"] .rb-app .rb-ecart.lx-ouvert{color:#ffd27a !important;-webkit-text-fill-color:#ffd27a !important}'
+    /* boutons fantômes lisibles (texte clair sur fond sombre, accent bleu) */
+    +'body[data-theme="noir"] .rb-app .btn-ghost{background:#16304a !important;border:1px solid #2a557e !important;color:#eaf2ff !important;-webkit-text-fill-color:#eaf2ff !important}'
+    +'body[data-theme="noir"] .rb-app .btn-ghost:hover{background:#1d3e5e !important}'
+    /* boutons OR → BLEU (Saisie banque + Rapprochement) */
+    +'.rb-app .btn-gold,.sg-app .btn-gold{background:linear-gradient(120deg,#5ab0ff,#0a64d6) !important;border:none !important;color:#fff !important;-webkit-text-fill-color:#fff !important}'
+    /* menu contextuel du compte 512 */
+    +'#rb-ctx-cpt{position:fixed;z-index:130;display:none;background:#13202c;border:1px solid #1e90ff;border-radius:9px;box-shadow:0 12px 30px rgba(0,0,0,.5);padding:5px;min-width:250px}'
+    +'#rb-ctx-cpt.show{display:block}'
+    +'#rb-ctx-cpt button{display:block;width:100%;text-align:left;background:none;border:none;padding:9px 12px;font:inherit;cursor:pointer;color:#eaf2ff;border-radius:6px}'
+    +'#rb-ctx-cpt button:hover{background:rgba(30,144,255,.18)}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
