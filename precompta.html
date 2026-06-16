@@ -10606,7 +10606,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v173 · noir & bleu';
+    b.textContent='YADA · v174 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -13614,6 +13614,149 @@ ${lignes}
     +'.ec-sage .ec-status{background:#0a1422 !important;border-top:1px solid #16212e !important;color:#9fb6d0 !important}'
     +'.ec-sage .ec-status *{color:#9fb6d0 !important;-webkit-text-fill-color:#9fb6d0 !important}'
     +'.ec-sage .ec-brand{color:#cfe0f5 !important}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+
+<script id="yada-addon93">
+/* ============================================================
+   CHARGES & PAIE — Journal de paie mensuel assisté + comptabilisation.
+   - Dépôt d'un document (journal de paie / charges) ; reconnaissance OCR
+     AUTOMATIQUE quand le réseau est disponible (réutilise window.ocrImage),
+     repli saisie manuelle hors-ligne (les scans n'ont pas de couche texte).
+   - Décomposé MENSUELLEMENT (utilise le mois sélectionné du module).
+   - Rubriques pré-mappées aux bons comptes :
+       Salaire brut (Total général) → 641 ;
+       URSSAF (Total général) + CSG/CRDS → 6451 ;
+       BTP Prévoyance / Retraite → 6453 ;
+       Prime de panier + Carte Navigo → 648 ;
+       Prélèvement à la source (PAS) → 4421 ;
+       Net à payer (équilibrage) → 421.
+   - Génère l'écriture OD PAIE équilibrée du mois (journal ODP), idempotent.
+   100% additif : greffe sur pageChargesPaie (injection dans .cp-scroll).
+   ============================================================ */
+(function(){
+  if(typeof window.pageChargesPaie!=='function') return;
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];}); }
+  var PJ_RUBR=[
+    {key:'brut',  lib:'Salaire brut (Total général)', compte:'641000000', sens:'D'},
+    {key:'urssaf',lib:'URSSAF (Total général)',        compte:'645100000', sens:'D'},
+    {key:'csg',   lib:'CSG / CRDS',                    compte:'645100000', sens:'D'},
+    {key:'prev',  lib:'BTP Prévoyance / Retraite',     compte:'645300000', sens:'D'},
+    {key:'panier',lib:'Prime de panier',               compte:'648000000', sens:'D'},
+    {key:'navigo',lib:'Carte Navigo (transport)',      compte:'648000000', sens:'D'},
+    {key:'pas',   lib:'Prélèvement à la source (PAS)', compte:'442100000', sens:'C'}
+  ];
+  function pjStore(){ if(!db.parametres)db.parametres={}; return (db.parametres.paieJournal=db.parametres.paieJournal||{}); }
+  function pjMois(){ try{ if(typeof cpMois!=='undefined' && cpMois) return cpMois; }catch(e){} var L=moisExoListe(); return L[L.length-1]; }
+  function pjData(m){ var s=pjStore(); return (s[m]=s[m]||{}); }
+  function pjLines(m){ var d=pjData(m); var L=[];
+    PJ_RUBR.forEach(function(r){ var v=r2(+d[r.key]||0); if(v>0.005) L.push({compte:r.compte, lib:r.lib, debit:r.sens==='D'?v:0, credit:r.sens==='C'?v:0}); });
+    var sd=r2(L.reduce(function(a,l){return a+l.debit;},0)), sc=r2(L.reduce(function(a,l){return a+l.credit;},0)); var diff=r2(sd-sc);
+    var net=0; if(Math.abs(diff)>=0.005){ net=diff; L.push({compte:'421000000', lib:'Net à payer', debit: diff<0?r2(-diff):0, credit: diff>0?diff:0}); }
+    return {L:L, sd:r2(L.reduce(function(a,l){return a+l.debit;},0)), sc:r2(L.reduce(function(a,l){return a+l.credit;},0)), net:net};
+  }
+  function pjDejaPostee(m){ var lib='JOURNAL PAIE '+pieceMois(m); return db.ecritures.some(function(e){ return e.journal==='ODP' && (e.libelle||'').indexOf(lib)>=0; }); }
+
+  window.pjSet=function(m,key,val){ var d=pjData(m); var n=parseFloat(String(val).replace(/\s/g,'').replace(',','.')); d[key]=isNaN(n)?0:r2(n); if(typeof save==='function')save(); if(typeof render==='function')render(); };
+  window.pjReset=function(m){ if(!confirm('Effacer les montants saisis pour '+moisLabel(m)+' ?'))return; pjStore()[m]={}; if(typeof save==='function')save(); if(typeof render==='function')render(); };
+
+  window.pjGenerer=function(m){
+    var r=pjLines(m); if(!r.L.length){ if(typeof toast==='function')toast('Saisissez au moins un montant (le journal de paie).'); return; }
+    if(pjDejaPostee(m)){ if(!confirm('Une écriture JOURNAL PAIE existe déjà pour '+moisLabel(m)+'. La remplacer ?')) return; window.pjSupprimer(m,true); }
+    if(Math.abs(r2(r.sd-r.sc))>=0.005){ if(typeof toast==='function')toast('Écriture non équilibrée — vérifiez les montants.'); return; }
+    posterOD({ journal:'ODP', date: dernierJourMoisISO(m), numero: pieceMois(m),
+      libelle:'JOURNAL PAIE '+pieceMois(m), lignes: r.L.map(function(l){ return {compte:l.compte, lib:l.lib, debit:l.debit, credit:l.credit}; }) });
+    if(typeof save==='function')save(); if(typeof toast==='function')toast('Écriture JOURNAL PAIE '+pieceMois(m)+' générée ✓ (OD PAIE).'); if(typeof render==='function')render();
+  };
+  window.pjSupprimer=function(m,silencieux){ var lib='JOURNAL PAIE '+pieceMois(m);
+    if(!silencieux && !confirm('Supprimer l\'écriture JOURNAL PAIE '+pieceMois(m)+' ?')) return;
+    db.ecritures=db.ecritures.filter(function(e){ return !(e.journal==='ODP' && (e.libelle||'').indexOf(lib)>=0); });
+    if(!silencieux){ if(typeof save==='function')save(); if(typeof toast==='function')toast('Écriture supprimée'); if(typeof render==='function')render(); }
+  };
+
+  /* ---- Dépôt + reconnaissance ---- */
+  window.pjFichier=function(m, input){ var f=input&&input.files&&input.files[0]; if(!f)return;
+    var rd=new FileReader(); rd.onload=function(){ var d=pjData(m); d.doc={name:f.name, type:f.type, dataUrl:rd.result, date:todayStr()};
+      try{ if(!db.parametres.pieces)db.parametres.pieces=[]; db.parametres.pieces.push({id:uid(), nom:f.name, type:f.type, data:rd.result, cat:'paie', mois:m, date:todayStr()}); }catch(e){}
+      if(typeof save==='function')save(); if(typeof toast==='function')toast('Document déposé — cliquez « Analyser » pour la reconnaissance.'); if(typeof render==='function')render();
+      window.pjAnalyser(m, true);
+    }; rd.readAsDataURL(f);
+  };
+  function pjParse(txt){ var T=(txt||'').toUpperCase(); function num(s){ s=(s||'').replace(/\s/g,'').replace(/\./g,'').replace(',','.'); var n=parseFloat(s); return isNaN(n)?0:n; }
+    function near(kw){ var re=new RegExp(kw+'[^0-9]{0,40}([0-9][0-9 .]*,[0-9]{2})'); var mm=T.match(re); return mm?num(mm[1]):0; }
+    return { brut:near('BRUT'), urssaf:near('URSSAF'), csg:near('CSG')||near('CRDS'),
+      prev:near('PREVOYANCE')||near('RETRAITE'), panier:near('PANIER'),
+      navigo:near('NAVIGO')||near('TRANSPORT'), pas:near('PRELEVEMENT')||near('SOURCE') }; }
+  window.pjAnalyser=function(m, auto){ var d=pjData(m); if(!d.doc){ if(!auto && typeof toast==='function')toast('Déposez d\'abord un document.'); return; }
+    var isImg=/^image\//.test(d.doc.type||'');
+    if(!navigator.onLine || typeof window.ocrImage!=='function' || !isImg){
+      if(!auto && typeof toast==='function') toast(navigator.onLine?'Reconnaissance auto : images uniquement (les PDF scannés sans texte → saisie manuelle).':'Reconnaissance OCR indisponible hors-ligne — saisie manuelle.');
+      return; }
+    if(typeof toast==='function')toast('Analyse du document en cours…');
+    Promise.resolve().then(function(){ return window.ocrImage(null, d.doc.dataUrl); }).then(function(txt){
+      var p=pjParse(txt||''); var got=0; PJ_RUBR.forEach(function(r){ if(p[r.key]>0){ d[r.key]=r2(p[r.key]); got++; } });
+      if(typeof save==='function')save(); if(typeof toast==='function')toast(got?('Reconnaissance : '+got+' montant(s) détecté(s) — vérifiez puis générez.'):'Aucun montant reconnu — saisie manuelle.'); if(typeof render==='function')render();
+    }).catch(function(){ if(typeof toast==='function')toast('Analyse impossible — saisie manuelle.'); });
+  };
+
+  function pjCard(){ var m=pjMois(); var d=pjData(m); var r=pjLines(m); var ok=Math.abs(r2(r.sd-r.sc))<0.005 && r.L.length;
+    var poste=pjDejaPostee(m);
+    var grid=PJ_RUBR.map(function(rb){ return '<tr><td>'+esc(rb.lib)+'</td><td class="num">'+c9(rb.compte)+' — '+esc(COMPTES[rb.compte]||'')+'</td>'
+      +'<td class="r"><input class="pj-in" type="number" step="0.01" value="'+((+d[rb.key])? (+d[rb.key]) : '')+'" placeholder="0,00" onchange="pjSet(\''+m+'\',\''+rb.key+'\',this.value)"></td>'
+      +'<td class="pj-sens '+(rb.sens==='D'?'d':'c')+'">'+(rb.sens==='D'?'Débit':'Crédit')+'</td></tr>'; }).join('');
+    var ecr=r.L.map(function(l){ return '<tr><td class="num">'+c9(l.compte)+'</td><td>'+esc(l.lib)+'</td>'
+      +'<td class="r num '+(l.debit?'deb':'')+'">'+(l.debit?eur(l.debit):'—')+'</td><td class="r num '+(l.credit?'cre':'')+'">'+(l.credit?eur(l.credit):'—')+'</td></tr>'; }).join('');
+    return '<div class="pj-card card">'
+      +'<h2>📑 Journal de paie — '+moisLabel(m)+' (saisie mensuelle + comptabilisation)</h2>'
+      +'<div class="sub">Déposez le journal de paie / charges du mois (l\'<b>IA reconnaît le document quand vous êtes connecté</b>, sinon saisie manuelle), vérifiez les montants ci-dessous : ils sont <b>automatiquement assimilés aux bons comptes</b>, puis générez l\'écriture <b>OD PAIE</b> équilibrée. <i>On retient toujours le total général.</i></div>'
+      +'<div class="pj-depot">'
+        +'<label class="btn btn-ghost btn-sm" style="cursor:pointer">📎 Déposer le document<input type="file" accept="image/*,application/pdf" style="display:none" onchange="pjFichier(\''+m+'\',this)"></label>'
+        +(d.doc?('<span class="pj-doc">📄 '+esc(d.doc.name)+'</span><button class="btn btn-ghost btn-sm" onclick="pjAnalyser(\''+m+'\')">🔎 Analyser (OCR)</button>'):'<span class="pj-doc pj-none">aucun document</span>')
+      +'</div>'
+      +'<table class="pj-t"><thead><tr><th>Rubrique du journal</th><th>Compte assimilé</th><th class="r">Montant</th><th>Sens</th></tr></thead><tbody>'+grid+'</tbody></table>'
+      +'<h3 class="pj-h3">Détail de l\'écriture générée (OD PAIE)</h3>'
+      +'<table class="pj-t"><thead><tr><th>Compte</th><th>Libellé</th><th class="r">Débit</th><th class="r">Crédit</th></tr></thead><tbody>'
+        +(ecr||'<tr><td colspan="4" class="pj-empty">Saisissez les montants ci-dessus.</td></tr>')
+        +'<tr class="pj-totrow"><td colspan="2">Totaux · pièce '+pieceMois(m)+'</td><td class="r num">'+eur(r.sd)+'</td><td class="r num">'+eur(r.sc)+'</td></tr>'
+      +'</tbody></table>'
+      +'<div class="pj-actions">'
+        +'<span class="'+(ok?'balance-ok':'balance-ko')+'">'+(r.L.length?(ok?'Équilibrée ✓':'Déséquilibre'):'—')+(r.net?(' · Net à payer (421) : '+eur(Math.abs(r.net))):'')+'</span>'
+        +'<span style="flex:1"></span>'
+        +(poste?'<button class="btn btn-ghost btn-sm" onclick="pjSupprimer(\''+m+'\')">Supprimer l\'écriture du mois</button>':'')
+        +'<button class="btn btn-ghost btn-sm" onclick="pjReset(\''+m+'\')">Réinitialiser</button>'
+        +'<button class="btn btn-pri" onclick="pjGenerer(\''+m+'\')"'+(r.L.length?'':' disabled')+'>⚙️ Générer l\'écriture OD PAIE'+(poste?' (remplacer)':'')+'</button>'
+      +'</div>'
+      +(poste?'<div class="pj-flag">✓ Écriture JOURNAL PAIE '+pieceMois(m)+' déjà comptabilisée pour ce mois.</div>':'')
+      +'</div>';
+  }
+  window.pjCard=pjCard;
+
+  var _cp=window.pageChargesPaie;
+  window.pageChargesPaie=function(){ var h=_cp.apply(this,arguments);
+    try{ h=h.replace('<div class="cp-scroll">','<div class="cp-scroll">'+pjCard()); }catch(e){}
+    return h; };
+
+  try{ var st=document.createElement('style'); st.id='pj-mod'; st.textContent=
+    '.pj-card{margin:0 0 18px}'
+    +'.pj-card .sub{font-size:12.5px;color:#9fb6d0;margin:2px 0 12px;line-height:1.5}'
+    +'.pj-depot{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}'
+    +'.pj-doc{font-size:12.5px;color:#cfe0f5}.pj-doc.pj-none{color:#7d8aa0}'
+    +'.pj-t{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:6px}'
+    +'.pj-t th{text-align:left;color:#9fb6d0;font-weight:600;font-size:11.5px;padding:6px 8px;border-bottom:1px solid #24405d}'
+    +'.pj-t th.r{text-align:right}'
+    +'.pj-t td{padding:5px 8px;border-bottom:1px solid #16212e}'
+    +'.pj-t td.num{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:#9fd0ff}'
+    +'.pj-t td.r{text-align:right}.pj-t td.deb{color:#ff9a9a}.pj-t td.cre{color:#7fe3b4}'
+    +'.pj-in{width:130px;text-align:right;font:inherit;font-size:12.5px;padding:4px 7px;border:1px solid #24405d;border-radius:6px;background:#0b1118;color:#eaf2ff}'
+    +'.pj-in:focus{outline:none;border-color:#1e90ff;box-shadow:0 0 0 2px rgba(30,144,255,.25)}'
+    +'.pj-sens{font-size:11px;font-weight:700}.pj-sens.d{color:#ff9a9a}.pj-sens.c{color:#7fe3b4}'
+    +'.pj-h3{font-size:13px;color:#cfe0f5;margin:14px 0 6px}'
+    +'.pj-totrow td{font-weight:700;border-top:1px solid #1e90ff;background:rgba(30,144,255,.06)}'
+    +'.pj-empty{color:#7d8aa0;text-align:center;padding:14px}'
+    +'.pj-actions{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}'
+    +'.pj-actions .balance-ok{color:#7fe3b4;font-weight:700}.pj-actions .balance-ko{color:#ffd27a;font-weight:700}'
+    +'.pj-flag{margin-top:8px;font-size:12px;color:#7fe3b4}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
