@@ -4,7 +4,32 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Facturation électronique : opérateur relié (PPF/PDP) + Factur-X
+## 🟢 Dernière mise à jour — Refonte visuelle mobile (Espace Client) — v180
+**Quoi :** une refonte **visuelle** de l'application **mobile** (téléphone, Espace Client uniquement) qui modernise l'écran d'accueil et la navigation, en conservant l'identité **bleu nuit / or** « liquid glass ».
+
+**Pourquoi :** sur mobile le client n'a accès qu'à son Espace Client (addon38/62) ; l'accueil et la barre d'onglets méritaient une présentation plus soignée et plus lisible au pouce.
+
+**Ce qu'il fait (description fonctionnelle) :**
+- **Écran d'accueil « hero »** : salutation contextuelle (Bonjour / Bon après-midi / Bonsoir selon l'heure), **nom de la société** (typo Fraunces), date du jour, et **3 chiffres clés** en pastilles (Chiffre d'affaires, Résultat, Trésorerie).
+- **Tuiles d'action 2×2** : Mes factures & devis, Réception factures, Mes clients & fournisseurs, Déposer une pièce.
+- **Barre de navigation basse FLOTTANTE** (pilule détachée, verre dépoli) à **3 onglets** : 🏠 **Accueil** / ✚ **Créer** / 📥 **Déposer**, avec le bouton central **« Créer » surélevé** en accent **or**.
+
+**Où / comment (description technique) — addon `yada-addon99` :**
+- Override `window.ecHero` **sur mobile uniquement** (`isMobile()` ≤820px) : renvoie le hero + les tuiles ; sur bureau, délègue à l'ancien `ecHero` (capturé au chargement). Aucun impact desktop.
+- Reconstruction du `#m-tabbar` après chaque `render` (greffe `render`, s'exécute **après** addon63 → 3 onglets `.mtab`, dont `.mtab-fab` central). Marquage `active` selon `current`.
+- Feuille de style **`<style id="mobile-refonte">`** injectée en fin de `<head>` (priorité cascade), entièrement gardée par `@media(max-width:820px)` + `body[data-role="client"]` ; neutralise l'indicateur `::before` de l'ancienne barre, masque le `.page-head` redondant de l'accueil, et augmente le `padding-bottom` du contenu pour la barre flottante + bouton surélevé.
+- Badge de version (addon37) → **v180 · mobile**.
+
+**Limites assumées :** purement **visuel** (aucune logique comptable touchée, écritures inchangées) ; pages **Créer** (facturation) et **Déposer** (achats) conservent leur mise en forme mobile existante (cartes `li-cli`, etc.).
+
+---
+
+## Refonte visuelle mobile (Espace Client) — addon99
+- **`yada-addon99` (refonte visuelle mobile)** : accueil « hero » mobile (salutation + société + 3 chiffres clés en pastilles) + tuiles d'action 2×2 + **barre de navigation basse flottante** 3 onglets (🏠 Accueil / ✚ Créer / 📥 Déposer, bouton central or surélevé). Override `window.ecHero` (mobile only) + reconstruction `#m-tabbar` post-`render` + `<style id="mobile-refonte">`. 100% additif, bureau inchangé.
+
+---
+
+## 🟢 MAJ précédente — Facturation électronique : opérateur relié (PPF/PDP) + Factur-X
 **Quoi :** un module ajouté dans la page **Facturation client** (`pageFacturation`) qui simule l'intégration à un **opérateur de dématérialisation agréé** (PPF — Portail Public de Facturation, ou PDP — Plateforme de Dématérialisation Partenaire), conformément à l'esprit de la réforme française de la facturation électronique B2B.
 
 **Pourquoi :** à terme, un PDF par e-mail ne suffira plus en B2B ; les factures doivent transiter par une plateforme agréée au format structuré (**Factur-X / XML**). Le module pose les fondations côté outil.

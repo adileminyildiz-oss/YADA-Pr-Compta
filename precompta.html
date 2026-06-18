@@ -10633,7 +10633,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v179 · noir & bleu';
+    b.textContent='YADA · v180 · mobile';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -14271,6 +14271,123 @@ ${lignes}
     +'.reg-alert-banner{background:rgba(255,90,80,.16);color:#ffd0c8;border:1px solid rgba(255,106,90,.4);border-radius:10px;padding:11px 14px;font-size:14px;margin-bottom:12px}'
     +'.reg-alert-kv{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px;margin-bottom:6px}'
     +'.reg-alert-kv span{color:#9fb6d0}.reg-alert-kv b{font-weight:700}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon99">
+/* ============================================================
+   REFONTE VISUELLE MOBILE — Espace Client (téléphone uniquement)
+   - Écran d'accueil "hero" : salutation, société, chiffres clés
+   - Tuiles d'action 2×2
+   - Barre de navigation basse FLOTTANTE (Accueil / Créer / Déposer),
+     bouton central "Créer" surélevé (accent or).
+   100% additif : override window.ecHero (mobile only) + reconstruction
+   du #m-tabbar après chaque render + feuille de style injectée en fin
+   de <head> (priorité cascade). Aucun impact sur la version bureau.
+   ============================================================ */
+(function(){
+  function isMobile(){ try{ return window.__secMobile?window.__secMobile():(window.matchMedia&&window.matchMedia('(max-width:820px)').matches); }catch(e){ return false; } }
+  function eurX(v){ try{ return (typeof eur==='function')?eur(v):(Number(v||0).toFixed(2)+' €'); }catch(e){ return '—'; } }
+
+  /* ---------- Accueil mobile (remplace ecHero sur téléphone) ---------- */
+  var _ecHero = (typeof window.ecHero==='function') ? window.ecHero : null;
+  function tile(ic,lbl,act){ return '<button class="mtile" onclick="'+act+'"><span class="ic">'+ic+'</span><span class="lb">'+lbl+'</span></button>'; }
+  window.ecHero=function(){
+    if(!isMobile()) return _ecHero?_ecHero():'';
+    var s=(typeof db!=='undefined'&&db&&db.societe)||{};
+    var h=new Date().getHours();
+    var greet = h<5?'Bonne nuit' : h<12?'Bonjour' : h<18?'Bon après-midi' : 'Bonsoir';
+    var a={ca:0,resultat:0}; try{ if(typeof analytique==='function') a=analytique()||a; }catch(e){}
+    var tr=null; try{ if(typeof soldeTresorerie==='function') tr=soldeTresorerie(); }catch(e){}
+    var dateStr=''; try{ dateStr=frDate(todayStr()); }catch(e){}
+    var chips=''
+      + '<div class="mh-chip"><div class="l">Chiffre d\'affaires</div><div class="v">'+eurX(a.ca)+'</div></div>'
+      + '<div class="mh-chip"><div class="l">Résultat</div><div class="v">'+eurX(a.resultat)+'</div></div>'
+      + (tr!=null?'<div class="mh-chip"><div class="l">Trésorerie</div><div class="v">'+eurX(tr)+'</div></div>':'');
+    var hero='<div id="mhero">'
+      + '<div class="mh-greet">'+greet+'</div>'
+      + '<div class="mh-name">'+ (s.raison||'Votre dossier') +'</div>'
+      + '<div class="mh-date">'+dateStr+'</div>'
+      + '<div class="mh-stats">'+chips+'</div>'
+      + '</div>';
+    var tiles='<div id="mtiles">'
+      + tile('🧾','Mes factures &amp; devis',"current='facturation';render()")
+      + tile('📥','Réception factures',"current='achats';render()")
+      + tile('👥','Mes clients &amp; fournisseurs',"current='tiers';render()")
+      + tile('📎','Déposer une pièce',"(typeof gedPick==='function'?gedPick():render())")
+      + '</div>';
+    return hero+tiles;
+  };
+
+  /* ---------- Barre de navigation basse flottante (3 onglets) ---------- */
+  function mtab(tab,ic,lbl,extra){ var cur=(typeof current!=='undefined')?current:'';
+    return '<button class="mtab '+(extra||'')+(cur===tab?' active':'')+'" onclick="current=\''+tab+'\';render()">'
+      +'<span class="mtab-ic">'+ic+'</span><span class="mtab-lb">'+lbl+'</span></button>'; }
+  function rebuildTabbar(){
+    var el=document.getElementById('m-tabbar');
+    if(!el){ if(!document.body) return; el=document.createElement('div'); el.id='m-tabbar'; document.body.appendChild(el); }
+    el.innerHTML = mtab('client','🏠','Accueil')
+      + mtab('facturation','✚','Créer','mtab-fab')
+      + mtab('achats','📥','Déposer');
+  }
+  if(typeof render==='function'){
+    var _r=render; render=function(){ var x=_r.apply(this,arguments); try{ rebuildTabbar(); }catch(e){} return x; };
+  }
+  if(document.body) rebuildTabbar(); else document.addEventListener('DOMContentLoaded', rebuildTabbar);
+
+  /* ---------- Feuille de style (injectée en fin de <head>) ---------- */
+  try{ var st=document.createElement('style'); st.id='mobile-refonte'; st.textContent = `
+@media(max-width:820px){
+  /* Accueil : titre de page redondant masqué (le hero le remplace) */
+  body[data-role="client"][data-page="client"] .page-head{ display:none !important; }
+  /* clearance pour la barre flottante + bouton surélevé */
+  body[data-role="client"] main.fullbleed .mod-wrap,
+  body[data-role="client"] main.fullbleed .dash-wrap{ padding-bottom:calc(108px + env(safe-area-inset-bottom)) !important; }
+
+  /* ===== Hero d'accueil ===== */
+  #mhero{ position:relative; margin:2px 0 16px; padding:22px 20px 18px; border-radius:22px; overflow:hidden;
+    background:linear-gradient(150deg, rgba(30,144,255,.20), rgba(8,14,28,.20) 55%), linear-gradient(160deg,#0d1830,#070b16);
+    border:1px solid rgba(120,170,255,.22);
+    box-shadow:0 18px 42px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08); }
+  #mhero::before{ content:""; position:absolute; right:-46px; top:-58px; width:176px; height:176px; border-radius:50%;
+    background:radial-gradient(circle at 32% 32%, rgba(212,175,90,.32), transparent 70%); }
+  #mhero .mh-greet{ position:relative; z-index:1; font-size:12px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#d4b463; }
+  #mhero .mh-name{ position:relative; z-index:1; font-family:'Fraunces',serif; font-weight:700; font-size:25px; line-height:1.12; color:#fff; margin-top:5px; }
+  #mhero .mh-date{ position:relative; z-index:1; font-size:12.5px; color:#9fb6d0; margin-top:6px; }
+  #mhero .mh-stats{ position:relative; z-index:1; display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-top:16px; }
+  #mhero .mh-chip{ background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:13px; padding:9px; }
+  #mhero .mh-chip .l{ font-size:9px; font-weight:700; letter-spacing:.02em; text-transform:uppercase; color:#9fb6d0; }
+  #mhero .mh-chip .v{ font-size:14px; font-weight:800; color:#eaf2ff; margin-top:3px; }
+
+  /* ===== Tuiles d'action ===== */
+  #mtiles{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+  #mtiles .mtile{ display:flex; flex-direction:column; align-items:flex-start; gap:10px; padding:16px 14px; border-radius:18px;
+    background:linear-gradient(160deg, rgba(255,255,255,.075), rgba(255,255,255,.02)); border:1px solid rgba(255,255,255,.12);
+    color:#eaf2ff; cursor:pointer; text-align:left; box-shadow:0 8px 22px rgba(0,0,0,.35); transition:transform .12s ease; }
+  #mtiles .mtile:active{ transform:scale(.97); }
+  #mtiles .mtile .ic{ font-size:23px; line-height:1; }
+  #mtiles .mtile .lb{ font-weight:700; font-size:13px; line-height:1.25; }
+
+  /* ===== Barre de navigation basse flottante ===== */
+  body[data-role="client"] #m-tabbar{ left:12px !important; right:12px !important;
+    bottom:calc(12px + env(safe-area-inset-bottom)) !important; height:64px !important; padding:0 8px !important;
+    border-radius:24px !important; border:1px solid rgba(255,255,255,.14) !important;
+    background:rgba(12,18,32,.84) !important; -webkit-backdrop-filter:blur(22px) saturate(160%); backdrop-filter:blur(22px) saturate(160%);
+    box-shadow:0 14px 36px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.08) !important; overflow:visible !important; }
+  body[data-role="client"] #m-tabbar .mtab{ flex:1; background:none !important; border:none !important; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    font:700 11px system-ui,sans-serif; color:#9fb6d0 !important; }
+  body[data-role="client"] #m-tabbar .mtab .mtab-ic{ font-size:20px !important; line-height:1; }
+  body[data-role="client"] #m-tabbar .mtab.active{ color:#eaf2ff !important; }
+  body[data-role="client"] #m-tabbar .mtab.active::before{ display:none !important; }
+  /* bouton central surélevé (Créer) */
+  body[data-role="client"] #m-tabbar .mtab-fab .mtab-ic{ width:54px; height:54px; margin-top:-26px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-size:27px !important; color:#06101f !important;
+    background:linear-gradient(150deg,#ffdc84,#d4a73c); box-shadow:0 10px 22px rgba(212,167,60,.5), inset 0 1px 0 rgba(255,255,255,.55); }
+  body[data-role="client"] #m-tabbar .mtab-fab.active .mtab-ic{ box-shadow:0 10px 28px rgba(212,167,60,.72), inset 0 1px 0 rgba(255,255,255,.6); }
+  body[data-role="client"] #m-tabbar .mtab-fab .mtab-lb{ color:#d4b463 !important; }
+  body[data-role="client"] #m-tabbar .mtab-fab.active .mtab-lb{ color:#ffdc84 !important; }
+}`;
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
