@@ -5376,9 +5376,9 @@ function sgJournalGrid(code, per){
   let ecr=db.ecritures.filter(e=>e.journal===code);
   if(per) ecr=ecr.filter(e=> cumul ? ym(e.date)<=per : ym(e.date)===per);
   ecr=ecr.sort((a,b)=>a.date<b.date?-1:(a.date>b.date?1:0));
-  let td=0,tc=0; const rows=ecr.map(e=>{ const jour=e.date.slice(8,10); const piece=e.libelle.split(' · ')[0]; const lib=(e.libelle.split(' · ')[1]||e.libelle);
-    return e.lignes.map(l=>{ td+=l.debit; tc+=l.credit;
-      return `<tr><td>${jour}</td><td class="cpt">${(c9(l.compte)||l.compte)}</td><td></td><td>${piece}</td><td class="l">${lib}</td>
+  let td=0,tc=0; const rows=ecr.map((e,ei)=>{ const jour=e.date.slice(8,10); const piece=e.libelle.split(' · ')[0]; const lib=(e.libelle.split(' · ')[1]||e.libelle);
+    return e.lignes.map((l,i)=>{ td+=l.debit; tc+=l.credit;
+      return `<tr class="${(i===0&&ei>0)?'sgj-ecr-sep':''}"><td>${jour}</td><td class="cpt">${(c9(l.compte)||l.compte)}</td><td></td><td>${piece}</td><td class="l">${lib}</td>
         <td class="r">${l.debit?sageNum(l.debit):''}</td><td class="r">${l.credit?sageNum(l.credit):''}</td></tr>`; }).join('');
   }).join('');
   const ok=Math.abs(r2(td-tc))<0.005;
@@ -10633,7 +10633,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v180 · mobile';
+    b.textContent='YADA · v181 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -14500,6 +14500,17 @@ ${lignes}
   body[data-role="client"] tr.vp-more .vp-btn{ width:100%; }
 }
 @media(min-width:821px){ #m-back{ display:none !important; } }`;
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+
+<script id="yada-addon101">
+/* Consultation → grille de journal (HA, VT, BQ, OD…) : ligne BLEUE entre chaque
+   écriture pour les différencier nettement. 100% additif (CSS). */
+(function(){
+  try{ var st=document.createElement('style'); st.id='sgj-sep-mod'; st.textContent=
+    '.sg-app table.sgj tbody tr.sgj-ecr-sep td{border-top:2px solid #1e90ff !important}'
+    +'body[data-theme="noir"] .sg-app table.sgj tbody tr.sgj-ecr-sep td{border-top:2px solid #1e90ff !important}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
