@@ -27,6 +27,9 @@
 ## Refonte visuelle mobile (Espace Client) — addon99
 - **`yada-addon99` (refonte visuelle mobile)** : accueil « hero » mobile (salutation + société + 3 chiffres clés en pastilles) + tuiles d'action 2×2 + **barre de navigation basse flottante** 3 onglets (🏠 Accueil / ✚ Créer / 📥 Déposer, bouton central or surélevé). Override `window.ecHero` (mobile only) + reconstruction `#m-tabbar` post-`render` + `<style id="mobile-refonte">`. 100% additif, bureau inchangé.
 
+## Maniabilité mobile (Espace Client) — addon100
+- **`yada-addon100` (maniabilité mobile)** : rend l'app mobile plus facile à manier, 3 axes. **(1) Cibles tactiles plus grandes** : boutons (`.btn` min 52px), champs (52px/16px), onglets/FAB et tuiles agrandis (`<style id="mobile-maniabilite">`). **(2) Retour & repères clairs** : bouton **« ← »** (`#m-back`) injecté dans `#m-topbar` quand `current !== 'client'` (revient à l'accueil) + **titre = nom de la page** (`LABELS`), via `updateTopbar()` greffé sur `render`. **(3) Écrans épurés** : `.flow` décoratif + paragraphes `.page-head p` masqués sur mobile client, grille KPI `.grid.g4` masquée sur l'accueil (redondante avec le hero), et **tableaux longs repliés** au-delà de 5 lignes derrière un bouton **« Voir plus / Voir moins »** (`truncateTables()`, classes `.vp-hidden`/`.vp-more`/`.vp-btn`, idempotent par `data-vp`). Gardé par `isMobile()`/@media + `body[data-role="client"]`. 100% additif, bureau inchangé.
+
 ---
 
 ## 🟢 MAJ précédente — Facturation électronique : opérateur relié (PPF/PDP) + Factur-X

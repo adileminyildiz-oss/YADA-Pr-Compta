@@ -14391,5 +14391,117 @@ ${lignes}
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
+<script id="yada-addon100">
+/* ============================================================
+   MANIABILITÉ MOBILE (Espace Client) — 3 axes :
+   1) Cibles tactiles plus grandes (boutons, onglets, champs, tuiles).
+   2) Retour & repères clairs : bouton « ← » dans la barre supérieure
+      quand on n'est pas sur l'accueil + titre = nom de la page.
+   3) Écrans épurés : décoratif masqué + tableaux longs repliés
+      derrière un bouton « Voir plus / Voir moins ».
+   100% additif, gardé par isMobile()/@media + body[data-role="client"].
+   Aucun impact sur la version bureau.
+   ============================================================ */
+(function(){
+  function isMobile(){ try{ return window.__secMobile?window.__secMobile():(window.matchMedia&&window.matchMedia('(max-width:820px)').matches); }catch(e){ return false; } }
+  function isClient(){ try{ return document.body && document.body.getAttribute('data-role')==='client'; }catch(e){ return false; } }
+
+  /* ---------- Repères : bouton Retour + titre de page ---------- */
+  var LABELS={ client:'Accueil', facturation:'Mes factures', achats:'Réception factures', tiers:'Clients & fournisseurs' };
+  function updateTopbar(){
+    var bar=document.getElementById('m-topbar'); if(!bar) return;
+    var cur=(typeof current!=='undefined')?current:'client';
+    var back=document.getElementById('m-back');
+    if(!back){
+      back=document.createElement('button'); back.id='m-back'; back.className='m-back'; back.type='button';
+      back.setAttribute('aria-label','Retour à l\'accueil'); back.innerHTML='←';
+      back.onclick=function(){ try{ current='client'; render(); }catch(e){} };
+      bar.insertBefore(back, bar.firstChild);
+    }
+    var onHome=(cur==='client');
+    back.style.display = onHome ? 'none' : '';
+    var title=bar.querySelector('.m-title');
+    if(title){
+      if(onHome){ title.innerHTML='YADA<small>Précompta</small>'; }
+      else { title.textContent = LABELS[cur] || 'YADA'; }
+    }
+  }
+
+  /* ---------- Écrans épurés : tableaux longs repliés ---------- */
+  var SEUIL=5;
+  function truncateTables(){
+    if(!isMobile() || !isClient()) return;
+    var tbs=document.querySelectorAll('.mod-wrap table tbody, .dash-wrap table tbody');
+    Array.prototype.forEach.call(tbs, function(tb){
+      if(tb.getAttribute('data-vp')) return; /* déjà traité ce rendu */
+      var rows=Array.prototype.filter.call(tb.children, function(r){ return r.tagName==='TR'; });
+      if(rows.length <= SEUIL+1) return;
+      tb.setAttribute('data-vp','1');
+      for(var i=SEUIL;i<rows.length;i++){ rows[i].classList.add('vp-hidden'); }
+      var tr=document.createElement('tr'); tr.className='vp-more';
+      var td=document.createElement('td'); td.colSpan=20;
+      var nb=rows.length-SEUIL;
+      td.innerHTML='<button type="button" class="btn btn-ghost btn-sm vp-btn">Voir plus ('+nb+')</button>';
+      tr.appendChild(td); tb.appendChild(tr);
+      var btn=td.querySelector('.vp-btn');
+      btn.onclick=function(){
+        var all=Array.prototype.filter.call(tb.children, function(r){ return r.tagName==='TR' && !r.classList.contains('vp-more'); });
+        var collapsed=false; all.forEach(function(r,i){ if(i>=SEUIL && r.classList.contains('vp-hidden')) collapsed=true; });
+        all.forEach(function(r,i){ if(i>=SEUIL){ if(collapsed) r.classList.remove('vp-hidden'); else r.classList.add('vp-hidden'); } });
+        btn.textContent = collapsed ? 'Voir moins' : 'Voir plus ('+nb+')';
+      };
+    });
+  }
+
+  function refresh(){ try{ updateTopbar(); }catch(e){} try{ truncateTables(); }catch(e){} }
+  if(typeof render==='function'){
+    var _r=render; render=function(){ var x=_r.apply(this,arguments); refresh(); return x; };
+  }
+  if(document.body) refresh(); else document.addEventListener('DOMContentLoaded', refresh);
+
+  /* ---------- Feuille de style ---------- */
+  try{ var st=document.createElement('style'); st.id='mobile-maniabilite'; st.textContent = `
+@media(max-width:820px){
+  /* ===== 1) Cibles tactiles plus grandes ===== */
+  body[data-role="client"] .btn{ min-height:52px !important; font-size:15px !important; border-radius:14px !important; padding-left:16px; padding-right:16px; }
+  body[data-role="client"] .btn-sm{ min-height:44px !important; font-size:14px !important; }
+  body[data-role="client"] .btn-xs{ min-height:40px !important; font-size:13px !important; padding:7px 13px !important; }
+  body[data-role="client"] input, body[data-role="client"] select, body[data-role="client"] textarea{ min-height:52px !important; font-size:16px !important; }
+  body[data-role="client"] .field label{ font-size:13px !important; margin-bottom:6px !important; }
+  body[data-role="client"] table td, body[data-role="client"] table th{ padding:12px 10px !important; }
+  body[data-role="client"] table{ font-size:14px !important; }
+
+  /* tuiles d'accueil plus grandes */
+  #mtiles{ gap:14px !important; }
+  #mtiles .mtile{ padding:20px 16px !important; gap:12px !important; min-height:104px; justify-content:center; }
+  #mtiles .mtile .ic{ font-size:28px !important; }
+  #mtiles .mtile .lb{ font-size:14px !important; }
+
+  /* barre d'onglets : plus haute, icônes & libellés plus grands */
+  body[data-role="client"] #m-tabbar{ height:72px !important; }
+  body[data-role="client"] #m-tabbar .mtab{ font-size:12px !important; gap:4px; }
+  body[data-role="client"] #m-tabbar .mtab .mtab-ic{ font-size:23px !important; }
+  body[data-role="client"] #m-tabbar .mtab-fab .mtab-ic{ width:60px; height:60px; font-size:30px !important; margin-top:-30px; }
+  body[data-role="client"] main.fullbleed .mod-wrap,
+  body[data-role="client"] main.fullbleed .dash-wrap{ padding-bottom:calc(124px + env(safe-area-inset-bottom)) !important; }
+
+  /* barre supérieure : boutons confortables au pouce */
+  #m-topbar{ gap:6px !important; }
+  #m-topbar .m-burger{ font-size:25px !important; padding:8px 11px !important; }
+  #m-back{ display:none; background:none; border:none; color:#eaf0ff; font-size:27px; line-height:1; padding:8px 12px; cursor:pointer; border-radius:11px; }
+  #m-back:active{ background:rgba(255,255,255,.14); }
+
+  /* ===== 3) Écrans épurés ===== */
+  body[data-role="client"] .flow{ display:none !important; }
+  body[data-role="client"] .page-head p{ display:none !important; }
+  body[data-role="client"][data-page="client"] .grid.g4{ display:none !important; }
+  body[data-role="client"] tr.vp-hidden{ display:none !important; }
+  body[data-role="client"] tr.vp-more td{ text-align:center !important; padding:10px 8px !important; border:none !important; background:transparent !important; }
+  body[data-role="client"] tr.vp-more .vp-btn{ width:100%; }
+}
+@media(min-width:821px){ #m-back{ display:none !important; } }`;
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
 </body>
 </html>
