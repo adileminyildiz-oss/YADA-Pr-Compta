@@ -544,7 +544,7 @@
   .inv-pay .lbl{font-weight:700;margin-bottom:6px}
   .inv-pay .kv{display:grid;grid-template-columns:150px 1fr;gap:3px 10px}
   .inv-foot-line{border-top:1px solid #ccc;margin-top:14px;padding-top:8px;font-size:9.5px;color:#888}
-  .li-row{display:grid;grid-template-columns:1fr 70px 90px 70px 100px 30px;gap:6px;align-items:center;margin-bottom:6px}
+  .li-row{display:grid;grid-template-columns:1fr 104px 70px 90px 70px 100px 30px;gap:6px;align-items:center;margin-bottom:6px}
   .li-row input,.li-row select{font:inherit;font-size:12.5px;padding:6px 7px;border:1px solid var(--line-strong);border-radius:6px;width:100%}
   .li-head{font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
 
@@ -1937,7 +1937,7 @@ body[data-theme="noir"] #ec-hero.cab-hero{background:linear-gradient(120deg,#0b3
 </style>
 <style id="li-cli-css">
 /* Lignes de facture (écritures) — bureau : grille alignée (cellules transparentes) */
-.li-cli{ grid-template-columns:1fr 72px 92px 86px 104px 110px; align-items:center; }
+.li-cli{ grid-template-columns:1fr 104px 72px 92px 86px 104px 110px; align-items:center; }
 .li-cli .li-cell{ display:contents; }
 .li-cli .li-cl{ display:none; }
 .li-cli .li-del{ white-space:nowrap; }
@@ -4389,13 +4389,20 @@ function ajoutTiers(){
 function supTiers(id){ db.tiers=db.tiers.filter(t=>t.id!==id); save(); render(); }
 
 /* ---------- FACTURATION CLIENT ---------- */
-let faLignes=[{desc:'',qte:1,pu:0,taux:20,unite:''}];
-function faTotaux(){ let ht=0,tva=0; faLignes.forEach(l=>{ const lht=r2((+l.qte||0)*(+l.pu||0)); ht+=lht; tva+=r2(lht*(+l.taux||0)/100); });
+let faLignes=[{desc:'',qte:1,pu:0,taux:20,unite:'',nature:'produit'}];
+/* Nature d'une ligne : prestation (sans quantité) ou produit / marchandise (avec quantité). */
+function faNatOptions(nat){ const v=nat||'produit';
+  return [['produit','Produit'],['marchandise','Marchandise'],['prestation','Prestation']]
+    .map(o=>`<option value="${o[0]}" ${v===o[0]?'selected':''}>${o[1]}</option>`).join(''); }
+function faQte(l){ return (l.nature==='prestation')?1:(+l.qte||0); }
+function faTotaux(){ let ht=0,tva=0; faLignes.forEach(l=>{ const lht=r2(faQte(l)*(+l.pu||0)); ht+=lht; tva+=r2(lht*(+l.taux||0)/100); });
   ht=r2(ht); tva=r2(tva); return {ht,tva,ttc:r2(ht+tva)}; }
-function faAddLigne(){ faLignes.push({desc:'',qte:1,pu:0,taux:20,unite:''}); render(); }
-function faDelLigne(i){ faLignes.splice(i,1); if(!faLignes.length)faLignes=[{desc:'',qte:1,pu:0,taux:20,unite:''}]; render(); }
+function faAddLigne(){ faLignes.push({desc:'',qte:1,pu:0,taux:20,unite:'',nature:'produit'}); render(); }
+function faDelLigne(i){ faLignes.splice(i,1); if(!faLignes.length)faLignes=[{desc:'',qte:1,pu:0,taux:20,unite:'',nature:'produit'}]; render(); }
 function faSync(){ faLignes.forEach((l,i)=>{ const g=s=>document.getElementById('li-'+s+'-'+i);
-  if(g('desc'))l.desc=g('desc').value; if(g('qte'))l.qte=+g('qte').value; if(g('pu'))l.pu=+g('pu').value;
+  if(g('nat'))l.nature=g('nat').value;
+  if(g('desc'))l.desc=g('desc').value; if(l.nature==='prestation'){ l.qte=1; } else if(g('qte'))l.qte=+g('qte').value;
+  if(g('pu'))l.pu=+g('pu').value;
   if(g('taux'))l.taux=+g('taux').value; if(g('unite'))l.unite=g('unite').value; }); }
 function faMaj(){ faSync(); const t=faTotaux();
   const el=document.getElementById('fa-apercu'); const c=db.tiers.find(x=>x.id===document.getElementById('fa-client').value);
@@ -4410,11 +4417,12 @@ function faMaj(){ faSync(); const t=faTotaux();
 function pageFacturation(){
   const clients=db.tiers.filter(t=>t.type==='client');
   const t=faTotaux();
-  const liHead=`<div class="li-row li-head"><div>Désignation</div><div>Qté</div><div>PU HT</div><div>TVA %</div><div>Total HT</div><div></div></div>`;
-  const liRows=faLignes.map((l,i)=>{ const lht=r2((+l.qte||0)*(+l.pu||0));
+  const liHead=`<div class="li-row li-head"><div>Désignation</div><div>Nature</div><div>Qté</div><div>PU HT</div><div>TVA %</div><div>Total HT</div><div></div></div>`;
+  const liRows=faLignes.map((l,i)=>{ const presta=(l.nature==='prestation'); const lht=r2((presta?1:(+l.qte||0))*(+l.pu||0));
     return `<div class="li-row">
       <input id="li-desc-${i}" value="${(l.desc||'').replace(/"/g,'&quot;')}" placeholder="Prestation / produit" oninput="faMaj()">
-      <input id="li-qte-${i}" type="number" value="${l.qte}" oninput="faMaj()">
+      <select id="li-nat-${i}" onchange="faMaj()">${faNatOptions(l.nature)}</select>
+      <input id="li-qte-${i}" type="number" value="${presta?'':l.qte}" ${presta?'disabled title="Quantité non applicable (prestation)" placeholder="—"':''} oninput="faMaj()">
       <input id="li-pu-${i}" type="number" value="${l.pu}" oninput="faMaj()">
       <select id="li-taux-${i}" onchange="faMaj()">${[20,10,5.5,0].map(x=>`<option ${x==l.taux?'selected':''}>${x}</option>`).join('')}</select>
       <input value="${eur(lht)}" disabled style="background:#f3efe6">
@@ -4539,8 +4547,8 @@ function docHTML(d){
   /* N'afficher QUE les désignations réellement saisies (pas de ligne vide). */
   const lignesSaisies=lignesAll.filter(l=>(l.desc!=null&&String(l.desc).trim()!=='') || r2((+l.qte||0)*(+l.pu||0))!==0);
   const lignes=lignesSaisies.length?lignesSaisies:[{desc:d.lib||'',qte:1,pu:Math.abs(d.ht||0),taux:20,unite:''}];
-  const rows=lignes.map(l=>{const lht=r2((+l.qte||0)*(+l.pu||0));
-    return `<tr><td class="l">${l.desc||''}</td><td>${(l.qte||0)}${l.unite?(' '+l.unite):''}</td><td>${eur(+l.pu||0)}</td><td>${(+l.taux||0).toLocaleString('fr-FR',{minimumFractionDigits:1})}%</td><td>${eur(lht)}</td></tr>`;}).join('');
+  const rows=lignes.map(l=>{const presta=(l.nature==='prestation'); const q=presta?1:(+l.qte||0); const lht=r2(q*(+l.pu||0));
+    return `<tr><td class="l">${l.desc||''}</td><td>${presta?'—':(q+(l.unite?(' '+l.unite):''))}</td><td>${eur(+l.pu||0)}</td><td>${(+l.taux||0).toLocaleString('fr-FR',{minimumFractionDigits:1})}%</td><td>${eur(lht)}</td></tr>`;}).join('');
   const ht=Math.abs(d.ht), tva=Math.abs(d.tva), ttc=Math.abs(d.ttc);
   return `<div class="inv-page">
     <div class="inv-top"><div class="inv-h1">${titre}</div><div class="inv-logo">${(s.raison||'AMA')}</div></div>
@@ -8373,11 +8381,12 @@ pageFacturation=function(){ if(typeof catInit==='function')catInit();
 /* Ancien formulaire « Émettre un document client » (saisie rapide directe) */
 function formulaireRapide(){
   const clients=db.tiers.filter(t=>t.type==='client');
-  const liHead=`<div class="li-row li-head"><div>Désignation</div><div>Qté</div><div>PU HT</div><div>TVA %</div><div>Total HT</div><div></div></div>`;
-  const liRows=faLignes.map((l,i)=>{ const lht=r2((+l.qte||0)*(+l.pu||0));
+  const liHead=`<div class="li-row li-head"><div>Désignation</div><div>Nature</div><div>Qté</div><div>PU HT</div><div>TVA %</div><div>Total HT</div><div></div></div>`;
+  const liRows=faLignes.map((l,i)=>{ const presta=(l.nature==='prestation'); const lht=r2((presta?1:(+l.qte||0))*(+l.pu||0));
     return `<div class="li-row">
       <input id="li-desc-${i}" value="${(l.desc||'').replace(/"/g,'&quot;')}" placeholder="Prestation / produit" oninput="faMaj()">
-      <input id="li-qte-${i}" type="number" value="${l.qte}" oninput="faMaj()">
+      <select id="li-nat-${i}" onchange="faMaj()">${faNatOptions(l.nature)}</select>
+      <input id="li-qte-${i}" type="number" value="${presta?'':l.qte}" ${presta?'disabled title="Quantité non applicable (prestation)" placeholder="—"':''} oninput="faMaj()">
       <input id="li-pu-${i}" type="number" value="${l.pu}" oninput="faMaj()">
       <select id="li-taux-${i}" onchange="faMaj()">${[20,10,5.5,0].map(x=>`<option ${x==l.taux?'selected':''}>${x}</option>`).join('')}</select>
       <input value="${eur(lht)}" disabled style="background:#f3efe6">
@@ -10635,7 +10644,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v187 · noir & bleu';
+    b.textContent='YADA · v188 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -10885,11 +10894,12 @@ ${lignes}
   /* ----- Facturation client simplifiée ----- */
   function faClientCreer(){
     var clients=(db.tiers||[]).filter(function(t){return t.type==='client';});
-    var liHead='<div class="li-row li-head"><div>Désignation</div><div>Qté</div><div>PU HT</div><div>TVA %</div><div>Total HT</div><div></div></div>';
-    var liRows=faLignes.map(function(l,i){ var lht=r2((+l.qte||0)*(+l.pu||0));
+    var liHead='<div class="li-row li-head"><div>Désignation</div><div>Nature</div><div>Qté</div><div>PU HT</div><div>TVA %</div><div>Total HT</div><div></div></div>';
+    var liRows=faLignes.map(function(l,i){ var presta=(l.nature==='prestation'); var lht=r2((presta?1:(+l.qte||0))*(+l.pu||0));
       return '<div class="li-row li-cli">'
         +'<input id="li-desc-'+i+'" value="'+(l.desc||'').replace(/"/g,'&quot;')+'" placeholder="Désignation (prestation / produit)" oninput="faMaj()">'
-        +'<div class="li-cell"><span class="li-cl">Qté</span><input id="li-qte-'+i+'" type="number" value="'+l.qte+'" oninput="faMaj()"></div>'
+        +'<div class="li-cell"><span class="li-cl">Nature</span><select id="li-nat-'+i+'" onchange="faMaj()">'+faNatOptions(l.nature)+'</select></div>'
+        +'<div class="li-cell"><span class="li-cl">Qté</span><input id="li-qte-'+i+'" type="number" value="'+(presta?'':l.qte)+'" '+(presta?'disabled placeholder="—" title="Quantité non applicable (prestation)"':'')+' oninput="faMaj()"></div>'
         +'<div class="li-cell"><span class="li-cl">PU HT</span><input id="li-pu-'+i+'" type="number" value="'+l.pu+'" oninput="faMaj()"></div>'
         +'<div class="li-cell"><span class="li-cl">TVA</span><select id="li-taux-'+i+'" onchange="faMaj()">'+[20,10,5.5,0].map(function(x){return '<option value="'+x+'" '+(x==l.taux?'selected':'')+'>'+x+'%</option>';}).join('')+'</select></div>'
         +'<div class="li-cell"><span class="li-cl">Total HT</span><input id="li-tot-'+i+'" value="'+eur(lht)+'" disabled></div>'
