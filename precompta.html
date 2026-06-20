@@ -4565,19 +4565,18 @@ function docHTML(d){
       ${(d.acompte||d.retenue)?`<div class="ttc"><span class="lbl">Net à payer</span><span>${eur(Math.abs(d.netAPayer!=null?d.netAPayer:ttc))}</span></div>`:''}
     </div>
     <div class="inv-cond">
-      Type de transaction : Bien<br>Conditions de paiement de la TVA : Sur les encaissements<br>
-      ${d.moyen&&d.moyen!=='Non précisé'?('Moyen de paiement : '+d.moyen+'<br>'):''}
+      Type de transaction : ${d.moyen||s.moyenDefaut||'Virement'}<br>Conditions de paiement de la TVA : ${d.tvaCondition||s.tvaCondition||'Sur les encaissements'}<br>
       ${d.conditions?('Conditions de paiement : '+d.conditions+'<br>'):''}
-      ${(d.escompte&&+d.escompte>0)?('Escompte pour paiement anticipé : '+d.escompte+' %'+(d.escompteDelai?(' (sous '+d.escompteDelai+' jours)'):'')+'<br>'):'Pas d\'escompte accordé pour le paiement anticipé.<br>'}
+      ${(function(){var e=(d.escompte!=null?d.escompte:s.escompteDefaut)||0; var dl=(d.escompteDelai!=null?d.escompteDelai:s.escompteDelaiDefaut)||''; return (+e>0)?('Escompte pour paiement anticipé : '+e+' %'+(dl?(' (sous '+dl+' jours)'):'')+'<br>'):'Pas d\'escompte accordé pour le paiement anticipé.<br>';})()}
       En cas de non-paiement à la date d'échéance, des pénalités calculées à trois fois le taux d'intérêt légal seront appliquées.<br>
-      Tout retard de paiement entraînera une indemnité forfaitaire pour frais de recouvrement de 40 €.
+      Tout retard de paiement entraînera une indemnité forfaitaire pour frais de recouvrement de ${(s.fraisRecouvrement!=null?s.fraisRecouvrement:40)} €.
     </div>
-    ${(d.showPay===false)?'':`<div class="inv-pay"><div class="lbl">Détails du paiement</div>
+    <div class="inv-pay"><div class="lbl">Détails du paiement (RIB)</div>
       <div class="kv"><span>Nom du bénéficiaire</span><span>${s.banqueBenef||s.raison||'—'}</span>
         <span>BIC</span><span>${s.bic||'—'}</span>
         <span>IBAN</span><span>${s.iban||'—'}</span>
         <span>Référence</span><span>${d.numero}</span></div>
-    </div>`}
+    </div>
     <div class="inv-foot-line">${s.raison||'AMA'}, ${s.formeJur||'SAS'}${s.siren?(' — SIREN : '+s.siren):''}</div>
   </div>`;
 }
@@ -10633,7 +10632,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v185 · noir & bleu';
+    b.textContent='YADA · v186 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -14751,6 +14750,68 @@ ${lignes}
   document.addEventListener('visibilitychange', function(){ if(!document.hidden) checkAll(); });
   window.addEventListener('online', checkAll);
   window.cloudCheckUpdate=checkAll;
+})();
+</script>
+
+<script id="yada-addon104">
+/* ============================================================
+   FACTURATION CLIENT — réglages des mentions A4 (modifiables) + retrait du
+   tableau « suivi & validation » + date : année limitée à 4 chiffres.
+   - RIB toujours en bas de la facture A4 (docHTML, édité) ; conditions TVA
+     (encaissements/débits), type de transaction (Virement/CB/Espèces/Chèque),
+     escompte, et frais de recouvrement (40 €) deviennent modifiables.
+   - Carte « ⚙️ Paramètres de facturation » greffée dans la page Facturation.
+   - `documentsClientsCard` (tableau suivi & validation) → retiré.
+   100% additif.
+   ============================================================ */
+(function(){
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
+  function opt(val, cur){ return '<option value="'+esc(val)+'" '+(cur===val?'selected':'')+'>'+esc(val)+'</option>'; }
+
+  /* (1) Retrait du tableau « suivi & validation » */
+  if(typeof window.documentsClientsCard==='function'){ window.documentsClientsCard=function(){ return ''; }; }
+
+  /* (2) Date : l'année s'arrête à 4 chiffres (max sur tous les champs date) */
+  function capDates(){ try{ document.querySelectorAll('input[type=date]').forEach(function(i){
+    if(!i.getAttribute('max')) i.setAttribute('max','9999-12-31'); if(!i.getAttribute('min')) i.setAttribute('min','1900-01-01'); }); }catch(e){} }
+  if(typeof window.render==='function'){ var _r=window.render; window.render=function(){ var x=_r.apply(this,arguments); try{ capDates(); }catch(e){} return x; }; }
+
+  /* (3) Carte des paramètres de facturation (mentions A4) */
+  window.factParamSave=function(){ var g=function(id){ var e=document.getElementById(id); return e?e.value:''; };
+    var s=db.societe||(db.societe={});
+    s.tvaCondition=g('fp-tva')||'Sur les encaissements'; s.moyenDefaut=g('fp-moyen')||'Virement';
+    s.fraisRecouvrement=parseFloat((g('fp-frais')||'').replace(',','.')); if(isNaN(s.fraisRecouvrement)) s.fraisRecouvrement=40;
+    s.escompteDefaut=parseFloat((g('fp-esc')||'').replace(',','.'))||0; s.escompteDelaiDefaut=parseInt(g('fp-escd'),10)||0;
+    s.banqueBenef=(g('fp-benef')||'').trim(); s.iban=(g('fp-iban')||'').trim(); s.bic=(g('fp-bic')||'').trim();
+    if(typeof save==='function')save(); if(typeof render==='function')render(); if(typeof toast==='function')toast('Paramètres de facturation enregistrés ✓');
+  };
+  function factParamCard(){ var s=db.societe||{}; var tva=s.tvaCondition||'Sur les encaissements'; var moyen=s.moyenDefaut||'Virement';
+    return '<div class="card fparam-card"><h2>⚙️ Paramètres de facturation (mentions de la facture A4)</h2>'
+      +'<div class="sub">Modifiables ici, appliqués automatiquement en bas de <b>toutes les factures A4</b> (RIB, conditions TVA, type de transaction, escompte, frais de recouvrement).</div>'
+      +'<div class="row g3">'
+        +'<div class="field"><label>Conditions de paiement de la TVA</label><select id="fp-tva">'+opt('Sur les encaissements',tva)+opt('Sur les débits',tva)+'</select></div>'
+        +'<div class="field"><label>Type de transaction (paiement)</label><select id="fp-moyen">'+opt('Virement',moyen)+opt('CB',moyen)+opt('Espèces',moyen)+opt('Chèque',moyen)+'</select></div>'
+        +'<div class="field"><label>Frais de recouvrement (€) en cas de retard</label><input id="fp-frais" type="number" step="0.01" value="'+(s.fraisRecouvrement!=null?s.fraisRecouvrement:40)+'"></div>'
+      +'</div>'
+      +'<div class="row g3">'
+        +'<div class="field"><label>Escompte paiement anticipé (%)</label><input id="fp-esc" type="number" step="0.01" value="'+(s.escompteDefaut!=null?s.escompteDefaut:0)+'"></div>'
+        +'<div class="field"><label>Escompte — délai (jours)</label><input id="fp-escd" type="number" value="'+(s.escompteDelaiDefaut!=null?s.escompteDelaiDefaut:0)+'"></div>'
+        +'<div class="field" style="display:flex;align-items:flex-end"><button class="btn btn-pri" style="width:100%" onclick="factParamSave()">Enregistrer les paramètres</button></div>'
+      +'</div>'
+      +'<h3 style="margin:10px 0 6px;font-size:13px;color:#9fb6d0">RIB de la société (affiché en bas de chaque facture)</h3>'
+      +'<div class="row g3">'
+        +'<div class="field"><label>Bénéficiaire</label><input id="fp-benef" value="'+esc(s.banqueBenef||s.raison||'')+'"></div>'
+        +'<div class="field"><label>IBAN</label><input id="fp-iban" value="'+esc(s.iban||'')+'" placeholder="FR76 …"></div>'
+        +'<div class="field"><label>BIC</label><input id="fp-bic" value="'+esc(s.bic||'')+'" placeholder="XXXXFRPPXXX"></div>'
+      +'</div></div>';
+  }
+  window.factParamCard=factParamCard;
+  function greffe(name){ if(typeof window[name]==='function'){ var _o=window[name]; window[name]=function(){ var h=_o.apply(this,arguments); try{ h+=factParamCard(); }catch(e){} return h; }; } }
+  greffe('pageFacturation'); greffe('pageFacturationClient');
+
+  try{ var st=document.createElement('style'); st.id='fparam-mod'; st.textContent=
+    '.fparam-card .sub{font-size:12.5px;color:#9fb6d0;margin:2px 0 12px}';
+    document.head.appendChild(st); }catch(e){}
 })();
 </script>
 </body>
