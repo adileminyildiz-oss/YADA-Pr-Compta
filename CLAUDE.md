@@ -4,7 +4,26 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Charges & Paie : bulletins de paie éditables (modèle français) + OD de paie multi-mois — v190
+## 🟢 Dernière mise à jour — Paie : génération de la fiche + proposition des OD de paie ET de charges — v191
+**Quoi :** après la saisie d'une fiche de paie, YADA **génère le bulletin** (aperçu A4) puis **propose de comptabiliser** l'**OD de paie** (salaires) **et** l'**OD de charges** (patronales) du mois — deux écritures distinctes et équilibrées.
+
+**Pourquoi :** l'utilisateur veut, suite à la saisie d'une fiche, voir la fiche générée et se voir proposer la génération des écritures d'OD de paie et d'OD de charges.
+
+**Ce qu'il fait (description fonctionnelle) :**
+- Bouton **« ✅ Générer la fiche de paie »** dans l'éditeur → ouvre l'**aperçu A4** du bulletin et, en dessous, un panneau **« Écritures proposées »** montrant le détail des deux écritures (OD de paie + OD de charges) agrégeant **toutes les fiches du mois**, avec un bouton **« ⚙️ Générer l'OD de paie et l'OD de charges »**.
+- **OD de paie** (équilibrée) : 641 (brut) + 648 (primes panier/transport) au débit = 645100000/645300000 (cotisations salariales) + 442100000 (PAS) + 421 (net à payer) au crédit.
+- **OD de charges** (équilibrée) : 645100000/645300000 (charges patronales) au débit = 431000000 (URSSAF) + 437300000 (caisses retraite/prévoyance) au crédit.
+- **Idempotent par mois** : régénérer **remplace** les écritures « OD PAIE / OD CHARGES » du mois (jamais de doublon) ; statut affiché (« déjà comptabilisées ») ; bouton de suppression.
+
+**Où / comment (description technique) :**
+- `yada-addon106` : `bpCalc` expose la décomposition salariale/patronale par organisme (`salUrssaf/patUrssaf/salPrev/patPrev/salCsg/patCsg`) ; `bpAgg(m)` agrège les fiches du mois ; `bpLignesPaie`/`bpLignesCharges` construisent les deux écritures équilibrées ; `bpGenererODMois(m)` supprime puis re-poste « OD PAIE/OD CHARGES »+pièce via `posterOD` (journal ODP, dernier jour du mois) ; `bpFinaliser(id)` enregistre + ouvre `bpVoir` (A4 + aperçu des OD via `bpODApercu`). `bpODStatut(m)` / `bpSupprimerOD(m)`.
+- Badge de version → **v191**.
+
+**Limites assumées :** une seule OD de paie et une seule OD de charges par mois (agrégat de toutes les fiches) ; net à payer = brut − cotisations salariales − PAS + primes non soumises ; taux par défaut indicatifs, modifiables ligne par ligne.
+
+---
+
+## 🟢 MAJ précédente — Charges & Paie : bulletins de paie éditables (modèle français) + OD de paie multi-mois — v190
 **Quoi :** un module **Bulletins de paie** dans Charges & Paie qui **génère des fiches de paie au modèle français** dont **tous les éléments sont modifiables** (gains, cotisations salariales & patronales, primes, PAS), pour **plusieurs salariés** et **plusieurs mois**, avec **récupération de plusieurs bulletins déposés** et alimentation automatique du **Journal de paie** (addon93) pour produire les **OD de paie**.
 
 **Pourquoi :** l'utilisateur veut que YADA repère les bulletins de paie déposés, génère des fiches de paie entièrement éditables (sur le modèle fourni), récupère les informations de plusieurs fiches et de plusieurs mois de journal de paie pour les OD.

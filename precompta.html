@@ -10644,7 +10644,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v190 · noir & bleu';
+    b.textContent='YADA · v191 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -14980,8 +14980,14 @@ ${lignes}
     var urssaf=R2((f.cotis||[]).filter(function(c){return c.org==='urssaf';}).reduce(function(a,c){return a+R2(c.mS)+R2(c.mP);},0));
     var csg=R2((f.cotis||[]).filter(function(c){return c.org==='csg';}).reduce(function(a,c){return a+R2(c.mS)+R2(c.mP);},0));
     var prev=R2((f.cotis||[]).filter(function(c){return c.org==='prev';}).reduce(function(a,c){return a+R2(c.mS)+R2(c.mP);},0));
+    /* décomposition salariale / patronale par organisme (pour OD PAIE vs OD CHARGES) */
+    function sumOrg(org,key){ return R2((f.cotis||[]).filter(function(c){return c.org===org;}).reduce(function(a,c){return a+R2(c[key]);},0)); }
+    var salUrssaf=sumOrg('urssaf','mS'), patUrssaf=sumOrg('urssaf','mP');
+    var salPrev=sumOrg('prev','mS'),     patPrev=sumOrg('prev','mP');
+    var salCsg=sumOrg('csg','mS'),       patCsg=sumOrg('csg','mP');
     return { brut:brut, totSal:totSal, totSalDed:totSalDed, totPat:totPat, netImpo:netImpo,
       pas:pas, panier:panier, navigo:navigo, netAPayer:netAPayer,
+      salUrssaf:salUrssaf, patUrssaf:patUrssaf, salPrev:salPrev, patPrev:patPrev, salCsg:salCsg, patCsg:patCsg,
       journal:{ brut:brut, urssaf:urssaf, csg:csg, prev:prev, panier:panier, navigo:navigo, pas:pas } };
   }
 
@@ -15046,25 +15052,89 @@ ${lignes}
       +'<div class="bp-foot">Total charges patronales : '+eur(c.totPat)+' · Coût total employeur : '+eur(R2(c.brut+c.totPat))+'</div>'
       +'</div>';
   }
+  function bpODApercu(m){
+    var r=bpAgg(m); var Lp=bpLignesPaie(r.a), Lc=bpLignesCharges(r.a);
+    function tbl(titre,L){ if(!L.length) return '';
+      var rows=L.map(function(l){ return '<tr><td class="num">'+c9(l.compte)+'</td><td>'+esc(l.lib)+'</td><td class="r num '+(l.debit?'deb':'')+'">'+(l.debit?eur(l.debit):'—')+'</td><td class="r num '+(l.credit?'cre':'')+'">'+(l.credit?eur(l.credit):'—')+'</td></tr>'; }).join('');
+      var sd=bpSomme(L,'d'), sc=bpSomme(L,'c');
+      return '<div class="bp-od-blk"><div class="bp-od-t">'+titre+'</div><table class="bp-et"><thead><tr><th class="l">Compte</th><th class="l">Libellé</th><th class="r">Débit</th><th class="r">Crédit</th></tr></thead><tbody>'+rows
+        +'<tr class="bp-totrow"><td></td><td class="l">Totaux</td><td class="r num">'+eur(sd)+'</td><td class="r num">'+eur(sc)+'</td></tr></tbody></table></div>'; }
+    var st=window.bpODStatut(m);
+    return '<div class="bp-od">'
+      +'<h4 class="bp-h4" style="margin-top:4px">Écritures proposées — '+esc(moisLabel(m))+' ('+r.fs.length+' fiche'+(r.fs.length>1?'s':'')+' du mois)</h4>'
+      +tbl('OD de paie (salaires)',Lp)+tbl('OD de charges (patronales)',Lc)
+      +'<div class="bp-od-act">'
+        +((st.paie||st.charges)?'<span class="bp-od-flag">✓ Déjà comptabilisées pour ce mois — régénérer remplacera les écritures.</span>':'<span class="bp-sub">Les écritures sont équilibrées et regroupent toutes les fiches du mois.</span>')
+        +'<span style="flex:1"></span>'
+        +((st.paie||st.charges)?'<button class="btn btn-ghost btn-sm" onclick="bpSupprimerOD(\''+m+'\')">Supprimer les écritures</button>':'')
+        +'<button class="btn btn-pri" onclick="bpGenererODMois(\''+m+'\')">⚙️ Générer l\'OD de paie et l\'OD de charges</button>'
+      +'</div></div>';
+  }
   window.bpVoir=function(id){ var f=bpGet(id); if(!f)return; var mc=document.getElementById('modal-c'); if(!mc)return;
     mc.innerHTML='<div class="modal-h"><h3>Bulletin de paie — '+esc(f.nom||'Salarié')+' · '+esc(moisLabel(f.mois))+'</h3><button class="x" onclick="closeModal()">×</button></div>'
       +'<div class="modal-b"><div class="bp-render">'+bpBulletinHTML(f)+'</div>'
-      +'<div class="right"><button class="btn btn-ghost" onclick="bpImprimer(\''+id+'\')">Télécharger / Imprimer PDF</button></div></div>';
+      +'<div class="right" style="margin:8px 0 4px"><button class="btn btn-ghost" onclick="bpImprimer(\''+id+'\')">Télécharger / Imprimer le bulletin (PDF)</button></div>'
+      +bpODApercu(f.mois)
+      +'</div>';
     document.getElementById('modal').classList.add('show'); };
   window.bpImprimer=function(id){ var f=bpGet(id); if(!f)return; var pa=document.getElementById('print-area');
     if(pa){ pa.innerHTML='<div class="bp-render">'+bpBulletinHTML(f)+'</div>'; } if(typeof toast==='function')toast('Fenêtre d\'impression → « Enregistrer en PDF »'); setTimeout(function(){window.print();},150); };
 
-  /* ---- alimentation du Journal de paie + OD ---- */
+  /* ---- OD de paie + OD de charges (deux écritures équilibrées) ----
+     Agrège toutes les fiches du mois. Idempotent : on remplace les
+     éventuelles écritures « OD PAIE / OD CHARGES » du même mois. */
+  function bpAgg(m){ var fs=bpFichesMois(m);
+    var a={brut:0,salUrssaf:0,patUrssaf:0,salPrev:0,patPrev:0,salCsg:0,patCsg:0,totSal:0,totPat:0,pas:0,panier:0,navigo:0,net:0};
+    fs.forEach(function(f){ var c=bpCalc(f);
+      a.brut=R2(a.brut+c.brut); a.salUrssaf=R2(a.salUrssaf+c.salUrssaf); a.patUrssaf=R2(a.patUrssaf+c.patUrssaf);
+      a.salPrev=R2(a.salPrev+c.salPrev); a.patPrev=R2(a.patPrev+c.patPrev); a.salCsg=R2(a.salCsg+c.salCsg); a.patCsg=R2(a.patCsg+c.patCsg);
+      a.totSal=R2(a.totSal+c.totSal); a.totPat=R2(a.totPat+c.totPat); a.pas=R2(a.pas+c.pas);
+      a.panier=R2(a.panier+c.panier); a.navigo=R2(a.navigo+c.navigo); a.net=R2(a.net+c.netAPayer); });
+    return {fs:fs, a:a};
+  }
+  function bpLignesPaie(a){ var L=[];
+    L.push({compte:'641000000', lib:'Salaires bruts', debit:a.brut, credit:0});
+    var primes=R2(a.panier+a.navigo); if(primes>0.005) L.push({compte:'648000000', lib:'Primes panier / transport', debit:primes, credit:0});
+    var cSalUr=R2(a.salUrssaf+a.salCsg); if(cSalUr>0.005) L.push({compte:'645100000', lib:'Cotisations salariales URSSAF / CSG', debit:0, credit:cSalUr});
+    if(a.salPrev>0.005) L.push({compte:'645300000', lib:'Cotisations salariales retraite / prévoyance', debit:0, credit:a.salPrev});
+    if(a.pas>0.005) L.push({compte:'442100000', lib:'Prélèvement à la source', debit:0, credit:a.pas});
+    L.push({compte:'421000000', lib:'Net à payer au personnel', debit:0, credit:a.net});
+    return L;
+  }
+  function bpLignesCharges(a){ var L=[];
+    var dUr=R2(a.patUrssaf+a.patCsg); if(dUr>0.005) L.push({compte:'645100000', lib:'Charges patronales URSSAF / CSG', debit:dUr, credit:0});
+    if(a.patPrev>0.005) L.push({compte:'645300000', lib:'Charges patronales retraite / prévoyance', debit:a.patPrev, credit:0});
+    if(dUr>0.005) L.push({compte:'431000000', lib:'URSSAF — organismes sociaux', debit:0, credit:dUr});
+    if(a.patPrev>0.005) L.push({compte:'437300000', lib:'Caisses de retraite / prévoyance', debit:0, credit:a.patPrev});
+    return L;
+  }
+  function bpSomme(L,s){ return R2(L.reduce(function(x,l){return x+(s==='d'?l.debit:l.credit);},0)); }
+  function bpODFaite(m,type){ var lib='OD '+type+' '+pieceMois(m); return db.ecritures.some(function(e){ return e.journal==='ODP' && (e.libelle||'').indexOf(lib)>=0; }); }
+  window.bpODStatut=function(m){ return { paie:bpODFaite(m,'PAIE'), charges:bpODFaite(m,'CHARGES') }; };
+  function bpSupprOD(m,type){ var lib='OD '+type+' '+pieceMois(m);
+    db.ecritures=db.ecritures.filter(function(e){ return !(e.journal==='ODP' && (e.libelle||'').indexOf(lib)>=0); }); }
+
   window.bpGenererODMois=function(m){
-    var fs=bpFichesMois(m); if(!fs.length){ if(typeof toast==='function')toast('Aucune fiche de paie pour '+moisLabel(m)+'.'); return; }
-    var agg={brut:0,urssaf:0,csg:0,prev:0,panier:0,navigo:0,pas:0};
-    fs.forEach(function(f){ var j=bpCalc(f).journal; Object.keys(agg).forEach(function(k){ agg[k]=R2(agg[k]+R2(j[k])); }); });
-    if(!db.parametres)db.parametres={}; var pj=db.parametres.paieJournal=db.parametres.paieJournal||{}; pj[m]=pj[m]||{};
-    Object.keys(agg).forEach(function(k){ pj[m][k]=agg[k]; });
+    var r=bpAgg(m); if(!r.fs.length){ if(typeof toast==='function')toast('Aucune fiche de paie pour '+moisLabel(m)+'.'); return; }
+    if(r.a.brut<=0.005){ if(typeof toast==='function')toast('Saisissez au moins un salaire brut.'); return; }
+    var existe=bpODFaite(m,'PAIE')||bpODFaite(m,'CHARGES');
+    if(existe && !confirm('Des écritures OD PAIE / OD CHARGES existent déjà pour '+moisLabel(m)+'. Les remplacer avec toutes les fiches du mois ?')) return;
+    var Lp=bpLignesPaie(r.a), Lc=bpLignesCharges(r.a);
+    if(Math.abs(bpSomme(Lp,'d')-bpSomme(Lp,'c'))>=0.005){ if(typeof toast==='function')toast('OD PAIE non équilibrée — vérifiez les montants.'); return; }
+    if(Lc.length && Math.abs(bpSomme(Lc,'d')-bpSomme(Lc,'c'))>=0.005){ if(typeof toast==='function')toast('OD CHARGES non équilibrée — vérifiez les montants.'); return; }
+    bpSupprOD(m,'PAIE'); bpSupprOD(m,'CHARGES');
+    var date=dernierJourMoisISO(m), piece=pieceMois(m);
+    posterOD({ journal:'ODP', date:date, numero:piece, libelle:'OD PAIE '+piece, lignes:Lp });
+    if(Lc.length) posterOD({ journal:'ODP', date:date, numero:piece, libelle:'OD CHARGES '+piece, lignes:Lc });
     if(typeof save==='function')save();
-    if(typeof window.pjGenerer==='function'){ window.pjGenerer(m); }
-    else { if(typeof toast==='function')toast('Montants reportés au Journal de paie — générez l\'OD depuis la carte Journal.'); if(typeof render==='function')render(); }
+    if(typeof toast==='function')toast('OD PAIE'+(Lc.length?' et OD CHARGES':'')+' '+piece+' générée'+(Lc.length?'s':'')+' ✓ ('+r.fs.length+' fiche'+(r.fs.length>1?'s':'')+').');
+    if(typeof render==='function')render();
   };
+  window.bpSupprimerOD=function(m){ if(!confirm('Supprimer les écritures OD PAIE et OD CHARGES de '+moisLabel(m)+' ?'))return;
+    bpSupprOD(m,'PAIE'); bpSupprOD(m,'CHARGES'); if(typeof save==='function')save(); if(typeof toast==='function')toast('Écritures de paie supprimées'); if(typeof render==='function')render(); };
+
+  /* finalisation d'une fiche : on la « génère » (aperçu A4) puis on PROPOSE les OD */
+  window.bpFinaliser=function(id){ var f=bpGet(id); if(!f)return; if(typeof save==='function')save(); window.bpVoir(id); };
 
   /* ---- dépôt de plusieurs bulletins ---- */
   window.bpDepot=function(input){ var files=input&&input.files; if(!files||!files.length)return; var m=bpMois();
@@ -15142,7 +15212,10 @@ ${lignes}
         +'<span>Charges pat. <b>'+eur(c.totPat)+'</b></span>'
         +'<span class="bp-recap-net">Net à payer <b>'+eur(c.netAPayer)+'</b></span>'
       +'</div>'
-      +'<div class="right" style="margin-top:10px"><button class="btn btn-ghost btn-sm" onclick="bpSupprimer(\''+id+'\')">Supprimer la fiche</button></div>'
+      +'<div class="bp-ed-foot"><button class="btn btn-ghost btn-sm" onclick="bpSupprimer(\''+id+'\')">Supprimer la fiche</button>'
+        +'<span style="flex:1"></span>'
+        +'<button class="btn btn-pri" onclick="bpFinaliser(\''+id+'\')">✅ Générer la fiche de paie</button></div>'
+      +'<div class="bp-sub" style="margin-top:6px">À la génération, YADA affiche le bulletin et vous propose de créer l\'<b>OD de paie</b> et l\'<b>OD de charges</b> du mois.</div>'
       +'</div>';
   }
 
@@ -15158,12 +15231,12 @@ ${lignes}
     var depList=deps.length?('<ul class="bp-deps">'+deps.map(function(p){ return '<li><span>📄 '+esc(p.nom)+'</span> <button class="btn btn-ghost btn-sm" onclick="bpAnalyserBulletin(\''+p.id+'\')">🔎 Analyser → créer la fiche</button> <button class="btn btn-ghost btn-sm" onclick="gedVoir(\''+p.id+'\')">Voir</button></li>'; }).join('')+'</ul>'):'<div class="bp-sub" style="margin:6px 0">Aucun bulletin déposé pour ce mois.</div>';
     return '<div class="bp-card card">'
       +'<h2>🧾 Bulletins de paie — '+moisLabel(m)+' (génération & édition · modèle français, tout modifiable)</h2>'
-      +'<div class="sub">Créez et <b>modifiez chaque élément</b> du bulletin (gains, cotisations salariales & patronales, primes, PAS) pour <b>plusieurs salariés</b>. Déposez plusieurs bulletins existants (reconnaissance OCR si connecté). Les fiches d\'un mois alimentent le <b>Journal de paie</b> pour générer l\'<b>OD de paie</b> du mois ; chaque mois est indépendant.</div>'
+      +'<div class="sub">Créez et <b>modifiez chaque élément</b> du bulletin (gains, cotisations salariales & patronales, primes, PAS) pour <b>plusieurs salariés</b>. Déposez plusieurs bulletins existants (reconnaissance OCR si connecté). À la génération d\'une fiche, YADA propose de créer l\'<b>OD de paie</b> et l\'<b>OD de charges</b> du mois ; chaque mois est indépendant.</div>'
       +'<div class="bp-bar">'
         +'<button class="btn btn-pri btn-sm" onclick="bpCreer()">+ Nouvelle fiche de paie</button>'
         +'<label class="btn btn-ghost btn-sm" style="cursor:pointer">📎 Déposer des bulletins<input type="file" accept="image/*,application/pdf" multiple style="display:none" onchange="bpDepot(this)"></label>'
         +'<span style="flex:1"></span>'
-        +(fs.length?'<button class="btn btn-gold btn-sm" onclick="bpGenererODMois(\''+m+'\')">⚙️ Générer l\'OD de paie du mois ('+fs.length+' fiche'+(fs.length>1?'s':'')+')</button>':'')
+        +(fs.length?('<button class="btn btn-gold btn-sm" onclick="bpGenererODMois(\''+m+'\')">⚙️ Générer l\'OD de paie + l\'OD de charges'+(function(){var s=window.bpODStatut(m);return (s.paie||s.charges)?' (remplacer)':'';})()+'</button>'):'')
       +'</div>'
       +(fs.length?('<table class="bp-list"><thead><tr><th class="l">Salarié</th><th class="r">Brut</th><th class="r">Net imposable</th><th class="r">Net à payer</th><th class="r">Charges pat.</th><th></th></tr></thead><tbody>'+rows
         +'<tr class="bp-totrow"><td class="l">Total '+moisLabel(m)+' · '+fs.length+' fiche(s)</td><td class="r num">'+eur(tot.brut)+'</td><td class="r num"></td><td class="r num"><b>'+eur(tot.net)+'</b></td><td class="r num">'+eur(tot.pat)+'</td><td></td></tr>'
@@ -15208,6 +15281,14 @@ ${lignes}
     +'.bp-recap{display:flex;flex-wrap:wrap;gap:16px;margin-top:14px;padding:10px 12px;background:#0d1722;border:1px solid #24405d;border-radius:9px;font-size:12.5px;color:#9fb6d0}'
     +'.bp-recap b{color:#eaf2ff;margin-left:4px}'
     +'.bp-recap-net b{color:#7fe3b4}'
+    +'.bp-ed-foot{display:flex;align-items:center;gap:8px;margin-top:14px}'
+    +'.bp-od{margin-top:14px;padding:14px;border:1px solid #24405d;border-radius:12px;background:#0d1722}'
+    +'.bp-od-blk{margin-bottom:12px}'
+    +'.bp-od-t{font-size:12px;font-weight:700;color:#9fd0ff;margin:6px 0 4px}'
+    +'.bp-od .bp-et td.num,.bp-od .bp-et td .num{font-family:"IBM Plex Mono",monospace}'
+    +'.bp-od .bp-et td.deb{color:#ff9a9a}.bp-od .bp-et td.cre{color:#7fe3b4}'
+    +'.bp-od-act{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px}'
+    +'.bp-od-flag{font-size:12px;color:#7fe3b4}'
     +'.bp-deps{list-style:none;padding:0;margin:6px 0;font-size:12.5px}'
     +'.bp-deps li{display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid #16212e;color:#cfe0f5;flex-wrap:wrap}'
     /* rendu A4 du bulletin */
