@@ -10664,7 +10664,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v195 · noir & bleu';
+    b.textContent='YADA · v196 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -15340,6 +15340,31 @@ ${lignes}
     +'.bp-render .bp-page .bp-t .bp-st td{background:#f6f8fc !important;border-top:1px solid #cbd6e6 !important}'
     +'@media(max-width:820px){.bp-grid{grid-template-columns:1fr 1fr}.bp-et{display:block;overflow-x:auto}}';
     document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon107">
+/* addon107 — Lisibilité des listes déroulantes natives (<option>).
+   Les <select> sont stylés par thème mais les <option> du menu déroulant
+   natif n'avaient aucune couleur explicite → texte peu lisible (terne) sur
+   le thème noir. On force un fond opaque + texte contrasté par thème, et la
+   surbrillance de l'option sélectionnée. 100% additif (CSS en fin de <head>). */
+(function(){
+  try{
+    var st=document.createElement('style'); st.id='option-readability';
+    st.textContent=
+      'select option{background-color:#ffffff;color:#0e1726}'
+      /* thème noir (défaut) : fond bleu nuit opaque, texte clair */
+      +'body[data-theme="noir"] option,body[data-theme="noir"] select option{background-color:#0c1a2a !important;color:#eaf2ff !important;-webkit-text-fill-color:#eaf2ff !important}'
+      +'body[data-theme="noir"] option:checked,body[data-theme="noir"] option:hover{background-color:#0a64d6 !important;color:#ffffff !important;-webkit-text-fill-color:#ffffff !important}'
+      /* liquid-teinte : fond sombre teinté, texte clair */
+      +'body[data-theme="liquid-teinte"] option{background-color:#0f1b2e !important;color:#eaf0f7 !important;-webkit-text-fill-color:#eaf0f7 !important}'
+      +'body[data-theme="liquid-teinte"] option:checked,body[data-theme="liquid-teinte"] option:hover{background-color:#0a64d6 !important;color:#ffffff !important;-webkit-text-fill-color:#ffffff !important}'
+      /* thèmes clairs : fond blanc, texte foncé */
+      +'body[data-theme="liquid-clair"] option{background-color:#ffffff !important;color:#0c1320 !important;-webkit-text-fill-color:#0c1320 !important}'
+      +'body[data-theme="jour"] option{background-color:#ffffff !important;color:#0e1726 !important;-webkit-text-fill-color:#0e1726 !important}'
+      +'body[data-theme="liquid-clair"] option:checked,body[data-theme="jour"] option:checked{background-color:#0a64d6 !important;color:#ffffff !important;-webkit-text-fill-color:#ffffff !important}';
+    document.head.appendChild(st);
+  }catch(e){}
 })();
 </script>
 </body>

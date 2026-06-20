@@ -8,7 +8,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Tiers : numéro de compte (401/411) modifiable — v195
+---
+
+## 🟢 Dernière mise à jour — Lisibilité des listes déroulantes (option) — v196
+**Quoi :** correctif d'**affichage** des menus déroulants natifs (`<select>`/`<option>`). Sur le thème noir, le texte des options (ex. « Compte de contrepartie ») était **peu lisible** (terne) car les `<option>` n'avaient aucune couleur explicite.
+
+**Où / comment :** `yada-addon107` injecte un `<style id="option-readability">` qui force, **par thème**, un fond opaque + un texte contrasté sur les `<option>` (noir : fond bleu nuit `#0c1a2a` / texte clair ; clairs : fond blanc / texte foncé) et une **surbrillance bleue** (`#0a64d6`, texte blanc) sur l'option sélectionnée/survolée. 100% additif. Badge → **v196**.
+
+---
+
+## 🟢 MAJ précédente — Tiers : numéro de compte (401/411) modifiable — v195
 **Quoi :** dans la fiche **Modifier — <tiers>**, on peut désormais **changer le numéro de compte tiers** (401XXXX pour un fournisseur, 411XXXX pour un client). La renumérotation **met à jour les écritures existantes** du tiers pour qu'elles restent rattachées.
 
 **Où / comment :** `tiersEditer` ajoute le champ `te-aux` ; `tiersEnregistrer` valide le préfixe (401/411 selon le type), l'unicité (aucun autre tiers), la longueur (≤9), puis remplace `c9(ancien)` par `c9(nouveau)` dans toutes les lignes d'écriture (avec confirmation si des écritures existent) et marque `t.compteAuxCustom=true`. `migrerAuxTiers` **préserve** les numéros saisis manuellement (ne les régénère plus). Badge → **v195**.
