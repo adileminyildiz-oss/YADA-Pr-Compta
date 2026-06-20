@@ -4,7 +4,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Paie : écritures visibles (carte Bulletins + Journal comptable) — v192
+---
+
+## 🟢 Dernière mise à jour — Création de dossier : Statuts facultatifs — v194
+**Quoi :** lors de la **création d'un dossier**, les **Statuts ne sont plus obligatoires** (seul le K-bis reste requis). On peut créer le dossier sans joindre les statuts et les ajouter plus tard.
+
+**Où / comment :** `creerDossierComplet()` — suppression du blocage `if(!cdDocs.statuts)…` ; `statutsRecu/statutsNom/statutsPdf` renseignés seulement si un fichier est joint ; libellés du formulaire (« Statuts (facultatif) ») et toast adaptés. Badge → **v194**.
+
+---
+
+## 🟢 MAJ précédente — Paie : écritures visibles (carte Bulletins + Journal comptable) — v192
 **Quoi :** correctif de **visibilité des écritures de paie**. Les OD de paie / OD de charges (journal `ODP`) sont désormais affichées **directement dans la carte Bulletins de paie** (pas seulement dans la modale du bulletin) et apparaissent dans le **Journal comptable imprimable** et le **centralisateur**.
 
 **Pourquoi :** l'utilisateur ne voyait pas les écritures générées — elles n'apparaissaient que dans la modale du bulletin, et le journal comptable imprimable (`journauxDoc`) n'affichait que `ACH/VTE/BQ/OD` (pas `ODP`/`ODTVA`).

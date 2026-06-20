@@ -9491,13 +9491,13 @@ function cdFormHTML(){
         </div>
       </div>
 
-      <div class="card"><h2>Documents obligatoires</h2>
-        <div class="sub">Le K-bis et les Statuts sont requis pour créer le dossier.</div>
+      <div class="card"><h2>Documents</h2>
+        <div class="sub">Le K-bis est requis pour créer le dossier. Les Statuts sont <b>facultatifs</b> (vous pourrez les joindre plus tard).</div>
         <div class="row g2">
           <div class="field"><label>Extrait K-bis *</label>
             <input type="file" id="cd-kbis" accept="application/pdf,image/*" onchange="cdFichier(event,'kbis')">
             <div class="hint" id="cd-kbis-lbl">Aucun fichier joint.</div></div>
-          <div class="field"><label>Statuts *</label>
+          <div class="field"><label>Statuts (facultatif)</label>
             <input type="file" id="cd-statuts" accept="application/pdf,image/*" onchange="cdFichier(event,'statuts')">
             <div class="hint" id="cd-statuts-lbl">Aucun fichier joint.</div></div>
         </div>
@@ -9546,7 +9546,6 @@ function creerDossierComplet(){
   if(!g('cd-adresse')||!g('cd-cp')||!g('cd-ville')) return toast('Adresse complète obligatoire (adresse, code postal, ville)');
   if(!g('cd-dirigeant')) return toast('Le dirigeant est obligatoire');
   if(!cdDocs.kbis) return toast('Veuillez joindre le K-bis');
-  if(!cdDocs.statuts) return toast('Veuillez joindre les Statuts');
   const sirenFinal = siren.length===9 ? siren : siret.slice(0,9);
   const exoDebut=g('cd-exod')||'2026-01-01', exoFin=g('cd-exof')||'2026-12-31';
   const id='d-'+uid();
@@ -9562,7 +9561,7 @@ function creerDossierComplet(){
     banqueBenef:g('cd-banqbenef'), iban:g('cd-iban'), bic:g('cd-bic'),
     exoDebut, exoFin, exercices:[exoDebut+'|'+exoFin], source:'Création',
     kbisRecu:true, kbisNom:cdDocs.kbis.name, kbisPdf:cdDocs.kbis.data,
-    statutsRecu:true, statutsNom:cdDocs.statuts.name, statutsPdf:cdDocs.statuts.data
+    statutsRecu:!!cdDocs.statuts, statutsNom:cdDocs.statuts?cdDocs.statuts.name:'', statutsPdf:cdDocs.statuts?cdDocs.statuts.data:''
   });
   if(!db.dossiersData) db.dossiersData={};
   db.dossiersData[id]=datasetVide(soc);
@@ -9572,7 +9571,7 @@ function creerDossierComplet(){
     ville:g('cd-ville'), siren:sirenFinal, actif:true, favori:false });
   save(); cdFermer();
   chargerDossier(id); connecte=true; current='dash'; if(typeof sgPer!=='undefined') sgPer=null; render();
-  toast('Dossier « '+raison+' » créé — fiche, K-bis et Statuts enregistrés');
+  toast('Dossier « '+raison+' » créé — fiche, K-bis'+(cdDocs.statuts?' et Statuts':'')+' enregistrés'+(cdDocs.statuts?'':' (Statuts à joindre plus tard)'));
 }
 
 </script>
@@ -10644,7 +10643,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v193 · noir & bleu';
+    b.textContent='YADA · v194 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
