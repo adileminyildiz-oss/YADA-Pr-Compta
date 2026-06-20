@@ -10633,7 +10633,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v184 · noir & bleu';
+    b.textContent='YADA · v185 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -14595,6 +14595,45 @@ ${lignes}
       }).catch(function(){ if(!silencieux) status('☁ Hors-ligne / non configuré'); return false; });
   };
   window.cloudSyncNow=function(){ status('☁ Synchronisation…'); return window.cloudPull(true).then(function(){ return window.cloudPushNow(); }); };
+  /* ---- Contrôle d'intégrité : mêmes montants dans TOUS les dossiers (local vs cloud) ---- */
+  function dsFp(ds){ if(!ds) return null; var d=0,c=0,n=0;
+    (ds.ecritures||[]).forEach(function(e){ (e.lignes||[]).forEach(function(l){ d+=(+l.debit||0); c+=(+l.credit||0); n++; }); });
+    var ttc=0; (ds.factures||[]).forEach(function(f){ ttc+=(+f.ttc||0); });
+    return { ecr:(ds.ecritures||[]).length, lignes:n, debit:Math.round(d*100)/100, credit:Math.round(c*100)/100, fact:(ds.factures||[]).length, ttc:Math.round(ttc*100)/100 }; }
+  function dsNom(d, id){ try{ var x=((d.cabinet&&d.cabinet.dossiers)||[]).find(function(o){return o.id===id;}); return x?x.nom:id; }catch(e){ return id; } }
+  function escq(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
+  window.cloudIntegrityCheck=function(){
+    var c=cfg(); if(!c.enabled||!c.url||!c.key){ if(typeof toast==='function')toast('Configurez et activez d\'abord la synchronisation.'); return; }
+    status('🔎 Vérification de l\'intégrité…');
+    cloudFetch('GET', '/rest/v1/'+encodeURIComponent(c.table)+'?id=eq.'+encodeURIComponent(c.espace)+'&select=data,ts', null, {})
+      .then(function(rows){ if(!rows||!rows.length){ status('☁ Aucune donnée cloud'); if(typeof toast==='function')toast('Aucune donnée dans le cloud à comparer.'); return; }
+        return decryptStr(rows[0].data, c.pass).then(function(clear){
+          try{ if(typeof persistActif==='function') persistActif(); }catch(e){}
+          var localDb=db, remoteDb=JSON.parse(clear);
+          var lD=localDb.dossiersData||{}, rD=remoteDb.dossiersData||{};
+          var idset={}; Object.keys(lD).forEach(function(k){idset[k]=1;}); Object.keys(rD).forEach(function(k){idset[k]=1;});
+          var ids=Object.keys(idset); var allMatch=ids.length>0;
+          var html=ids.map(function(id){ var lf=dsFp(lD[id]), rf=dsFp(rD[id]);
+            var same=JSON.stringify(lD[id]||null)===JSON.stringify(rD[id]||null); if(!same) allMatch=false;
+            var nom=dsNom(localDb,id)||dsNom(remoteDb,id)||id;
+            return '<tr class="'+(same?'':'reg-late')+'"><td>'+escq(nom)+'</td>'
+              +'<td class="r num">'+(lf?eur(lf.debit):'—')+'</td><td class="r num">'+(rf?eur(rf.debit):'—')+'</td>'
+              +'<td class="r num">'+(lf?eur(lf.ttc):'—')+'</td><td class="r num">'+(rf?eur(rf.ttc):'—')+'</td>'
+              +'<td>'+(same?'<span style="color:#7fe3b4;font-weight:700">✓ identique</span>':'<span style="color:#ff9a9a;font-weight:700">✗ écart</span>')+'</td></tr>';
+          }).join('');
+          var localTs=parseInt(localStorage.getItem(TSK)||'0',10)||0, remoteTs=rows[0].ts||0;
+          var cc=document.getElementById('modal-c'); if(!cc) return;
+          cc.innerHTML='<div class="modal-h"><h3>🔎 Intégrité des montants — tous les dossiers</h3><button class="x" onclick="closeModal()">×</button></div>'
+            +'<div class="modal-b">'
+            +'<div class="reg-alert-banner" style="background:'+(allMatch?'rgba(127,227,180,.14)':'rgba(255,90,80,.16)')+';color:'+(allMatch?'#bdf0d4':'#ffd0c8')+';border-color:'+(allMatch?'rgba(127,227,180,.4)':'rgba(255,106,90,.4)')+'">'+(allMatch?'✓ Tous les dossiers concordent : les montants sont exactement les mêmes en local et dans le cloud.':'✗ Des écarts existent (un appareil n\'est pas à jour). Cliquez « Synchroniser maintenant » pour aligner — dernier enregistrement gagnant.')+'</div>'
+            +'<table class="reg-t"><thead><tr><th>Dossier</th><th class="r">Débit (local)</th><th class="r">Débit (cloud)</th><th class="r">TTC factures (local)</th><th class="r">TTC (cloud)</th><th>État</th></tr></thead><tbody>'+(html||'<tr><td colspan=6 class=empty>Aucun dossier</td></tr>')+'</tbody></table>'
+            +'<p class="mini" style="margin-top:8px">Dernier enregistrement — local : '+(localTs?new Date(localTs).toLocaleString('fr-FR'):'—')+' · cloud : '+(remoteTs?new Date(remoteTs).toLocaleString('fr-FR'):'—')+'</p>'
+            +'</div>';
+          document.getElementById('modal').classList.add('show');
+          status(allMatch?'✓ Montants identiques (tous dossiers)':'✗ Écarts détectés');
+        });
+      }).catch(function(e){ status('☁ Vérification impossible'); if(typeof toast==='function')toast('Vérification impossible : '+String((e&&e.message)||e).slice(0,90)); });
+  };
   window.cloudTest=function(){ var c=cfg(); if(!c.url||!c.key){ if(typeof toast==='function')toast('Renseignez l\'URL et la clé Supabase.'); return; }
     status('☁ Test de connexion…');
     cloudFetch('GET','/rest/v1/'+encodeURIComponent(c.table)+'?select=id&limit=1',null,{})
@@ -14647,6 +14686,7 @@ ${lignes}
         +'<span id="cloud-status" class="cloud-status"></span>'
         +'<button class="btn btn-ghost" onclick="cloudSaveCfg()">Enregistrer la configuration</button>'
         +'<button class="btn btn-ghost" onclick="cloudTest()">Tester la connexion</button>'
+        +'<button class="btn btn-ghost" onclick="cloudIntegrityCheck()">🔎 Vérifier les montants (tous les dossiers)</button>'
         +'<button class="btn btn-pri" onclick="cloudSyncNow()">☁ Synchroniser maintenant</button>'
       +'</div>'
       +'<details class="cloud-help"><summary>Aide — créer le projet Supabase (gratuit) en 3 minutes</summary>'
