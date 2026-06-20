@@ -10644,7 +10644,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v192 · noir & bleu';
+    b.textContent='YADA · v193 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -15309,6 +15309,15 @@ ${lignes}
     +'.bp-tot>div{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #eee}'
     +'.bp-tot .bp-net{font-weight:700;font-size:15px;color:#0a64d6;border-bottom:none;border-top:2px solid #1a2b45;margin-top:4px;padding-top:6px}'
     +'.bp-foot{margin-top:14px;font-size:11px;color:#666;border-top:1px solid #ddd;padding-top:8px}'
+    /* le bulletin est un DOCUMENT papier : texte NOIR sur fond blanc, quel que soit le thème (sinon thème noir → texte blanc invisible) */
+    +'.bp-render .bp-page{background:#fff !important}'
+    +'.bp-render .bp-page,.bp-render .bp-page td,.bp-render .bp-page th,.bp-render .bp-page tr,.bp-render .bp-page div,.bp-render .bp-page span,.bp-render .bp-page b,.bp-render .bp-page strong{color:#1a1a1a !important}'
+    +'.bp-render .bp-page .bp-sub,.bp-render .bp-page .bp-foot{color:#555 !important}'
+    +'.bp-render .bp-page .bp-emp,.bp-render .bp-page .bp-titre,.bp-render .bp-page .bp-titre span{color:#1a2b45 !important}'
+    +'.bp-render .bp-page .bp-net,.bp-render .bp-page .bp-net span{color:#0a64d6 !important}'
+    +'.bp-render .bp-page .bp-t th{background:#eef2f8 !important;border-bottom:1px solid #cbd6e6 !important}'
+    +'.bp-render .bp-page .bp-t td{border-bottom:1px solid #eee !important}'
+    +'.bp-render .bp-page .bp-t .bp-st td{background:#f6f8fc !important;border-top:1px solid #cbd6e6 !important}'
     +'@media(max-width:820px){.bp-grid{grid-template-columns:1fr 1fr}.bp-et{display:block;overflow-x:auto}}';
     document.head.appendChild(st); }catch(e){}
 })();
