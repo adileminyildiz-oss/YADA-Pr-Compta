@@ -6,7 +6,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Création de dossier : Statuts facultatifs — v194
+---
+
+## 🟢 Dernière mise à jour — Tiers : numéro de compte (401/411) modifiable — v195
+**Quoi :** dans la fiche **Modifier — <tiers>**, on peut désormais **changer le numéro de compte tiers** (401XXXX pour un fournisseur, 411XXXX pour un client). La renumérotation **met à jour les écritures existantes** du tiers pour qu'elles restent rattachées.
+
+**Où / comment :** `tiersEditer` ajoute le champ `te-aux` ; `tiersEnregistrer` valide le préfixe (401/411 selon le type), l'unicité (aucun autre tiers), la longueur (≤9), puis remplace `c9(ancien)` par `c9(nouveau)` dans toutes les lignes d'écriture (avec confirmation si des écritures existent) et marque `t.compteAuxCustom=true`. `migrerAuxTiers` **préserve** les numéros saisis manuellement (ne les régénère plus). Badge → **v195**.
+
+---
+
+## 🟢 MAJ précédente — Création de dossier : Statuts facultatifs — v194
 **Quoi :** lors de la **création d'un dossier**, les **Statuts ne sont plus obligatoires** (seul le K-bis reste requis). On peut créer le dossier sans joindre les statuts et les ajouter plus tard.
 
 **Où / comment :** `creerDossierComplet()` — suppression du blocage `if(!cdDocs.statuts)…` ; `statutsRecu/statutsNom/statutsPdf` renseignés seulement si un fichier est joint ; libellés du formulaire (« Statuts (facultatif) ») et toast adaptés. Badge → **v194**.

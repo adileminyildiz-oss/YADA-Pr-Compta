@@ -3501,6 +3501,7 @@ function genAux(type, nom){ const pref=type==='client'?'411':'401'; const head=p
   return c9(head); }
 function migrerAuxTiers(){ if(!db.tiers) return;
   db.tiers.forEach(t=>{ if(t.type!=='fournisseur'&&t.type!=='client') return;
+    if(t.compteAuxCustom && /^(401|411)/.test(c9(t.compteAux||''))) return; /* numéro de compte saisi manuellement : préservé */
     if(!/^(401|411)[A-Z]/.test(c9(t.compteAux||''))) t.compteAux=genAux(t.type,t.nom); }); }
 function jrnTag(j){ const c=j==='ACH'?'t-ach':j==='VTE'?'t-ven':j==='OD'?'t-org':'t-bq'; return `<span class="tag ${c}">${j}</span>`; }
 /* compte affiché sur 9 chiffres (norme balance/grand-livre) */
@@ -10376,6 +10377,8 @@ ${lignes}
       +'<div class="modal-b">'+(t.nouveau?'<div class="hint" style="color:#1c7a52">Fournisseur créé par le client'+(t.origine==='client'?'':'')+' — complétez l\'IBAN, l\'e-mail et le téléphone puis enregistrez (le marquage « nouveau » sera retiré).</div>':'')+(mv?'<div class="hint" style="color:#c0584f">Tiers mouvementé : le type et les comptes des écritures passées ne sont pas modifiés rétroactivement.</div>':'')
       +'<div class="row g2"><div class="field"><label>Dénomination</label><input id="te-nom" value="'+(t.nom||'').replace(/"/g,'&quot;')+'"></div>'
       +'<div class="field"><label>Taux TVA</label><select id="te-taux">'+[20,10,5.5,2.1,0].map(x=>'<option '+(x==t.taux?'selected':'')+'>'+x+'</option>').join('')+'</select></div></div>'
+      +'<div class="row g2"><div class="field"><label>Numéro de compte tiers ('+(t.type==='client'?'411':'401')+')</label><input id="te-aux" value="'+(t.compteAux||(t.type==='client'?'411':'401')).replace(/"/g,'&quot;')+'" placeholder="ex : '+(t.type==='client'?'411DUPO00':'401ANTA00')+'"></div>'
+      +'<div class="field"><label>&nbsp;</label><div class="hint" style="margin:0">Doit commencer par <b>'+(t.type==='client'?'411':'401')+'</b>'+(mv?'. La renumérotation met à jour les écritures existantes du tiers.':'.')+'</div></div></div>'
       +'<div class="row g2"><div class="field"><label>Compte de contrepartie</label><select id="te-contre">'+opt(contre,t.compteContre)+'</select></div>'
       +'<div class="field"><label>Compte de TVA</label><select id="te-tva">'+opt(tva,t.compteTVA)+'</select></div></div>'
       +'<div class="row g3"><div class="field"><label>E-mail</label><input id="te-email" value="'+(t.email||'').replace(/"/g,'&quot;')+'"></div>'
@@ -10392,7 +10395,25 @@ ${lignes}
     t.nom=g('te-nom').trim()||t.nom; t.taux=+g('te-taux'); t.compteContre=g('te-contre'); t.compteTVA=g('te-tva');
     t.email=g('te-email'); t.tel=g('te-tel'); t.adresse=g('te-adr'); t.iban=g('te-iban').trim();
     var sr=g('te-siret').replace(/\s/g,''); if(sr)t.siret=sr; var tv=g('te-tvaintra').trim(); if(tv)t.tvaIntra=tv;
-    if(t.nouveau){ t.nouveau=false; } save(); closeModal(); render(); toast('Fiche tiers mise à jour'); };
+    /* ----- numéro de compte tiers (401/411) modifiable ----- */
+    var renumMsg='';
+    var newAux=g('te-aux').trim().toUpperCase().replace(/\s+/g,'');
+    if(newAux){
+      var pref=t.type==='client'?'411':'401';
+      if(newAux.slice(0,3)!==pref){ toast('Le numéro de compte doit commencer par '+pref+' pour ce '+(t.type==='client'?'client':'fournisseur')+'.'); return; }
+      if(!/^[0-9A-Z]+$/.test(newAux)){ toast('Numéro de compte invalide (chiffres et lettres majuscules uniquement).'); return; }
+      if(newAux.length>9){ toast('Le numéro de compte ne peut pas dépasser 9 caractères.'); return; }
+      var newC9=c9(newAux), oldC9=c9(t.compteAux||'');
+      if(newC9!==oldC9){
+        if((db.tiers||[]).some(function(x){ return x.id!==id && c9(x.compteAux||'')===newC9; })){ toast('Ce numéro de compte est déjà attribué à un autre tiers.'); return; }
+        var refs=(db.ecritures||[]).reduce(function(a,e){ return a+(e.lignes||[]).filter(function(l){ return c9(l.compte)===oldC9; }).length; },0);
+        if(refs>0 && !confirm('Renuméroter le compte tiers de '+(t.compteAux||oldC9)+' vers '+newC9+' ?\n\n'+refs+' ligne(s) d\'écriture seront mises à jour pour rester rattachées à ce tiers.')) return;
+        (db.ecritures||[]).forEach(function(e){ (e.lignes||[]).forEach(function(l){ if(c9(l.compte)===oldC9){ l.compte=newC9; } }); });
+        t.compteAux=newC9; t.compteAuxCustom=true;
+        renumMsg=' — compte tiers → '+newC9+(refs?(' ('+refs+' ligne'+(refs>1?'s':'')+' mise'+(refs>1?'s':'')+' à jour)'):'');
+      }
+    }
+    if(t.nouveau){ t.nouveau=false; } save(); closeModal(); render(); toast('Fiche tiers mise à jour'+renumMsg); };
   window.tiersEditSiret=function(id){ const g=x=>document.getElementById(x);
     const siret=((g('te-siret')||{}).value||'').replace(/\D/g,'');
     if(siret.length!==14 && siret.length!==9) return toast('Saisissez un SIRET (14 chiffres) ou un SIREN (9).');
@@ -10643,7 +10664,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v194 · noir & bleu';
+    b.textContent='YADA · v195 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
