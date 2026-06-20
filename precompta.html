@@ -10644,7 +10644,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v188 · noir & bleu';
+    b.textContent='YADA · v189 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -14157,7 +14157,8 @@ ${lignes}
       var f=(db.factures||[]).find(function(x){ return x.id===r.factureId; }); if(!f) return null;
       var t=(db.tiers||[]).find(function(x){ return x.id===f.tiersId; });
       var ech=r.echeance||f.date; var j=joursEntre(ech, today);
-      return { r:r, f:f, t:t, tiersId:f.tiersId, ech:ech, retard:(j>0?j:0), reste:(j<0?-j:0), enRetard:j>0, restant:r2(+r.restant||0) };
+      var frais=(j>0)?((db.societe&&db.societe.fraisRecouvrement!=null)?(+db.societe.fraisRecouvrement||0):40):0;
+      return { r:r, f:f, t:t, tiersId:f.tiersId, ech:ech, retard:(j>0?j:0), reste:(j<0?-j:0), enRetard:j>0, restant:r2(+r.restant||0), frais:r2(frais), du:r2((+r.restant||0)+frais) };
     }).filter(Boolean);
   }
   /* dernier paiement d'un tiers (règlement soldé le plus récent) */
@@ -14173,9 +14174,10 @@ ${lignes}
     var sens=t.type==='fournisseur'?'a_payer':'a_encaisser';
     var L=regLignes(sens).filter(function(x){ return x.tiersId===tid; });
     var retards=L.filter(function(x){ return x.enRetard; });
-    var montant=r2(L.reduce(function(s,x){ return s+x.restant; },0));
+    var montant=r2(L.reduce(function(s,x){ return s+x.du; },0));
+    var totalFrais=r2(L.reduce(function(s,x){ return s+(x.frais||0); },0));
     return { alerte: retards.length>=SEUIL_IMPAYES, nbRetard:retards.length, type:t.type, nom:t.nom,
-      montant:montant, dernier:dernierPaiement(tid), factures:L };
+      montant:montant, frais:totalFrais, dernier:dernierPaiement(tid), factures:L };
   };
   window.regSetOnglet=function(o){ window.regOnglet=o; if(typeof render==='function') render(); };
 
@@ -14190,17 +14192,19 @@ ${lignes}
     var motCible=a.type==='fournisseur'?'ce fournisseur':'ce client';
     var pj=a.factures.map(function(x){
       return '<tr><td class="num">'+(x.f.numero||'')+'</td><td>'+frDate(x.f.date)+'</td><td>'+frDate(x.ech)+'</td>'
-        +'<td class="r num">'+eur(x.restant)+'</td><td>'+(x.enRetard?('<span style="color:#ff9a9a;font-weight:700">'+x.retard+' j de retard</span>'):(x.reste+' j restants'))+'</td>'
+        +'<td class="r num">'+eur(x.restant)+'</td><td class="r num">'+(x.frais?('+ '+eur(x.frais)):'—')+'</td><td class="r num">'+eur(x.du)+'</td>'
+        +'<td>'+(x.enRetard?('<span style="color:#ff9a9a;font-weight:700">'+x.retard+' j de retard</span>'):(x.reste+' j restants'))+'</td>'
         +'<td class="r"><button class="btn btn-ghost btn-sm" onclick="regVoirFacture(\''+x.f.id+'\')">📎 Voir</button></td></tr>';
     }).join('');
     var c=document.getElementById('modal-c'); if(!c) return;
     c.innerHTML='<div class="modal-h"><h3>⚠ Alerte impayés — '+(a.type==='fournisseur'?'Fournisseur':'Client')+' '+esc(a.nom)+'</h3><button class="x" onclick="closeModal()">×</button></div>'
       +'<div class="modal-b reg-alert">'
       +'<div class="reg-alert-banner">🚫 <b>Ne plus traiter avec '+motCible+'</b> — <b>'+a.nbRetard+'</b> factures impayées en retard.</div>'
-      +'<div class="reg-alert-kv"><span>Montant impayé total</span><b>'+eur(a.montant)+'</b>'
+      +'<div class="reg-alert-kv"><span>Montant impayé total (frais inclus)</span><b>'+eur(a.montant)+'</b>'
+        +'<span>dont indemnités de recouvrement</span><b>'+eur(a.frais||0)+'</b>'
         +'<span>Date du dernier paiement</span><b>'+(a.dernier?frDate(a.dernier):'— aucun paiement')+'</b></div>'
       +'<h4 style="margin:14px 0 6px">Factures non réglées (pièces jointes)</h4>'
-      +'<table class="reg-t"><thead><tr><th>Pièce</th><th>Date</th><th>Échéance</th><th class="r">Restant</th><th>Retard</th><th></th></tr></thead><tbody>'+(pj||'<tr><td colspan=6 class=empty>—</td></tr>')+'</tbody></table>'
+      +'<table class="reg-t"><thead><tr><th>Pièce</th><th>Date</th><th>Échéance</th><th class="r">Restant</th><th class="r">Frais</th><th class="r">Total dû</th><th>Retard</th><th></th></tr></thead><tbody>'+(pj||'<tr><td colspan=8 class=empty>—</td></tr>')+'</tbody></table>'
       +'</div>';
     document.getElementById('modal').classList.add('show');
   };
@@ -14212,16 +14216,18 @@ ${lignes}
     var L=regLignes(sens);
     /* groupage par tiers */
     var grp={}; L.forEach(function(x){ (grp[x.tiersId]=grp[x.tiersId]||[]).push(x); });
-    var totImpaye=r2(L.reduce(function(s,x){return s+x.restant;},0));
-    var totRetard=r2(L.filter(function(x){return x.enRetard;}).reduce(function(s,x){return s+x.restant;},0));
+    var totImpaye=r2(L.reduce(function(s,x){return s+x.du;},0));
+    var totRetard=r2(L.filter(function(x){return x.enRetard;}).reduce(function(s,x){return s+x.du;},0));
+    var totFrais=r2(L.reduce(function(s,x){return s+(x.frais||0);},0));
     var nbAlertes=Object.keys(grp).filter(function(tid){ return window.tiersAlerteImpayes(tid).alerte; }).length;
 
     var blocs=Object.keys(grp).map(function(tid){
       var lignes=grp[tid]; var t=(db.tiers||[]).find(function(x){return x.id===tid;}); var a=window.tiersAlerteImpayes(tid);
-      var sousTotal=r2(lignes.reduce(function(s,x){return s+x.restant;},0));
+      var sousTotal=r2(lignes.reduce(function(s,x){return s+x.du;},0));
       var rows=lignes.sort(function(p,q){return (p.ech<q.ech?-1:1);}).map(function(x){
         return '<tr class="'+(x.enRetard?'reg-late':'')+'"><td class="num">'+(x.f.numero||'')+'</td><td>'+frDate(x.f.date)+'</td><td>'+frDate(x.ech)+'</td>'
           +'<td class="r num">'+eur(x.f.ttc)+'</td><td class="r num">'+eur(x.r.regle)+'</td><td class="r num">'+eur(x.restant)+'</td>'
+          +'<td class="r num">'+(x.frais?('+ '+eur(x.frais)):'—')+'</td><td class="r num"><b>'+eur(x.du)+'</b></td>'
           +'<td>'+(x.enRetard?('<span class="reg-retard">'+x.retard+' j de retard</span>'):('<span class="reg-reste">dans '+x.reste+' j</span>'))+'</td>'
           +'<td>'+statutTag(x.r)+'</td>'
           +'<td class="r" style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="marquerRegle(\''+x.r.id+'\')">Validé ✓</button> <button class="btn btn-ghost btn-sm" onclick="regVoirFacture(\''+x.f.id+'\')">📎</button></td></tr>';
@@ -14230,7 +14236,7 @@ ${lignes}
         +'<div class="reg-bloc-h"><span class="reg-bloc-nom">'+(estClient?'Client':'Fournisseur')+' · <b>'+esc(t?t.nom:'?')+'</b></span>'
           +'<span class="reg-bloc-tot">Impayé : <b>'+eur(sousTotal)+'</b> · dernier paiement '+(a.dernier?frDate(a.dernier):'—')+'</span></div>'
         +(a.alerte?('<div class="reg-bloc-alert-msg">🚫 <b>Ne plus traiter avec ce '+(estClient?'client':'fournisseur')+'</b> — '+a.nbRetard+' impayés en retard · '+eur(a.montant)+' · dernier paiement '+(a.dernier?frDate(a.dernier):'aucun')+' <button class="btn btn-ghost btn-sm" onclick="regAlerteModal(\''+tid+'\')">Voir le détail & pièces</button></div>'):'')
-        +'<table class="reg-t"><thead><tr><th>Pièce</th><th>Date</th><th>Échéance</th><th class="r">TTC</th><th class="r">Réglé</th><th class="r">Restant</th><th>Délai / retard</th><th>Statut</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>'
+        +'<table class="reg-t"><thead><tr><th>Pièce</th><th>Date</th><th>Échéance</th><th class="r">TTC</th><th class="r">Réglé</th><th class="r">Restant</th><th class="r">Frais (40 €)</th><th class="r">Total dû</th><th>Délai / retard</th><th>Statut</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>'
         +'</div>';
     }).join('') || '<div class="card"><div class="empty">Aucun règlement '+(estClient?'à encaisser':'à payer')+' en cours.</div></div>';
 
@@ -14239,8 +14245,9 @@ ${lignes}
         +'<button class="reg-tab '+(estClient?'on':'')+'" onclick="regSetOnglet(\'client\')">👤 Clients (à encaisser)</button>'
         +'<button class="reg-tab '+(!estClient?'on':'')+'" onclick="regSetOnglet(\'fournisseur\')">🏭 Fournisseurs (à payer)</button>'
       +'</div>'
-      +'<div class="reg-kpis"><div class="reg-k"><div class="l">Total impayé</div><div class="v">'+eur(totImpaye)+'</div></div>'
+      +'<div class="reg-kpis"><div class="reg-k"><div class="l">Total dû (frais inclus)</div><div class="v">'+eur(totImpaye)+'</div></div>'
         +'<div class="reg-k red"><div class="l">Dont en retard</div><div class="v">'+eur(totRetard)+'</div></div>'
+        +'<div class="reg-k"><div class="l">Dont indemnités de recouvrement</div><div class="v">'+eur(totFrais)+'</div></div>'
         +'<div class="reg-k '+(nbAlertes?'red':'')+'"><div class="l">'+(estClient?'Clients':'Fournisseurs')+' en alerte (≥'+SEUIL_IMPAYES+' impayés)</div><div class="v">'+nbAlertes+'</div></div></div>'
       +blocs+'</div>';
   };
@@ -14824,6 +14831,77 @@ ${lignes}
 
   try{ var st=document.createElement('style'); st.id='fparam-mod'; st.textContent=
     '.fparam-card .sub{font-size:12.5px;color:#9fb6d0;margin:2px 0 12px}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon105">
+/* addon105 — Aperçu A4 EN DIRECT à la création d'une facture/devis.
+   Greffe sur faMaj : après le rendu de l'écriture comptable (#fa-apercu),
+   construit un document brouillon (champs du formulaire + faLignes + faTotaux)
+   et l'affiche au format A4 réel via docHTML(), mis à jour à chaque frappe.
+   100% additif : aucune écriture créée, simple prévisualisation. */
+(function(){
+  function previewNum(type){
+    var pref=type==='avoir'?'AV':type==='devis'?'DEV':'FAC';
+    var n=((typeof db==='object'&&db.seq&&db.seq[pref])||0)+1;
+    return pref+'-'+String(n).padStart(4,'0');
+  }
+  function val(id){ var e=document.getElementById(id); return e?e.value:''; }
+  /* construit le document brouillon à partir du formulaire courant */
+  function draftDoc(){
+    var type=val('fa-type')||'facture';
+    var clientId=val('fa-client');
+    if(clientId==='__new__') clientId=''; /* nouveau client pas encore créé */
+    var tot=(typeof faTotaux==='function')?faTotaux():{ht:0,tva:0,ttc:0};
+    var lignes=[];
+    try{ lignes=JSON.parse(JSON.stringify(typeof faLignes!=='undefined'?faLignes:[])); }catch(e){ lignes=[]; }
+    var s=(typeof db==='object'&&db.societe)?db.societe:{};
+    return {
+      id:'__preview__', type:type, clientId:clientId,
+      numero:previewNum(type),
+      date:val('fa-date')||(typeof todayStr==='function'?todayStr():''),
+      echeance:val('fa-ech')||val('fa-date')||(typeof todayStr==='function'?todayStr():''),
+      lignes:lignes, ht:tot.ht, tva:tot.tva, ttc:tot.ttc,
+      moyen:s.moyenDefaut, tvaCondition:s.tvaCondition,
+      escompte:s.escompteDefaut, escompteDelai:s.escompteDelaiDefaut
+    };
+  }
+  /* trouve / crée le conteneur d'aperçu A4 (placé juste après #fa-apercu) */
+  function ensureA4(){
+    var ap=document.getElementById('fa-apercu'); if(!ap) return null;
+    var wrap=document.getElementById('fa-a4-wrap');
+    if(!wrap){
+      wrap=document.createElement('div'); wrap.id='fa-a4-wrap'; wrap.className='fa-a4-wrap';
+      wrap.innerHTML='<div class="fa-a4-h">📄 Aperçu de la facture (format A4 · mis à jour en direct)</div>'
+        +'<div class="fa-a4-paper"><div class="inv" id="fa-a4"></div></div>';
+      ap.parentNode.insertBefore(wrap, ap.nextSibling);
+    }
+    return document.getElementById('fa-a4');
+  }
+  function refreshA4(){
+    try{
+      if(typeof docHTML!=='function') return;
+      var box=ensureA4(); if(!box) return;
+      box.innerHTML=docHTML(draftDoc());
+    }catch(e){}
+  }
+  /* greffe sur faMaj (binding global réassigné, pour intercepter aussi
+     l'appel interne de render : « if(current==='facturation'…) faMaj() »).
+     faMaj est appelée à chaque oninput/onchange des lignes & des champs, et
+     une fois en fin de render → l'aperçu A4 se met à jour à chaque frappe et
+     au premier affichage de la page. */
+  try{
+    if(typeof faMaj==='function'){
+      var _faMaj=faMaj;
+      faMaj=function(){ var r=_faMaj.apply(this,arguments); refreshA4(); return r; };
+    }
+  }catch(e){}
+  try{ var st=document.createElement('style'); st.id='fa-a4-mod'; st.textContent=
+    '.fa-a4-wrap{margin:14px 0 4px}'
+    +'.fa-a4-h{font-size:12.5px;font-weight:700;color:#9fb6d0;margin:0 0 8px;letter-spacing:.02em}'
+    +'.fa-a4-paper{background:#6b7280;background:rgba(120,130,150,.18);border:1px solid var(--line,rgba(255,255,255,.12));border-radius:12px;padding:18px;display:flex;justify-content:center;overflow:auto}'
+    +'.fa-a4-paper .inv{transform:scale(.92);transform-origin:top center}'
+    +'@media(max-width:820px){.fa-a4-paper{padding:8px}.fa-a4-paper .inv{transform:scale(.62);transform-origin:top left}}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
