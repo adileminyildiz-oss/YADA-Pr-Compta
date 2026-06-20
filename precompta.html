@@ -10633,7 +10633,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v181 · noir & bleu';
+    b.textContent='YADA · v182 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -14511,6 +14511,132 @@ ${lignes}
   try{ var st=document.createElement('style'); st.id='sgj-sep-mod'; st.textContent=
     '.sg-app table.sgj tbody tr.sgj-ecr-sep td{border-top:2px solid #1e90ff !important}'
     +'body[data-theme="noir"] .sg-app table.sgj tbody tr.sgj-ecr-sep td{border-top:2px solid #1e90ff !important}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+
+<script id="yada-addon102">
+/* ============================================================
+   SYNCHRONISATION CLOUD MULTI-APPAREILS (Supabase) — pour retrouver le DERNIER
+   enregistrement sur tous les appareils du même compte.
+   - Config stockée HORS db (localStorage 'yada-cloud') pour ne pas être écrasée
+     par les données reçues.
+   - PUSH (upsert horodaté) à chaque enregistrement (save) ; PULL au chargement
+     et à la demande ; « dernier enregistrement gagnant » (ts le plus récent).
+   - 100% additif, défensif (timeout, try/catch, hors-ligne géré). Carte de
+     réglage greffée dans Paramétrage.
+   ============================================================ */
+(function(){
+  var KEY='yada-cloud', TSK='yada-cloud-ts';
+  var cloudApplying=false, cloudPushTimer=null;
+  function cfg(){ try{ var v=JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){ v=null; }
+    v=v||{}; return { url:(v.url||'').replace(/\/+$/,''), key:v.key||'', table:v.table||'yada_sync', espace:v.espace||'yada-aemconseil', enabled:!!v.enabled }; }
+  window.cloudCfg=cfg;
+  function setCfg(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
+  function status(txt){ try{ var el=document.getElementById('yada-cloud-ind'); if(!el){ el=document.createElement('div'); el.id='yada-cloud-ind'; document.body.appendChild(el); }
+    el.textContent=txt+' · '+new Date().toLocaleTimeString('fr-FR'); el.style.display='block';
+    clearTimeout(el._t); el._t=setTimeout(function(){ el.style.display='none'; }, 4000);
+    var s=document.getElementById('cloud-status'); if(s) s.textContent=txt; }catch(e){} }
+
+  function cloudFetch(method, path, body, extra){
+    var c=cfg(); var ctrl=new AbortController(); var to=setTimeout(function(){ try{ctrl.abort();}catch(e){} }, 15000);
+    var h={ 'apikey':c.key, 'Authorization':'Bearer '+c.key, 'Content-Type':'application/json' };
+    if(extra) Object.keys(extra).forEach(function(k){ h[k]=extra[k]; });
+    return fetch(c.url+path, { method:method, headers:h, body: body?JSON.stringify(body):undefined, signal:ctrl.signal })
+      .then(function(r){ clearTimeout(to); if(!r.ok) return r.text().then(function(t){ throw new Error('HTTP '+r.status+' '+t.slice(0,120)); });
+        return method==='GET'? r.json() : true; });
+  }
+  function applyRemote(dataStr, ts){
+    try{ var parsed=JSON.parse(dataStr); if(!parsed||typeof parsed!=='object') return false;
+      cloudApplying=true; db=parsed; localStorage.setItem('yada-db', dataStr); localStorage.setItem(TSK, String(ts||Date.now()));
+      cloudApplying=false; if(typeof render==='function') render(); return true;
+    }catch(e){ cloudApplying=false; return false; }
+  }
+  window.cloudPushNow=function(){
+    var c=cfg(); if(!c.enabled||!c.url||!c.key){ return Promise.resolve(false); }
+    if(cloudApplying) return Promise.resolve(false);
+    try{ if(typeof persistActif==='function') persistActif(); }catch(e){}
+    var ts=Date.now(); var dataStr=JSON.stringify(db);
+    var body=[{ id:c.espace, data:dataStr, ts:ts, updated_at:new Date().toISOString() }];
+    return cloudFetch('POST', '/rest/v1/'+encodeURIComponent(c.table)+'?on_conflict=id', body, {'Prefer':'resolution=merge-duplicates,return=minimal'})
+      .then(function(){ localStorage.setItem(TSK, String(ts)); status('☁ Enregistré dans le cloud'); return true; })
+      .catch(function(e){ status('☁ Échec de l\'envoi'); return false; });
+  };
+  window.cloudPull=function(silencieux){
+    var c=cfg(); if(!c.enabled||!c.url||!c.key){ return Promise.resolve(false); }
+    return cloudFetch('GET', '/rest/v1/'+encodeURIComponent(c.table)+'?id=eq.'+encodeURIComponent(c.espace)+'&select=data,ts', null, {})
+      .then(function(rows){ if(!rows||!rows.length){ if(!silencieux) status('☁ Aucune donnée cloud'); return false; }
+        var remote=rows[0]; var localTs=parseInt(localStorage.getItem(TSK)||'0',10)||0;
+        if((remote.ts||0) > localTs){ var ok=applyRemote(remote.data, remote.ts); status(ok?'☁ Dernier enregistrement reçu ✓':'☁ Réception impossible'); if(ok&&typeof toast==='function') toast('Dernier enregistrement récupéré depuis le cloud ✓'); return ok; }
+        if(!silencieux) status('☁ Déjà à jour'); return false;
+      }).catch(function(){ if(!silencieux) status('☁ Hors-ligne / non configuré'); return false; });
+  };
+  window.cloudSyncNow=function(){ status('☁ Synchronisation…'); return window.cloudPull(true).then(function(){ return window.cloudPushNow(); }); };
+  window.cloudTest=function(){ var c=cfg(); if(!c.url||!c.key){ if(typeof toast==='function')toast('Renseignez l\'URL et la clé Supabase.'); return; }
+    status('☁ Test de connexion…');
+    cloudFetch('GET','/rest/v1/'+encodeURIComponent(c.table)+'?select=id&limit=1',null,{})
+      .then(function(){ status('☁ Connexion OK ✓'); if(typeof toast==='function')toast('Connexion Supabase réussie ✓'); })
+      .catch(function(e){ status('☁ Échec : '+String(e.message||e).slice(0,80)); if(typeof toast==='function')toast('Échec : '+String(e.message||e).slice(0,100)); }); };
+
+  /* greffe : pousser après chaque enregistrement (debounce) */
+  if(typeof window.save==='function'){ var _save=window.save;
+    window.save=function(){ var r=_save.apply(this, arguments);
+      try{ if(!cloudApplying && cfg().enabled){ clearTimeout(cloudPushTimer); cloudPushTimer=setTimeout(function(){ window.cloudPushNow(); }, 1800); } }catch(e){}
+      return r; }; }
+
+  /* au chargement : récupérer le dernier enregistrement du cloud */
+  function pullOnLoad(){ if(cfg().enabled) setTimeout(function(){ window.cloudPull(true); }, 1200); }
+  if(document.readyState==='complete'||document.readyState==='interactive') pullOnLoad();
+  else document.addEventListener('DOMContentLoaded', pullOnLoad);
+
+  /* ---- Réglages (carte greffée dans Paramétrage) ---- */
+  window.cloudSaveCfg=function(){
+    var g=function(id){ var e=document.getElementById(id); return e?e.value.trim():''; };
+    var en=document.getElementById('cloud-enabled');
+    setCfg({ url:g('cloud-url'), key:g('cloud-key'), table:g('cloud-table')||'yada_sync', espace:g('cloud-espace')||'yada-aemconseil', enabled: en?en.checked:false });
+    if(typeof toast==='function') toast('Configuration de synchronisation enregistrée'); if(typeof render==='function') render();
+  };
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
+  function cloudCard(){ var c=cfg();
+    var sql='create table if not exists yada_sync ( id text primary key, data text, ts bigint, updated_at timestamptz default now() );\\n'
+      +'alter table yada_sync enable row level security;\\n'
+      +'create policy "yada all" on yada_sync for all to anon using (true) with check (true);';
+    return '<div class="card cloud-card"><h2>☁ Synchronisation multi-appareils (Supabase)</h2>'
+      +'<div class="sub">Retrouvez le <b>dernier enregistrement sur tous vos appareils</b>. À chaque enregistrement, le dossier est envoyé au cloud ; à la connexion, le dernier état est récupéré (« dernier enregistrement gagnant »).</div>'
+      +'<div class="row g2">'
+        +'<div class="field"><label>URL du projet Supabase</label><input id="cloud-url" placeholder="https://xxxx.supabase.co" value="'+esc(c.url)+'"></div>'
+        +'<div class="field"><label>Clé publique (anon key)</label><input id="cloud-key" placeholder="eyJhbGciOi…" value="'+esc(c.key)+'"></div>'
+      +'</div>'
+      +'<div class="row g3">'
+        +'<div class="field"><label>Table</label><input id="cloud-table" value="'+esc(c.table)+'"></div>'
+        +'<div class="field"><label>Clé d\'espace (identique sur tous vos appareils)</label><input id="cloud-espace" value="'+esc(c.espace)+'"></div>'
+        +'<div class="field" style="display:flex;align-items:flex-end"><label class="md-check" style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="cloud-enabled" '+(c.enabled?'checked':'')+'> <b>Activer la synchronisation</b></label></div>'
+      +'</div>'
+      +'<div class="right" style="gap:8px;display:flex;flex-wrap:wrap;justify-content:flex-end">'
+        +'<span id="cloud-status" class="cloud-status"></span>'
+        +'<button class="btn btn-ghost" onclick="cloudSaveCfg()">Enregistrer la configuration</button>'
+        +'<button class="btn btn-ghost" onclick="cloudTest()">Tester la connexion</button>'
+        +'<button class="btn btn-pri" onclick="cloudSyncNow()">☁ Synchroniser maintenant</button>'
+      +'</div>'
+      +'<details class="cloud-help"><summary>Aide — créer le projet Supabase (gratuit) en 3 minutes</summary>'
+        +'<ol><li>Créez un compte sur <b>supabase.com</b> → New project (gratuit).</li>'
+        +'<li>Dans <b>Project Settings → API</b> : copiez <b>Project URL</b> et la clé <b>anon public</b> (à coller ci-dessus).</li>'
+        +'<li>Dans <b>SQL Editor</b>, exécutez :</li></ol>'
+        +'<pre class="cloud-sql">'+esc(sql)+'</pre>'
+        +'<p class="mini">Utilisez la <b>même URL, clé et clé d\'espace</b> sur chaque appareil. La clé anon est publique : ces données ne sont protégées que par votre clé d\'espace — pour un usage strictement personnel.</p>'
+      +'</details>'
+      +'</div>';
+  }
+  window.cloudCard=cloudCard;
+  if(typeof window.pageParametrage==='function'){ var _pp=window.pageParametrage;
+    window.pageParametrage=function(){ var h=_pp.apply(this, arguments); try{ h+=cloudCard(); }catch(e){} return h; }; }
+
+  try{ var st=document.createElement('style'); st.id='cloud-mod'; st.textContent=
+    '#yada-cloud-ind{position:fixed;left:12px;bottom:46px;z-index:9998;display:none;background:linear-gradient(120deg,#10243a,#0a64d6);color:#fff;font:600 11.5px system-ui,sans-serif;padding:6px 12px;border-radius:9px;box-shadow:0 6px 18px rgba(0,0,0,.4)}'
+    +'.cloud-card .sub{font-size:12.5px;color:#9fb6d0;margin:2px 0 12px}'
+    +'.cloud-status{font-size:12px;color:#5ab0ff;align-self:center;margin-right:auto}'
+    +'.cloud-help{margin-top:12px;font-size:12.5px}.cloud-help summary{cursor:pointer;color:#5ab0ff;font-weight:600}'
+    +'.cloud-sql{white-space:pre-wrap;background:#0b1118;border:1px solid #24405d;border-radius:8px;padding:10px;font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:#cfe0f5;overflow:auto}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
