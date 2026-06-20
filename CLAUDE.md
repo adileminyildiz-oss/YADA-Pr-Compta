@@ -10,7 +10,23 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Lisibilité des listes déroulantes (option) — v196
+---
+
+## 🟢 Dernière mise à jour — Module Client : facture créée → liste + génération en un clic — v197
+**Quoi :** refonte du **Module Client (Facturation)**. Une facture de vente créée est **immédiatement ajoutée à la liste « Mes factures de vente »** (toujours visible), puis **son écriture se génère depuis cette liste** (tableau de génération, pré-rempli) au lieu d'être comptabilisée automatiquement.
+
+**Pourquoi :** l'utilisateur veut voir la facture toujours dans la liste et pouvoir la générer/pré-saisir dans un tableau de génération, avec une interface simple et intuitive.
+
+**Ce qu'il fait :**
+- **« Créer la facture »** crée le document (statut *valide*, **non comptabilisé**) → il apparaît aussitôt dans **« Mes factures de vente »** avec le statut **« À générer »** (ligne surlignée).
+- **« ⚙️ Générer l'écriture »** dans la liste comptabilise la facture (`genererEcritureDoc` → écriture VTE équilibrée, TVA collectée transmise) ; la facture **reste dans la liste** et passe à **« Comptabilisée ✓ »**.
+- KPIs : Total TTC facturé · À générer · Comptabilisées. Actions par ligne : Voir / Générer / Envoyer / → Facture (devis).
+
+**Où / comment :** `emettre(valider, skipGen)` — nouveau paramètre `skipGen` (côté client) ne poste pas l'écriture à la validation. `faClientEmettre` appelle `emettre(valider,true)`. Nouvelle fonction `faClientFactures()` (liste complète + génération) remplace `faClientRecentes`/`suiviFacturesVente` dans `pageFacturationClient` (colonnes « Créer / Déposer » | « Mes factures de vente »). Badge → **v197**.
+
+---
+
+## 🟢 MAJ précédente — Lisibilité des listes déroulantes (option) — v196
 **Quoi :** correctif d'**affichage** des menus déroulants natifs (`<select>`/`<option>`). Sur le thème noir, le texte des options (ex. « Compte de contrepartie ») était **peu lisible** (terne) car les `<option>` n'avaient aucune couleur explicite.
 
 **Où / comment :** `yada-addon107` injecte un `<style id="option-readability">` qui force, **par thème**, un fond opaque + un texte contrasté sur les `<option>` (noir : fond bleu nuit `#0c1a2a` / texte clair ; clairs : fond blanc / texte foncé) et une **surbrillance bleue** (`#0a64d6`, texte blanc) sur l'option sélectionnée/survolée. 100% additif. Badge → **v196**.
