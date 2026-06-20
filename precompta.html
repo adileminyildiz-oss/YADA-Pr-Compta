@@ -4508,7 +4508,7 @@ function docEtatTag(d){
   return '<span class="tag t-att">brouillon</span>';
 }
 function peutEnvoyer(d){ return d.statut==='valide' && !d.envoye && d.type!=='avoir'?true:(d.statut==='valide'&&!d.envoye); }
-function emettre(valider){
+function emettre(valider, skipGen){
   const t=db.tiers.find(x=>x.id===document.getElementById('fa-client').value); if(!t)return toast('Ajoutez un client d\'abord');
   faSync(); const type=document.getElementById('fa-type').value; const tot=faTotaux();
   if(tot.ht<=0 && type!=='avoir') return toast('Renseignez au moins une ligne');
@@ -4522,10 +4522,12 @@ function emettre(valider){
   // si une facture est créée alors qu'un devis validé non transformé existe pour ce client+même total → lier
   if(type==='facture'){ const dev=db.docs.find(x=>x.type==='devis'&&x.clientId===t.id&&!x.transformeEn&&Math.abs(x.ttc-doc.ttc)<0.01);
     if(dev){ doc.devisId=dev.id; dev.transformeEn=doc.id; } }
-  if(valider && type==='facture'){
+  if(valider && type==='facture' && !skipGen){
     const f=posterFacture({type:'vente',tiersId:t.id,date,base:tot.ht*signe,baseEst:'HT',taux:(faLignes[0]?faLignes[0].taux:20),
       compteContre:t.compteContre,compteTVA:'44571',numero}); doc.ecritureId=f.ecritureId;
     toast('Facture '+numero+' validée → écriture VTE générée. Vous pouvez maintenant l\'envoyer.');
+  } else if(valider && type==='facture' && skipGen){
+    toast('Facture '+numero+' créée ✓ — retrouvez-la dans « Mes factures de vente » et générez son écriture.');
   } else { toast((valider?'Document ':'Brouillon ')+numero+(valider?' validé':' enregistré')); }
   db.docs.push(doc); faLignes=[{desc:'',qte:1,pu:0,taux:20,unite:''}]; save(); render();
 }
@@ -10664,7 +10666,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v196 · noir & bleu';
+    b.textContent='YADA · v197 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -10950,8 +10952,10 @@ ${lignes}
       +'<div id="fa-apercu"></div>'
       +'<div class="right">'
       +'<button class="btn btn-ghost" onclick="faClientEmettre(false)">Enregistrer en brouillon</button>'
-      +'<button class="btn btn-pri" onclick="faClientEmettre(true)">Valider la facture</button>'
-      +'</div></div>';
+      +'<button class="btn btn-pri" onclick="faClientEmettre(true)">✓ Créer la facture</button>'
+      +'</div>'
+      +'<div class="hint">Après création, la facture apparaît dans <b>« Mes factures de vente »</b> → cliquez <b>« ⚙️ Générer l\'écriture »</b> pour la comptabiliser.</div>'
+      +'</div>';
   }
   /* afficher/masquer le bloc « nouveau client » */
   window.faClientToggleNew=function(){ var s=document.getElementById('fa-client'); var b=document.getElementById('fa-newcli');
@@ -10982,7 +10986,7 @@ ${lignes}
       var o=document.createElement('option'); o.value=t.id; o.textContent=t.nom; sel.appendChild(o); sel.value=t.id;
       toast('Nouveau client « '+nom+' » créé — à compléter par le cabinet.');
     }
-    if(typeof emettre==='function') emettre(valider);
+    if(typeof emettre==='function') emettre(valider, true); /* côté client : on crée la facture, l'écriture se génère ensuite depuis la liste */
   };
   function faClientRecentes(){
     var docs=(db.docs||[]).slice().sort(function(a,b){return a.date<b.date?1:(a.date>b.date?-1:((a.numero||'')<(b.numero||'')?1:-1));}).slice(0,5);
@@ -10999,15 +11003,51 @@ ${lignes}
       +'<table><thead><tr><th>N°</th><th>Client</th><th>Date</th><th>Statut</th><th class="r">TTC</th><th class="r">Actions</th></tr></thead>'
       +'<tbody>'+(rows||'<tr><td colspan=6 class=empty>Aucune facture créée — créez-en une ci-dessus.</td></tr>')+'</tbody></table></div>';
   }
+  /* Liste COMPLÈTE des factures de vente + tableau de génération (toujours visible) */
+  function faClientFactures(){
+    var docs=(db.docs||[]).slice().sort(function(a,b){ return a.date<b.date?1:(a.date>b.date?-1:((a.numero||'')<(b.numero||'')?1:-1)); });
+    var factures=docs.filter(function(d){ return d.type==='facture'; });
+    var totTTC=r2(factures.reduce(function(s,d){ return s+(+d.ttc||0); },0));
+    var aGen=factures.filter(function(d){ return !d.ecritureId; }).length;
+    var compta=factures.filter(function(d){ return !!d.ecritureId; }).length;
+    function statut(d){
+      if(d.type==='devis') return d.transformeEn?{l:'Devis transformé',c:'t-part'}:{l:'Devis',c:'t-devis'};
+      if(d.type==='avoir') return {l:'Avoir',c:'t-avoir'};
+      if(d.statut!=='valide') return {l:'Brouillon',c:'t-att'};
+      if(!d.ecritureId) return {l:'À générer',c:'t-att'};
+      return d.envoye?{l:'Comptabilisée · envoyée ✓',c:'t-pay'}:{l:'Comptabilisée ✓',c:'t-pay'};
+    }
+    var rows=docs.map(function(d){ var c=(db.tiers||[]).find(function(x){ return x.id===d.clientId; }); var st=statut(d);
+      var aG=(d.type==='facture' && !d.ecritureId);
+      var act='<button class="btn btn-ghost btn-sm" onclick="voirDoc(\''+d.id+'\')">👁 Voir</button> ';
+      if(aG) act+='<button class="btn btn-gold btn-sm" onclick="genererEcritureDoc(\''+d.id+'\')">⚙️ Générer l\'écriture</button> ';
+      if(d.type==='facture' && d.ecritureId && !d.envoye) act+='<button class="btn btn-ghost btn-sm" onclick="envoyerDoc(\''+d.id+'\')">✉️ Envoyer</button> ';
+      if(d.type==='devis' && d.statut==='valide' && !d.transformeEn) act+='<button class="btn btn-ghost btn-sm" onclick="transformerDevis(\''+d.id+'\')">→ Facture</button> ';
+      return '<tr'+(aG?' style="background:rgba(127,227,180,.06)"':'')+'>'
+        +'<td><b>'+d.numero+'</b></td><td>'+(c?c.nom:'—')+'</td><td class="num">'+frDate(d.date)+'</td>'
+        +'<td class="r num">'+eur(d.ht)+'</td><td class="r num">'+eur(d.tva)+'</td><td class="r num"><b>'+eur(d.ttc)+'</b></td>'
+        +'<td><span class="tag '+st.c+'">'+st.l+'</span></td>'
+        +'<td class="r" style="white-space:nowrap">'+act+'</td></tr>';
+    }).join('');
+    return '<div class="card"><h2>Mes factures de vente</h2>'
+      +'<div class="sub">Toutes vos factures et devis ('+docs.length+'). Une facture créée apparaît ici ; cliquez <b>« ⚙️ Générer l\'écriture »</b> pour la comptabiliser (TVA collectée transmise).</div>'
+      +'<div class="grid g3" style="margin-bottom:12px">'
+        +'<div class="kpi blue"><div class="lbl">Total TTC facturé</div><div class="val">'+eur(totTTC)+'</div></div>'
+        +'<div class="kpi'+(aGen?' green':'')+'"><div class="lbl">À générer</div><div class="val">'+aGen+'</div></div>'
+        +'<div class="kpi"><div class="lbl">Comptabilisées</div><div class="val">'+compta+'</div></div>'
+      +'</div>'
+      +'<table><thead><tr><th>N°</th><th>Client</th><th>Date</th><th class="r">HT</th><th class="r">TVA</th><th class="r">TTC</th><th>Statut</th><th class="r">Actions</th></tr></thead>'
+      +'<tbody>'+(rows||'<tr><td colspan=8 class=empty>Aucune facture pour le moment — créez-en une à gauche.</td></tr>')+'</tbody></table></div>';
+  }
+  window.faClientFactures=faClientFactures;
   window.pageFacturationClient=function(){ if(typeof catInit==='function')catInit();
-    var out=head('Mes factures clients','Créez une facture en quelques secondes, déposez vos factures existantes, suivez vos ventes et retrouvez les factures envoyées.');
+    var out=head('Mes factures clients','Créez une facture, retrouvez-la aussitôt dans la liste, puis générez son écriture comptable en un clic.');
     var left=faClientCreer()
       +depotFacturesCard('vente','Déposer une facture client','Glissez-déposez vos factures de vente déjà établies (PDF/photo) : elles sont conservées dans le dossier et consultables par votre cabinet.');
-    var right=faClientRecentes();
-    try{ right+=suiviFacturesVente(); }catch(e){}
+    var right=faClientFactures();
     try{ right+=listeFacturesEnvoyees(); }catch(e){}
-    out+='<div class="cli-2col"><div class="cli-col"><div class="cli-col-h">Actions</div>'+left+'</div>'
-       +'<div class="cli-col"><div class="cli-col-h">Suivi & historique</div>'+right+'</div></div>';
+    out+='<div class="cli-2col"><div class="cli-col"><div class="cli-col-h">Créer / Déposer</div>'+left+'</div>'
+       +'<div class="cli-col"><div class="cli-col-h">Mes factures de vente</div>'+right+'</div></div>';
     return out;
   };
 
