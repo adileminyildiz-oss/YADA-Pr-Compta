@@ -4507,7 +4507,7 @@ function emettre(valider){
   const signe=type==='avoir'?-1:1;
   const numero=nextNumUnique(type==='avoir'?'AV':type==='devis'?'DEV':'FAC');
   const doc={ id:uid(), type, clientId:t.id, date, echeance:ech, numero,
-    lignes:JSON.parse(JSON.stringify(faLignes)).map(l=>({...l, qte:l.qte*1})),
+    lignes:JSON.parse(JSON.stringify(faLignes)).map(l=>({...l, qte:l.qte*1})).filter(l=>(l.desc!=null&&String(l.desc).trim()!=='') || r2((+l.qte||0)*(+l.pu||0))!==0),
     ht:r2(tot.ht*signe), tva:r2(tot.tva*signe), ttc:r2(tot.ttc*signe),
     statut: valider?'valide':'brouillon', envoye:false, ecritureId:null, devisId:null, transformeEn:null };
   // si une facture est créée alors qu'un devis validé non transformé existe pour ce client+même total → lier
@@ -4535,7 +4535,10 @@ function transformerDevis(id){
 function docHTML(d){
   const c=db.tiers.find(x=>x.id===d.clientId); const s=db.societe;
   const titre=d.type==='devis'?'Devis':d.type==='avoir'?'Avoir':'Facture';
-  const lignes=(d.lignes&&d.lignes.length?d.lignes:[{desc:d.lib||'',qte:1,pu:d.ht,taux:20,unite:''}]);
+  const lignesAll=(d.lignes&&d.lignes.length?d.lignes:[{desc:d.lib||'',qte:1,pu:d.ht,taux:20,unite:''}]);
+  /* N'afficher QUE les désignations réellement saisies (pas de ligne vide). */
+  const lignesSaisies=lignesAll.filter(l=>(l.desc!=null&&String(l.desc).trim()!=='') || r2((+l.qte||0)*(+l.pu||0))!==0);
+  const lignes=lignesSaisies.length?lignesSaisies:[{desc:d.lib||'',qte:1,pu:Math.abs(d.ht||0),taux:20,unite:''}];
   const rows=lignes.map(l=>{const lht=r2((+l.qte||0)*(+l.pu||0));
     return `<tr><td class="l">${l.desc||''}</td><td>${(l.qte||0)}${l.unite?(' '+l.unite):''}</td><td>${eur(+l.pu||0)}</td><td>${(+l.taux||0).toLocaleString('fr-FR',{minimumFractionDigits:1})}%</td><td>${eur(lht)}</td></tr>`;}).join('');
   const ht=Math.abs(d.ht), tva=Math.abs(d.tva), ttc=Math.abs(d.ttc);
@@ -10632,7 +10635,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v186 · noir & bleu';
+    b.textContent='YADA · v187 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
