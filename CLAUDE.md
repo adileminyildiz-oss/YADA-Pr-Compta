@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Libellé reporté automatiquement (saisie journal) + Tiers : doublons par ressemblance (jaune) + fusion globale + anti-doublon — v228
+## 🟢 Dernière mise à jour — Tiers : détection de doublons par MOTS (pluriel + mots de liaison ignorés) — ex. « Résidence(s) Picardie » — v229
+**Quoi :** la détection des doublons de tiers (v228) compare désormais aussi les **mots significatifs** : on **ignore les mots de liaison** (de, des, la, le, et…) et on **ramène au singulier** (RÉSIDENCES → RÉSIDENCE), de sorte que « **Résidences Picardie** », « Résidence Picardie », « Résidence DE Picardie », « SCI Résidence Picardie » sont reconnus comme **le même tiers** (surlignés jaune + fusionnables), **sans** confondre des entités distinctes qui partagent un mot (« Résidence Amiens » ≠ « Résidence Picardie »).
+
+**Où / comment :** `yada-addon123` — `similaire(n1,n2)` enrichi : `tokens()` (majuscules, sans accents, sans formes juridiques ni mots STOP, singulier) + `tokenKey()` ; vrai si **mêmes mots significatifs** (token-set égal), sinon inclusion, sinon **Jaccard de tokens ≥ 0,6**, sinon Dice ≥ 0,80. Aucune logique comptable modifiée. Badge → **v229**.
+
+---
+
+## 🟢 MAJ précédente — Libellé reporté automatiquement (saisie journal) + Tiers : doublons par ressemblance (jaune) + fusion globale + anti-doublon — v228
 **Quoi :** (1) **report automatique du libellé** dans la saisie au journal — une **nouvelle ligne** (clic droit « Insérer » ou « + Ajouter ») **hérite du libellé** de l'écriture (déjà identique sur toutes les lignes, v221) ; (2) **Tiers — doublons par RESSEMBLANCE** : les fournisseurs/clients dont la **dénomination se ressemble** (pas seulement identique) sont **détectés**, **surlignés en JAUNE** (tag **DOUBLON**) et regroupés ; un bouton **« ⚙️ Fusionner TOUS les doublons similaires »** regroupe chaque famille en un seul compte (SIRET différents laissés) ; à la **validation d'une fiche tiers**, si un tiers ressemblant existe déjà, on **propose de le rattacher** (anti-doublon) plutôt que d'en créer un nouveau.
 
 **Où / comment :** `ecAddLine`/`ecInsertLine` héritent de `e.lignes[0].lib`. `yada-addon123` : `norm` (majuscules + suppression formes juridiques SARL/SAS… + alphanum), `dice` (bigrammes) + `similaire` (égalité / inclusion / Dice ≥ 0,82) ; `window.tiersSimilaireExistant` ; **override `scanDoublonsTiers`** (groupes flous via union-find → `dupTiersIds` jaune) ; **override `tiersConsoliderDoublons`** (auto-fusion seulement des noms STRICTEMENT identiques, prudent) ; `tiersFusionnerSimilaires` (fusion de toutes les familles ressemblantes, SIRET divergents laissés) ; greffe `blocDoublonsTiers` (bouton « Fusionner tous ») ; garde `ficheValider` (proposition de rattachement). Aucune logique comptable modifiée. Badge → **v228**.
