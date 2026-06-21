@@ -36,7 +36,33 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Synchro cloud : SQL Supabase corrigé (colonne `enc`) — v238
+## 🟢 Dernière mise à jour — Synchro : méthode simple « Pantry » (stockage JSON sans base SQL) — v240
+**Quoi :** ajout d'un **3ᵉ mode de synchronisation, sans base SQL** — **Pantry** (`getpantry.cloud`). Aucune table, aucune RLS, aucun cache de schéma → **les erreurs Supabase de type `PGRST205` (« table introuvable ») sont impossibles**. Onboarding minimal : créer un Pantry (un e-mail), copier l'**identifiant** dans YADA. C'est le **mode recommandé** désormais (mis en avant dans la carte de Paramétrage), Supabase/serveur restant disponibles.
+
+**Ce qu'il fait :**
+- **Client** (addon102) : `cfg()` lit `pantry` ; helpers `pantryGet`/`pantryPut` (un « panier » nommé d'après la clé d'espace stocke `{data,ts,enc}` via `POST`/`GET` sur `getpantry.cloud/apiv1/pantry/<id>/basket/<espace>`). `cloudGetRows`/`cloudPut`/`cloudTest` routent vers Pantry **en priorité** quand l'identifiant est rempli, sinon serveur, sinon REST Supabase. Garde `cloudReady(c)` = `enabled && (pantry || server || (url&&key))`. **Le chiffrement de bout en bout reste appliqué avant l'envoi** (le stockage ne voit qu'un blob). Panier inexistant (HTTP 400/404) traité comme « vide ».
+- **UI** : section verte **« 📦 Méthode simple — Pantry (recommandé, sans base SQL) »** en tête de la carte (champ identifiant + clé d'espace) ; les champs **Supabase** passent dans un `<details>` « Méthode avancée » ; aide pas-à-pas Pantry. `cloudSaveCfg` persiste `pantry` dans `localStorage 'yada-cloud'`.
+
+**Où / comment :** greffes chirurgicales dans addon102 (transport Pantry + priorité, carte de réglage). Validé : `node --check` (118 scripts), filet d'équilibre (d-ama/d-sci42), smoke Playwright (routage Pantry `POST`/`GET` vers le bon panier + repli Supabase/serveur, 0 pageerror). Badge → **v240**.
+
+**Limites :** Pantry est un service tiers gratuit (taille de panier ~1,4 Mo, disponibilité « best-effort ») ; convient à un dossier de petite/moyenne taille. Pour de gros volumes, préférer Supabase/serveur. L'envoi effectif dépend de la disponibilité de `getpantry.cloud` (non testable depuis l'environnement de build — réseau restreint).
+
+---
+
+## 🟢 MAJ précédente — Synchro : câblage du serveur YADA (`@supabase/server`) de bout en bout — v239
+**Quoi :** la synchro cloud peut désormais **passer par un serveur** (proxy `@supabase/server`, dossier `server/`) au lieu d'appeler Supabase directement, pour que la **clé secrète reste côté serveur** (jamais dans le navigateur). 100% optionnel : champ **« Serveur YADA »** vide ⇒ mode Supabase direct inchangé (clé anon + chiffrement de bout en bout).
+
+**Ce qu'il fait :**
+- **Serveur** (`server/index.mjs`) : vrai proxy `withSupabase({ auth:'none' })` exposant `GET /health`, `GET /sync?espace=…`, `POST /sync` (upsert via `ctx.supabaseAdmin`, qui contourne la RLS avec la clé secrète). CORS gérée par le SDK ; jeton partagé optionnel `YADA_API_TOKEN`. Adaptateur Node http pour exécution autonome ; déployable aussi en Supabase Edge Function (`verify_jwt=false`). La clé secrète ne vit qu'en variable d'environnement (`.env` git-ignoré).
+- **Client** (`precompta.html`, addon102) : `cfg()` lit `server`/`token` ; helpers `srvFetch`/`cloudGetRows`/`cloudPut` ; `cloudPushNow`/`cloudPull`/`cloudTest`/`cloudIntegrityCheck` routent vers `<server>/sync` quand une URL serveur est renseignée, sinon repli REST Supabase. Garde `cloudReady(c)` = `enabled && (server || (url && key))`. Le **chiffrement reste appliqué avant l'envoi** (le serveur ne voit qu'un blob). Carte Paramétrage : section **« 🖧 Serveur YADA (optionnel) »** (URL + jeton) ; `cloudSaveCfg` persiste `server`/`token` dans `localStorage 'yada-cloud'`.
+
+**Où / comment :** greffes chirurgicales dans addon102 (transport branché serveur/direct) ; `server/` (index.mjs proxy, `.env.example`, README de déploiement Node/Edge). Validé : `node --check` (118 scripts + serveur), filet d'équilibre (d-ama/d-sci42), smokes Playwright (routage serveur **et** repli direct, 0 pageerror). Badge → **v239**.
+
+**Limites :** le déploiement effectif du serveur (Render/Railway/Fly/Edge) requiert le compte Supabase de l'utilisateur ; le proxy n'est pas requis pour synchroniser (le mode direct fonctionne déjà).
+
+---
+
+## 🟢 MAJ précédente — Synchro cloud : SQL Supabase corrigé (colonne `enc`) — v238
 **Quoi :** l aide SQL de la carte de Paramétrage créait la table `yada_sync` sans la colonne **`enc`**, alors que le PUSH envoie `enc` (0/1, chiffrement) → l upload échouait (« column enc does not exist »). Le script crée désormais `enc int default 0` (+ `add column if not exists` pour les tables déjà créées). Badge → **v238**.
 
 ---

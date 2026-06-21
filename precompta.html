@@ -10795,7 +10795,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v238 · noir & bleu';
+    b.textContent='YADA · v240 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -14829,7 +14829,7 @@ ${lignes}
   var cloudApplying=false, cloudPushTimer=null;
   function cfg(){ try{ var v=JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){ v=null; }
     v=v||{}; return { url:(v.url||'').replace(/\/+$/,''), key:v.key||'', table:v.table||'yada_sync', espace:v.espace||'yada-aemconseil', enabled:!!v.enabled,
-      encrypt:(v.encrypt!==false), pass:v.pass||'' }; }
+      encrypt:(v.encrypt!==false), pass:v.pass||'', server:(v.server||'').replace(/\/+$/,''), token:v.token||'', pantry:(v.pantry||'').trim() }; }
   /* ---- Chiffrement de bout en bout (AES-256-GCM + PBKDF2) — clé jamais envoyée ---- */
   function b64(buf){ var s=''; var b=new Uint8Array(buf); for(var i=0;i<b.length;i++) s+=String.fromCharCode(b[i]); return btoa(s); }
   function ub64(str){ var s=atob(str); var b=new Uint8Array(s.length); for(var i=0;i<s.length;i++) b[i]=s.charCodeAt(i); return b; }
@@ -14862,6 +14862,46 @@ ${lignes}
       .then(function(r){ clearTimeout(to); if(!r.ok) return r.text().then(function(t){ throw new Error('HTTP '+r.status+' '+t.slice(0,120)); });
         return method==='GET'? r.json() : true; });
   }
+  /* ---- Transport « serveur YADA » (proxy @supabase/server) — la clé secrète reste côté serveur ---- */
+  function srvFetch(method, c, body){
+    var ctrl=new AbortController(); var to=setTimeout(function(){ try{ctrl.abort();}catch(e){} }, 15000);
+    var h={ 'Content-Type':'application/json' }; if(c.token){ h['Authorization']='Bearer '+c.token; }
+    var url=c.server+'/sync'+(method==='GET'?('?espace='+encodeURIComponent(c.espace)):'');
+    return fetch(url, { method:method, headers:h, body: body?JSON.stringify(body):undefined, signal:ctrl.signal })
+      .then(function(r){ clearTimeout(to); if(!r.ok) return r.text().then(function(t){ throw new Error('HTTP '+r.status+' '+t.slice(0,120)); });
+        return method==='GET'? r.json() : true; });
+  }
+  /* ---- Transport « Pantry » (getpantry.cloud) — stockage JSON simple, sans base SQL ----
+     Aucun table/RLS/cache : un « panier » nommé d'après la clé d'espace stocke {data,ts,enc}. */
+  function pantryUrl(c){ return 'https://getpantry.cloud/apiv1/pantry/'+encodeURIComponent(c.pantry)+'/basket/'+encodeURIComponent(c.espace||'yada'); }
+  function pantryGet(c){
+    var ctrl=new AbortController(); var to=setTimeout(function(){ try{ctrl.abort();}catch(e){} }, 15000);
+    return fetch(pantryUrl(c), { method:'GET', headers:{'Content-Type':'application/json'}, signal:ctrl.signal })
+      .then(function(r){ clearTimeout(to);
+        if(r.status===400||r.status===404) return []; /* panier pas encore créé = vide */
+        if(!r.ok) return r.text().then(function(t){ throw new Error('HTTP '+r.status+' '+t.slice(0,120)); });
+        return r.json().then(function(o){ return (o && o.data!=null) ? [{ data:o.data, ts:o.ts, enc:o.enc }] : []; }); });
+  }
+  function pantryPut(c, payload, ts){
+    var ctrl=new AbortController(); var to=setTimeout(function(){ try{ctrl.abort();}catch(e){} }, 15000);
+    return fetch(pantryUrl(c), { method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ data:payload, ts:ts, enc:(c.encrypt?1:0) }), signal:ctrl.signal })
+      .then(function(r){ clearTimeout(to); if(!r.ok) return r.text().then(function(t){ throw new Error('HTTP '+r.status+' '+t.slice(0,120)); }); return true; });
+  }
+  function cloudReady(c){ return c.enabled && (c.pantry || c.server || (c.url && c.key)); }
+  /* Récupère l'espace de synchro (Pantry / serveur / REST Supabase) — même forme [{data,ts}] */
+  function cloudGetRows(c){
+    if(c.pantry) return pantryGet(c);
+    if(c.server) return srvFetch('GET', c);
+    return cloudFetch('GET', '/rest/v1/'+encodeURIComponent(c.table)+'?id=eq.'+encodeURIComponent(c.espace)+'&select=data,ts', null, {});
+  }
+  /* Envoie l'espace de synchro (Pantry / serveur / REST Supabase) */
+  function cloudPut(c, payload, ts){
+    if(c.pantry) return pantryPut(c, payload, ts);
+    if(c.server) return srvFetch('POST', c, { espace:c.espace, data:payload, ts:ts, enc:(c.encrypt?1:0) });
+    var body=[{ id:c.espace, data:payload, ts:ts, enc:(c.encrypt?1:0), updated_at:new Date().toISOString() }];
+    return cloudFetch('POST', '/rest/v1/'+encodeURIComponent(c.table)+'?on_conflict=id', body, {'Prefer':'resolution=merge-duplicates,return=minimal'});
+  }
   function applyRemote(dataStr, ts){
     try{ var parsed=JSON.parse(dataStr); if(!parsed||typeof parsed!=='object') return false;
       /* DOSSIERS ADDITIFS : on ne perd jamais un dossier créé localement et pas encore poussé.
@@ -14879,14 +14919,13 @@ ${lignes}
     }catch(e){ cloudApplying=false; return false; }
   }
   window.cloudPushNow=function(){
-    var c=cfg(); if(!c.enabled||!c.url||!c.key){ return Promise.resolve(false); }
+    var c=cfg(); if(!cloudReady(c)){ return Promise.resolve(false); }
     if(cloudApplying) return Promise.resolve(false);
     if(c.encrypt && !c.pass){ status('🔒 Phrase secrète manquante — envoi annulé'); return Promise.resolve(false); }
     try{ if(typeof persistActif==='function') persistActif(); }catch(e){}
     var ts=Date.now(); var plain=JSON.stringify(db);
     return (c.encrypt? encryptStr(plain, c.pass) : Promise.resolve(plain)).then(function(payload){
-      var body=[{ id:c.espace, data:payload, ts:ts, enc:(c.encrypt?1:0), updated_at:new Date().toISOString() }];
-      return cloudFetch('POST', '/rest/v1/'+encodeURIComponent(c.table)+'?on_conflict=id', body, {'Prefer':'resolution=merge-duplicates,return=minimal'})
+      return cloudPut(c, payload, ts)
         .then(function(){ localStorage.setItem(TSK, String(ts)); status(c.encrypt?'🔒 Enregistré (chiffré) dans le cloud':'☁ Enregistré dans le cloud'); return true; }); })
       .catch(function(e){ var msg=String((e&&e.message)||e||'').slice(0,160);
         try{ localStorage.setItem('yada-cloud-err', JSON.stringify({t:Date.now(), msg:msg})); }catch(_){}
@@ -14895,8 +14934,8 @@ ${lignes}
         return false; });
   };
   window.cloudPull=function(silencieux){
-    var c=cfg(); if(!c.enabled||!c.url||!c.key){ return Promise.resolve(false); }
-    return cloudFetch('GET', '/rest/v1/'+encodeURIComponent(c.table)+'?id=eq.'+encodeURIComponent(c.espace)+'&select=data,ts', null, {})
+    var c=cfg(); if(!cloudReady(c)){ return Promise.resolve(false); }
+    return cloudGetRows(c)
       .then(function(rows){ if(!rows||!rows.length){ if(!silencieux) status('☁ Aucune donnée cloud'); return false; }
         var remote=rows[0]; var localTs=parseInt(localStorage.getItem(TSK)||'0',10)||0;
         if((remote.ts||0) <= localTs){ if(!silencieux) status('☁ Déjà à jour'); return false; }
@@ -14917,9 +14956,9 @@ ${lignes}
   function dsNom(d, id){ try{ var x=((d.cabinet&&d.cabinet.dossiers)||[]).find(function(o){return o.id===id;}); return x?x.nom:id; }catch(e){ return id; } }
   function escq(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
   window.cloudIntegrityCheck=function(){
-    var c=cfg(); if(!c.enabled||!c.url||!c.key){ if(typeof toast==='function')toast('Configurez et activez d\'abord la synchronisation.'); return; }
+    var c=cfg(); if(!cloudReady(c)){ if(typeof toast==='function')toast('Configurez et activez d\'abord la synchronisation.'); return; }
     status('🔎 Vérification de l\'intégrité…');
-    cloudFetch('GET', '/rest/v1/'+encodeURIComponent(c.table)+'?id=eq.'+encodeURIComponent(c.espace)+'&select=data,ts', null, {})
+    cloudGetRows(c)
       .then(function(rows){ if(!rows||!rows.length){ status('☁ Aucune donnée cloud'); if(typeof toast==='function')toast('Aucune donnée dans le cloud à comparer.'); return; }
         return decryptStr(rows[0].data, c.pass).then(function(clear){
           try{ if(typeof persistActif==='function') persistActif(); }catch(e){}
@@ -14948,10 +14987,12 @@ ${lignes}
         });
       }).catch(function(e){ status('☁ Vérification impossible'); if(typeof toast==='function')toast('Vérification impossible : '+String((e&&e.message)||e).slice(0,90)); });
   };
-  window.cloudTest=function(){ var c=cfg(); if(!c.url||!c.key){ if(typeof toast==='function')toast('Renseignez l\'URL et la clé Supabase.'); return; }
+  window.cloudTest=function(){ var c=cfg(); if(!c.pantry && !c.server && (!c.url||!c.key)){ if(typeof toast==='function')toast('Renseignez l\'identifiant Pantry, ou l\'URL+clé Supabase, ou l\'URL du serveur YADA.'); return; }
     status('☁ Test de connexion…');
-    cloudFetch('GET','/rest/v1/'+encodeURIComponent(c.table)+'?select=id&limit=1',null,{})
-      .then(function(){ status('☁ Connexion OK ✓'); if(typeof toast==='function')toast('Connexion Supabase réussie ✓'); })
+    var p = c.pantry ? pantryGet(c)
+      : c.server ? srvFetch('GET', { server:c.server, espace:c.espace, token:c.token })
+      : cloudFetch('GET','/rest/v1/'+encodeURIComponent(c.table)+'?select=id&limit=1',null,{});
+    p.then(function(){ status('☁ Connexion OK ✓'); if(typeof toast==='function')toast(c.pantry?'Connexion Pantry réussie ✓':(c.server?'Connexion au serveur YADA réussie ✓':'Connexion Supabase réussie ✓')); })
       .catch(function(e){ status('☁ Échec : '+String(e.message||e).slice(0,80)); if(typeof toast==='function')toast('Échec : '+String(e.message||e).slice(0,100)); }); };
 
   /* greffe : pousser après chaque enregistrement (debounce) */
@@ -14970,7 +15011,7 @@ ${lignes}
     var g=function(id){ var e=document.getElementById(id); return e?e.value.trim():''; };
     var en=document.getElementById('cloud-enabled'); var enc=document.getElementById('cloud-encrypt');
     setCfg({ url:g('cloud-url'), key:g('cloud-key'), table:g('cloud-table')||'yada_sync', espace:g('cloud-espace')||'yada-aemconseil',
-      enabled: en?en.checked:false, encrypt: enc?enc.checked:true, pass:g('cloud-pass') });
+      enabled: en?en.checked:false, encrypt: enc?enc.checked:true, pass:g('cloud-pass'), server:g('cloud-server'), token:g('cloud-token'), pantry:g('cloud-pantry') });
     if(typeof toast==='function') toast('Configuration de synchronisation enregistrée'); if(typeof render==='function') render();
   };
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
@@ -14981,21 +15022,37 @@ ${lignes}
       +'create policy "yada all" on yada_sync for all to anon using (true) with check (true);';
     return '<div class="card cloud-card"><h2>☁ Synchronisation multi-appareils (Supabase)</h2>'
       +'<div class="sub">Retrouvez le <b>dernier enregistrement sur tous vos appareils</b>. À chaque enregistrement, le dossier est envoyé au cloud ; à la connexion, le dernier état est récupéré (« dernier enregistrement gagnant »).</div>'
-      +'<div class="row g2">'
+      +'<div class="cloud-sec" style="border-color:rgba(127,227,180,.4);background:rgba(127,227,180,.06)"><div class="cloud-sec-h" style="color:#bdf0d4">📦 Méthode simple — Pantry (recommandé, sans base SQL)</div>'
+        +'<div class="row g2" style="align-items:end">'
+          +'<div class="field"><label>Identifiant Pantry (le <b>même</b> sur tous vos appareils)</label><input id="cloud-pantry" placeholder="ex. 1a2b3c4d-… (depuis getpantry.cloud)" value="'+esc(c.pantry)+'"></div>'
+          +'<div class="field"><label>Clé d\'espace (nom du panier — identique partout)</label><input id="cloud-espace" value="'+esc(c.espace)+'"></div>'
+        +'</div>'
+        +'<div class="mini">Créez un Pantry gratuit sur <b>getpantry.cloud</b> (juste un e-mail) → copiez l\'<b>identifiant</b> ici. Aucune table, aucun SQL. Si ce champ est rempli, la synchro passe par Pantry. <b>Laissez-le vide</b> pour utiliser Supabase ci-dessous.</div>'
+      +'</div>'
+      +'<label class="md-check" style="display:flex;align-items:center;gap:8px;margin:6px 0 10px"><input type="checkbox" id="cloud-enabled" '+(c.enabled?'checked':'')+'> <b>Activer la synchronisation</b></label>'
+      +'<details class="cloud-help"'+((c.url||c.key)&&!c.pantry?' open':'')+'><summary>Méthode avancée — Supabase (base SQL)</summary>'
+      +'<div class="row g2" style="margin-top:8px">'
         +'<div class="field"><label>URL du projet Supabase</label><input id="cloud-url" placeholder="https://xxxx.supabase.co" value="'+esc(c.url)+'"></div>'
         +'<div class="field"><label>Clé publique (anon key)</label><input id="cloud-key" placeholder="eyJhbGciOi…" value="'+esc(c.key)+'"></div>'
       +'</div>'
-      +'<div class="row g3">'
+      +'<div class="row g2">'
         +'<div class="field"><label>Table</label><input id="cloud-table" value="'+esc(c.table)+'"></div>'
-        +'<div class="field"><label>Clé d\'espace (identique sur tous vos appareils)</label><input id="cloud-espace" value="'+esc(c.espace)+'"></div>'
-        +'<div class="field" style="display:flex;align-items:flex-end"><label class="md-check" style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="cloud-enabled" '+(c.enabled?'checked':'')+'> <b>Activer la synchronisation</b></label></div>'
+        +'<div class="field"></div>'
       +'</div>'
+      +'</details>'
       +'<div class="cloud-sec"><div class="cloud-sec-h">🔒 Chiffrement de bout en bout (recommandé)</div>'
         +'<div class="row g2" style="align-items:end">'
           +'<div class="field"><label class="md-check" style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="cloud-encrypt" '+(c.encrypt?'checked':'')+'> <b>Chiffrer les données avant l\'envoi</b></label></div>'
           +'<div class="field"><label>Phrase secrète de chiffrement (jamais envoyée)</label><input id="cloud-pass" type="password" autocomplete="new-password" placeholder="votre phrase secrète" value="'+esc(c.pass)+'"></div>'
         +'</div>'
         +'<div class="mini">Les données sont chiffrées <b>sur votre appareil</b> (AES‑256‑GCM) : le cloud ne stocke qu\'un blob illisible. Utilisez la <b>même phrase secrète sur tous vos appareils</b>. ⚠️ Sans cette phrase, les données sont <b>irrécupérables</b> (aucune réinitialisation possible).</div>'
+      +'</div>'
+      +'<div class="cloud-sec"><div class="cloud-sec-h">🖧 Serveur YADA (optionnel — pour masquer totalement la clé)</div>'
+        +'<div class="row g2" style="align-items:end">'
+          +'<div class="field"><label>URL du serveur YADA (proxy <code>@supabase/server</code>)</label><input id="cloud-server" placeholder="https://votre-serveur.exemple (vide = Supabase direct)" value="'+esc(c.server)+'"></div>'
+          +'<div class="field"><label>Jeton partagé (facultatif)</label><input id="cloud-token" type="password" autocomplete="new-password" placeholder="YADA_API_TOKEN du serveur" value="'+esc(c.token)+'"></div>'
+        +'</div>'
+        +'<div class="mini">Si vous renseignez une URL de serveur, la synchro <b>passe par ce serveur</b> (endpoints <code>/sync</code>) au lieu d\'appeler Supabase directement : la <b>clé secrète reste sur le serveur</b>, jamais dans le navigateur. <b>Laissez vide</b> pour le mode direct (clé anon + chiffrement de bout en bout), qui fonctionne sans serveur. Voir <code>server/README.md</code> pour le déploiement.</div>'
       +'</div>'
       +'<div class="right" style="gap:8px;display:flex;flex-wrap:wrap;justify-content:flex-end">'
         +'<span id="cloud-status" class="cloud-status"></span>'
@@ -15004,6 +15061,13 @@ ${lignes}
         +'<button class="btn btn-ghost" onclick="cloudIntegrityCheck()">🔎 Vérifier les montants (tous les dossiers)</button>'
         +'<button class="btn btn-pri" onclick="cloudSyncNow()">☁ Synchroniser maintenant</button>'
       +'</div>'
+      +'<details class="cloud-help" open><summary>Aide — méthode simple Pantry (gratuit) en 2 minutes</summary>'
+        +'<ol><li>Allez sur <b>getpantry.cloud</b> → saisissez votre <b>e-mail</b> → « Create Pantry ».</li>'
+        +'<li>Copiez votre <b>Pantry ID</b> (un identifiant du type <code>1a2b3c4d-…</code>) et collez-le dans le champ <b>« Identifiant Pantry »</b> ci-dessus.</li>'
+        +'<li>Cochez <b>Activer</b>, gardez le <b>chiffrement</b> + une <b>phrase secrète</b>, puis <b>Synchroniser maintenant</b>.</li>'
+        +'<li>Sur vos autres appareils : <b>le même Pantry ID</b>, la <b>même clé d\'espace</b> et la <b>même phrase secrète</b> → vos dossiers apparaissent.</li></ol>'
+        +'<p class="mini">Aucune table ni SQL : impossible d\'avoir l\'erreur « table introuvable ». Vos données sont chiffrées avant l\'envoi (le stockage ne voit qu\'un blob illisible).</p>'
+      +'</details>'
       +'<details class="cloud-help"><summary>Aide — créer le projet Supabase (gratuit) en 3 minutes</summary>'
         +'<ol><li>Créez un compte sur <b>supabase.com</b> → New project (gratuit).</li>'
         +'<li>Dans <b>Project Settings → API</b> : copiez <b>Project URL</b> et la clé <b>anon public</b> (à coller ci-dessus).</li>'
