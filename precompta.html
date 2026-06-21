@@ -8349,9 +8349,8 @@ function factureListe(){
       <td class="r num">${eur(d.ht)}</td><td class="r num">${eur(d.tva)}</td><td class="r num"><b>${eur(d.ttc)}</b></td>
       <td class="num">${d.dateEnvoi?frDate(d.dateEnvoi):'—'}</td>
       <td class="r" style="white-space:nowrap">
-        <button class="btn btn-ghost btn-sm" onclick="voirDoc('${d.id}')" title="Voir la facture"></button>
-        ${d.type==='facture'&&!d.ecritureId?`<button class="btn btn-ghost btn-sm" onclick="faReprendre('${d.id}')" title="Reprendre dans la saisie rapide pour générer les écritures">↧ Saisir</button>`:''}
-        ${d.type==='facture'&&!d.ecritureId?`<button class="btn btn-gold btn-sm" onclick="genererEcritureDoc('${d.id}')" title="Générer l'écriture (autorisation requise)">Générer</button>`:''}
+        <button class="btn btn-ghost btn-sm" onclick="voirDoc('${d.id}')" title="Voir la facture">Voir</button>
+        ${d.type==='facture'&&!d.ecritureId?`<button class="btn btn-gold btn-sm" onclick="genererEcritureDoc('${d.id}')" title="Générer l'écriture (autorisation requise)">⚙️ Générer</button>`:''}
         ${d.type==='devis'&&d.statut==='valide'&&!d.transformeEn?`<button class="btn btn-ghost btn-sm" onclick="transformerDevis('${d.id}')">→ Facture</button>`:''}
       </td></tr>`;}).join('');
   const pag=`<div class="fa-pag"><span>Page ${page} sur ${pages}</span>
@@ -8457,13 +8456,12 @@ window.faGenererSel=function(){
 
 /* Page recomposée : nouvelle version + éléments d'origine réaffectés */
 pageFacturation=function(){ if(typeof catInit==='function')catInit();
-  let out = head('Facturation client','Nouvelle version (bouton « Nouveau » + liste des factures) et éléments d\'origine réunis : saisie rapide, suivi des factures de vente et factures envoyées. Création avant comptabilisation, TVA transmise au module TVA, numérotation unique.')
+  let out = head('Facturation client','Créez une facture (bouton « Nouveau »), retrouvez-la dans la liste, puis générez son écriture. Suivi des factures de vente et factures envoyées. Création avant comptabilisation, TVA transmise au module TVA, numérotation unique.')
     + barreNouveau()
     + documentsClientsCard();
   try{ out += factureListe(); }catch(e){}
   try{ out += suiviFacturesVente(); }catch(e){}
   try{ out += listeFacturesEnvoyees(); }catch(e){}
-  try{ out += formulaireRapide(); }catch(e){}
   out += catalogueCard();
   return out;
 };
@@ -10666,7 +10664,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v197 · noir & bleu';
+    b.textContent='YADA · v198 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
