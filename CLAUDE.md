@@ -14,7 +14,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Facturation client : retrait de la « saisie rapide » (page épurée) — v198
+---
+
+## 🟢 Dernière mise à jour — Facturation cabinet : liste des factures agrandie (pleine largeur, 25/page) — v199
+**Quoi :** la **liste des factures de génération** (page « Client » côté cabinet) est **agrandie** : affichée en **pleine largeur** (au lieu d'une colonne étroite avec défilement horizontal) et **25 factures par page** au lieu de 10.
+
+**Où / comment :** `addon73` ne **scinde plus** `pageFacturation` en 2 colonnes (cabinet) → la liste `factureListe` occupe toute la largeur ; `factureListe` : `per` 10 → **25**. `addon73` continue de scinder `pageAchats`. Badge → **v199**.
+
+---
+
+## 🟢 MAJ précédente — Facturation client : retrait de la « saisie rapide » (page épurée) — v198
 **Quoi :** suppression du module **« Émettre un document client (saisie rapide) »** de la page **Facturation client** (menu « Client ») pour une présentation plus paisible et harmonieuse.
 
 **Où / comment :** `pageFacturation` ne rend plus `formulaireRapide()` ; le bouton **« ↧ Saisir »** (qui reprenait une facture dans la saisie rapide) est retiré de `factureListe` — la comptabilisation reste accessible via **« ⚙️ Générer »** sur chaque ligne. Sous-titre de la page mis à jour. `formulaireRapide`/`faReprendre` restent définis (inutilisés) ; aucune autre fonction impactée. Badge → **v198**.

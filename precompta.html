@@ -8338,7 +8338,7 @@ function docStatutFac(d){
 function faListeGo(n){ window.faListePage=n; render(); }
 function factureListe(){
   const docs=(db.docs||[]).slice().sort((a,b)=> a.date<b.date?1:(a.date>b.date?-1:((a.numero||'')<(b.numero||'')?1:-1)));
-  const per=10; const pages=Math.max(1,Math.ceil(docs.length/per));
+  const per=25; const pages=Math.max(1,Math.ceil(docs.length/per));
   let page=window.faListePage||1; if(page>pages)page=pages; if(page<1)page=1; window.faListePage=page;
   const slice=docs.slice((page-1)*per,page*per);
   const rows=slice.map(d=>{ const c=db.tiers.find(x=>x.id===d.clientId); const st=docStatutFac(d);
@@ -10664,7 +10664,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v198 · noir & bleu';
+    b.textContent='YADA · v199 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -12443,8 +12443,10 @@ ${lignes}
       +'<div class="cli-2col"><div class="cli-col"><div class="cli-col-h">Actions</div>'+left+'</div>'
       +'<div class="cli-col"><div class="cli-col-h">Suivi & historique</div>'+right+'</div></div>';
   }
+  /* Facturation cabinet : on garde la liste des factures EN PLEINE LARGEUR (pas de
+     colonne \u00e9troite) pour une liste de g\u00e9n\u00e9ration plus grande et lisible. */
   if(typeof pageFacturation==='function'){ var _pf=pageFacturation;
-    pageFacturation=function(){ var h=_pf(); return isCab()? split(h, /Cr\u00e9er|\u00c9mettre|Catalogue|saisie rapide/i) : h; }; }
+    pageFacturation=function(){ return _pf(); }; }
   if(typeof pageAchats==='function'){ var _pa=pageAchats;
     pageAchats=function(){ var h=_pa(); return isCab()? split(h, /Capture|Saisir|Nouvelle|Importer|Autoliquidation|saisie/i) : h; }; }
 })();
