@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Rapprochement bancaire : récap de tous les rapprochements + validation au mois + cadenas multi-comptes — v225
+## 🟢 Dernière mise à jour — Consultation des journaux : HA / VT / BQ filtrés sur le SEUL mois sélectionné (fin du cumul) — v226
+**Quoi :** dans la **Consultation des comptes**, quand on sélectionne un **mois** (janvier→décembre) dans la colonne des périodes, les journaux **HA (ACH)**, **VT (VTE)** et **BQ** affichent **uniquement les écritures de ce mois** (et plus le cumul depuis le début d'année). Tous les journaux se comportent désormais pareil (mois sélectionné uniquement) ; l'en-tête indique « — mois MM/AAAA ».
+
+**Où / comment :** `sgJournalGrid` — `const cumul=(code==='ACH'||code==='VTE')` remplacé par `const cumul=false` → le filtre devient `ym(e.date)===per` pour tous les journaux. L'éditeur (`ecEcritures` en mode `ecJournalFiltre`) filtrait déjà au mois. Affichage seul, aucune logique comptable modifiée. Badge → **v226**.
+
+---
+
+## 🟢 MAJ précédente — Rapprochement bancaire : récap de tous les rapprochements + validation au mois + cadenas multi-comptes — v225
 **Quoi :** dans le **Rapprochement bancaire**, (1) une bande **« Rapprochements bancaires effectués »** liste **tous les relevés** avec leur **état** (✓ soldé / 🔒 verrouillé / ● écart), cliquable pour ouvrir le rapprochement ; (2) un **cadenas 🔒** apparaît sur le **mois** (colonne des périodes) et sur la ligne du relevé quand c'est **verrouillé** ; (3) **validation au mois** : s'il y a **plusieurs comptes bancaires** mouvementés sur le mois, le mois n'est **« validé » (✓)** que lorsque **TOUS** sont rapprochés & soldés (sinon **◐ en attente** — aucune validation), mais le compte déjà rapproché **reste visible** dans son mois (colonne Journaux + récap).
 
 **Où / comment :** `yada-addon121` — helpers `window.rapBanquesMois(m)` (comptes 512 ayant des mouvements ce mois), `window.rapMoisStatut(m)` (`{total,faits,soldes,verrouilles,valide,verrouille}` ; `valide = soldes===total`, `verrouille = valide && tous verrouillés`), `window.rapRecapHTML()`. Greffe `pageRappro` : badges 🔒/✓/◐ par mois (regex sur les items `.it` de `.rb-per`) + injection du récap avant `.rb-top`. Édition chirurgicale de la ligne « Relevé BQ au … » (🔒 si verrouillé, ✓ si soldé). Aucune logique comptable modifiée. Badge → **v225**.

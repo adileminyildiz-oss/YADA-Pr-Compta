@@ -5433,9 +5433,8 @@ function sgJournaux(per){
 /* Grille du journal sélectionné dans la Consultation (style "Journal OD PAIE") */
 function sgJournalGrid(code, per){
   const noms={ACH:'HA ACHATS',VTE:'VT VENTES',BQ:'BQ BANQUE',ODP:'OD PAIE',ODC:'OD CHARGES',ODTVA:'OD TVA',OD:'OD OPERATIONS DIVERSES'};
-  // HA (ACH) et VT (VTE) : cumul du début d'année jusqu'au mois sélectionné.
-  // Tous les autres journaux (OD, OD TVA, BQ, OD PAIE…) : UNIQUEMENT le mois sélectionné.
-  const cumul=(code==='ACH'||code==='VTE');
+  // TOUS les journaux (HA/ACH, VT/VTE, BQ, OD, OD TVA, OD PAIE…) : UNIQUEMENT le mois sélectionné.
+  const cumul=false;
   let ecr=db.ecritures.filter(e=>e.journal===code);
   if(per) ecr=ecr.filter(e=> cumul ? ym(e.date)<=per : ym(e.date)===per);
   ecr=ecr.sort((a,b)=>a.date<b.date?-1:(a.date>b.date?1:0));
@@ -10782,7 +10781,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v225 · noir & bleu';
+    b.textContent='YADA · v226 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
