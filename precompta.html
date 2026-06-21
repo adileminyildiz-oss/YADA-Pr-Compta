@@ -10795,7 +10795,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v237 · noir & bleu';
+    b.textContent='YADA · v238 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -14969,7 +14969,8 @@ ${lignes}
   };
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
   function cloudCard(){ var c=cfg();
-    var sql='create table if not exists yada_sync ( id text primary key, data text, ts bigint, updated_at timestamptz default now() );\\n'
+    var sql='create table if not exists yada_sync ( id text primary key, data text, ts bigint, enc int default 0, updated_at timestamptz default now() );\\n'
+      +'alter table yada_sync add column if not exists enc int default 0;   -- si la table existe déjà\\n'
       +'alter table yada_sync enable row level security;\\n'
       +'create policy "yada all" on yada_sync for all to anon using (true) with check (true);';
     return '<div class="card cloud-card"><h2>☁ Synchronisation multi-appareils (Supabase)</h2>'

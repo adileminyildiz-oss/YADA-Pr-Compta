@@ -36,6 +36,11 @@
 
 ---
 
+## 🟢 Dernière mise à jour — Synchro cloud : SQL Supabase corrigé (colonne `enc`) — v238
+**Quoi :** l aide SQL de la carte de Paramétrage créait la table `yada_sync` sans la colonne **`enc`**, alors que le PUSH envoie `enc` (0/1, chiffrement) → l upload échouait (« column enc does not exist »). Le script crée désormais `enc int default 0` (+ `add column if not exists` pour les tables déjà créées). Badge → **v238**.
+
+---
+
 ## 🟢 Dernière mise à jour — Synchronisation multi-appareils : suivi continu + dossiers ADDITIFS (le travail du PC principal sur toutes les interfaces) — v237
 **Quoi :** tout le **travail fait sur le PC principal** (dossiers créés, écritures, règles) est **suivi en continu** sur les autres appareils — **mêmes dossiers, mêmes données, mêmes règles**. (1) **PULL automatique** périodique (40 s) + au **retour au premier plan** (`visibilitychange`/`focus`) + à la **reconnexion** (`online`), en plus du push après chaque save (addon102) ; cloudPull n'applique que si le cloud est **plus récent** (horodatage, dernier gagnant). (2) **Dossiers ADDITIFS** : à la réception, le cloud (PC principal) l'emporte pour les dossiers partagés, mais **aucun dossier créé localement n'est perdu** (les dossiers présents seulement en local sont conservés puis repoussés → visibles partout).
 
