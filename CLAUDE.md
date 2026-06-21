@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Éditeur d'écritures : saisie directe « tableur » (champs plats, clic droit pour insérer, date sur toutes les lignes, colonnes fixes) — v218
+## 🟢 Dernière mise à jour — Éditeur d'écritures : navigation clavier (Tab / Entrée) + retrait du bouton « + Ajouter une désignation » — v219
+**Quoi :** (1) **navigation clavier façon tableur** dans l'éditeur d'écritures (`.ec-sage`) — **TAB / MAJ+TAB** = champ suivant / précédent (gauche→droite puis ligne suivante, avec bouclage) ; **ENTRÉE** = descend dans la **même colonne** (cellule du dessous), et en bas d'une écriture passe à la première ligne de l'écriture suivante. (2) **Retrait du bouton « + Ajouter une désignation »** (l'insertion se fait au **clic droit**, addon113) ; le bouton **« Solder l'écriture »** reste visible.
+
+**Pourquoi :** la validation d'un champ relance `ecRender` (table reconstruite) → le Tab/Entrée natif perdait le focus. On re-cible le champ par ses **coordonnées** après reconstruction.
+
+**Où / comment :** `yada-addon114` — écouteur `keydown` (capture) : sur Tab/Entrée dans un `input.ec-i` de `#ec-win`, `blur()` (valide) puis re-focus par coordonnées (`data-eid`/`data-li`/`cellIndex` via `cellInput`/`editInputs`/`ecrOrder`). `yada-addon115` — `<style id="ec-noadd-mod">` masque `.ec-act .ec-bt:not(.ec-bt-solde)`. Aucune logique comptable modifiée. Badge → **v219**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur d'écritures : saisie directe « tableur » (champs plats, clic droit pour insérer, date sur toutes les lignes, colonnes fixes) — v218
 **Quoi :** l'**éditeur d'écritures** (`.ec-sage`) devient une vraie grille de saisie directe, plus simple : (1) **saisie directe sur le texte ET les montants** — champs **totalement plats**, **aucune bulle / aucun cercle / aucun halo** au focus (juste un léger fond bleu) ; (2) **insérer une ligne au CLIC DROIT** (menu contextuel « ↧ Insérer une ligne » / « 🗑 Supprimer la ligne ») — le **bouton ✕ (cercle rouge)** par ligne est **masqué** ; (3) la **date** de l'écriture est **répétée sur toutes les lignes** (jusqu'au solde) en **texte éditable (jj/mm/aaaa)** — **plus aucun sélecteur de date** ; (4) **tableau à colonnes FIXES** (`table-layout:fixed`) : tout reste en place quand on **agrandit / redimensionne** la fenêtre.
 
 **Où / comment :** `yada-addon113` — `<style id="ec-tableur-mod">` (colonnes `cw-*` fixes, champs plats, ✕ masqué, menu `#ec-ctx`) + helpers `window.ecSetDateTxt(id,v)` (parse jj/mm/aaaa → ISO) et `window.ecInsertLine(id,i)` + écouteur `contextmenu` (capture) sur `tr.ec-r` de `#ec-win`. `ecRender` génère désormais `data-eid`/`data-li` par ligne, la **date-texte sur chaque ligne** (`ec-datetxt`, plus de `type=date`) et un **`<colgroup>`** à largeurs fixes. Aucune logique comptable modifiée. Badge → **v218**.

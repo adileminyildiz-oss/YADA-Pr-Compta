@@ -10767,7 +10767,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v218 · noir & bleu';
+    b.textContent='YADA · v219 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -15912,6 +15912,59 @@ ${lignes}
     +'#ec-ctx{position:fixed;z-index:100002;background:#0c1a2a;border:1px solid #1e90ff;border-radius:8px;box-shadow:0 14px 36px rgba(0,0,0,.55);padding:4px;min-width:196px}'
     +'#ec-ctx button{display:block;width:100%;text-align:left;background:transparent;border:0;color:#eaf2ff;font:13px system-ui,sans-serif;padding:8px 12px;border-radius:6px;cursor:pointer}'
     +'#ec-ctx button:hover{background:rgba(30,144,255,.18)}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon114">
+/* ============================================================
+   ÉDITEUR D'ÉCRITURES — navigation clavier façon tableur.
+   • TAB / MAJ+TAB : champ suivant / précédent (de gauche à droite, puis ligne
+     suivante), avec bouclage.
+   • ENTRÉE : descend dans la MÊME colonne (cellule du dessous) ; en bas d'une
+     écriture, passe à la première ligne de l'écriture suivante.
+   Robuste au re-rendu : valider un champ relance ecRender (la table est
+   reconstruite) ; on re-cible le champ par ses COORDONNÉES (data-eid / data-li /
+   index de colonne) après la reconstruction. 100% additif, aucune logique
+   comptable modifiée.
+   ============================================================ */
+(function(){
+  function ecWin(){ var ov=document.getElementById('ec-overlay'); if(!ov||!ov.classList.contains('show')) return null; return document.getElementById('ec-win'); }
+  function editInputs(w){ return Array.prototype.slice.call(w.querySelectorAll('.ec-table tbody input.ec-i')); }
+  function cellInput(w,eid,li,col){ var row=w.querySelector('tr.ec-r[data-eid="'+eid+'"][data-li="'+li+'"]'); if(!row||col<0||!row.cells[col]) return null; return row.cells[col].querySelector('input.ec-i'); }
+  function ecrOrder(w){ var seen={},out=[]; Array.prototype.forEach.call(w.querySelectorAll('tr.ec-r'),function(tr){ var e=tr.getAttribute('data-eid'); if(e&&!seen[e]){seen[e]=1;out.push(e);} }); return out; }
+  function focusEl(t){ if(t){ try{ t.focus(); if(t.select) t.select(); }catch(e){} } }
+  document.addEventListener('keydown', function(e){
+    if(e.key!=='Tab' && e.key!=='Enter') return;
+    if(e.altKey||e.ctrlKey||e.metaKey) return;
+    var w=ecWin(); if(!w) return;
+    var inp=document.activeElement;
+    if(!inp || !inp.classList || !inp.classList.contains('ec-i') || !w.contains(inp)) return;
+    var tr=inp.closest && inp.closest('tr.ec-r'); if(!tr) return;   /* seulement les lignes de la grille */
+    var td=inp.closest('td'); var col=td?td.cellIndex:-1;
+    var eid=tr.getAttribute('data-eid'); var li=parseInt(tr.getAttribute('data-li'),10);
+    var all=editInputs(w); var idx=all.indexOf(inp);
+    if(e.key==='Tab'){
+      var dir=e.shiftKey?-1:1; var n=(idx<0?0:idx)+dir;
+      e.preventDefault(); inp.blur();                 /* valide le champ (peut relancer ecRender) */
+      var a2=editInputs(w); if(!a2.length) return;
+      if(n<0) n=a2.length-1; else if(n>=a2.length) n=0;
+      focusEl(a2[n]);
+    } else {                                          /* Entrée : cellule du dessous, même colonne */
+      e.preventDefault(); inp.blur();
+      var t=cellInput(w,eid,li+1,col);
+      if(!t){ var ord=ecrOrder(w); var k=ord.indexOf(eid); if(k>=0 && k+1<ord.length) t=cellInput(w,ord[k+1],0,col); }
+      if(!t){ var a3=editInputs(w); if(a3.length) t=a3[Math.min((idx<0?0:idx)+1, a3.length-1)]; }
+      focusEl(t);
+    }
+  }, true);
+})();
+</script>
+<script id="yada-addon115">
+/* Retrait du bouton « + Ajouter une désignation » (l'insertion se fait au clic
+   droit, addon113). Le bouton « Solder l'écriture » reste visible. 100% CSS. */
+(function(){
+  try{ var st=document.createElement('style'); st.id='ec-noadd-mod'; st.textContent=
+    '.ec-sage .ec-table tbody tr.ec-act .ec-bt:not(.ec-bt-solde){display:none !important}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
