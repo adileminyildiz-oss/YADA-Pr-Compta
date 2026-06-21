@@ -4435,8 +4435,9 @@ function pageFacturation(){
     <div class="row g4">
       <div class="field"><label>Type</label><select id="fa-type"><option value="facture">Facture</option><option value="devis">Devis</option><option value="avoir">Avoir</option></select></div>
       <div class="field"><label>Client</label><select id="fa-client" onchange="faMaj()">${clients.map(c=>`<option value="${c.id}">${c.nom}${c.categorie==='particulier'?' (particulier)':''}</option>`).join('')}</select></div>
-      <div class="field"><label>Date d'émission</label><input type="date" id="fa-date" value="${todayStr()}"></div>
-      <div class="field"><label>Date d'échéance</label><input type="date" id="fa-ech" value="${todayStr()}"></div>
+      <div class="field"><label>Date d'émission</label><input type="date" id="fa-date" value="${todayStr()}" onchange="faEcheanceAuto()"></div>
+      <div class="field"><label>Délai de paiement (jours)</label><input type="number" id="fa-delai" min="0" value="${(typeof faDelaiDefaut==='function'?faDelaiDefaut():30)}" onchange="faEcheanceAuto()"></div>
+      <div class="field"><label>Date d'échéance (auto)</label><input type="date" id="fa-ech" value="${(typeof addDaysISO==='function'?addDaysISO(todayStr(),(typeof faDelaiDefaut==='function'?faDelaiDefaut():30)):todayStr())}"></div>
     </div>
     <div class="field"><label>Lignes de facturation</label>${liHead}${liRows}
       <button class="btn btn-ghost btn-sm" onclick="faSync();faAddLigne()">+ Ajouter une désignation</button></div>
@@ -4542,6 +4543,21 @@ function transformerDevis(id){
   doc.ecritureId=f.ecritureId; dev.transformeEn=doc.id; db.docs.push(doc); save(); render();
   toast('Devis '+dev.numero+' transformé en facture '+numero);
 }
+/* Découpe une adresse en lignes : rue sur une ligne, code postal + ville sur la
+   ligne suivante. Si le code postal/ville sont déjà séparés, on les garde tels quels ;
+   sinon on coupe l'adresse avant le code postal (5 chiffres), ou à défaut vers le 15e
+   caractère (sans couper un mot). */
+function adrLignes(adresse, cp, ville){
+  var adr=String(adresse==null?'':adresse).trim();
+  var cpv=((cp||'')+' '+(ville||'')).trim();
+  if(cpv){ var o=[]; if(adr)o.push(adr); o.push(cpv); return o; }
+  if(!adr) return [];
+  var m=adr.match(/^(.*?\S)\s+(\d{5}\b.*)$/);
+  if(m) return [m[1].trim(), m[2].trim()];
+  if(adr.length>15){ var cut=adr.lastIndexOf(' ',15); if(cut<5)cut=adr.indexOf(' ',15); if(cut<0)cut=15;
+    return [adr.slice(0,cut).trim(), adr.slice(cut).trim()].filter(Boolean); }
+  return [adr];
+}
 /* ----- rendu HTML de la facture (modèle type YADA) ----- */
 function docHTML(d){
   const c=db.tiers.find(x=>x.id===d.clientId); const s=db.societe;
@@ -4562,9 +4578,9 @@ function docHTML(d){
       ${d.devise&&d.devise!=='EUR'?`<span><b>Devise</b></span><span>${d.devise}</span>`:''}
     </div>
     <div class="inv-parties">
-      <div><div class="lbl">${s.raison||'—'}</div><div>${s.adresse||''}</div><div>${(s.cp||'')+' '+(s.ville||'')}</div>
+      <div><div class="lbl">${s.raison||'—'}</div>${adrLignes(s.adresse,s.cp,s.ville).map(l=>`<div>${l}</div>`).join('')}
         <div>${numIdentifiant(s.siret||s.siren)}</div></div>
-      <div><div class="lbl">${c?c.nom:'CLIENT'}</div><div>${c&&c.adresse?c.adresse:''}</div>
+      <div><div class="lbl">${c?c.nom:'CLIENT'}</div>${adrLignes(c?c.adresse:'',c?c.cp:'',c?c.ville:'').map(l=>`<div>${l}</div>`).join('')}
         <div class="mail">${c&&c.email?c.email:'—'}</div><div>${numIdentifiant(c?(c.siret||c.siren):'')}</div></div>
     </div>
     <table class="inv-t"><thead><tr><th class="l">Description</th><th>Qté</th><th>Prix Unitaire</th><th>TVA (%)</th><th>Total HT</th></tr></thead>
@@ -8149,9 +8165,10 @@ function nfFormHTML(){ const clients=db.tiers.filter(t=>t.type==='client'); cons
       <div class="field"><label>Type</label><select id="nf-type" onchange="nfUpdate()">${['facture','devis','avoir'].map(t=>`<option value="${t}" ${t===s.type?'selected':''}>${t.charAt(0).toUpperCase()+t.slice(1)}</option>`).join('')}</select></div>
       <div class="field"><label>Client</label><select id="nf-client" onchange="nfUpdate()"><option value="">Sélectionner un client</option>${clients.map(c=>`<option value="${c.id}" ${c.id===s.clientId?'selected':''}>${c.nom}</option>`).join('')}</select></div>
     </div>
-    <div class="row g2">
-      <div class="field"><label>Date d'émission</label><input type="date" id="nf-date" value="${s.date}" onchange="nfUpdate()"></div>
-      <div class="field"><label>Date d'échéance</label><input type="date" id="nf-ech" value="${s.ech}" onchange="nfUpdate()"></div>
+    <div class="row g3">
+      <div class="field"><label>Date d'émission</label><input type="date" id="nf-date" value="${s.date}" onchange="nfEcheanceAuto()"></div>
+      <div class="field"><label>Délai de paiement (jours)</label><input type="number" id="nf-delai" min="0" value="${s.delai!=null?s.delai:(typeof faDelaiDefaut==='function'?faDelaiDefaut():30)}" onchange="nfEcheanceAuto()"></div>
+      <div class="field"><label>Date d'échéance (auto)</label><input type="date" id="nf-ech" value="${s.ech}" onchange="nfUpdate()"></div>
     </div>
     <div class="field"><label>Devise</label><select id="nf-devise" onchange="nfUpdate()">${NF_DEVISES.map(d=>{const code=d.split(' ')[0];return `<option value="${code}" ${code===s.devise?'selected':''}>${d}</option>`;}).join('')}</select></div>
     <div class="field"><label>Lignes</label><div id="nf-lignes">${nfLignesHTML()}</div>
@@ -8176,9 +8193,10 @@ function nfFormHTML(){ const clients=db.tiers.filter(t=>t.type==='client'); cons
     <div class="field"><label>Retenue de garantie (%)</label><input id="nf-ret" type="number" value="${s.retenue||''}" placeholder="ex : 5 — vide si aucune" oninput="nfUpdate()"></div>
   </div>`; }
 function factureNouvelleOuvrir(){
-  nfState={ type:'facture', clientId:'', date:todayStr(), ech:todayStr(), devise:'EUR',
+  var _del=(typeof faDelaiDefaut==='function'?faDelaiDefaut():30);
+  nfState={ type:'facture', clientId:'', date:todayStr(), delai:_del, ech:(typeof addDaysISO==='function'?addDaysISO(todayStr(),_del):todayStr()), devise:'EUR',
     lignes:[nfLigneVide()], notes:'', remiseType:'', remiseVal:0, acompte:0,
-    moyen:'Non précisé', conditions:'30 jours', escompte:0, escompteDelai:0, retenue:0 };
+    moyen:'Non précisé', conditions:_del+' jours', escompte:0, escompteDelai:0, retenue:0 };
   let ov=document.getElementById('nf-overlay'); if(!ov){ ov=document.createElement('div'); ov.id='nf-overlay'; document.body.appendChild(ov); }
   ov.innerHTML='<div class="nf-wrap"><div class="nf-form">'+nfFormHTML()+'</div><div class="nf-prev"><div id="nf-prev-inner"></div></div></div>';
   ov.classList.add('show'); nfApercu();
@@ -8277,9 +8295,10 @@ function nfFormHTML(){ const clients=db.tiers.filter(t=>t.type==='client'); cons
       <div class="field"><label>Type</label><select id="nf-type" onchange="nfUpdate()">${['facture','devis','avoir'].map(t=>`<option value="${t}" ${t===s.type?'selected':''}>${t.charAt(0).toUpperCase()+t.slice(1)}</option>`).join('')}</select></div>
       <div class="field"><label>Client</label><select id="nf-client" onchange="nfUpdate()"><option value="">Sélectionner un client</option>${clients.map(c=>`<option value="${c.id}" ${c.id===s.clientId?'selected':''}>${c.nom}</option>`).join('')}</select></div>
     </div>
-    <div class="row g2">
-      <div class="field"><label>Date d'émission</label><input type="date" id="nf-date" value="${s.date}" onchange="nfUpdate()"></div>
-      <div class="field"><label>Date d'échéance</label><input type="date" id="nf-ech" value="${s.ech}" onchange="nfUpdate()"></div>
+    <div class="row g3">
+      <div class="field"><label>Date d'émission</label><input type="date" id="nf-date" value="${s.date}" onchange="nfEcheanceAuto()"></div>
+      <div class="field"><label>Délai de paiement (jours)</label><input type="number" id="nf-delai" min="0" value="${s.delai!=null?s.delai:(typeof faDelaiDefaut==='function'?faDelaiDefaut():30)}" onchange="nfEcheanceAuto()"></div>
+      <div class="field"><label>Date d'échéance (auto)</label><input type="date" id="nf-ech" value="${s.ech}" onchange="nfUpdate()"></div>
     </div>
     <div class="field"><label>Devise</label><select id="nf-devise" onchange="nfUpdate()">${NF_DEVISES.map(d=>{const code=d.split(' ')[0];return `<option value="${code}" ${code===s.devise?'selected':''}>${d}</option>`;}).join('')}</select></div>
     <div class="field"><label>Lignes</label><div id="nf-lignes">${nfLignesHTML()}</div>
@@ -10664,7 +10683,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v199 · noir & bleu';
+    b.textContent='YADA · v200 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -10931,14 +10950,16 @@ ${lignes}
       +'<div class="row g3">'
       +'<div class="field"><label>Type</label><select id="fa-type2" onchange="document.getElementById(&quot;fa-type&quot;).value=this.value"><option value="facture">Facture</option><option value="devis">Devis</option></select></div>'
       +'<div class="field"><label>Client</label><select id="fa-client" onchange="faClientToggleNew();faMaj()">'+(clients.map(function(c){return '<option value="'+c.id+'">'+c.nom+'</option>';}).join(''))+'<option value="__new__">Nouveau client…</option></select></div>'
-      +'<div class="field"><label>Date d\'émission</label><input type="date" id="fa-date" value="'+todayStr()+'"></div>'
+      +'<div class="field"><label>Date d\'émission</label><input type="date" id="fa-date" value="'+todayStr()+'" onchange="faEcheanceAuto()"></div>'
       +'</div>'
       +'<div id="fa-newcli" style="display:none;margin:-4px 0 10px;padding:11px 12px;border:1px dashed var(--line);border-radius:10px;background:var(--paper-2,rgba(127,127,127,.05))">'
       +'<div class="sub" style="margin-bottom:8px">Nouveau client — il sera créé et marqué « NOUVEAU » pour que le cabinet complète sa fiche (IBAN, e-mail…).</div>'
       +'<div class="row g3"><div class="field"><label>Raison sociale *</label><input id="fa-newnom" placeholder="Nom du client"></div>'
       +'<div class="field"><label>SIRET</label><input id="fa-newsiret" placeholder="14 chiffres"></div>'
       +'<div class="field" style="align-self:end"><button class="btn btn-gold" style="width:100%" onclick="faClientNewSiret()">Compléter via le SIRET</button></div></div></div>'
-      +'<div class="row g3"><div class="field"><label>Date d\'échéance</label><input type="date" id="fa-ech" value="'+todayStr()+'"></div><div></div><div></div></div>'
+      +'<div class="row g3"><div class="field"><label>Délai de paiement (jours)</label><input type="number" id="fa-delai" min="0" value="'+(typeof faDelaiDefaut==='function'?faDelaiDefaut():30)+'" onchange="faEcheanceAuto()"></div>'
+      +'<div class="field"><label>Date d\'échéance (auto)</label><input type="date" id="fa-ech" value="'+(typeof addDaysISO==='function'?addDaysISO(todayStr(),(typeof faDelaiDefaut==='function'?faDelaiDefaut():30)):todayStr())+'"></div>'
+      +'<div></div></div>'
       +'<div class="field"><label>Lignes</label>'+liHead+liRows
       +'<button class="btn btn-ghost btn-sm" onclick="faSync();faAddLigne()">+ Ajouter une désignation</button></div>'
       +'<div class="ecr" style="margin-top:6px"><div class="ecr-h"><span>Totaux</span><span></span></div>'
@@ -14862,6 +14883,7 @@ ${lignes}
     s.tvaCondition=g('fp-tva')||'Sur les encaissements'; s.moyenDefaut=g('fp-moyen')||'Virement';
     s.fraisRecouvrement=parseFloat((g('fp-frais')||'').replace(',','.')); if(isNaN(s.fraisRecouvrement)) s.fraisRecouvrement=40;
     s.escompteDefaut=parseFloat((g('fp-esc')||'').replace(',','.'))||0; s.escompteDelaiDefaut=parseInt(g('fp-escd'),10)||0;
+    s.delaiPaiement=parseInt(g('fp-delai'),10); if(isNaN(s.delaiPaiement)||s.delaiPaiement<0) s.delaiPaiement=30;
     s.banqueBenef=(g('fp-benef')||'').trim(); s.iban=(g('fp-iban')||'').trim(); s.bic=(g('fp-bic')||'').trim();
     if(typeof save==='function')save(); if(typeof render==='function')render(); if(typeof toast==='function')toast('Paramètres de facturation enregistrés ✓');
   };
@@ -14872,6 +14894,11 @@ ${lignes}
         +'<div class="field"><label>Conditions de paiement de la TVA</label><select id="fp-tva">'+opt('Sur les encaissements',tva)+opt('Sur les débits',tva)+'</select></div>'
         +'<div class="field"><label>Type de transaction (paiement)</label><select id="fp-moyen">'+opt('Virement',moyen)+opt('CB',moyen)+opt('Espèces',moyen)+opt('Chèque',moyen)+'</select></div>'
         +'<div class="field"><label>Frais de recouvrement (€) en cas de retard</label><input id="fp-frais" type="number" step="0.01" value="'+(s.fraisRecouvrement!=null?s.fraisRecouvrement:40)+'"></div>'
+      +'</div>'
+      +'<div class="row g3">'
+        +'<div class="field"><label>Délai de paiement par défaut (jours)</label><input id="fp-delai" type="number" min="0" value="'+(s.delaiPaiement!=null?s.delaiPaiement:30)+'"></div>'
+        +'<div class="field"><label>&nbsp;</label><div class="sub" style="margin:0">La date d\'échéance des nouvelles factures = date d\'émission + ce délai (recalculée automatiquement).</div></div>'
+        +'<div></div>'
       +'</div>'
       +'<div class="row g3">'
         +'<div class="field"><label>Escompte paiement anticipé (%)</label><input id="fp-esc" type="number" step="0.01" value="'+(s.escompteDefaut!=null?s.escompteDefaut:0)+'"></div>'
@@ -15405,6 +15432,31 @@ ${lignes}
       +'body[data-theme="liquid-clair"] option:checked,body[data-theme="jour"] option:checked{background-color:#0a64d6 !important;color:#ffffff !important;-webkit-text-fill-color:#ffffff !important}';
     document.head.appendChild(st);
   }catch(e){}
+})();
+</script>
+<script id="yada-addon108">
+/* addon108 — Date d'échéance calculée automatiquement = date d'émission + délai de
+   paiement (par défaut 30 jours, modifiable). Recalcul à chaque changement de la date
+   d'émission OU du délai. 100% additif. */
+(function(){
+  window.addDaysISO=function(iso,n){ if(!iso) return iso; var p=String(iso).split('-'); if(p.length!==3) return iso;
+    var d=new Date(Date.UTC(+p[0],+p[1]-1,+p[2])); if(isNaN(d.getTime())) return iso;
+    d.setUTCDate(d.getUTCDate()+(parseInt(n,10)||0)); return d.toISOString().slice(0,10); };
+  window.faDelaiDefaut=function(){ try{ return (db.societe&&db.societe.delaiPaiement!=null)?(parseInt(db.societe.delaiPaiement,10)||0):30; }catch(e){ return 30; } };
+  window.faEcheanceAuto=function(){
+    var de=document.getElementById('fa-date'), ec=document.getElementById('fa-ech'), dl=document.getElementById('fa-delai');
+    if(!de||!ec) return;
+    var delai = dl ? (parseInt(dl.value,10)||0) : window.faDelaiDefaut();
+    if(de.value){ ec.value=window.addDaysISO(de.value, delai); }
+    try{ if(typeof faMaj==='function') faMaj(); }catch(e){}
+  };
+  /* même logique pour la fenêtre « Nouvelle facture » du cabinet (champs nf-*) */
+  window.nfEcheanceAuto=function(){
+    var de=document.getElementById('nf-date'), ec=document.getElementById('nf-ech'), dl=document.getElementById('nf-delai');
+    if(de&&ec){ var delai = dl ? (parseInt(dl.value,10)||0) : window.faDelaiDefaut();
+      if(de.value){ ec.value=window.addDaysISO(de.value, delai); } }
+    try{ if(typeof nfUpdate==='function') nfUpdate(); }catch(e){}
+  };
 })();
 </script>
 </body>

@@ -16,7 +16,19 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Facturation cabinet : liste des factures agrandie (pleine largeur, 25/page) — v199
+---
+
+## 🟢 Dernière mise à jour — Facture : échéance auto (émission + délai) + adresse société sur 2 lignes — v200
+**Quoi :** (1) la **date d'échéance** se calcule **automatiquement** = date d'émission + **délai de paiement** (30 j par défaut, modifiable) ; recalcul à chaque changement de la date d'émission OU du délai. (2) l'**adresse de la société** (ex. ALR CONSEIL) est **mise à la ligne** sur la facture A4 (rue / code postal + ville).
+
+**Où / comment :**
+- `yada-addon108` : `addDaysISO(iso,n)`, `faDelaiDefaut()` (= `db.societe.delaiPaiement` ?? 30), `faEcheanceAuto()` (champs `fa-*`) et `nfEcheanceAuto()` (fenêtre cabinet `nf-*`). Champs **« Délai de paiement (jours) »** ajoutés dans `faClientCreer`, le formulaire `pageFacturation` et la fenêtre `nfFormHTML` ; `fa-date`/`nf-date` `onchange` → recalcul de l'échéance ; valeurs initiales d'échéance déjà calculées. Réglage **« Délai de paiement par défaut »** dans `factParamCard`/`factParamSave` (`db.societe.delaiPaiement`).
+- `adrLignes(adresse,cp,ville)` (avant `docHTML`) : coupe la rue / le code postal (5 chiffres) — sinon vers le 15e caractère sans couper un mot ; utilisé pour le bloc société **et** client dans `docHTML`.
+- Badge → **v200**.
+
+---
+
+## 🟢 MAJ précédente — Facturation cabinet : liste des factures agrandie (pleine largeur, 25/page) — v199
 **Quoi :** la **liste des factures de génération** (page « Client » côté cabinet) est **agrandie** : affichée en **pleine largeur** (au lieu d'une colonne étroite avec défilement horizontal) et **25 factures par page** au lieu de 10.
 
 **Où / comment :** `addon73` ne **scinde plus** `pageFacturation` en 2 colonnes (cabinet) → la liste `factureListe` occupe toute la largeur ; `factureListe` : `per` 10 → **25**. `addon73` continue de scinder `pageAchats`. Badge → **v199**.
