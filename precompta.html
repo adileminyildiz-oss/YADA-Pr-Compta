@@ -5101,7 +5101,7 @@ function pageRappro(){
   // colonne journaux/comptes 512 + relevés existants
   const jrCol=comptes.map(c=>{ const rel=releveDe(c.code, rapMois); const sel=c.code===rapCompte;
     return `<div class="cpt ${sel?'on':''}" onclick="rapSetCompte('${c.code}')" oncontextmenu="rapCtxCompte(event,'${c.code}')" title="Clic droit : créer un relevé de rapprochement sur ce compte">▸ ${c9(c.code)} - ${c.lib}</div>`+
-      (rel?`<div class="rel ${sel?'on':''}" oncontextmenu="rapCtx(event,'${c.code}')" onclick="rapSetCompte('${c.code}')">Relevé BQ au ${frDate(rel.dateFin)}${rel.verrouille?' ':''}</div>`:'');
+      (rel?`<div class="rel ${sel?'on':''}" oncontextmenu="rapCtx(event,'${c.code}')" onclick="rapSetCompte('${c.code}')">Relevé BQ au ${frDate(rel.dateFin)}${rel.verrouille?' 🔒':(Math.abs((rapStats(rel)||{ecartAJustifier:1}).ecartAJustifier)<0.005?' ✓':'')}</div>`:'');
   }).join('');
   const rel=releveDe(rapCompte, rapMois);
   // panneau droit selon onglet / existence du relevé
@@ -10782,7 +10782,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v224 · noir & bleu';
+    b.textContent='YADA · v225 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -16309,6 +16309,92 @@ ${lignes}
     +'.ec-sage .ec-table tbody tr.ec-r .ec-c,.ec-sage .ec-table tbody tr.ec-r .ec-jrn,.ec-sage .ec-table tbody tr.ec-r .ec-solde,.ec-sage .ec-table tbody tr.ec-r .ec-lettre{cursor:cell}'
     +'@keyframes ecFocusEcr{0%{background:rgba(30,144,255,.45)}100%{background:transparent}}'
     +'.ec-sage .ec-table tbody tr.ec-focus-ecr td{animation:ecFocusEcr 1.6s ease-out}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon121">
+/* ============================================================
+   RAPPROCHEMENT BANCAIRE — vue de tous les rapprochements + validation au mois.
+   • Récap « Rapprochements bancaires effectués » (tous les relevés + leur état :
+     ✓ soldé / 🔒 verrouillé / écart) — cliquable pour ouvrir le rapprochement.
+   • CADENAS 🔒 sur le MOIS de rapprochement quand il est verrouillé.
+   • Validation au MOIS : avec plusieurs comptes bancaires, le mois n'est
+     « validé » (✓) que lorsque TOUS les comptes ayant des mouvements ce mois-là
+     sont rapprochés & soldés (sinon ◐ en attente — pas de validation). Le compte
+     déjà rapproché reste visible dans son mois (colonne Journaux + récap).
+   100% additif (greffe pageRappro), aucune logique comptable modifiée.
+   ============================================================ */
+(function(){
+  function banks(){ return (typeof comptesBanque==='function'?comptesBanque():[]); }
+  /* comptes bancaires AYANT des mouvements ce mois (ceux à rapprocher) */
+  window.rapBanquesMois=function(m){ return banks().filter(function(c){ try{ return ecrituresBanqueMois(c.code,m).length>0; }catch(e){ return false; } }); };
+  window.rapMoisStatut=function(m){
+    var bs=window.rapBanquesMois(m); var total=bs.length, faits=0, soldes=0, verr=0;
+    bs.forEach(function(c){ var rel=(typeof releveDe==='function')?releveDe(c.code,m):null; if(rel){ faits++; var st=rapStats(rel); if(st && Math.abs(st.ecartAJustifier)<0.005) soldes++; if(rel.verrouille) verr++; } });
+    var valide=(total>0 && soldes===total);
+    var verrouille=(total>0 && verr===total && valide);
+    return { total:total, faits:faits, soldes:soldes, verrouilles:verr, valide:valide, verrouille:verrouille };
+  };
+  window.rapRecapHTML=function(){
+    var rels=(db.releves||[]).slice();
+    if(!rels.length) return '<div class="rb-recap"><div class="rb-recap-h">Rapprochements bancaires effectués</div>'
+      +'<div class="rb-recap-body"><div class="rb-recap-empty">Aucun rapprochement effectué pour le moment — créez un relevé (clic droit sur un compte bancaire).</div></div></div>';
+    rels.sort(function(a,b){ return a.mois<b.mois?-1:(a.mois>b.mois?1:(c9(a.compte)<c9(b.compte)?-1:1)); });
+    var rows=rels.map(function(rel){ var st=rapStats(rel); var solde=st&&Math.abs(st.ecartAJustifier)<0.005; var sm=window.rapMoisStatut(rel.mois);
+      var statut = rel.verrouille?'<span class="rb-tag lock">🔒 Verrouillé</span>'
+        : solde?'<span class="rb-tag ok">✓ Soldé</span>'
+        : '<span class="rb-tag ko">● Écart '+eur(st?st.ecartAJustifier:0)+'</span>';
+      var moisLbl=rel.mois.slice(5)+'/'+rel.mois.slice(0,4); var mb=sm.verrouille?' 🔒':(sm.valide?' ✓':(sm.total>1?' ◐':''));
+      return '<tr onclick="rapSetMois(\''+rel.mois+'\');rapSetCompte(\''+rel.compte+'\')" title="Ouvrir ce rapprochement">'
+        +'<td>'+moisLbl+'<span class="rb-mb">'+mb+'</span></td>'
+        +'<td class="cpt">'+c9(rel.compte)+'</td><td>au '+frDate(rel.dateFin)+'</td>'
+        +'<td class="r">'+eur(rel.solde)+'</td><td>'+statut+'</td></tr>';
+    }).join('');
+    return '<div class="rb-recap"><div class="rb-recap-h">Rapprochements bancaires effectués'
+      +'<span class="rb-recap-x" onclick="this.closest(\'.rb-recap\').classList.toggle(\'collapsed\')" title="Réduire / déplier">▾</span></div>'
+      +'<div class="rb-recap-body"><table class="rb-recap-t"><thead><tr><th>Mois</th><th>Compte 512</th><th>Relevé</th><th class="r">Solde relevé</th><th>État</th></tr></thead>'
+      +'<tbody>'+rows+'</tbody></table></div></div>';
+  };
+  if(typeof window.pageRappro==='function'){
+    var _pr=window.pageRappro;
+    window.pageRappro=function(){
+      var html=_pr.apply(this, arguments);
+      try{
+        /* cadenas / validation sur le MOIS dans la colonne des périodes */
+        html=html.replace(/<div class="it ([^"]*)" onclick="rapSetMois\('([^']+)'\)">([\s\S]*?)<\/div>/g, function(full, cls, mois, inner){
+          var s=window.rapMoisStatut(mois); var b='';
+          if(s.verrouille) b=' <span class="rb-mbadge lock" title="Mois verrouillé — tous les comptes rapprochés et verrouillés">🔒</span>';
+          else if(s.valide) b=' <span class="rb-mbadge ok" title="Rapprochement validé — tous les comptes bancaires du mois soldés">✓</span>';
+          else if(s.faits>0) b=' <span class="rb-mbadge part" title="'+s.faits+'/'+s.total+' compte(s) rapproché(s) — validation du mois en attente">◐</span>';
+          return '<div class="it '+cls+'" onclick="rapSetMois(\''+mois+'\')">'+inner+b+'</div>';
+        });
+        /* récap de tous les rapprochements, juste sous la barre de menus */
+        html=html.replace('<div class="rb-top">', window.rapRecapHTML()+'<div class="rb-top">');
+      }catch(e){}
+      return html;
+    };
+  }
+  try{ var st=document.createElement('style'); st.id='rb-recap-mod'; st.textContent=
+    '.rb-mbadge{font-size:11px;margin-left:4px}.rb-mbadge.ok{color:#1f6b4f}.rb-mbadge.part{color:#b07a16}'
+    +'.rb-recap{background:#f4f7fa;border-bottom:1px solid #d8dde3;font-family:"Segoe UI",system-ui,sans-serif}'
+    +'.rb-recap-h{display:flex;align-items:center;justify-content:space-between;background:#10243a;color:#cfe0f5;font-weight:700;font-size:12px;padding:6px 12px}'
+    +'.rb-recap-x{cursor:pointer;background:rgba(255,255,255,.12);border-radius:5px;padding:0 8px;line-height:18px}'
+    +'.rb-recap.collapsed .rb-recap-body{display:none}'
+    +'.rb-recap-body{max-height:172px;overflow:auto}'
+    +'.rb-recap-empty{padding:12px;color:#667;font-size:12px}'
+    +'.rb-recap-t{width:100%;border-collapse:collapse;font-size:12px}'
+    +'.rb-recap-t th{position:sticky;top:0;background:#e7edf3;color:#33424f;text-align:left;font-weight:600;padding:5px 10px;border-bottom:1px solid #cdd6df}'
+    +'.rb-recap-t th.r{text-align:right}'
+    +'.rb-recap-t td{padding:4px 10px;border-bottom:1px solid #edf1f5;cursor:pointer;white-space:nowrap}'
+    +'.rb-recap-t td.r{text-align:right;font-variant-numeric:tabular-nums}.rb-recap-t td.cpt{font-family:"IBM Plex Mono",monospace}'
+    +'.rb-recap-t tr:hover td{background:#e8f1fc}'
+    +'.rb-recap-t .rb-mb{color:#1f6b4f;font-weight:700}'
+    +'.rb-tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:11px}'
+    +'.rb-tag.ok{background:#dcefe6;color:#1f6b4f}.rb-tag.ko{background:#fde2dd;color:#9c3024}.rb-tag.lock{background:#e3ecff;color:#234}'
+    +'body[data-theme="noir"] .rb-recap{background:#0a121d}'
+    +'body[data-theme="noir"] .rb-recap-t th{background:#11243a;color:#cfe0f5;border-color:#1c3a57}'
+    +'body[data-theme="noir"] .rb-recap-t td{color:#dce7f2;border-color:#16212e}'
+    +'body[data-theme="noir"] .rb-recap-t tr:hover td{background:rgba(30,144,255,.14)}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>

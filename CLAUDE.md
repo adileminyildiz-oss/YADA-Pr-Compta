@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Fenêtre plein écran au glisser-haut + saisie sur l'écriture cliquée + sélection multi-lignes copier/coller — v224
+## 🟢 Dernière mise à jour — Rapprochement bancaire : récap de tous les rapprochements + validation au mois + cadenas multi-comptes — v225
+**Quoi :** dans le **Rapprochement bancaire**, (1) une bande **« Rapprochements bancaires effectués »** liste **tous les relevés** avec leur **état** (✓ soldé / 🔒 verrouillé / ● écart), cliquable pour ouvrir le rapprochement ; (2) un **cadenas 🔒** apparaît sur le **mois** (colonne des périodes) et sur la ligne du relevé quand c'est **verrouillé** ; (3) **validation au mois** : s'il y a **plusieurs comptes bancaires** mouvementés sur le mois, le mois n'est **« validé » (✓)** que lorsque **TOUS** sont rapprochés & soldés (sinon **◐ en attente** — aucune validation), mais le compte déjà rapproché **reste visible** dans son mois (colonne Journaux + récap).
+
+**Où / comment :** `yada-addon121` — helpers `window.rapBanquesMois(m)` (comptes 512 ayant des mouvements ce mois), `window.rapMoisStatut(m)` (`{total,faits,soldes,verrouilles,valide,verrouille}` ; `valide = soldes===total`, `verrouille = valide && tous verrouillés`), `window.rapRecapHTML()`. Greffe `pageRappro` : badges 🔒/✓/◐ par mois (regex sur les items `.it` de `.rb-per`) + injection du récap avant `.rb-top`. Édition chirurgicale de la ligne « Relevé BQ au … » (🔒 si verrouillé, ✓ si soldé). Aucune logique comptable modifiée. Badge → **v225**.
+
+---
+
+## 🟢 MAJ précédente — Fenêtre plein écran au glisser-haut + saisie sur l'écriture cliquée + sélection multi-lignes copier/coller — v224
 **Quoi :** trois améliorations de la saisie / des fenêtres : (1) **glisser une fenêtre (manipulable) vers le haut de l'écran → plein écran** (snap façon Windows, repère bleu en haut) ; (2) dans **tous les journaux**, le **clic droit « ✎ Saisir / éditer cette écriture »** ouvre l'éditeur **positionné sur l'écriture cliquée** (défilement + curseur sur la **saisie du compte** de la ligne sélectionnée, surbrillance temporaire) ; (3) **sélection multi-lignes** dans l'éditeur (glisser le pointeur sur la zone gauche/droite des lignes, ou **Maj+clic** ; **Échap** annule) puis **Ctrl/Cmd+C / Ctrl/Cmd+V** pour **copier / coller** les lignes (collées après la ligne active, et copiées en TSV dans le presse-papiers).
 
 **Où / comment :** `addon89` — `dragMove`/`dragEnd` détectent le haut de l'écran (`#wm-topzone`) → `wmMaximize(k)` (dé-flotte / sort de `sg-reduit`). `sgJournalGrid` — lignes `data-ecr`/`data-cpt` ; `addon117` transmet l'id d'écriture ; `ouvrirJournalEditable(journal,mois,ecrId,cpt)` défile + focus `input.ec-cpt` (classe `ec-focus-ecr`). `yada-addon120` — sélection (`mousedown`/glisser sur cellules hors saisie, `.ec-rowsel`), `Ctrl+C`/`Ctrl+V` (`window.ecClip`, collage `e.lignes.splice`), actif hors mode compte (`!window.ecCode`, pour ne pas gêner le lettrage). Aucune logique comptable modifiée. Badge → **v224**.
