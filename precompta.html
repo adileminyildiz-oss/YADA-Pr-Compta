@@ -6729,10 +6729,12 @@ function integrerFEC(data, exoD, exoF){
     const estFourn=String(compte).startsWith('401');
     if(!estClient && !estFourn) return null;
     const cleAux=compaux||(''); const nom=(compauxlib||libEcr||(estClient?'Client':'Fournisseur')).trim();
+    const norm=s=>(s||'').toUpperCase().normalize('NFD').replace(/[^A-Z0-9]/g,'');
     // 1) par compte auxiliaire
     if(cleAux && tiersParAux[cleAux]) return tiersParAux[cleAux];
-    // 2) par nom déjà existant
-    let t=db.tiers.find(x=> x.type===(estClient?'client':'fournisseur') && (x.nom||'').toLowerCase()===nom.toLowerCase());
+    // 2) par nom déjà existant (normalisé : évite les doublons « HABITAT CONCEPT » avec variantes)
+    const nn=norm(nom);
+    let t=db.tiers.find(x=> x.type===(estClient?'client':'fournisseur') && norm(x.nom)===nn);
     if(t){ if(cleAux && !t.compteAux){ t.compteAux=cleAux; tiersParAux[cleAux]=t; } return t; }
     // 3) création
     t={ id:uid(), type:estClient?'client':'fournisseur', categorie:'societe', nom,
@@ -8045,17 +8047,25 @@ function blocDoublonsTiers(){
       </div>`;}).join('')}</div>`;
 }
 function tiersFusionner(key){ scanDoublonsTiers(); const grp=(window.dupTiersGroups||{})[key]; if(!grp||grp.length<2)return;
-  const score=t=>((db.factures||[]).filter(f=>f.tiersId===t.id).length)+((db.ecritures||[]).filter(e=>e.tiersId===t.id).length)+((db.banque||[]).filter(b=>b.tiersId===t.id).length);
+  const score=t=>((db.factures||[]).filter(f=>f.tiersId===t.id).length)+((db.docs||[]).filter(d=>d.clientId===t.id).length)+((db.ecritures||[]).filter(e=>(e.lignes||[]).some(l=>t.compteAux&&c9(l.compte)===c9(t.compteAux))).length)+(t.compteAuxCustom?5:0);
   const master=grp.slice().sort((a,b)=>score(b)-score(a))[0];
-  if(!confirm('Fusionner '+grp.length+' fiches « '+master.nom+' » en une seule ? Les mouvements seront rattachés à la fiche conservée.'))return;
+  if(!confirm('Fusionner '+grp.length+' fiches « '+master.nom+' » en une seule ?\n\nTous les montants saisis et mouvements seront regroupés sur la fiche conservée (compte '+(master.compteAux||'')+').'))return;
+  // compte de tiers cible (auxiliaire) du master
+  if(!master.compteAux) master.compteAux = (typeof genAux==='function'?genAux(master.type, master.nom):(master.type==='client'?'411':'401'));
+  const newC=c9(master.compteAux); let nLignes=0;
   grp.forEach(t=>{ if(t.id===master.id)return;
+    // rattacher les pièces au master
     (db.factures||[]).forEach(f=>{if(f.tiersId===t.id)f.tiersId=master.id;});
+    (db.docs||[]).forEach(d=>{if(d.clientId===t.id)d.clientId=master.id;});
     (db.ecritures||[]).forEach(e=>{if(e.tiersId===t.id)e.tiersId=master.id;});
     (db.banque||[]).forEach(b=>{if(b.tiersId===t.id)b.tiersId=master.id;});
     (db.reglements||[]).forEach(r=>{if(r.tiersId===t.id)r.tiersId=master.id;});
-    if(!master.compteAux && t.compteAux) master.compteAux=t.compteAux;
+    // CONSOLIDER LES MONTANTS : déplacer les lignes d'écriture du compte du doublon vers le compte du master
+    if(t.compteAux){ const oldC=c9(t.compteAux);
+      if(oldC!==newC){ (db.ecritures||[]).forEach(e=>{ (e.lignes||[]).forEach(l=>{ if(c9(l.compte)===oldC){ l.compte=newC; l.lib=(master.type==='client'?'Client ':'Fournisseur ')+master.nom; nLignes++; } }); }); } }
     db.tiers=db.tiers.filter(x=>x.id!==t.id); });
-  save(); scanDoublonsTiers(); render(); toast('Fiches fusionnées sur « '+master.nom+' »'); }
+  master.compteAuxCustom=true; // ne pas régénérer le compte conservé
+  save(); scanDoublonsTiers(); render(); toast('Fusion : 1 fiche « '+master.nom+' » conservée'+(nLignes?(' · '+nLignes+' ligne(s) d\'écriture regroupée(s) sur '+newC):'')); }
 function tiersSupprimerDup(id){ const t=(db.tiers||[]).find(x=>x.id===id); if(!t)return;
   const nb=((db.ecritures||[]).filter(e=>e.tiersId===id).length)+((db.factures||[]).filter(f=>f.tiersId===id).length);
   if(!confirm('Supprimer la fiche « '+t.nom+' » ?'+(nb?(' '+nb+' mouvement(s) lié(s) deviendront orphelins.'):'')))return;
@@ -10707,7 +10717,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v205 · noir & bleu';
+    b.textContent='YADA · v206 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -11022,12 +11032,19 @@ ${lignes}
       var nomEl=document.getElementById('fa-newnom'); var nom=((nomEl||{}).value||'').trim();
       if(!nom) return toast('Indiquez le nom du nouveau client.');
       var siret=((document.getElementById('fa-newsiret')||{}).value||'').replace(/\s/g,'');
-      var t={ id:uid(), type:'client', categorie:'societe', nom:nom, compteContre:'706000', compteTVA:'44571', taux:20,
-        compteAux:null, email:'', tel:'', siret:siret, tvaIntra:(nomEl&&nomEl.dataset?nomEl.dataset.tva||'':''), iban:'',
-        adresse:(nomEl&&nomEl.dataset?nomEl.dataset.adr||'':''), nouveau:true, origine:'client', dateAjout:todayStr() };
-      db.tiers.push(t); try{ t.compteAux=genAux('client',t.nom); }catch(e){}
-      var o=document.createElement('option'); o.value=t.id; o.textContent=t.nom; sel.appendChild(o); sel.value=t.id;
-      toast('Nouveau client « '+nom+' » créé — à compléter par le cabinet.');
+      /* DÉDOUBLONNAGE : réutiliser un client existant du même nom au lieu d'en recréer un */
+      var nrm=function(s){ return (s||'').toUpperCase().normalize('NFD').replace(/[^A-Z0-9]/g,''); };
+      var t=(db.tiers||[]).find(function(x){ return x.type==='client' && nrm(x.nom)===nrm(nom); });
+      if(t){ if(!t.siret&&siret)t.siret=siret; toast('Client « '+t.nom+' » déjà existant — la facture y sera rattachée.'); }
+      else {
+        t={ id:uid(), type:'client', categorie:'societe', nom:nom, compteContre:'706000', compteTVA:'44571', taux:20,
+          compteAux:null, email:'', tel:'', siret:siret, tvaIntra:(nomEl&&nomEl.dataset?nomEl.dataset.tva||'':''), iban:'',
+          adresse:(nomEl&&nomEl.dataset?nomEl.dataset.adr||'':''), nouveau:true, origine:'client', dateAjout:todayStr() };
+        db.tiers.push(t); try{ t.compteAux=genAux('client',t.nom); }catch(e){}
+        toast('Nouveau client « '+nom+' » créé — à compléter par le cabinet.');
+      }
+      var ex=Array.prototype.slice.call(sel.options).filter(function(o){return o.value===t.id;})[0];
+      if(!ex){ var o=document.createElement('option'); o.value=t.id; o.textContent=t.nom; sel.appendChild(o); } sel.value=t.id;
     }
     if(typeof emettre==='function') emettre(valider, true); /* côté client : on crée la facture, l'écriture se génère ensuite depuis la liste */
   };
@@ -11394,16 +11411,26 @@ ${lignes}
     if(f.statut!=='remplie')return toast('La fiche n\'est pas encore remplie par le client.');
     var adr=((f.adresse||'')+((f.cp||f.ville)?(', '+(f.cp||'')+' '+(f.ville||'')):'')).trim();
     var isCli=(f.type==='client');
-    var t={ id:uid(), type:isCli?'client':'fournisseur', categorie:'societe', nom:f.raison,
-      compteContre:isCli?'706000':'606000', compteTVA:isCli?'44571':'44566',
-      taux:20, compteAux:null, email:f.email||'', tel:f.tel||'', siret:f.siret||'', tvaIntra:f.tvaIntra||'', iban:f.iban||'', adresse:adr,
-      nouveau:true, origine:'client', dateAjout:todayStr() };
-    db.tiers.push(t); try{ t.compteAux=genAux(t.type,t.nom); }catch(e){}
+    /* DÉDOUBLONNAGE : si un tiers du même type porte déjà ce nom, on le RÉUTILISE
+       (les factures du client/fournisseur sont rattachées à UN seul compte tiers). */
+    var norm=function(s){ return (s||'').toUpperCase().normalize('NFD').replace(/[^A-Z0-9]/g,''); };
+    var nn=norm(f.raison); var existant=nn && (db.tiers||[]).find(function(x){ return x.type===(isCli?'client':'fournisseur') && norm(x.nom)===nn; });
+    var t, reutilise=false;
+    if(existant){ t=existant; reutilise=true;
+      if(!t.email&&f.email)t.email=f.email; if(!t.tel&&f.tel)t.tel=f.tel; if(!t.siret&&f.siret)t.siret=f.siret;
+      if(!t.tvaIntra&&f.tvaIntra)t.tvaIntra=f.tvaIntra; if(!t.iban&&f.iban)t.iban=f.iban; if(!t.adresse&&adr)t.adresse=adr;
+    } else {
+      t={ id:uid(), type:isCli?'client':'fournisseur', categorie:'societe', nom:f.raison,
+        compteContre:isCli?'706000':'606000', compteTVA:isCli?'44571':'44566',
+        taux:20, compteAux:null, email:f.email||'', tel:f.tel||'', siret:f.siret||'', tvaIntra:f.tvaIntra||'', iban:f.iban||'', adresse:adr,
+        nouveau:true, origine:'client', dateAjout:todayStr() };
+      db.tiers.push(t); try{ t.compteAux=genAux(t.type,t.nom); }catch(e){}
+    }
     f.statut='validee'; f.tiersId=t.id;
     /* rattacher TOUTES les factures liées à cette fiche (un seul nouveau tiers pour plusieurs factures) */
     var ids=Array.isArray(f.depotIds)?f.depotIds.slice():[]; if(f.depotId && ids.indexOf(f.depotId)<0) ids.push(f.depotId);
     var nb=0; ids.forEach(function(did){ var d=dstore().find(function(x){return x.id===did;}); if(d){ d.tiersId=t.id; d.tiersInconnu=false; nb++; } });
-    save(); if(typeof closeModal==='function')closeModal(); toast(''+(isCli?'Client':'Fournisseur')+' « '+t.nom+' » créé'+(nb>1?(' — '+nb+' factures rattachées'):'')+'.'); render();
+    save(); if(typeof closeModal==='function')closeModal(); toast(''+(isCli?'Client':'Fournisseur')+' « '+t.nom+' » '+(reutilise?'déjà existant — factures rattachées au même compte':'créé')+(nb>1?(' ('+nb+' factures)'):'')+'.'); render();
   };
 
   function lblTier(type){ return type==='client'?'client':'fournisseur'; }

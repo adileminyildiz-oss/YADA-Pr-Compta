@@ -28,7 +28,25 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Import FEC : écritures classées par libellé (OD PAIE / OD CHARGES / OD TVA / OD) + ligne bleue entre écritures — v205
+---
+
+## 🟢 Dernière mise à jour — Tiers : doublons clients/fournisseurs fusionnés en UN seul compte (montants regroupés) + dédoublonnage à la réception — v206
+**Quoi :** quand un client (ex. **HABITAT CONCEPT**) apparaît plusieurs fois dans les tiers, la **fusion** ne garde **qu'une fiche** et **regroupe tous les montants saisis** sur **ce compte tiers** (les lignes d'écriture du compte auxiliaire des doublons sont déplacées vers celui de la fiche conservée). La **réception** des factures clients ne crée plus de doublon (réutilisation du tiers existant).
+
+**Pourquoi :** les factures clients reçues créaient un nouveau client à chaque fois (plusieurs « HABITAT CONCEPT ») ; l'utilisateur veut une alerte de doublon, une seule fiche par client et tous les montants regroupés sur ce compte.
+
+**Ce qu'il fait :**
+- **Alerte doublon** (déjà existante) : tag **DOUBLON** + carte « Doublons fournisseurs / clients » (`scanDoublonsTiers`/`blocDoublonsTiers`, normalisation du nom).
+- **Fusion corrigée** (`tiersFusionner`) : choisit la fiche maître (la plus active / compte personnalisé), rattache factures/`docs`/écritures/banque/règlements, **et déplace les lignes d'écriture `c9(compteAux)` des doublons vers `c9(compteAux)` du maître** → tous les montants sur un seul compte tiers. `compteAuxCustom=true` sur le maître.
+- **Dédoublonnage à la création** : `integrerFEC`/`trouverOuCreerTiers` (FEC), `ficheValider` (dépôt « client/fournisseur inconnu ») et `faClientEmettre` (nouveau client) **réutilisent** un tiers du même nom (comparaison **normalisée** : majuscules, sans accents ni ponctuation) au lieu d'en recréer un.
+
+**Où / comment :** `tiersFusionner` (consolidation des lignes via `c9`), `trouverOuCreerTiers`/`ficheValider`/`faClientEmettre` (réutilisation par nom normalisé). Badge → **v206**.
+
+**Limites :** le rapprochement se fait sur le **nom normalisé** ; deux entités réellement distinctes au même nom devraient être distinguées manuellement (bouton « Laisser »).
+
+---
+
+## 🟢 MAJ précédente — Import FEC : écritures classées par libellé (OD PAIE / OD CHARGES / OD TVA / OD) + ligne bleue entre écritures — v205
 **Quoi :** à l'import FEC, chaque écriture d'O.D. est placée dans le **bon journal d'après son libellé** : « OD PAIE » → **OD PAIE (ODP)**, charges (CHARGE/COTISATION/URSSAF/PATRONAL) → **OD CHARGES (ODC, nouveau journal)**, TVA → **OD TVA (ODTVA)**, le reste → **OD (Opérations diverses)**. Les écritures de charges générées par la paie vont aussi en **ODC**. Une **ligne bleue** sépare chaque écriture dans le Journal comptable.
 
 **Où / comment :**
