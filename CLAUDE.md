@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Saisie au journal : clic droit pour saisir, en-têtes répétés par ligne, navigation clavier complète (flèches) — v221
+## 🟢 Dernière mise à jour — Messages d'alerte aux couleurs YADA (fin des `alert()` natifs) — v222
+**Quoi :** le message « ⚠ Écriture non soldée » (affiché quand on tente de quitter l'éditeur avec une écriture déséquilibrée) — et plus largement les alertes — s'affichent désormais dans une **modale soignée aux couleurs YADA (bleu nuit + bleu Crystal)** au lieu de la **boîte `alert()` native** du navigateur (« …github.io indique »). En-tête avec titre + pastille **YADA**, corps lisible, bouton **OK** ; **Échap / Entrée / clic dehors** ferment. La modale passe **au-dessus** de l'éditeur et des listes (z-index élevé).
+
+**Où / comment :** `yada-addon118` — `window.yadaAlert(msg, titre)` (création d'un overlay `#yada-alert`, `<style id="ya-alert-mod">`). `ecFermer` appelle `yadaAlert(msg,'⚠ Écriture non soldée')` (repli `alert`/`toast` si indisponible). Aucune logique modifiée (le blocage de fermeture v216 reste identique). Badge → **v222**.
+
+---
+
+## 🟢 MAJ précédente — Saisie au journal : clic droit pour saisir, en-têtes répétés par ligne, navigation clavier complète (flèches) — v221
 **Quoi :** refonte de la **saisie au journal** (Consultation + éditeur `.ec-sage`) : (1) **plus de bouton « Éditer le journal du mois »** — on fait désormais **clic droit sur une écriture** du journal → « ✎ Saisir / éditer ce journal » (ouvre l'éditeur) ; (2) dans l'éditeur, le **journal**, la **pièce** et le **libellé** **suivent toutes les lignes** de l'écriture (journal + pièce + libellé affichés sur chaque ligne jusqu'au solde ; le **libellé est identique** sur toutes les lignes — édité sur la 1re ligne, répliqué via `ecSetLibAll`) ; (3) les **comptes de tiers 401000000 / 411000000** apparaissent **avec les comptes auxiliaires fournisseurs / clients** dans l'autocomplétion ; (4) **navigation clavier complète** : **↓/↑** choisissent le compte dans la liste (sinon cellule dessous/dessus), **→/←** passent au champ suivant/précédent (au bord du champ ; toujours sur les montants), **Tab/Maj+Tab** champ suivant/précédent, **Entrée** = « passer à la suite » (valide le compte sélectionné dans la liste puis avance).
 
 **Où / comment :** `ecRender` (journal/pièce/libellé sur chaque ligne, `ec-ro` en lignes suivantes, `ecSetLibAll`) ; `addon85` (`ecSuggMove`/`ecSuggConfirm` + item actif `.act`) ; `addon114` réécrit (gestion Tab/Entrée/flèches + liste de comptes) ; `addon117` (clic droit `#sgj-ctx` sur `.sgj` → `ouvrirJournalEditable` ; styles `ec-ro`/`sgj-hint`) ; `sgJournalGrid` (bouton retiré, `data-jrn`/`data-per`). Aucune logique comptable modifiée. Badge → **v221**.
