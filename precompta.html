@@ -4162,6 +4162,14 @@ function pageDash(){
 function pageSociete(){
   return '<div class="dash-wrap">'+cabinetApercu()+'</div>';
 }
+/* Accès au compte bancaire Qonto (ouvre l'application Qonto dans un nouvel onglet).
+   Un dossier peut définir sa propre URL Qonto (d.qontoUrl) ; sinon l'app Qonto générique. */
+function accederQonto(url){
+  var u=(url&&/^https?:\/\//.test(url))?url:'https://app.qonto.com';
+  try{ window.open(u,'_blank','noopener,noreferrer'); }catch(e){ try{ location.href=u; }catch(_e){} }
+  if(typeof toast==='function') toast('Ouverture de Qonto…');
+}
+window.accederQonto=accederQonto;
 function cabinetApercu(){
   const cab=db.cabinet||cabinetDefaut();
   const actifs=cab.dossiers.filter(d=>d.actif).length;
@@ -4174,8 +4182,8 @@ function cabinetApercu(){
     <div class="kpi"><div class="lbl">Écritures comptables rejetées</div><div class="val">${cab.ecrituresRejetees||0}</div></div>
     <div class="kpi blue"><div class="lbl">Entreprises activées</div><div class="val">${actifs} <span class="meta">/ ${cab.total||cab.dossiers.length}</span></div></div>
   </div>
-  <div class="card"><h2>Portefeuille d'entreprises</h2>
-    <div class="sub">Cliquez sur « Ouvrir » pour accéder au dossier comptable.</div>
+  <div class="card"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:2px"><h2 style="margin:0">Portefeuille d'entreprises</h2><span style="flex:1"></span><button class="btn btn-pri btn-sm" onclick="accederQonto()" title="Ouvrir le compte bancaire Qonto">🏦 Accéder à Qonto</button></div>
+    <div class="sub">Cliquez sur « Ouvrir » pour accéder au dossier comptable, ou « Accéder à Qonto » pour ouvrir votre compte bancaire Qonto.</div>
     <input id="cab-search" placeholder="Rechercher une entreprise…" value="${(dashRecherche||'').replace(/"/g,'&quot;')}" oninput="dashRecherche=this.value;rafraichirCabinet()" autocomplete="off" style="margin-bottom:14px">
     <div id="rg-portfolio">${cabinetTable(liste)}</div>
   </div>`;
@@ -4196,7 +4204,7 @@ function cabinetTable(liste){
     <td class="r num">${fc.fourn}</td>
     <td class="r num">${fc.client}</td>
     <td class="r num">${d.docsManquants||0}</td>
-    <td><span class="rg-link" onclick="ouvrirDossierCabinet('${d.id}')">Accéder à ${d.portail||'Qonto'}</span></td>
+    <td><span class="rg-link" onclick="accederQonto('${(d.qontoUrl||'').replace(/'/g,'&#39;')}')" title="Ouvrir le compte Qonto">Accéder à ${d.portail||'Qonto'}</span></td>
     <td class="r" style="white-space:nowrap">
       <button class="btn btn-gold btn-sm" onclick="ouvrirDossierCabinet('${d.id}')">Ouvrir</button>
       <span class="rg-star ${d.favori?'on':''}" onclick="toggleFavoriDossier('${d.id}')" title="Favori" style="cursor:pointer;margin-left:6px">${d.favori?'★':'☆'}</span></td>
@@ -10692,7 +10700,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v202 · noir & bleu';
+    b.textContent='YADA · v203 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }

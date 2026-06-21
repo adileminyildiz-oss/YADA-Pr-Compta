@@ -22,7 +22,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Facturation : « Conditions de paiement » à la place du délai en jours — v202
+---
+
+## 🟢 Dernière mise à jour — Sociétés (portefeuille) : bouton « Accéder à Qonto » — v203
+**Quoi :** dans **Sociétés (portefeuille)**, un bouton cliquable **« 🏦 Accéder à Qonto »** ouvre le compte bancaire **Qonto** (application `https://app.qonto.com`) dans un nouvel onglet. Le lien « Accéder à Qonto » de chaque ligne de dossier ouvre désormais réellement Qonto (au lieu d'ouvrir le dossier).
+
+**Où / comment :** `accederQonto(url)` (`window.open(url||'https://app.qonto.com','_blank','noopener,noreferrer')`) ; bouton ajouté dans l'entête de la carte « Portefeuille d'entreprises » (`cabinetApercu`) ; lien par ligne (`cabinetTable`) → `accederQonto(d.qontoUrl||'')` (URL Qonto propre au dossier si renseignée, sinon l'app générique). Badge → **v203**.
+
+---
+
+## 🟢 MAJ précédente — Facturation : « Conditions de paiement » à la place du délai en jours — v202
 **Quoi :** dans la création de facture (Espace Client **et** fenêtre cabinet), la case **« Délai de paiement (jours) »** est remplacée par une liste **« Conditions de paiement »** (À réception, 8 / 15 / 30 / 45 / 60 jours, 30 / 45 jours fin de mois). La date d'échéance se calcule automatiquement selon la condition choisie ; la condition est imprimée sur la facture.
 
 **Où / comment :** `yada-addon108` — `FA_CONDITIONS`, `faCondDefaut`, `faCondOptions`, `faEcheanceFromCond` (+ `lastDayOfMonthISO` pour « fin de mois ») ; `faEcheanceAuto`/`nfEcheanceAuto` lisent `fa-cond`/`nf-cond`. Champs `fa-cond`/`nf-cond` (selects) à la place de `fa-delai`/`nf-delai` dans `faClientCreer`, `pageFacturation`, `nfFormHTML`. `emettre` enregistre `doc.conditions` (affiché par `docHTML`). Réglage **« Conditions de paiement par défaut »** dans `factParamCard`/`factParamSave` (`db.societe.conditionPaiement`, + `delaiPaiement` dérivé pour compat). Badge → **v202**.
