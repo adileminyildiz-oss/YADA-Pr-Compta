@@ -4162,6 +4162,14 @@ function pageDash(){
 function pageSociete(){
   return '<div class="dash-wrap">'+cabinetApercu()+'</div>';
 }
+/* Accès au compte bancaire Qonto (ouvre l'application Qonto dans un nouvel onglet).
+   Un dossier peut définir sa propre URL Qonto (d.qontoUrl) ; sinon l'app Qonto générique. */
+function accederQonto(url){
+  var u=(url&&/^https?:\/\//.test(url))?url:'https://app.qonto.com';
+  try{ window.open(u,'_blank','noopener,noreferrer'); }catch(e){ try{ location.href=u; }catch(_e){} }
+  if(typeof toast==='function') toast('Ouverture de Qonto…');
+}
+window.accederQonto=accederQonto;
 function cabinetApercu(){
   const cab=db.cabinet||cabinetDefaut();
   const actifs=cab.dossiers.filter(d=>d.actif).length;
@@ -4174,8 +4182,8 @@ function cabinetApercu(){
     <div class="kpi"><div class="lbl">Écritures comptables rejetées</div><div class="val">${cab.ecrituresRejetees||0}</div></div>
     <div class="kpi blue"><div class="lbl">Entreprises activées</div><div class="val">${actifs} <span class="meta">/ ${cab.total||cab.dossiers.length}</span></div></div>
   </div>
-  <div class="card"><h2>Portefeuille d'entreprises</h2>
-    <div class="sub">Cliquez sur « Ouvrir » pour accéder au dossier comptable.</div>
+  <div class="card"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:2px"><h2 style="margin:0">Portefeuille d'entreprises</h2><span style="flex:1"></span><button class="btn btn-pri btn-sm" onclick="accederQonto()" title="Ouvrir le compte bancaire Qonto">🏦 Accéder à Qonto</button></div>
+    <div class="sub">Cliquez sur « Ouvrir » pour accéder au dossier comptable, ou « Accéder à Qonto » pour ouvrir votre compte bancaire Qonto.</div>
     <input id="cab-search" placeholder="Rechercher une entreprise…" value="${(dashRecherche||'').replace(/"/g,'&quot;')}" oninput="dashRecherche=this.value;rafraichirCabinet()" autocomplete="off" style="margin-bottom:14px">
     <div id="rg-portfolio">${cabinetTable(liste)}</div>
   </div>`;
@@ -4196,7 +4204,7 @@ function cabinetTable(liste){
     <td class="r num">${fc.fourn}</td>
     <td class="r num">${fc.client}</td>
     <td class="r num">${d.docsManquants||0}</td>
-    <td><span class="rg-link" onclick="ouvrirDossierCabinet('${d.id}')">Accéder à ${d.portail||'Qonto'}</span></td>
+    <td><span class="rg-link" onclick="accederQonto('${(d.qontoUrl||'').replace(/'/g,'&#39;')}')" title="Ouvrir le compte Qonto">Accéder à ${d.portail||'Qonto'}</span></td>
     <td class="r" style="white-space:nowrap">
       <button class="btn btn-gold btn-sm" onclick="ouvrirDossierCabinet('${d.id}')">Ouvrir</button>
       <span class="rg-star ${d.favori?'on':''}" onclick="toggleFavoriDossier('${d.id}')" title="Favori" style="cursor:pointer;margin-left:6px">${d.favori?'★':'☆'}</span></td>
@@ -4441,8 +4449,8 @@ function pageFacturation(){
       <div class="field"><label>Type</label><select id="fa-type"><option value="facture">Facture</option><option value="devis">Devis</option><option value="avoir">Avoir</option></select></div>
       <div class="field"><label>Client</label><select id="fa-client" onchange="faMaj()">${clients.map(c=>`<option value="${c.id}">${c.nom}${c.categorie==='particulier'?' (particulier)':''}</option>`).join('')}</select></div>
       <div class="field"><label>Date d'émission</label><input type="date" id="fa-date" value="${todayStr()}" onchange="faEcheanceAuto()"></div>
-      <div class="field"><label>Délai de paiement (jours)</label><input type="number" id="fa-delai" min="0" value="${(typeof faDelaiDefaut==='function'?faDelaiDefaut():30)}" onchange="faEcheanceAuto()"></div>
-      <div class="field"><label>Date d'échéance (auto)</label><input type="date" id="fa-ech" value="${(typeof addDaysISO==='function'?addDaysISO(todayStr(),(typeof faDelaiDefaut==='function'?faDelaiDefaut():30)):todayStr())}"></div>
+      <div class="field"><label>Conditions de paiement</label><select id="fa-cond" onchange="faEcheanceAuto()">${(typeof faCondOptions==='function'?faCondOptions():'<option>30 jours</option>')}</select></div>
+      <div class="field"><label>Date d'échéance (auto)</label><input type="date" id="fa-ech" value="${(typeof faEcheanceFromCond==='function'?faEcheanceFromCond(todayStr(),faCondDefaut()):todayStr())}"></div>
     </div>
     <div class="field"><label>Lignes de facturation</label>${liHead}${liRows}
       <button class="btn btn-ghost btn-sm" onclick="faSync();faAddLigne()">+ Ajouter une désignation</button></div>
@@ -4521,7 +4529,9 @@ function emettre(valider, skipGen){
   const date=document.getElementById('fa-date').value, ech=document.getElementById('fa-ech').value;
   const signe=type==='avoir'?-1:1;
   const numero=nextNumUnique(type==='avoir'?'AV':type==='devis'?'DEV':'FAC');
+  const condEl=document.getElementById('fa-cond');
   const doc={ id:uid(), type, clientId:t.id, date, echeance:ech, numero,
+    conditions:(condEl?condEl.value:'')||'',
     lignes:JSON.parse(JSON.stringify(faLignes)).map(l=>({...l, qte:l.qte*1})).filter(l=>(l.desc!=null&&String(l.desc).trim()!=='') || r2((+l.qte||0)*(+l.pu||0))!==0),
     ht:r2(tot.ht*signe), tva:r2(tot.tva*signe), ttc:r2(tot.ttc*signe),
     statut: valider?'valide':'brouillon', envoye:false, ecritureId:null, devisId:null, transformeEn:null };
@@ -8174,7 +8184,7 @@ function nfFormHTML(){ const clients=db.tiers.filter(t=>t.type==='client'); cons
     </div>
     <div class="row g3">
       <div class="field"><label>Date d'émission</label><input type="date" id="nf-date" value="${s.date}" onchange="nfEcheanceAuto()"></div>
-      <div class="field"><label>Délai de paiement (jours)</label><input type="number" id="nf-delai" min="0" value="${s.delai!=null?s.delai:(typeof faDelaiDefaut==='function'?faDelaiDefaut():30)}" onchange="nfEcheanceAuto()"></div>
+      <div class="field"><label>Conditions de paiement</label><select id="nf-cond" onchange="nfEcheanceAuto()">${(typeof faCondOptions==='function'?faCondOptions(s.conditions):'<option>30 jours</option>')}</select></div>
       <div class="field"><label>Date d'échéance (auto)</label><input type="date" id="nf-ech" value="${s.ech}" onchange="nfUpdate()"></div>
     </div>
     <div class="field"><label>Devise</label><select id="nf-devise" onchange="nfUpdate()">${NF_DEVISES.map(d=>{const code=d.split(' ')[0];return `<option value="${code}" ${code===s.devise?'selected':''}>${d}</option>`;}).join('')}</select></div>
@@ -8200,10 +8210,10 @@ function nfFormHTML(){ const clients=db.tiers.filter(t=>t.type==='client'); cons
     <div class="field"><label>Retenue de garantie (%)</label><input id="nf-ret" type="number" value="${s.retenue||''}" placeholder="ex : 5 — vide si aucune" oninput="nfUpdate()"></div>
   </div>`; }
 function factureNouvelleOuvrir(){
-  var _del=(typeof faDelaiDefaut==='function'?faDelaiDefaut():30);
-  nfState={ type:'facture', clientId:'', date:todayStr(), delai:_del, ech:(typeof addDaysISO==='function'?addDaysISO(todayStr(),_del):todayStr()), devise:'EUR',
+  var _cond=(typeof faCondDefaut==='function'?faCondDefaut():'30 jours');
+  nfState={ type:'facture', clientId:'', date:todayStr(), ech:(typeof faEcheanceFromCond==='function'?faEcheanceFromCond(todayStr(),_cond):todayStr()), devise:'EUR',
     lignes:[nfLigneVide()], notes:'', remiseType:'', remiseVal:0, acompte:0,
-    moyen:'Non précisé', conditions:_del+' jours', escompte:0, escompteDelai:0, retenue:0 };
+    moyen:'Non précisé', conditions:_cond, escompte:0, escompteDelai:0, retenue:0 };
   let ov=document.getElementById('nf-overlay'); if(!ov){ ov=document.createElement('div'); ov.id='nf-overlay'; document.body.appendChild(ov); }
   ov.innerHTML='<div class="nf-wrap"><div class="nf-form">'+nfFormHTML()+'</div><div class="nf-prev"><div id="nf-prev-inner"></div></div></div>';
   ov.classList.add('show'); nfApercu();
@@ -8304,7 +8314,7 @@ function nfFormHTML(){ const clients=db.tiers.filter(t=>t.type==='client'); cons
     </div>
     <div class="row g3">
       <div class="field"><label>Date d'émission</label><input type="date" id="nf-date" value="${s.date}" onchange="nfEcheanceAuto()"></div>
-      <div class="field"><label>Délai de paiement (jours)</label><input type="number" id="nf-delai" min="0" value="${s.delai!=null?s.delai:(typeof faDelaiDefaut==='function'?faDelaiDefaut():30)}" onchange="nfEcheanceAuto()"></div>
+      <div class="field"><label>Conditions de paiement</label><select id="nf-cond" onchange="nfEcheanceAuto()">${(typeof faCondOptions==='function'?faCondOptions(s.conditions):'<option>30 jours</option>')}</select></div>
       <div class="field"><label>Date d'échéance (auto)</label><input type="date" id="nf-ech" value="${s.ech}" onchange="nfUpdate()"></div>
     </div>
     <div class="field"><label>Devise</label><select id="nf-devise" onchange="nfUpdate()">${NF_DEVISES.map(d=>{const code=d.split(' ')[0];return `<option value="${code}" ${code===s.devise?'selected':''}>${d}</option>`;}).join('')}</select></div>
@@ -10690,7 +10700,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v201 · noir & bleu';
+    b.textContent='YADA · v203 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -10964,8 +10974,8 @@ ${lignes}
       +'<div class="row g3"><div class="field"><label>Raison sociale *</label><input id="fa-newnom" placeholder="Nom du client"></div>'
       +'<div class="field"><label>SIRET</label><input id="fa-newsiret" placeholder="14 chiffres"></div>'
       +'<div class="field" style="align-self:end"><button class="btn btn-gold" style="width:100%" onclick="faClientNewSiret()">Compléter via le SIRET</button></div></div></div>'
-      +'<div class="row g3"><div class="field"><label>Délai de paiement (jours)</label><input type="number" id="fa-delai" min="0" value="'+(typeof faDelaiDefaut==='function'?faDelaiDefaut():30)+'" onchange="faEcheanceAuto()"></div>'
-      +'<div class="field"><label>Date d\'échéance (auto)</label><input type="date" id="fa-ech" value="'+(typeof addDaysISO==='function'?addDaysISO(todayStr(),(typeof faDelaiDefaut==='function'?faDelaiDefaut():30)):todayStr())+'"></div>'
+      +'<div class="row g3"><div class="field"><label>Conditions de paiement</label><select id="fa-cond" onchange="faEcheanceAuto()">'+(typeof faCondOptions==='function'?faCondOptions():'<option>30 jours</option>')+'</select></div>'
+      +'<div class="field"><label>Date d\'échéance (auto)</label><input type="date" id="fa-ech" value="'+(typeof faEcheanceFromCond==='function'?faEcheanceFromCond(todayStr(),faCondDefaut()):todayStr())+'"></div>'
       +'<div></div></div>'
       +'<div class="field"><label>Lignes</label>'+liHead+liRows
       +'<button class="btn btn-ghost btn-sm" onclick="faSync();faAddLigne()">+ Ajouter une désignation</button></div>'
@@ -14890,7 +14900,8 @@ ${lignes}
     s.tvaCondition=g('fp-tva')||'Sur les encaissements'; s.moyenDefaut=g('fp-moyen')||'Virement';
     s.fraisRecouvrement=parseFloat((g('fp-frais')||'').replace(',','.')); if(isNaN(s.fraisRecouvrement)) s.fraisRecouvrement=40;
     s.escompteDefaut=parseFloat((g('fp-esc')||'').replace(',','.'))||0; s.escompteDelaiDefaut=parseInt(g('fp-escd'),10)||0;
-    s.delaiPaiement=parseInt(g('fp-delai'),10); if(isNaN(s.delaiPaiement)||s.delaiPaiement<0) s.delaiPaiement=30;
+    s.conditionPaiement=g('fp-cond')||'30 jours';
+    try{ var _c=(window.FA_CONDITIONS||[]).filter(function(x){return x.lib===s.conditionPaiement;})[0]; s.delaiPaiement=_c?_c.j:30; }catch(e){ s.delaiPaiement=30; }
     s.banqueBenef=(g('fp-benef')||'').trim(); s.iban=(g('fp-iban')||'').trim(); s.bic=(g('fp-bic')||'').trim();
     if(typeof save==='function')save(); if(typeof render==='function')render(); if(typeof toast==='function')toast('Paramètres de facturation enregistrés ✓');
   };
@@ -14903,8 +14914,8 @@ ${lignes}
         +'<div class="field"><label>Frais de recouvrement (€) en cas de retard</label><input id="fp-frais" type="number" step="0.01" value="'+(s.fraisRecouvrement!=null?s.fraisRecouvrement:40)+'"></div>'
       +'</div>'
       +'<div class="row g3">'
-        +'<div class="field"><label>Délai de paiement par défaut (jours)</label><input id="fp-delai" type="number" min="0" value="'+(s.delaiPaiement!=null?s.delaiPaiement:30)+'"></div>'
-        +'<div class="field"><label>&nbsp;</label><div class="sub" style="margin:0">La date d\'échéance des nouvelles factures = date d\'émission + ce délai (recalculée automatiquement).</div></div>'
+        +'<div class="field"><label>Conditions de paiement par défaut</label><select id="fp-cond">'+(typeof faCondOptions==='function'?faCondOptions(s.conditionPaiement):'<option>30 jours</option>')+'</select></div>'
+        +'<div class="field"><label>&nbsp;</label><div class="sub" style="margin:0">La date d\'échéance des nouvelles factures est calculée automatiquement selon les conditions choisies.</div></div>'
         +'<div></div>'
       +'</div>'
       +'<div class="row g3">'
@@ -15442,26 +15453,53 @@ ${lignes}
 })();
 </script>
 <script id="yada-addon108">
-/* addon108 — Date d'échéance calculée automatiquement = date d'émission + délai de
-   paiement (par défaut 30 jours, modifiable). Recalcul à chaque changement de la date
-   d'émission OU du délai. 100% additif. */
+/* addon108 — Date d'échéance calculée automatiquement à partir des CONDITIONS DE
+   PAIEMENT choisies (au lieu d'un délai en jours). Recalcul à chaque changement de la
+   date d'émission OU des conditions. 100% additif. */
 (function(){
   window.addDaysISO=function(iso,n){ if(!iso) return iso; var p=String(iso).split('-'); if(p.length!==3) return iso;
     var d=new Date(Date.UTC(+p[0],+p[1]-1,+p[2])); if(isNaN(d.getTime())) return iso;
     d.setUTCDate(d.getUTCDate()+(parseInt(n,10)||0)); return d.toISOString().slice(0,10); };
-  window.faDelaiDefaut=function(){ try{ return (db.societe&&db.societe.delaiPaiement!=null)?(parseInt(db.societe.delaiPaiement,10)||0):30; }catch(e){ return 30; } };
+  window.lastDayOfMonthISO=function(iso){ var p=String(iso).split('-'); if(p.length!==3) return iso;
+    var d=new Date(Date.UTC(+p[0],+p[1],0)); return d.toISOString().slice(0,10); };
+  /* conditions de paiement proposées (libellé → nombre de jours [+ fin de mois]) */
+  window.FA_CONDITIONS=[
+    {lib:'À réception', j:0},
+    {lib:'8 jours', j:8},
+    {lib:'15 jours', j:15},
+    {lib:'30 jours', j:30},
+    {lib:'45 jours', j:45},
+    {lib:'60 jours', j:60},
+    {lib:'30 jours fin de mois', j:30, fdm:true},
+    {lib:'45 jours fin de mois', j:45, fdm:true}
+  ];
+  function condBy(lib){ return (window.FA_CONDITIONS||[]).filter(function(x){return x.lib===lib;})[0]; }
+  window.faCondDefaut=function(){ try{
+      if(db.societe&&db.societe.conditionPaiement && condBy(db.societe.conditionPaiement)) return db.societe.conditionPaiement;
+      var j=(db.societe&&db.societe.delaiPaiement!=null)?(parseInt(db.societe.delaiPaiement,10)||0):30;
+      var c=(window.FA_CONDITIONS||[]).filter(function(x){return x.j===j && !x.fdm;})[0];
+      return c?c.lib:'30 jours';
+    }catch(e){ return '30 jours'; } };
+  window.faCondOptions=function(sel){ if(!sel) sel=window.faCondDefaut();
+    return (window.FA_CONDITIONS||[]).map(function(c){ return '<option value="'+c.lib+'"'+(c.lib===sel?' selected':'')+'>'+c.lib+'</option>'; }).join(''); };
+  window.faEcheanceFromCond=function(dateISO, lib){ if(!dateISO) return dateISO; var c=condBy(lib)||{j:30};
+    var d=window.addDaysISO(dateISO, c.j); if(c.fdm) d=window.lastDayOfMonthISO(d); return d; };
+  /* compat : certains appels lisent encore un « délai par défaut » en jours */
+  window.faDelaiDefaut=function(){ var c=condBy(window.faCondDefaut())||{j:30}; return c.j; };
+
   window.faEcheanceAuto=function(){
-    var de=document.getElementById('fa-date'), ec=document.getElementById('fa-ech'), dl=document.getElementById('fa-delai');
+    var de=document.getElementById('fa-date'), ec=document.getElementById('fa-ech'), co=document.getElementById('fa-cond');
     if(!de||!ec) return;
-    var delai = dl ? (parseInt(dl.value,10)||0) : window.faDelaiDefaut();
-    if(de.value){ ec.value=window.addDaysISO(de.value, delai); }
+    var cond = co ? co.value : window.faCondDefaut();
+    if(de.value){ ec.value=window.faEcheanceFromCond(de.value, cond); }
     try{ if(typeof faMaj==='function') faMaj(); }catch(e){}
   };
   /* même logique pour la fenêtre « Nouvelle facture » du cabinet (champs nf-*) */
   window.nfEcheanceAuto=function(){
-    var de=document.getElementById('nf-date'), ec=document.getElementById('nf-ech'), dl=document.getElementById('nf-delai');
-    if(de&&ec){ var delai = dl ? (parseInt(dl.value,10)||0) : window.faDelaiDefaut();
-      if(de.value){ ec.value=window.addDaysISO(de.value, delai); } }
+    var de=document.getElementById('nf-date'), ec=document.getElementById('nf-ech'), co=document.getElementById('nf-cond');
+    var cond = co ? co.value : window.faCondDefaut();
+    if(de&&ec&&de.value){ ec.value=window.faEcheanceFromCond(de.value, cond); }
+    try{ if(typeof nfState!=='undefined' && nfState){ nfState.conditions=cond; } }catch(e){}
     try{ if(typeof nfUpdate==='function') nfUpdate(); }catch(e){}
   };
 })();
