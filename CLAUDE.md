@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Confirmations & saisies aux couleurs YADA (fin des `confirm()` / `prompt()` natifs) — v223
+## 🟢 Dernière mise à jour — Fenêtre plein écran au glisser-haut + saisie sur l'écriture cliquée + sélection multi-lignes copier/coller — v224
+**Quoi :** trois améliorations de la saisie / des fenêtres : (1) **glisser une fenêtre (manipulable) vers le haut de l'écran → plein écran** (snap façon Windows, repère bleu en haut) ; (2) dans **tous les journaux**, le **clic droit « ✎ Saisir / éditer cette écriture »** ouvre l'éditeur **positionné sur l'écriture cliquée** (défilement + curseur sur la **saisie du compte** de la ligne sélectionnée, surbrillance temporaire) ; (3) **sélection multi-lignes** dans l'éditeur (glisser le pointeur sur la zone gauche/droite des lignes, ou **Maj+clic** ; **Échap** annule) puis **Ctrl/Cmd+C / Ctrl/Cmd+V** pour **copier / coller** les lignes (collées après la ligne active, et copiées en TSV dans le presse-papiers).
+
+**Où / comment :** `addon89` — `dragMove`/`dragEnd` détectent le haut de l'écran (`#wm-topzone`) → `wmMaximize(k)` (dé-flotte / sort de `sg-reduit`). `sgJournalGrid` — lignes `data-ecr`/`data-cpt` ; `addon117` transmet l'id d'écriture ; `ouvrirJournalEditable(journal,mois,ecrId,cpt)` défile + focus `input.ec-cpt` (classe `ec-focus-ecr`). `yada-addon120` — sélection (`mousedown`/glisser sur cellules hors saisie, `.ec-rowsel`), `Ctrl+C`/`Ctrl+V` (`window.ecClip`, collage `e.lignes.splice`), actif hors mode compte (`!window.ecCode`, pour ne pas gêner le lettrage). Aucune logique comptable modifiée. Badge → **v224**.
+
+---
+
+## 🟢 MAJ précédente — Confirmations & saisies aux couleurs YADA (fin des `confirm()` / `prompt()` natifs) — v223
 **Quoi :** toutes les **confirmations de suppression** et **invites de saisie** du logiciel s'affichent désormais dans des **modales soignées aux couleurs YADA (bleu nuit + bleu Crystal)** au lieu des boîtes `confirm()` / `prompt()` natives du navigateur (« …github.io indique »). Boutons **Annuler / Confirmer** (le bouton de suppression est en **rouge danger**), champ de saisie intégré pour les prompts ; **Échap / clic dehors = Annuler**, **Entrée = Confirmer / OK**. `window.alert` est aussi redirigé.
 
 **Où / comment :** `yada-addon119` — `window.yadaConfirm(msg, onYes, opts)` et `window.yadaPrompt(msg, valeur, onOk, opts)` (callback, modale `.ya-ov`/`.ya-card`, réutilise le style de `yadaAlert`/addon118 + `<style id="ya-confirm-mod">`). **~49 confirmations** et **~15 saisies** converties (fire-and-forget → callback ; séquences de prompts imbriquées ; confirmations conditionnelles via fonction `_go`/`_gen`). **2 cas laissés en natif** (garde à retour synchrone) : `quitterRappro` (renvoie `false` pour bloquer la navigation) et la renumérotation de compte tiers dans `tiersEnregistrer` (garde au milieu d'un enregistrement synchrone). Aucune logique comptable modifiée. Badge → **v223**.
