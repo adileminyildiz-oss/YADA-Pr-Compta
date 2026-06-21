@@ -10755,7 +10755,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v210 · noir & bleu';
+    b.textContent='YADA · v211 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -14699,8 +14699,8 @@ ${lignes}
    écriture pour les différencier nettement. 100% additif (CSS). */
 (function(){
   try{ var st=document.createElement('style'); st.id='sgj-sep-mod'; st.textContent=
-    '.sg-app table.sgj tbody tr.sgj-ecr-sep td{border-top:3px solid #1e90ff !important}'
-    +'body[data-theme="noir"] .sg-app table.sgj tbody tr.sgj-ecr-sep td{border-top:3px solid #1e90ff !important}';
+    '.sg-app table.sgj tbody tr.sgj-ecr-sep td{border-top:1px solid #1e90ff !important}'
+    +'body[data-theme="noir"] .sg-app table.sgj tbody tr.sgj-ecr-sep td{border-top:1px solid #1e90ff !important}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
@@ -15717,14 +15717,14 @@ ${lignes}
    séparateur (sgj-ecr-sep) ; on l'ajoute à la page Journal comptable. 100% additif. */
 (function(){
   try{ var st=document.createElement('style'); st.id='journal-bluesep'; st.textContent=
-    'body[data-page="journal"] .card .ecr + .ecr{border-top:2px solid #1e90ff !important;margin-top:16px;padding-top:16px}'
-    /* Consultation des comptes / grand-livre : LIGNE BLEUE entre chaque écriture */
-    +'table.lx tbody tr.lx-ecr-sep td{border-top:2px solid #1e90ff !important}'
-    +'.lx-app table.lx tbody tr.lx-ecr-sep td{border-top:2px solid #1e90ff !important}'
-    +'#cl-overlay table.lx tbody tr.lx-ecr-sep td{border-top:2px solid #1e90ff !important}'
-    /* Consultation des comptes — vue par JOURNAL (sgJournalGrid) : ligne bleue entre écritures */
-    +'table.sgj tbody tr.sgj-ecr-sep td{border-top:3px solid #1e90ff !important;box-shadow:inset 0 2px 0 #1e90ff}'
-    +'.sg-app table.sgj tbody tr.sgj-ecr-sep td{border-top:3px solid #1e90ff !important;box-shadow:inset 0 2px 0 #1e90ff}';
+    'body[data-page="journal"] .card .ecr + .ecr{border-top:1px solid #1e90ff !important;margin-top:14px;padding-top:14px}'
+    /* Consultation des comptes / grand-livre : fine LIGNE BLEUE entre chaque écriture */
+    +'table.lx tbody tr.lx-ecr-sep td{border-top:1px solid #1e90ff !important}'
+    +'.lx-app table.lx tbody tr.lx-ecr-sep td{border-top:1px solid #1e90ff !important}'
+    +'#cl-overlay table.lx tbody tr.lx-ecr-sep td{border-top:1px solid #1e90ff !important}'
+    /* Consultation des comptes — vue par JOURNAL (sgJournalGrid) : fine ligne bleue entre écritures */
+    +'table.sgj tbody tr.sgj-ecr-sep td{border-top:1px solid #1e90ff !important}'
+    +'.sg-app table.sgj tbody tr.sgj-ecr-sep td{border-top:1px solid #1e90ff !important}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
