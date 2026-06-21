@@ -36,7 +36,20 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Capture de facture : compte d'Honoraires 622600000 dans le menu des comptes de charges — v244
+## 🟢 Dernière mise à jour — Paramétrage / Plan comptable séparés + transfert manuel + ajout direct fournisseur/client — v245
+**Quoi :** la page « Paramétrage & plan comptable » est **scindée en deux entrées de menu** : **« Paramétrage (réglages) »** et **« Plan comptable »**. La page Paramétrage gagne une carte **« 📁 Transfert manuel (par fichier) »** (Télécharger la base / Importer). Les onglets **Fournisseur** et **Client** du plan comptable reçoivent un **formulaire d'ajout direct** de compte (401…/411…).
+
+**Où / comment :**
+- Nav : entrée `parametrage` renommée « Paramétrage (réglages) » + nouvelle entrée `plancomptable` ; dispatch `plancomptable:pagePlanComptable` (objet réévalué à chaque rendu).
+- `pageParametrage` : retire `planComptableCard()`, ajoute `transfertManuelCard()` (réutilise `exportJSON`/`importJSON`, input `#param-imp`). Nouveau `pagePlanComptable()` = `head` + `planComptableCard()`.
+- `planComptableCard` : l'`addRow` des onglets fournisseur/client affiche un champ nom + bouton « + Créer le compte 401…/411… » → `pcAjoutTiers(type)` (crée un `db.tiers` minimal, `compteAux` via `genAux`, comptes de contrepartie/TVA par défaut). Le module Tiers reste pour la fiche complète.
+- Raccourci menu « Plan comptable… » → `current='plancomptable'`.
+
+Validé : `node --check` (118 scripts), filet d'équilibre (d-ama/d-sci42), smoke Playwright (pages séparées, transfert manuel présent, onglets + ajout fournisseur `401TEST00` créé, 0 pageerror). Badge → **v245**.
+
+---
+
+## 🟢 MAJ précédente — Capture de facture : compte d'Honoraires 622600000 dans le menu des comptes de charges — v244
 **Quoi :** lors de la **capture / comptabilisation d'une facture fournisseur** (et dans la fiche tiers, la saisie d'achat, les dépôts), le menu déroulant **« compte de charge »** propose désormais **« 622600 — Honoraires »**.
 
 **Où / comment :** ajout de `'622600'` à `COMPTES_CHARGE` (liste du menu, utilisée par `optComptes` dans la fiche tiers `ti-contre`, la comptabilisation des dépôts d'achat et la saisie d'achat) + libellé `'622600':'Honoraires'` dans `COMPTES` (clé 6 chiffres). À la génération, `c9('622600')='622600000'`. Validé : `node --check` (118 scripts), filet d'équilibre (d-ama/d-sci42), smoke Playwright (option « 622600 — Honoraires » présente, c9 OK, 0 pageerror). Badge → **v244**.

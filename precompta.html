@@ -4092,7 +4092,8 @@ const PAGES=[
   {id:'dossier',ico:'',sec:'Dossier',lbl:'Société & création du dossier'},
   {id:'infosociete',ico:'',sec:'Dossier',lbl:'Informations société'},
   {id:'coffre',ico:'',sec:'Dossier',lbl:'Coffre-fort identifiants'},
-  {id:'parametrage',ico:'',sec:'Dossier',lbl:'Paramétrage & plan comptable'},
+  {id:'parametrage',ico:'',sec:'Dossier',lbl:'Paramétrage (réglages)'},
+  {id:'plancomptable',ico:'',sec:'Dossier',lbl:'Plan comptable'},
 ];
 let current='dash';
 function buildNav(){
@@ -4119,7 +4120,7 @@ function render(){
   client:pageEspaceClient, compta:pageCompta, compteaux:pageCompteAux, chargespaie:pageChargesPaie, journal:pageJournal, ia:pageIA, tva:pageTVA, editions:pageEditions, fec:pageFEC,
   analytique:pageAnalytique, banque:pageBanque, saisiebq:pageSaisieBq, rappro:pageRappro, reglements:pageReglements,
   immos:pageImmos, fraiskm:pageFraisKm,
-  dossier:pageDossier, parametrage:pageParametrage, infosociete:pageInfoSociete, coffre:pageCoffre
+  dossier:pageDossier, parametrage:pageParametrage, plancomptable:pagePlanComptable, infosociete:pageInfoSociete, coffre:pageCoffre
 })[current]();
   // compta/compteaux et dash/societe fournissent déjà leur propre conteneur plein cadre ; les autres sont enveloppés
   const autoWrap = !softwareLike && current!=='dash' && current!=='societe';
@@ -6256,7 +6257,7 @@ function pageCompta(){
           <button onclick="balOuvrir('personnel')">Balance personnel</button>
         </div></span><span class="mi" onclick="event.stopPropagation();toggleMenu('sg-param')">Paramètres
         <div class="sg-dd" id="sg-param">
-          <button onclick="closeMenus();current='parametrage';render();toast('Plan comptable')">Plan comptable…</button>
+          <button onclick="closeMenus();current='plancomptable';render();toast('Plan comptable')">Plan comptable…</button>
           <button onclick="paramJournaux()">Plan de journaux…</button>
           <button onclick="toast('Export vers Sage Active')">Exporter vers Sage Active…</button>
         </div></span><span class="mi" onclick="event.stopPropagation();toggleMenu('sg-util')">Utilitaires
@@ -7049,6 +7050,16 @@ function pcRows(){
   if(rows.length>cap) html+='<tr><td colspan="5" class="mini" style="text-align:center;padding:8px">… '+(rows.length-cap)+' comptes supplémentaires — affinez la recherche.</td></tr>';
   return html;
 }
+function pcAjoutTiers(type){
+  const inp=document.getElementById('pc-tnom'); const nom=inp?inp.value.trim():'';
+  if(!nom) return toast('Dénomination requise');
+  const isC=type==='client';
+  db.tiers.push({ id:uid(), type:type, nom:nom, categorie:isC?'entreprise':null,
+    compteContre:isC?'706000':'606400', compteTVA:isC?'44571':'44566', taux:20,
+    compteAux:genAux(type,nom), email:'', tel:'', siret:'', siren:'', adresse:'',
+    tvaIntra:'', formeJuridique:'', codeAPE:'', activite:'', dateCreation:'', capitalSocial:'', conventionCollective:'' });
+  save(); render(); toast('Compte '+(isC?'client (411…)':'fournisseur (401…)')+' « '+nom+' » créé');
+}
 function pcRenameTiers(id,val){ const t=(db.tiers||[]).find(x=>x.id===id); if(!t)return;
   if(pcTiersUsed(t)){ toast('Tiers mouvementé : modification impossible'); render(); return; }
   t.nom=(val||'').trim()||t.nom; if(t.compteAux) COMPTES[c9(t.compteAux)]=t.nom; save(); toast('Compte tiers renommé'); }
@@ -7086,7 +7097,11 @@ function planComptableCard(){
       +'<div class="field"><label>Libellé</label><input id="pc-lib" placeholder="Intitulé du compte"></div>'
       +'<div class="field"><label>Compte de TVA lié</label><select id="pc-tva"><option value="">—</option>'+tvaOpts+'</select></div>'
       +'<div class="field" style="display:flex;align-items:flex-end"><button class="btn btn-gold" onclick="ajoutCompte()">+ Ajouter</button></div></div>')
-    : ('<div class="hint">'+(pcTab==='fournisseur'?'Les comptes fournisseurs (401…) sont créés automatiquement à l\'ajout d\'un fournisseur dans le module <b>Tiers</b>.':pcTab==='client'?'Les comptes clients (411…) sont créés automatiquement à l\'ajout d\'un client dans le module <b>Tiers</b>.':'Les comptes salariés (421…) sont créés automatiquement à l\'ajout d\'un salarié dans <b>Charges et Paie</b>.')+'</div>');
+    : (pcTab==='fournisseur'||pcTab==='client') ? ('<div class="row g3">'
+      +'<div class="field"><label>Dénomination du '+(pcTab==='fournisseur'?'fournisseur':'client')+'</label><input id="pc-tnom" placeholder="ex : ALR CONSEIL"></div>'
+      +'<div class="field" style="display:flex;align-items:flex-end"><button class="btn btn-gold" onclick="pcAjoutTiers(\''+pcTab+'\')">+ Créer le compte '+(pcTab==='fournisseur'?'401…':'411…')+'</button></div></div>'
+      +'<div class="hint">Le compte auxiliaire ('+(pcTab==='fournisseur'?'401XXXX00':'411XXXX00')+') est généré automatiquement depuis le nom. Pour une fiche complète (SIRET, TVA, IBAN…), utilisez le module <b>Tiers</b>.</div>')
+    : ('<div class="hint">Les comptes salariés (421…) sont créés automatiquement à l\'ajout d\'un salarié dans <b>Charges et Paie</b>.</div>');
   return '<div class="card"><h2>Plan comptable — comptes généraux & tiers</h2>'
     +tabBar
     +'<div class="sub">'+desc+'</div>'
@@ -7100,9 +7115,30 @@ function planComptableCard(){
       +'<tbody id="pc-list-body">'+pcRows()+'</tbody></table></div>';
 }
 
+function pagePlanComptable(){
+  return head('Plan comptable','Plan comptable général de la société. Les comptes peuvent être ajoutés, modifiés, supprimés, et déclinés en sous-comptes.')+
+  planComptableCard();
+}
+function transfertManuelCard(){
+  return `<div class="card"><h2>📁 Transfert manuel (par fichier, sans cloud)</h2>
+    <div class="sub">Enregistrez tous vos dossiers dans un fichier et transmettez-le à un autre appareil — sans synchronisation cloud.</div>
+    <ol class="mini" style="margin:4px 0 12px 18px;line-height:1.7">
+      <li><b>Sur l'appareil à jour</b> : « Télécharger la base » → un fichier <code>precompta-AAAA-MM-JJ.json</code> (tous les dossiers) est enregistré.</li>
+      <li>Transmettez ce fichier (e-mail, clé USB, AirDrop…).</li>
+      <li><b>Sur l'autre appareil</b> : « Importer le fichier » → sélectionnez le fichier reçu.</li>
+    </ol>
+    <div class="right" style="gap:8px;display:flex;flex-wrap:wrap;justify-content:flex-end">
+      <button class="btn btn-gold" onclick="exportJSON()">⬇️ Télécharger la base</button>
+      <input type="file" id="param-imp" accept="application/json" hidden onchange="importJSON(event)">
+      <button class="btn btn-pri" onclick="document.getElementById('param-imp').click()">⬆️ Importer le fichier</button>
+    </div>
+    <div class="hint">⚠️ L'import <b>remplace</b> les données de cet appareil : exportez toujours depuis l'appareil le plus à jour, importez sur les autres.</div>
+  </div>`;
+}
 function pageParametrage(){
   const p=db.parametres;
-  return head('Paramétrage & plan comptable','Réglages de saisie et plan comptable général de la société. Les comptes peuvent être ajoutés, modifiés, supprimés, et déclinés en sous-comptes.')+
+  return head('Paramétrage (réglages)','Réglages de saisie, synchronisation et transfert des données. (Le plan comptable a sa propre page.)')+
+  transfertManuelCard()+
   `<div class="card"><h2>Tailles des lignes & des comptes</h2>
     <div class="row g3">
       <div class="field"><label>Longueur des libellés</label><input type="number" id="p-longLib" value="${p.longLib}"></div>
@@ -7120,8 +7156,7 @@ function pageParametrage(){
       <div class="field"><label>Compte de résultat / d'arrondi</label><input id="p-resarr" value="${p.compteResultat} / ${p.compteArrondi}"></div>
     </div>
     <div class="right"><button class="btn btn-gold" onclick="enregistrerParam()">Enregistrer le paramétrage</button></div>
-  </div>
-  ${planComptableCard()}`;
+  </div>`;
 }
 function planComptableListe(){
   // comptes du plan (BTP + ajouts) + comptes réellement utilisés, dédupliqués par n° à 9 chiffres
@@ -10812,7 +10847,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v244 · noir & bleu';
+    b.textContent='YADA · v245 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
