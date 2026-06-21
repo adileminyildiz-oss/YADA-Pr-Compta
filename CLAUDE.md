@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Édition de la Balance : écritures en noir sur fond blanc légèrement bleuté — v233
+## 🟢 Dernière mise à jour — Toutes les éditions (Grand-livre, Bilan, Compte de résultat, Journaux…) : écritures en noir sur fond blanc légèrement bleuté — v234
+**Quoi :** l'habillage de la Balance (v233) est **généralisé à toutes les éditions imprimables** (`.doc-page`) — **Grand-livre**, **Bilan**, **Compte de résultat**, **Journaux**, **centralisateur**, justificatifs : **écritures en NOIR** sur **fond BLANC légèrement bleuté** (en-têtes / lignes alternées / totaux en bleu clair, titre & filets bleus), **quel que soit le thème**. Les **factures** (`.inv-page`) ne sont pas touchées.
+
+**Où / comment :** `yada-addon128` — `<style id="doc-edit-mod">` reprend les règles de la balance mais sur **`.doc-page`** (toutes les éditions). Pour battre la règle du thème noir `body[data-theme="noir"] .doc *{color:#1b1b1b !important}` (spécificité 0,2,1), les règles texte utilisent **`body[data-theme] .doc-page *`** (même spécificité, injectées en dernier → priorité) → texte `#111418`. 100% CSS additif, aucune donnée/logique modifiée. Badge → **v234**.
+
+---
+
+## 🟢 MAJ précédente — Édition de la Balance : écritures en noir sur fond blanc légèrement bleuté — v233
 **Quoi :** l'**édition de la Balance** (Balance générale / fournisseurs / clients / personnel / immo / retenue, ouverte depuis Éditions → modale) est rendue **plus lisible** : **toutes les écritures en NOIR** (compte, libellé, montants) sur un **fond BLANC légèrement bleuté** (en-têtes bleu clair, lignes alternées bleu très clair, totaux teintés de bleu, titre & filets bleus), **quel que soit le thème** (corrige le faible contraste en mode nuit).
 
 **Où / comment :** `balanceDoc` pose la classe **`bal-doc`** sur le `.doc-page` ; `yada-addon127` injecte `<style id="bal-edit-mod">` : `.bal-doc *{color:#111418}` (noir) + `background:#fff` + accents bleus (`th` `#eaf2fb`/`#0b346e`, lignes impaires `#f5f9ff`, totaux `sub/cls/tg` en bleu clair, titre `#0b346e` souligné `#0a64d6`). 100% CSS additif, aucune donnée ni logique modifiée. Badge → **v233**.

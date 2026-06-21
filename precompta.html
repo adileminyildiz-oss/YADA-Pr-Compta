@@ -10790,7 +10790,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v233 · noir & bleu';
+    b.textContent='YADA · v234 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -16862,6 +16862,37 @@ ${lignes}
     +'.bal-doc .doc-t td.cpt{color:#111418 !important;-webkit-text-fill-color:#111418 !important}'
     +'.bal-doc .doc-res{color:#0b346e !important;-webkit-text-fill-color:#0b346e !important}'
     +'.bal-doc .doc-foot{color:#5a6b7b !important;-webkit-text-fill-color:#5a6b7b !important}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon128">
+/* ============================================================
+   TOUTES LES ÉDITIONS imprimables (.doc-page) — Grand-livre, Bilan, Compte de
+   résultat, Journaux, centralisateur, balance, justificatifs : ÉCRITURES EN NOIR
+   sur FOND BLANC légèrement bleuté (en-têtes / lignes / totaux en bleu clair),
+   quel que soit le thème. Même habillage que la Balance (v233), généralisé.
+   N'affecte pas les FACTURES (.inv-page). 100% CSS additif.
+   ============================================================ */
+(function(){
+  try{ var st=document.createElement('style'); st.id='doc-edit-mod'; st.textContent=
+    '.doc-page{background:#ffffff !important;border:1px solid #cfe0f5 !important;box-shadow:0 6px 22px rgba(10,100,214,.12) !important}'
+    /* spécificité élevée (body[data-theme]…) pour battre les règles du thème noir sur « .doc * » */
+    +'.doc-page, .doc-page *, body[data-theme] .doc-page, body[data-theme] .doc-page *{color:#111418 !important;-webkit-text-fill-color:#111418 !important}'
+    +'.doc-page .doc-h1,.doc-page .doc-h1 *,body[data-theme] .doc-page .doc-h1,body[data-theme] .doc-page .doc-h1 *{color:#0b346e !important;-webkit-text-fill-color:#0b346e !important}'
+    +'.doc-page .doc-title,body[data-theme] .doc-page .doc-title{color:#0b346e !important;-webkit-text-fill-color:#0b346e !important;border-bottom:2px solid #0a64d6;padding-bottom:4px}'
+    +'body[data-theme] .doc-page .doc-t td.cpt{color:#111418 !important;-webkit-text-fill-color:#111418 !important}'
+    +'body[data-theme] .doc-page .doc-res{color:#0b346e !important;-webkit-text-fill-color:#0b346e !important}'
+    +'.doc-page table.doc-t th{background:#eaf2fb !important;color:#0b346e !important;-webkit-text-fill-color:#0b346e !important;border-bottom:1px solid #0a64d6 !important}'
+    +'.doc-page table.doc-t td{border-bottom:1px solid #eef3f9 !important}'
+    +'.doc-page table.doc-t tbody tr:nth-child(odd) td{background:#f5f9ff !important}'
+    +'.doc-page table.doc-t tbody tr:nth-child(even) td{background:#ffffff !important}'
+    +'.doc-page .doc-t tr.sub td{background:#eef5ff !important;border-top:1px solid #9fc2ec !important}'
+    +'.doc-page .doc-t tr.cls td{background:#e3eefc !important;border-top:1px solid #0a64d6 !important;border-bottom:1px solid #0a64d6 !important}'
+    +'.doc-page .doc-t tr.tg td{background:#d8e8fb !important;border-top:2px solid #0a64d6 !important;border-bottom:2px solid #0a64d6 !important}'
+    +'.doc-page .doc-t tr.ecr td,.doc-page .doc-t tr.total td{background:#eef5ff !important}'
+    +'.doc-page .doc-t td.cpt{color:#111418 !important;-webkit-text-fill-color:#111418 !important}'
+    +'.doc-page .doc-res{color:#0b346e !important;-webkit-text-fill-color:#0b346e !important}'
+    +'.doc-page .doc-foot{color:#5a6b7b !important;-webkit-text-fill-color:#5a6b7b !important}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
