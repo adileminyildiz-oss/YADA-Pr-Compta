@@ -10781,7 +10781,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v226 · noir & bleu';
+    b.textContent='YADA · v227 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -16394,6 +16394,175 @@ ${lignes}
     +'body[data-theme="noir"] .rb-recap-t th{background:#11243a;color:#cfe0f5;border-color:#1c3a57}'
     +'body[data-theme="noir"] .rb-recap-t td{color:#dce7f2;border-color:#16212e}'
     +'body[data-theme="noir"] .rb-recap-t tr:hover td{background:rgba(30,144,255,.14)}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon122">
+/* ============================================================
+   SAISIE JOURNAL DE BANQUE — mêmes paramètres que la saisie des journaux
+   (éditeur Sage `.ec-sage`) + DÉPÔT du relevé bancaire (PDF) : télécharger,
+   VOIR en page à part, et LIRE le relevé → aperçu à vérifier → écritures BQ.
+   100% additif (greffe pageSaisieBq + parseur PDF autonome avec auto-décalage
+   de police). Aucune logique comptable modifiée (les écritures passent par
+   posterBanque, déjà équilibré).
+   ============================================================ */
+(function(){
+  function relevesStore(){ db.parametres=db.parametres||{}; db.parametres.pieces=db.parametres.pieces||[]; return db.parametres.pieces; }
+  function moisCourant(){ try{ return (typeof sjMois!=='undefined'&&sjMois)?sjMois:((typeof ym==='function')?ym(todayStr()):''); }catch(e){ return ''; } }
+  function relevesDuMois(m){ return relevesStore().filter(function(p){ return p.cat==='releve' && (!m || p.mois===m); }); }
+
+  /* ---- Dépôt / téléchargement / vue ---- */
+  window.rbqDepot=function(input){
+    var files=input&&input.files?input.files:[]; if(!files.length) return;
+    var m=moisCourant();
+    var done=0; Array.prototype.forEach.call(files,function(f){
+      var rd=new FileReader();
+      rd.onload=function(){ relevesStore().push({ id:uid(), nom:f.name, mime:f.type||'application/pdf', taille:f.size||0, data:rd.result, date:todayStr(), cat:'releve', mois:m });
+        done++; if(done===files.length){ if(typeof save==='function')save(); if(typeof toast==='function')toast(done+' relevé(s) déposé(s) sur '+m); if(typeof render==='function')render(); } };
+      rd.readAsDataURL(f);
+    });
+  };
+  window.rbqVoir=function(id){ var p=relevesStore().find(function(x){return x.id===id;}); if(!p)return;
+    var w=window.open('', '_blank'); if(!w){ if(typeof toast==='function')toast('Autorisez les fenêtres pour voir le relevé.'); return; }
+    w.document.write('<!doctype html><title>'+(p.nom||'Relevé')+'</title><body style="margin:0"><iframe src="'+p.data+'" style="border:0;position:fixed;inset:0;width:100%;height:100%"></iframe></body>'); w.document.close(); };
+  window.rbqTelecharger=function(id){ var p=relevesStore().find(function(x){return x.id===id;}); if(!p)return; var a=document.createElement('a'); a.href=p.data; a.download=p.nom||'releve.pdf'; document.body.appendChild(a); a.click(); a.remove(); };
+  window.rbqSupprimer=function(id){ if(typeof yadaConfirm!=='function'){ return; } yadaConfirm('Supprimer ce relevé déposé ?', function(){ var s=relevesStore(); var i=s.findIndex(function(x){return x.id===id;}); if(i>=0)s.splice(i,1); if(typeof save==='function')save(); if(typeof render==='function')render(); }, {danger:true}); };
+
+  /* ---- Lecture PDF autonome (FlateDecode + texte + auto-décalage de police) ---- */
+  function b64ToU8(dataUrl){ var i=String(dataUrl||'').indexOf('base64,'); var b=i>=0?dataUrl.slice(i+7):''; var bin=atob(b); var u=new Uint8Array(bin.length); for(var k=0;k<bin.length;k++)u[k]=bin.charCodeAt(k); return u; }
+  function pump(rd){ return new Promise(function(resolve){ var reader=rd.getReader(),chunks=[],len=0; (function read(){ reader.read().then(function(r){ if(r.done){ var o=new Uint8Array(len),p=0; chunks.forEach(function(c){o.set(c,p);p+=c.length;}); resolve(o); return; } chunks.push(r.value); len+=r.value.length; read(); }); })(); }); }
+  function inflate(u8,mode){ var ds=new DecompressionStream(mode); var w=ds.writable.getWriter(); w.closed.catch(function(){}); w.write(u8).catch(function(){}); w.close().catch(function(){}); return pump(ds.readable); }
+  function flate(u8){ return inflate(u8,'deflate').catch(function(){ return inflate(u8,'deflate-raw').catch(function(){ return null; }); }); }
+  function pdfUnesc(s){ return s.replace(/\\([nrtbf()\\]|[0-7]{1,3})/g,function(_,c){ switch(c){case'n':return'\n';case'r':return'\r';case't':return'\t';case'b':return' ';case'f':return' ';case'(':return'(';case')':return')';case'\\':return'\\';default:return String.fromCharCode(parseInt(c,8));} }); }
+  function hexDec(h){ h=h.replace(/[^0-9A-Fa-f]/g,''); if(h.length%2)h+='0'; var s=''; for(var i=0;i<h.length;i+=2)s+=String.fromCharCode(parseInt(h.substr(i,2),16)); return s; }
+  function textFromContent(c){ var out=[]; var re=/\(((?:\\[\s\S]|[^\\()])*)\)|<([0-9A-Fa-f\s]+)>/g,m; while((m=re.exec(c))){ if(m[1]!=null)out.push(pdfUnesc(m[1])); else if(m[2]!=null)out.push(hexDec(m[2])); } return out.join(''); }
+  function extractText(u8){
+    var raw=new TextDecoder('latin1').decode(u8); var re=/stream\r?\n/g,m,guard=0,parts=[];
+    return (function next(){
+      m=re.exec(raw); guard++;
+      if(!m || guard>5000) return Promise.resolve(parts.join('\n'));
+      var start=m.index+m[0].length; var end=raw.indexOf('endstream',start); if(end<0) return Promise.resolve(parts.join('\n'));
+      var ds=raw.lastIndexOf('<<', m.index); var dict=ds>=0?raw.slice(ds,m.index):'';
+      var de=end; while(de>start && (raw.charCodeAt(de-1)===10||raw.charCodeAt(de-1)===13)) de--;
+      var bytes=u8.subarray(start,de);
+      var p=/FlateDecode/.test(dict)?flate(bytes):Promise.resolve(bytes);
+      return p.then(function(data){ if(data){ try{ parts.push(textFromContent(new TextDecoder('latin1').decode(data))); }catch(e){} } re.lastIndex=end+9; return next(); });
+    })();
+  }
+  /* police CID : octets de poids fort nuls + glyphes décalés (chiffres compris, < 32) →
+     on retire les nuls et on décale TOUTE la plage d'octets, puis on choisit le meilleur décalage. */
+  function shiftStr(s,k){ var o=''; for(var i=0;i<s.length;i++){ var c=s.charCodeAt(i); if(c===0) continue; o+=(c>=1&&c<=250)?String.fromCharCode(c+k):s[i]; } return o; }
+  function autoDecode(t){
+    if(/EUR|Transactions|Carte/.test(t)) return t;   /* déjà lisible (PDF non vectorisé) */
+    var KW=['EUR','Carte','Virement','Solde','Transactions','Date','Abonnement','Total'];
+    var best=t.replace(/\u0000/g,''),bestScore=-1;
+    for(var k=-40;k<=40;k++){ var d=shiftStr(t,k); var sc=0; for(var j=0;j<KW.length;j++){ var idx=0,c=0; while((idx=d.indexOf(KW[j],idx))>=0){ c++; idx+=KW[j].length; if(c>60)break; } sc+=c; } if(sc>bestScore){ bestScore=sc; best=d; } }
+    return best;
+  }
+  var ANCHOR=/Transactions\s*D\S{0,2}bit\s*Cr\S{0,2}dit/i;
+  var NOISE=/^(solde|entr|sortie|date\s*de\s*val|transactions|d\S{0,2}bit|cr\S{0,2}dit|relev|iban|bic|amaf?r\b|du\b|au\b|olinda|rcs|si\S{0,2}ge|autorit|toutes les cartes|adobe|capital|navarin|une marque|ope tour|avenue|europe|thiais|france)/i;
+  function frAmt(s){ return parseFloat(String(s).replace(/[ .](?=\d{3}\b)/g,'').replace(',','.')); }
+  window.rbqParse=function(text){
+    var t=autoDecode(String(text||'')).replace(/\u0000/g,'').replace(/[ \t]+/g,' ');
+    var period=null; var mp=t.match(/Du\s*(\d{1,2}\/\d{1,2}\/\d{2,4})\s*au\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i); if(mp) period={debut:mp[1],fin:mp[2]};
+    var am=t.match(ANCHOR); var body=am?t.slice(am.index+am[0].length):t;
+    body=body.replace(new RegExp('Date\\s*de\\s*val\\S*\\s*'+ANCHOR.source,'ig'),' ').replace(new RegExp(ANCHOR.source,'ig'),' ');
+    var segs=body.split(/\s*EUR\s*/i); var ops=[];
+    segs.forEach(function(s){ s=s.replace(/\s+/g,' ').trim(); if(s.length<3) return;
+      var ma=s.match(/(\d{1,3}(?:[ .]\d{3})*[.,]\d{2})(?!.*\d)/);
+      var montant=ma?frAmt(ma[1]):0;
+      var lib=(ma?s.slice(0,ma.index):s).replace(/[\d.,\s+\-]+$/,'').replace(/\s+/g,' ').trim();
+      if(!lib || lib.length<2 || lib.length>80) return; if(NOISE.test(lib)) return;
+      ops.push({ libelle:lib, montant:r2(montant||0) }); });
+    return { period:period, ops:ops.slice(0,250) };
+  };
+  window.rbqLire=function(id){
+    var p=relevesStore().find(function(x){return x.id===id;}); if(!p){ return; }
+    if(!/pdf/i.test(p.mime||'') && !/\.pdf$/i.test(p.nom||'')){ if(typeof toast==='function')toast('Déposez un relevé PDF pour la lecture automatique.'); return; }
+    if(typeof toast==='function')toast('Lecture du relevé…');
+    try{ var u8=b64ToU8(p.data); extractText(u8).then(function(txt){
+      var parsed=window.rbqParse(txt); var ops=(parsed&&parsed.ops)?parsed.ops:(Array.isArray(parsed)?parsed:[]);
+      var mo=p.mois||moisCourant();
+      /* extraire le jour (jj/mm) du libellé si présent, et nettoyer le libellé */
+      ops.forEach(function(o){ var md=String(o.libelle||'').match(/^(\d{1,2})\/(\d{1,2})/); if(md){ o.jour=md[1]; o.libelle=o.libelle.replace(/^\d{1,2}\/\d{1,2}\s*/,'').trim(); } });
+      window._rbqPreview={ pieceId:id, mois:mo, ops:ops, period:parsed&&parsed.period };
+      rbqOuvrirApercu();
+    }).catch(function(){ if(typeof toast==='function')toast('Lecture impossible — complétez manuellement dans l\'éditeur.'); }); }
+    catch(e){ if(typeof toast==='function')toast('Lecture impossible.'); }
+  };
+  function rbqOuvrirApercu(){
+    var P=window._rbqPreview; if(!P){ return; }
+    var rows=P.ops.map(function(o,i){ return '<tr>'
+      +'<td><input class="rbq-i rbq-j" data-i="'+i+'" data-f="jour" value="'+ (o.jour||'') +'" placeholder="jj"></td>'
+      +'<td><input class="rbq-i rbq-lib" data-i="'+i+'" data-f="libelle" value="'+String(o.libelle||'').replace(/"/g,'&quot;')+'"></td>'
+      +'<td><select class="rbq-i rbq-cpt" data-i="'+i+'" data-f="compte"><option value="">— compte —</option>'
+        +(typeof BANK_CHARGE!=='undefined'?BANK_CHARGE.map(function(c){return '<option value="'+c+'">'+c+' — '+(COMPTES[c]||'')+'</option>';}).join(''):'')
+        +'<option value="401000000">401 Fournisseurs</option><option value="411000000">411 Clients</option><option value="627000000">627 Services bancaires</option>'
+      +'</select></td>'
+      +'<td><input class="rbq-i rbq-num" data-i="'+i+'" data-f="debit" type="number" step="0.01" value="'+(o.montant>0?o.montant:'')+'" placeholder="0,00"></td>'
+      +'<td><input class="rbq-i rbq-num" data-i="'+i+'" data-f="credit" type="number" step="0.01" placeholder="0,00"></td>'
+      +'</tr>'; }).join('');
+    var html='<div class="rbq-ap"><div class="rbq-ap-note">Relevé lu : <b>'+P.ops.length+' opération(s)</b> détectée(s) sur '+P.mois+'. '
+      +'Les <b>libellés</b> sont repris du relevé ; complétez le <b>jour</b>, le <b>compte</b> et le <b>montant</b> (Débit = sortie, Crédit = entrée), puis générez les écritures. '
+      +'<i>Astuce : si les montants n\'apparaissent pas, c\'est que le PDF vectorise les chiffres — l\'OCR (connecté) les lira automatiquement.</i></div>'
+      +'<div class="rbq-ap-wrap"><table class="rbq-ap-t"><thead><tr><th>Jour</th><th>Libellé</th><th>Compte</th><th>Débit</th><th>Crédit</th></tr></thead><tbody>'
+      +(rows||'<tr><td colspan="5" style="padding:14px;color:#888">Aucune opération détectée — saisissez via l\'éditeur.</td></tr>')
+      +'</tbody></table></div>'
+      +'<div class="rbq-ap-foot"><button class="btn btn-ghost btn-sm" onclick="closeModal()">Fermer</button>'
+      +'<button class="btn btn-gold btn-sm" onclick="rbqGenerer()">⚙️ Générer les écritures bancaires</button></div></div>';
+    if(typeof openModal==='function') openModal('Relevé bancaire — vérification avant comptabilisation', html);
+    else { var mc=document.getElementById('modal-c'); if(mc){ mc.innerHTML='<div class="modal-h"><h3>Relevé bancaire — vérification</h3><button class="x" onclick="closeModal()">×</button></div>'+html; document.getElementById('modal').classList.add('show'); } }
+  }
+  window.rbqGenerer=function(){
+    var P=window._rbqPreview; if(!P){ return; }
+    var inputs=document.querySelectorAll('.rbq-ap .rbq-i'); var data={};
+    Array.prototype.forEach.call(inputs,function(el){ var i=el.getAttribute('data-i'), f=el.getAttribute('data-f'); (data[i]=data[i]||{})[f]=el.value; });
+    var n=0; Object.keys(data).forEach(function(i){ var r=data[i]; var deb=r2(parseFloat((r.debit||'0').replace(',','.'))||0), cre=r2(parseFloat((r.credit||'0').replace(',','.'))||0);
+      var montant=deb||cre; if(!montant) return; if(!r.compte){ return; }
+      posterBanque({ mois:P.mois, jour:(r.jour||'1'), compte:r.compte, libelle:(r.libelle||'Mouvement bancaire'),
+        sens:deb?'D':'C', montant:montant, suivi:(typeof nextNum==='function'?nextNum('BQ'):''), tiersId:'' }); n++; });
+    if(typeof save==='function')save(); if(typeof closeModal==='function')closeModal();
+    if(typeof toast==='function')toast(n?(n+' écriture(s) bancaire(s) générée(s) ✓'):'Renseignez au moins un compte + un montant.');
+    if(typeof render==='function')render();
+  };
+
+  /* ---- Carte greffée sous la saisie banque ---- */
+  window.rbqCard=function(){
+    var m=moisCourant(); var L=relevesDuMois('');
+    var items=L.map(function(p){ var pdf=/pdf/i.test(p.mime||'')||/\.pdf$/i.test(p.nom||'');
+      return '<div class="rbq-item"><span class="rbq-nom" title="'+String(p.nom||'').replace(/"/g,'&quot;')+'">📄 '+String(p.nom||'relevé')+(p.mois?(' · '+p.mois):'')+'</span>'
+        +'<span class="rbq-acts">'
+        +'<button class="btn btn-ghost btn-sm" onclick="rbqVoir(\''+p.id+'\')">👁 Voir (page à part)</button>'
+        +'<button class="btn btn-ghost btn-sm" onclick="rbqTelecharger(\''+p.id+'\')">⬇ Télécharger</button>'
+        +(pdf?'<button class="btn btn-gold btn-sm" onclick="rbqLire(\''+p.id+'\')">🧾 Lire le relevé → écritures</button>':'')
+        +'<button class="btn btn-ghost btn-sm" onclick="rbqSupprimer(\''+p.id+'\')">🗑</button>'
+        +'</span></div>'; }).join('');
+    return '<div class="card rbq-card">'
+      +'<div class="rbq-head"><b>📒 Saisie & relevé de banque</b>'
+        +'<button class="btn btn-pri" onclick="ouvrirJournalEditable(\'BQ\', (typeof sjMois!==\'undefined\'?sjMois:\''+m+'\'))">✎ Saisir le journal de banque (éditeur Sage)</button></div>'
+      +'<p class="mini" style="margin:6px 0 10px">Saisissez vos écritures de banque avec <b>la même interface que les journaux</b> (saisie directe, clic droit pour insérer, navigation clavier, copier/coller). Déposez votre <b>relevé bancaire</b> ci-dessous pour le consulter et en reprendre les opérations.</p>'
+      +'<div class="rbq-drop"><label class="btn btn-gold btn-sm" style="cursor:pointer">📎 Déposer un relevé bancaire (PDF)<input type="file" accept="application/pdf,.pdf" multiple style="display:none" onchange="rbqDepot(this)"></label>'
+        +'<span class="mini">Mois : <b>'+m+'</b></span></div>'
+      +'<div class="rbq-list">'+(items||'<div class="mini" style="color:#888;padding:6px 0">Aucun relevé déposé.</div>')+'</div>'
+      +'</div>';
+  };
+  if(typeof window.pageSaisieBq==='function'){ var _p=window.pageSaisieBq; window.pageSaisieBq=function(){ var h=_p.apply(this,arguments); try{ h+=window.rbqCard(); }catch(e){} return h; }; }
+
+  try{ var st=document.createElement('style'); st.id='rbq-mod'; st.textContent=
+    '.rbq-card{margin-top:14px}'
+    +'.rbq-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}'
+    +'.rbq-drop{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px}'
+    +'.rbq-item{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:7px 10px;border:1px solid var(--line,#ddd);border-radius:9px;margin-bottom:7px;background:var(--paper-2,#f7f7f7)}'
+    +'.rbq-nom{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46vw}'
+    +'.rbq-acts{display:flex;gap:6px;flex-wrap:wrap}'
+    +'.rbq-ap-note{font-size:12.5px;line-height:1.5;background:var(--paper-2,#eef);border:1px dashed var(--line-strong,#bbc);border-radius:9px;padding:9px 11px;margin-bottom:10px}'
+    +'.rbq-ap-wrap{max-height:48vh;overflow:auto;border:1px solid var(--line,#ddd);border-radius:9px}'
+    +'.rbq-ap-t{width:100%;border-collapse:collapse;font-size:12.5px}'
+    +'.rbq-ap-t th{position:sticky;top:0;background:#10243a;color:#cfe0f5;text-align:left;padding:6px 8px;font-weight:600}'
+    +'.rbq-ap-t td{padding:3px 6px;border-bottom:1px solid #eef1f5}'
+    +'.rbq-i{width:100%;font:inherit;font-size:12.5px;padding:4px 6px;border:1px solid #cfd6df;border-radius:6px;background:#fff;color:#1b1b1b}'
+    +'.rbq-j{width:54px}.rbq-num{width:96px;text-align:right}'
+    +'.rbq-ap-foot{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>

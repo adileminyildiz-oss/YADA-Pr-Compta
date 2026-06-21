@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Consultation des journaux : HA / VT / BQ filtrés sur le SEUL mois sélectionné (fin du cumul) — v226
+## 🟢 Dernière mise à jour — Saisie Journal de Banque : éditeur Sage + dépôt / lecture du relevé bancaire → écritures — v227
+**Quoi :** dans **Saisie journal Banque**, une carte **« 📒 Saisie & relevé de banque »** ajoute : (1) **« ✎ Saisir le journal de banque (éditeur Sage) »** qui ouvre **le même éditeur que les journaux** (`ouvrirJournalEditable('BQ', mois)` — saisie directe, clic droit, navigation clavier, copier/coller) ; (2) **dépôt d'un relevé bancaire PDF**, avec **⬇ Télécharger** et **👁 Voir (page à part)** (ouvre le PDF dans un nouvel onglet pour vérification) ; (3) **🧾 Lire le relevé → écritures** : lecture du PDF (décompression FlateDecode + décodage de la **police vectorisée**, auto-décalage), extraction des **opérations** (jour, libellé, **montant**), **aperçu de vérification** (modale : jour / libellé / compte / Débit / Crédit éditables) puis **génération des écritures BQ** via `posterBanque` (équilibrées).
+
+**Où / comment :** `yada-addon122` — greffe `pageSaisieBq` (+`rbqCard`) ; dépôt dans `db.parametres.pieces` (cat `releve`) ; `rbqVoir`/`rbqTelecharger`/`rbqSupprimer` ; lecteur PDF autonome (`extractText` + `DecompressionStream`, `shiftStr`/`autoDecode` pour les polices CID à octets nuls + glyphes décalés, chiffres compris) ; `rbqParse` (ancres tolérantes aux accents, split par « EUR », montant en fin de segment) → `rbqOuvrirApercu` → `rbqGenerer` (`posterBanque`). 100% additif, aucune logique comptable modifiée. **Limite :** l'extraction est *best-effort* (vérification humaine obligatoire avant génération ; sens Débit/Crédit et compte à confirmer ; certains relevés vectorisent les chiffres → l'OCR connecté reste le repli). Badge → **v227**.
+
+---
+
+## 🟢 MAJ précédente — Consultation des journaux : HA / VT / BQ filtrés sur le SEUL mois sélectionné (fin du cumul) — v226
 **Quoi :** dans la **Consultation des comptes**, quand on sélectionne un **mois** (janvier→décembre) dans la colonne des périodes, les journaux **HA (ACH)**, **VT (VTE)** et **BQ** affichent **uniquement les écritures de ce mois** (et plus le cumul depuis le début d'année). Tous les journaux se comportent désormais pareil (mois sélectionné uniquement) ; l'en-tête indique « — mois MM/AAAA ».
 
 **Où / comment :** `sgJournalGrid` — `const cumul=(code==='ACH'||code==='VTE')` remplacé par `const cumul=false` → le filtre devient `ym(e.date)===per` pour tous les journaux. L'éditeur (`ecEcritures` en mode `ecJournalFiltre`) filtrait déjà au mois. Affichage seul, aucune logique comptable modifiée. Badge → **v226**.
