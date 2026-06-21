@@ -9026,9 +9026,9 @@ function ecRender(){
       if(mine) solde=r2(solde + (+l.debit||0) - (+l.credit||0));
       totD+=(+l.debit||0); totC+=(+l.credit||0);
       const sSens = solde>0?'D':(solde<0?'C':'');
-      body+=`<tr class="ec-r ${mine?'ec-mine':'ec-other'}">
+      body+=`<tr class="ec-r ${mine?'ec-mine':'ec-other'}" data-eid="${e.id}" data-li="${i}">
         <td class="ec-c">${first?'!':''}</td>
-        <td class="ec-c">${first?`<input class="ec-i ec-date" type="date" value="${ecAttr(e.date)}" onchange="ecSetDate('${e.id}',this.value)">`:''}</td>
+        <td class="ec-c ec-dt"><input class="ec-i ec-datetxt" value="${ecAttr(frDate(e.date))}" onchange="ecSetDateTxt('${e.id}',this.value)"></td>
         <td class="ec-c ec-jrn">${first?(e.journal||''):''}</td>
         <td class="ec-l">${first?`<input class="ec-i" value="${ecAttr(ecPiece(e))}" onchange="ecSetPiece('${e.id}',this.value)">`:''}</td>
         <td class="ec-l"><input class="ec-i ec-cpt" value="${ecAttr(l.compte)}" autocomplete="off" onfocus="this.select()" onmouseup="return false" oninput="ecSuggest(this,'${e.id}',${i})" onblur="ecSuggClose()" onchange="ecSetLine('${e.id}',${i},'compte',this.value)"></td>
@@ -9052,7 +9052,7 @@ function ecRender(){
       <span class="ec-winbtn"><i>─</i><i>▢</i><i class="x" onclick="ecFermer()">✕</i></span></div>
     <div class="ec-menubar"><span>Fichier</span><span>Édition</span><span>Déplacement</span><span>Consultation</span><span>Affichage</span><span>Lettrage</span><span>Traitements</span><span>Aide</span></div>
     <div class="ec-toolbar"><span>⟵</span><span>⟶</span><span>⤒</span><span>⤓</span><span>⇕</span><span></span><span>↧</span><span>▤</span><span></span></div>
-    <div class="ec-tablewrap"><table class="ec-table"><thead><tr>
+    <div class="ec-tablewrap"><table class="ec-table"><colgroup><col class="cw-m"><col class="cw-dt"><col class="cw-j"><col class="cw-pc"><col class="cw-cp"><col class="cw-lb"><col class="cw-db"><col class="cw-cr"><col class="cw-sd"><col class="cw-l"><col class="cw-x"></colgroup><thead><tr>
       <th></th><th>Date</th><th>Jnl</th><th>Pièce</th><th>Compte</th><th>Libellé</th><th class="r">Débit</th><th class="r">Crédit</th><th class="r">Solde</th><th>L</th><th></th>
     </tr></thead><tbody>${body}</tbody></table></div>
     <div class="ec-totbar"><span class="ec-totlbl">Totaux</span>
@@ -10767,7 +10767,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v217 · noir & bleu';
+    b.textContent='YADA · v218 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -15824,6 +15824,94 @@ ${lignes}
     +'.ec-sage .ec-totbar{background:#0c1a2a !important;border-top:1px solid #1e90ff !important;padding:5px 7px !important}'
     +'.ec-sage .ec-fields{padding:5px 12px !important}'
     +'.ec-sage .ec-status{padding:4px 12px !important}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon113">
+/* ============================================================
+   ÉDITEUR D'ÉCRITURES — saisie directe « tableur », façon Sage simplifiée.
+   • Saisie DIRECTE sur le texte et les montants : champs totalement plats
+     (aucune bulle / aucun cercle / aucun halo au focus, juste un léger fond).
+   • INSÉRER une ligne au CLIC DROIT (menu contextuel) ; suppression aussi.
+     Le bouton ✕ (cercle rouge) par ligne est masqué.
+   • DATE répétée sur TOUTES les lignes de l'écriture (jusqu'au solde),
+     en TEXTE éditable (jj/mm/aaaa) — plus aucun sélecteur de date.
+   • TABLEAU à colonnes FIXES (table-layout:fixed) : tout reste en place quand
+     on agrandit ou redimensionne la fenêtre.
+   100% additif (CSS + 2 helpers ; ecRender génère déjà data-eid/data-li,
+   la date-texte et le colgroup). Aucune logique comptable modifiée.
+   ============================================================ */
+(function(){
+  /* Helper : date saisie en texte (jj/mm/aaaa ou aaaa-mm-jj) → ISO sur l'écriture. */
+  window.ecSetDateTxt=function(id,v){
+    try{
+      var e=(typeof ecGet==='function')?ecGet(id):null; if(!e) return;
+      var s=String(v||'').trim(), iso='';
+      var m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+      if(m){ var d=('0'+m[1]).slice(-2), mo=('0'+m[2]).slice(-2), y=m[3].length===2?('20'+m[3]):m[3]; iso=y+'-'+mo+'-'+d; }
+      else if(/^\d{4}-\d{2}-\d{2}$/.test(s)){ iso=s; }
+      if(iso){ e.date=iso; if(typeof save==='function') save(); }
+      if(typeof ecRender==='function') ecRender();
+    }catch(_){ if(typeof ecRender==='function') ecRender(); }
+  };
+  /* Helper : insérer une ligne vierge APRÈS la ligne i de l'écriture. */
+  window.ecInsertLine=function(id,i){
+    var e=(typeof ecGet==='function')?ecGet(id):null; if(!e||!e.lignes) return;
+    var pos=(typeof i==='number' && i>=0)?(i+1):e.lignes.length;
+    e.lignes.splice(pos,0,{compte:'',lib:'',debit:0,credit:0});
+    if(typeof ecRender==='function') ecRender();
+  };
+
+  /* Menu contextuel (clic droit) sur une ligne de l'éditeur. */
+  function ecCtxClose(){ var m=document.getElementById('ec-ctx'); if(m) m.remove(); }
+  document.addEventListener('click', ecCtxClose);
+  document.addEventListener('scroll', ecCtxClose, true);
+  document.addEventListener('contextmenu', function(ev){
+    var ov=document.getElementById('ec-overlay');
+    if(!ov || !ov.classList.contains('show')) return;
+    var win=document.getElementById('ec-win'); if(!win) return;
+    var tr=ev.target && ev.target.closest ? ev.target.closest('tr.ec-r') : null;
+    if(!tr || !win.contains(tr)) return;
+    ev.preventDefault(); ecCtxClose();
+    var eid=tr.getAttribute('data-eid'); var li=parseInt(tr.getAttribute('data-li'),10);
+    var m=document.createElement('div'); m.id='ec-ctx';
+    m.innerHTML='<button type="button" data-a="ins">↧ Insérer une ligne</button>'
+              +'<button type="button" data-a="del">🗑 Supprimer la ligne</button>';
+    document.body.appendChild(m);
+    var x=Math.min(ev.clientX, (window.innerWidth||1000)-210);
+    var y=Math.min(ev.clientY, (window.innerHeight||700)-100);
+    m.style.left=Math.max(6,x)+'px'; m.style.top=Math.max(6,y)+'px';
+    m.addEventListener('mousedown', function(e){ e.stopPropagation(); });
+    m.addEventListener('click', function(e){
+      var b=e.target.closest('button'); if(!b) return;
+      var a=b.getAttribute('data-a'); ecCtxClose();
+      if(a==='ins'){ window.ecInsertLine(eid, isNaN(li)?-1:li); }
+      else if(a==='del' && typeof ecDelLine==='function'){ ecDelLine(eid, isNaN(li)?0:li); }
+    });
+  }, true);
+
+  /* Styles : tableau fixe + saisie plate + masquage du ✕ + date-texte. */
+  try{ var st=document.createElement('style'); st.id='ec-tableur-mod'; st.textContent=
+    /* TABLEAU À COLONNES FIXES — rien ne bouge au redimensionnement */
+    '.ec-sage .ec-table{table-layout:fixed !important;width:100% !important}'
+    +'.ec-sage col.cw-m{width:22px}.ec-sage col.cw-dt{width:96px}.ec-sage col.cw-j{width:42px}'
+    +'.ec-sage col.cw-pc{width:122px}.ec-sage col.cw-cp{width:112px}'
+    +'.ec-sage col.cw-db{width:114px}.ec-sage col.cw-cr{width:114px}.ec-sage col.cw-sd{width:112px}'
+    +'.ec-sage col.cw-l{width:26px}.ec-sage col.cw-x{width:0}'
+    +'.ec-sage .ec-table td,.ec-sage .ec-table th{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}'
+    /* SAISIE DIRECTE — champs plats : aucune bulle/cercle/halo, juste un léger fond au focus */
+    +'.ec-sage .ec-i,.ec-sage input.ec-i,.ec-sage .ec-sage input{border:0 !important;border-radius:0 !important;box-shadow:none !important;background:transparent !important;outline:0 !important}'
+    +'.ec-sage .ec-i:hover{border:0 !important;background:transparent !important;box-shadow:none !important}'
+    +'.ec-sage .ec-i:focus{border:0 !important;border-radius:0 !important;box-shadow:none !important;outline:0 !important;background:rgba(30,144,255,.14) !important}'
+    /* DATE en texte (centrée), répétée sur toutes les lignes */
+    +'.ec-sage .ec-datetxt{text-align:center !important;color:#b9c6d6 !important;-webkit-text-fill-color:#b9c6d6 !important}'
+    +'.ec-sage .ec-r.ec-mine .ec-datetxt{color:#eaf2ff !important;-webkit-text-fill-color:#eaf2ff !important}'
+    /* MASQUER le bouton ✕ (cercle) par ligne — suppression via clic droit */
+    +'.ec-sage .ec-del{display:none !important}'
+    /* Menu contextuel */
+    +'#ec-ctx{position:fixed;z-index:100002;background:#0c1a2a;border:1px solid #1e90ff;border-radius:8px;box-shadow:0 14px 36px rgba(0,0,0,.55);padding:4px;min-width:196px}'
+    +'#ec-ctx button{display:block;width:100%;text-align:left;background:transparent;border:0;color:#eaf2ff;font:13px system-ui,sans-serif;padding:8px 12px;border-radius:6px;cursor:pointer}'
+    +'#ec-ctx button:hover{background:rgba(30,144,255,.18)}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>

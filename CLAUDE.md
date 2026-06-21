@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Éditeur d'écritures (Compte auxiliaire / Consultation) : refonte sobre façon Sage aux couleurs YADA — v217
+## 🟢 Dernière mise à jour — Éditeur d'écritures : saisie directe « tableur » (champs plats, clic droit pour insérer, date sur toutes les lignes, colonnes fixes) — v218
+**Quoi :** l'**éditeur d'écritures** (`.ec-sage`) devient une vraie grille de saisie directe, plus simple : (1) **saisie directe sur le texte ET les montants** — champs **totalement plats**, **aucune bulle / aucun cercle / aucun halo** au focus (juste un léger fond bleu) ; (2) **insérer une ligne au CLIC DROIT** (menu contextuel « ↧ Insérer une ligne » / « 🗑 Supprimer la ligne ») — le **bouton ✕ (cercle rouge)** par ligne est **masqué** ; (3) la **date** de l'écriture est **répétée sur toutes les lignes** (jusqu'au solde) en **texte éditable (jj/mm/aaaa)** — **plus aucun sélecteur de date** ; (4) **tableau à colonnes FIXES** (`table-layout:fixed`) : tout reste en place quand on **agrandit / redimensionne** la fenêtre.
+
+**Où / comment :** `yada-addon113` — `<style id="ec-tableur-mod">` (colonnes `cw-*` fixes, champs plats, ✕ masqué, menu `#ec-ctx`) + helpers `window.ecSetDateTxt(id,v)` (parse jj/mm/aaaa → ISO) et `window.ecInsertLine(id,i)` + écouteur `contextmenu` (capture) sur `tr.ec-r` de `#ec-win`. `ecRender` génère désormais `data-eid`/`data-li` par ligne, la **date-texte sur chaque ligne** (`ec-datetxt`, plus de `type=date`) et un **`<colgroup>`** à largeurs fixes. Aucune logique comptable modifiée. Badge → **v218**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur d'écritures (Compte auxiliaire / Consultation) : refonte sobre façon Sage aux couleurs YADA — v217
 **Quoi :** l'**éditeur d'écritures** façon Sage (`.ec-sage` — Compte auxiliaire, double-clic sur un compte, « Saisir une opération ») est rendu **plus sobre, plus dense et plus léger**, au plus près du **format Sage** mais aux **couleurs YADA (bleu nuit + bleu Crystal)** : (1) suppression des **bandeaux « Écriture i / N · Pièce · Équilibrée ✓ »** (moins de texte, moins de cadrage) ; (2) une **seule ligne bleu Crystal (#1e90ff, 2px)** fine **après chaque écriture SOLDÉE** (la logique v216 est inchangée : aucune ligne après une écriture non soldée) ; (3) **lignes serrées + champs compacts** (densité façon journal Sage) ; (4) ligne d'actions **allégée** (sans fond ni « Soldée ✓ », bouton « + Ajouter » discret — « Solder l'écriture » conservé) ; (5) en-tête/pied **aplatis**.
 
 **Où / comment :** `yada-addon112` injecte `<style id="ec-epure-mod">` en fin de `<head>` (prioritaire dans la cascade) ; **100% CSS**, aucune logique modifiée (séparateur conditionné au solde + fermeture bloquée tant qu'une écriture n'est pas soldée restent tels quels). Badge → **v217**.
