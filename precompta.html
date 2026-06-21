@@ -10767,7 +10767,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v216 · noir & bleu';
+    b.textContent='YADA · v217 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -15783,6 +15783,48 @@ ${lignes}
     +'#yada-wn .wn-ok{background:#1e90ff;border:none;color:#fff;font-weight:700;padding:8px 16px;border-radius:9px;cursor:pointer}';
     document.head.appendChild(st); }catch(e){}
   if(document.body) setTimeout(show,800); else document.addEventListener('DOMContentLoaded',function(){ setTimeout(show,800); });
+})();
+</script>
+<script id="yada-addon112">
+/* ============================================================
+   ÉPURE SAGE — éditeur d'écritures (.ec-sage / Consultation, Compte auxiliaire,
+   « Saisir une opération ») rendu plus SOBRE, plus DENSE et plus LÉGER, au plus
+   près du format Sage mais aux couleurs YADA (bleu nuit + bleu Crystal) :
+   • suppression des bandeaux « Écriture i / N · Équilibrée ✓ » (moins de texte) ;
+   • une seule LIGNE BLEU CRYSTAL fine APRÈS chaque écriture SOLDÉE (la logique
+     v216 reste inchangée : pas de ligne après une écriture non soldée) ;
+   • lignes serrées, champs compacts, moins de cadrage ; pied de page sobre.
+   100% additif (CSS injecté en fin de <head> → prioritaire dans la cascade).
+   Aucune logique modifiée (séparateur conditionné au solde + fermeture bloquée
+   tant qu'une écriture n'est pas soldée restent tels quels).
+   ============================================================ */
+(function(){
+  try{ var st=document.createElement('style'); st.id='ec-epure-mod'; st.textContent=
+    /* 1) Bandeaux d'en-tête d'écriture supprimés (sobriété, moins de texte) */
+    '.ec-sage .ec-table tbody tr.ec-ecr-sep{display:none !important}'
+    /* 2) Une seule ligne bleu Crystal, fine, APRÈS chaque écriture soldée */
+    +'.ec-sage .ec-table tbody tr.ec-redrow td{padding:0 !important;border:none !important}'
+    +'.ec-sage .ec-table tbody tr.ec-redrow .ec-soldee{border-top:2px solid #1e90ff !important;height:0 !important;margin:0 !important}'
+    /* 3) Ligne d'actions allégée : sans fond ni « Soldée ✓ », bouton discret
+          (les boutons « + Ajouter » et « Solder l'écriture » restent actifs) */
+    +'.ec-sage .ec-table tbody tr.ec-act td{background:transparent !important;border-bottom:none !important;padding:2px 6px 6px !important}'
+    +'.ec-sage .ec-okk{display:none !important}'
+    +'.ec-sage .ec-bt{background:transparent !important;border:1px solid #24405d !important;color:#9fb6d0 !important;font-size:11px !important;padding:2px 9px !important;border-radius:5px !important}'
+    +'.ec-sage .ec-bt:hover{background:rgba(30,144,255,.12) !important;color:#eaf2ff !important}'
+    +'.ec-sage .ec-bt-solde{background:linear-gradient(120deg,#5ab0ff,#0a64d6) !important;border:none !important;color:#fff !important}'
+    /* 4) Densité façon Sage : en-tête, lignes et champs resserrés */
+    +'.ec-sage .ec-table th{padding:3px 7px !important;font-size:11px !important}'
+    +'.ec-sage .ec-r td{padding:0 4px !important;border-bottom:1px solid #11202f !important}'
+    +'.ec-sage .ec-i{padding:1px 5px !important}'
+    /* 5) Moins de cadrage : surbrillance du compte plus discrète */
+    +'.ec-sage .ec-r.ec-mine{background:rgba(30,144,255,.07) !important}'
+    +'.ec-sage .ec-r.ec-mine td{font-weight:600}'
+    /* 6) En-tête et pied aplatis (plus de légèreté) */
+    +'.ec-sage .ec-titlebar{background:#0a1626 !important}'
+    +'.ec-sage .ec-totbar{background:#0c1a2a !important;border-top:1px solid #1e90ff !important;padding:5px 7px !important}'
+    +'.ec-sage .ec-fields{padding:5px 12px !important}'
+    +'.ec-sage .ec-status{padding:4px 12px !important}';
+    document.head.appendChild(st); }catch(e){}
 })();
 </script>
 </body>
