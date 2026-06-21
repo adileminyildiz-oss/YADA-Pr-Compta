@@ -12,7 +12,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Module Client : facture créée → liste + génération en un clic — v197
+---
+
+## 🟢 Dernière mise à jour — Facturation client : retrait de la « saisie rapide » (page épurée) — v198
+**Quoi :** suppression du module **« Émettre un document client (saisie rapide) »** de la page **Facturation client** (menu « Client ») pour une présentation plus paisible et harmonieuse.
+
+**Où / comment :** `pageFacturation` ne rend plus `formulaireRapide()` ; le bouton **« ↧ Saisir »** (qui reprenait une facture dans la saisie rapide) est retiré de `factureListe` — la comptabilisation reste accessible via **« ⚙️ Générer »** sur chaque ligne. Sous-titre de la page mis à jour. `formulaireRapide`/`faReprendre` restent définis (inutilisés) ; aucune autre fonction impactée. Badge → **v198**.
+
+---
+
+## 🟢 MAJ précédente — Module Client : facture créée → liste + génération en un clic — v197
 **Quoi :** refonte du **Module Client (Facturation)**. Une facture de vente créée est **immédiatement ajoutée à la liste « Mes factures de vente »** (toujours visible), puis **son écriture se génère depuis cette liste** (tableau de génération, pré-rempli) au lieu d'être comptabilisée automatiquement.
 
 **Pourquoi :** l'utilisateur veut voir la facture toujours dans la liste et pouvoir la générer/pré-saisir dans un tableau de génération, avec une interface simple et intuitive.
