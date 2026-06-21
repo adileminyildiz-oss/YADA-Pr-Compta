@@ -9106,7 +9106,7 @@ function ecSetLine(id,i,field,v){ const e=ecGet(id); if(!e||!e.lignes[i])return;
   else { l[field]=v; }
   ecRender();
 }
-function ecAddLine(id){ const e=ecGet(id); if(!e)return; e.lignes.push({compte:'', lib:'', debit:0, credit:0}); ecRender(); }
+function ecAddLine(id){ const e=ecGet(id); if(!e)return; const lib=(e.lignes[0]&&e.lignes[0].lib)||''; e.lignes.push({compte:'', lib:lib, debit:0, credit:0}); ecRender(); }
 function ecDelLine(id,i){ const e=ecGet(id); if(!e)return; e.lignes.splice(i,1); if(!e.lignes.length) e.lignes.push({compte:'',lib:'',debit:0,credit:0}); ecRender(); }
 function ecSolder(id){ const e=ecGet(id); if(!e)return;
   /* Une ligne ne peut pas s'enregistrer sans compte (compte de tiers obligatoire si renseigné). */
@@ -10781,7 +10781,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v227 · noir & bleu';
+    b.textContent='YADA · v228 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -15929,7 +15929,8 @@ ${lignes}
   window.ecInsertLine=function(id,i){
     var e=(typeof ecGet==='function')?ecGet(id):null; if(!e||!e.lignes) return;
     var pos=(typeof i==='number' && i>=0)?(i+1):e.lignes.length;
-    e.lignes.splice(pos,0,{compte:'',lib:'',debit:0,credit:0});
+    var lib=(e.lignes[0]&&e.lignes[0].lib)||'';
+    e.lignes.splice(pos,0,{compte:'',lib:lib,debit:0,credit:0});
     if(typeof ecRender==='function') ecRender();
   };
 
@@ -16563,6 +16564,94 @@ ${lignes}
     +'.rbq-i{width:100%;font:inherit;font-size:12.5px;padding:4px 6px;border:1px solid #cfd6df;border-radius:6px;background:#fff;color:#1b1b1b}'
     +'.rbq-j{width:54px}.rbq-num{width:96px;text-align:right}'
     +'.rbq-ap-foot{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon123">
+/* ============================================================
+   TIERS — doublons par RESSEMBLANCE (pas seulement nom identique).
+   • Détection FLOUE des fournisseurs/clients qui se ressemblent → surlignés en
+     JAUNE (tag DOUBLON) dans les listes.
+   • Bouton « ⚙️ Fusionner TOUS les doublons similaires » (regroupe chaque famille
+     en un seul compte ; les SIRET différents sont laissés).
+   • À la validation d'une fiche tiers, si un tiers ressemblant existe déjà → on
+     propose de le RATTACHER (anti-doublon) plutôt que d'en créer un nouveau.
+   100% additif (override scanDoublonsTiers/tiersConsoliderDoublons + greffe
+   blocDoublonsTiers + garde ficheValider). Aucune logique comptable modifiée.
+   ============================================================ */
+(function(){
+  var LEGAL=/\b(SARL|SARLU|SASU|SAS|SELARL|EURL|SCI|SNC|SCOP|SA|EI|EIRL|ETS|ETABLISSEMENTS|ENTREPRISE|CIE|COMPAGNIE|GROUPE|HOLDING|FRANCE|ET FILS|FILS|AND SONS)\b/g;
+  function norm(s){ return String(s||'').toUpperCase().normalize('NFD').replace(LEGAL,' ').replace(/[^A-Z0-9]/g,''); }
+  function bigrams(s){ var b={}; for(var i=0;i<s.length-1;i++){ var g=s.substr(i,2); b[g]=(b[g]||0)+1; } return b; }
+  function dice(a,b){ if(a===b) return 1; if(a.length<2||b.length<2) return 0; var ba=bigrams(a),bb=bigrams(b),inter=0,ta=0,tb=0,k; for(k in ba){ ta+=ba[k]; if(bb[k]) inter+=Math.min(ba[k],bb[k]); } for(k in bb) tb+=bb[k]; return (ta+tb)?2*inter/(ta+tb):0; }
+  function similaire(n1,n2){ var a=norm(n1),b=norm(n2); if(!a||!b) return false; if(a===b) return true;
+    if(a.length>=4 && b.length>=4 && (a.indexOf(b)>=0||b.indexOf(a)>=0)) return true;
+    return dice(a,b)>=0.82; }
+  window.tiersNormNom=norm; window.tiersSimilaireNoms=similaire;
+  window.tiersSimilaireExistant=function(nom, type, excludeId){
+    var best=null,bs=0; (db.tiers||[]).forEach(function(t){ if(t.id===excludeId) return; if((t.type||'')!==type) return; if(!similaire(nom,t.nom)) return;
+      var sc=dice(norm(nom),norm(t.nom)); if(norm(nom)===norm(t.nom)) sc=2; if(sc>bs){ bs=sc; best=t; } }); return best; };
+
+  function fuzzyGroups(){
+    var byType={}; (db.tiers||[]).forEach(function(t){ if(!t.nom) return; (byType[t.type]=byType[t.type]||[]).push(t); });
+    var out={};
+    Object.keys(byType).forEach(function(type){ var arr=byType[type]; var par=arr.map(function(_,i){return i;});
+      function find(i){ while(par[i]!==i){ par[i]=par[par[i]]; i=par[i]; } return i; }
+      for(var i=0;i<arr.length;i++) for(var j=i+1;j<arr.length;j++){ if(similaire(arr[i].nom,arr[j].nom)) par[find(i)]=find(j); }
+      var cl={}; for(var k=0;k<arr.length;k++){ var r=find(k); (cl[r]=cl[r]||[]).push(arr[k]); }
+      Object.keys(cl).forEach(function(r){ var grp=cl[r]; if(grp.length>1){ var key=type+':'+grp.map(function(t){return norm(t.nom);}).sort()[0]; out[key]=grp; } });
+    }); return out;
+  }
+  /* scan FLOU : surlignage jaune + groupes proposés à la fusion */
+  window.scanDoublonsTiers=function(){
+    var res=(db.societe&&db.societe.dupTiersResolu)||{}; var groups=fuzzyGroups(); var real={}; var ids=new Set();
+    Object.keys(groups).forEach(function(k){ if(res[k]) return; real[k]=groups[k]; groups[k].forEach(function(t){ ids.add(t.id); }); });
+    window.dupTiersIds=ids; window.dupTiersGroups=real; return real;
+  };
+  /* auto-consolidation au rendu : seulement les noms STRICTEMENT identiques (prudent) */
+  window.tiersConsoliderDoublons=function(){
+    var n2=function(s){ return String(s||'').toUpperCase().normalize('NFD').replace(/[^A-Z0-9]/g,''); };
+    var g={}; (db.tiers||[]).forEach(function(t){ var nn=n2(t.nom); if(!nn)return; var k=(t.type||'')+':'+nn; (g[k]=g[k]||[]).push(t); });
+    var n=0; Object.keys(g).forEach(function(k){ var grp=g[k]; if(grp.length<2) return;
+      var si=Object.keys(grp.reduce(function(a,t){ var s=(t.siret||'').replace(/\D/g,''); if(s)a[s]=1; return a; },{}));
+      if(si.length>1) return; if(typeof _fusionGroupeTiers==='function' && _fusionGroupeTiers(grp)) n++; });
+    if(n && typeof save==='function') save(); try{ window.scanDoublonsTiers(); }catch(e){} return n;
+  };
+  /* fusionner TOUS les groupes ressemblants (proposition) */
+  window.tiersFusionnerSimilaires=function(){
+    var g=window.scanDoublonsTiers(); var keys=Object.keys(g);
+    if(!keys.length){ if(typeof toast==='function') toast('Aucun doublon similaire à fusionner.'); return; }
+    yadaConfirm('Fusionner les '+keys.length+' famille(s) de fournisseurs/clients qui se ressemblent ?\n\nChaque famille sera regroupée en UN seul compte (montants consolidés). Les fiches avec un SIRET différent seront laissées (à fusionner manuellement).', function(){
+      var n=0; keys.forEach(function(k){ var grp=g[k];
+        var si=Object.keys(grp.reduce(function(a,t){ var s=(t.siret||'').replace(/\D/g,''); if(s)a[s]=1; return a; },{}));
+        if(si.length>1) return; if(typeof _fusionGroupeTiers==='function' && _fusionGroupeTiers(grp)) n++; });
+      if(typeof save==='function') save(); try{ window.scanDoublonsTiers(); }catch(e){} if(typeof render==='function') render();
+      if(typeof toast==='function') toast(n+' famille(s) fusionnée(s) en un seul compte chacune.');
+    });
+  };
+  /* bouton « Fusionner tous » dans la carte Doublons */
+  if(typeof window.blocDoublonsTiers==='function'){ var _bloc=window.blocDoublonsTiers; window.blocDoublonsTiers=function(){ var h=_bloc.apply(this,arguments);
+    try{ h=h.replace('Choisissez : fusionner, supprimer ou laisser.</div>',
+      'Choisissez : fusionner, supprimer ou laisser.</div><div class="right" style="margin:8px 0 4px"><button class="btn btn-pri" onclick="tiersFusionnerSimilaires()">⚙️ Fusionner TOUS les doublons similaires</button></div>'); }catch(e){}
+    return h; }; }
+  /* garde anti-doublon à la validation d'une fiche tiers */
+  if(typeof window.ficheValider==='function'){ var _fv=window.ficheValider; window.ficheValider=function(id){
+    try{ var f=(db.parametres&&db.parametres.fichesTiers||[]).find(function(x){return x.id===id;});
+      if(f && f.statut==='remplie'){ var ty=(f.type==='client')?'client':'fournisseur'; var sim=window.tiersSimilaireExistant(f.raison, ty, null);
+        if(sim && norm(sim.nom)!==norm(f.raison)){
+          yadaConfirm('Un '+(ty==='client'?'client':'fournisseur')+' ressemblant existe déjà : « '+sim.nom+' » ('+(sim.compteAux||'')+').\n\nRattacher la fiche à ce compte existant pour éviter un doublon ?',
+            function(){ f.raison=sim.nom; _fv(id); },
+            { okLabel:'Rattacher à l\'existant', cancelLabel:'Créer quand même', onCancel:function(){ _fv(id); } });
+          return;
+        }
+      }
+    }catch(e){}
+    return _fv(id);
+  }; }
+  /* surlignage jaune renforcé (au cas où) */
+  try{ var st=document.createElement('style'); st.id='dup-fuzzy-mod'; st.textContent=
+    'tr.dup-tiers td{background:rgba(232,196,40,.20) !important}'
+    +'.dup-tag{display:inline-block;background:#e8c428;color:#3a2c00;font-size:10px;font-weight:800;padding:1px 7px;border-radius:10px;margin-left:6px;letter-spacing:.04em}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
