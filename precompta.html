@@ -3617,6 +3617,11 @@ function posterFacture({type, tiersId, date, base, baseEst, taux, compteContre, 
     taux:+taux, ht:m.ht, tva:m.tva, ttc:m.ttc, compteContre, compteTVA,
     source:source||(type==='achat'?'manuelle':'vente'), modeReglement:modeReglement||'', recuLe:date };
   const ecr=genEcriture(f); f.ecritureId=ecr.id;
+  /* utiliser le COMPTE DE TIERS COMPLET (auxiliaire, ex. 401GASO00 / 411DUPO00) au lieu
+     du collectif 401/411, comme pour les factures déposées */
+  const tAux=db.tiers.find(x=>x.id===tiersId);
+  if(tAux && tAux.compteAux){ const coll=c9(type==='achat'?'401':'411');
+    ecr.lignes.forEach(l=>{ if(c9(l.compte)===coll){ l.compte=tAux.compteAux; l.lib=(type==='achat'?'Fournisseur ':'Client ')+tAux.nom; } }); }
   const reg={ id:uid(), factureId:f.id, type, sens:type==='achat'?'a_payer':'a_encaisser',
     statut:'attente', echeance:echeance||date, regle:0, restant:m.ttc, notes:[], echelonne:false };
   db.factures.push(f); db.ecritures.push(ecr); db.reglements.push(reg); save();
@@ -4752,11 +4757,13 @@ function majAc(){
   const sel=document.getElementById('ac-contre');
   if(sel.options.length===0||sel.dataset.f!==fid){ sel.innerHTML=optComptes(COMPTES_CHARGE, t?t.compteContre:'606400'); sel.dataset.f=fid; }
   const cc=sel.value;
+  const aux = t ? (t.compteAux || (typeof sageCode==='function'? sageCode(t) : '401000000')) : '401000000';
+  const tvaC = (t && t.compteTVA) ? t.compteTVA : '44566';
   document.getElementById('ac-apercu').innerHTML=`<div class="ecr"><div class="ecr-h"><span>Écriture qui sera générée (journal ACH)</span><span class="balance-ok">Équilibrée ✓</span></div>
     <table><tbody>
-    <tr><td class="num">${cc}</td><td>${COMPTES[cc]}</td><td class="r num deb">${eur(m.ht)}</td><td class="r num"></td></tr>
-    <tr><td class="num">44566</td><td>TVA déductible (${taux}%)</td><td class="r num deb">${eur(m.tva)}</td><td class="r num"></td></tr>
-    <tr><td class="num">401</td><td>Fournisseur ${t?t.nom:''}</td><td class="r num"></td><td class="r num cre">${eur(m.ttc)}</td></tr>
+    <tr><td class="num">${c9(aux)}</td><td>Fournisseur ${t?t.nom:''}</td><td class="r num"></td><td class="r num cre">${eur(m.ttc)}</td></tr>
+    <tr><td class="num">${c9(tvaC)}</td><td>TVA déductible (${taux}%)</td><td class="r num deb">${eur(m.tva)}</td><td class="r num"></td></tr>
+    <tr><td class="num">${c9(cc)}</td><td>${COMPTES[cc]||''}</td><td class="r num deb">${eur(m.ht)}</td><td class="r num"></td></tr>
     <tr class="totrow"><td colspan=2>Totaux — TTC ${eur(m.ttc)}</td><td class="r num">${eur(m.ttc)}</td><td class="r num">${eur(m.ttc)}</td></tr>
     </tbody></table></div>`;
 }
@@ -4769,7 +4776,7 @@ function validerAchat(){
   const t=db.tiers.find(x=>x.id===document.getElementById('ac-four').value); if(!t)return toast('Ajoutez un fournisseur d\'abord');
   posterFacture({type:'achat',tiersId:t.id,date:document.getElementById('ac-date').value,
     base:+document.getElementById('ac-ttc').value||0,baseEst:'TTC',taux:+document.getElementById('ac-taux').value,
-    compteContre:document.getElementById('ac-contre').value,compteTVA:'44566',
+    compteContre:document.getElementById('ac-contre').value,compteTVA:(t.compteTVA||'44566'),
     source:acSource, modeReglement:document.getElementById('ac-mode').value});
   toast('Écriture d\'achat générée ('+(acSource==='ocr'?'OCR':acSource==='scan'?'scan':'manuelle')+') → TVA déductible mise à jour'); render();
 }
@@ -10638,7 +10645,7 @@ ${lignes}
     document.getElementById('ac-apercu').innerHTML='<div class="ecr"><div class="ecr-h"><span>Écriture AUTOLIQUIDÉE (journal ACH)</span><span class="balance-ok">Équilibrée ✓</span></div><table><tbody>'
       +'<tr><td class="num">'+cc+'</td><td>'+(COMPTES[cc]||'')+'</td><td class="r num deb">'+eur(m.ht)+'</td><td class="r num"></td></tr>'
       +'<tr><td class="num">445660000</td><td>TVA déductible autoliquidée ('+taux+'%)</td><td class="r num deb">'+eur(m.tva)+'</td><td class="r num"></td></tr>'
-      +'<tr><td class="num">401</td><td>Fournisseur '+(t?t.nom:'')+' (HT)</td><td class="r num"></td><td class="r num cre">'+eur(m.ht)+'</td></tr>'
+      +'<tr><td class="num">'+c9(t?(t.compteAux||(typeof sageCode==='function'?sageCode(t):'401000000')):'401000000')+'</td><td>Fournisseur '+(t?t.nom:'')+' (HT)</td><td class="r num"></td><td class="r num cre">'+eur(m.ht)+'</td></tr>'
       +'<tr><td class="num">445710000</td><td>TVA collectée autoliquidée</td><td class="r num"></td><td class="r num cre">'+eur(m.tva)+'</td></tr>'
       +'<tr class="totrow"><td colspan=2>Totaux</td><td class="r num">'+eur(r2(m.ht+m.tva))+'</td><td class="r num">'+eur(r2(m.ht+m.tva))+'</td></tr>'
       +'</tbody></table><div class="hint">Le montant saisi est le <b>HT</b>. La TVA ('+taux+'%) est collectée ET déductible → trésorerie nulle, mais déclarée sur la CA3.</div></div>'; };
@@ -10683,7 +10690,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v200 · noir & bleu';
+    b.textContent='YADA · v201 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }

@@ -18,7 +18,23 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Facture : échéance auto (émission + délai) + adresse société sur 2 lignes — v200
+---
+
+## 🟢 Dernière mise à jour — Facture fournisseur : écriture ACH avec le compte de tiers complet (401GASO00) — v201
+**Quoi :** l'**écriture d'achat** (journal ACH), en aperçu **et** générée, utilise désormais le **compte de tiers complet (auxiliaire)** — ex. **401GASO00** — au lieu du collectif 401000000, et l'aperçu affiche les comptes en **codes 9 chiffres** dans l'ordre **401 (tiers) / 445xxx (TVA) / 606xxx (charge)**.
+
+**Pourquoi :** l'utilisateur veut voir, dans « l'écriture qui sera générée », le compte de tiers réel (401GASO00) puis la TVA déductible puis le compte de charge.
+
+**Où / comment :**
+- `posterFacture` remplace la ligne collective 401/411 par `tiers.compteAux` (centralisé — vaut pour achats **et** ventes, manuels comme déposés ; les dépôts le faisaient déjà via `posterFactureAux`).
+- `majAc` (aperçu ACH) : ordre **tiers (compteAux, `c9`) / TVA (`tiers.compteTVA`, `c9`) / charge (`c9`)**, libellés complets. `validerAchat` transmet `tiers.compteTVA`. Aperçu autoliquidation aligné sur le compte auxiliaire.
+- Les cartes de comptabilisation des **dépôts** restent pré-remplies (OCR/scan/saisie, addon48/50) et utilisent ces mêmes comptes. Badge → **v201**.
+
+**Limites :** le code TVA exact (ex. 445667000) et le compte de charge (ex. 606200000) proviennent de la **fiche du tiers** (compteTVA / compteContre) — à régler sur la fiche pour qu'ils apparaissent tels quels.
+
+---
+
+## 🟢 MAJ précédente — Facture : échéance auto (émission + délai) + adresse société sur 2 lignes — v200
 **Quoi :** (1) la **date d'échéance** se calcule **automatiquement** = date d'émission + **délai de paiement** (30 j par défaut, modifiable) ; recalcul à chaque changement de la date d'émission OU du délai. (2) l'**adresse de la société** (ex. ALR CONSEIL) est **mise à la ligne** sur la facture A4 (rue / code postal + ville).
 
 **Où / comment :**
