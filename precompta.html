@@ -14888,7 +14888,11 @@ ${lignes}
       var body=[{ id:c.espace, data:payload, ts:ts, enc:(c.encrypt?1:0), updated_at:new Date().toISOString() }];
       return cloudFetch('POST', '/rest/v1/'+encodeURIComponent(c.table)+'?on_conflict=id', body, {'Prefer':'resolution=merge-duplicates,return=minimal'})
         .then(function(){ localStorage.setItem(TSK, String(ts)); status(c.encrypt?'🔒 Enregistré (chiffré) dans le cloud':'☁ Enregistré dans le cloud'); return true; }); })
-      .catch(function(e){ status('☁ Échec de l\'envoi'); return false; });
+      .catch(function(e){ var msg=String((e&&e.message)||e||'').slice(0,160);
+        try{ localStorage.setItem('yada-cloud-err', JSON.stringify({t:Date.now(), msg:msg})); }catch(_){}
+        status('☁ Échec de l\'envoi'+(msg?(' : '+msg):''));
+        if(typeof toast==='function') toast('Synchro : envoi échoué — '+(/enc/.test(msg)?'colonne « enc » manquante : ré-exécutez le script SQL (Paramétrage → Aide).':(msg||'vérifiez l\'URL, la clé et la table Supabase.')));
+        return false; });
   };
   window.cloudPull=function(silencieux){
     var c=cfg(); if(!c.enabled||!c.url||!c.key){ return Promise.resolve(false); }
@@ -14900,7 +14904,9 @@ ${lignes}
           var ok=applyRemote(clear, remote.ts); status(ok?(c.encrypt?'🔒 Dernier enregistrement déchiffré ✓':'☁ Dernier enregistrement reçu ✓'):'☁ Réception impossible');
           if(ok&&typeof toast==='function') toast('Dernier enregistrement récupéré depuis le cloud ✓'); return ok;
         }).catch(function(){ status('🔒 Phrase secrète invalide — données protégées non déchiffrées'); if(typeof toast==='function') toast('Phrase secrète invalide : impossible de déchiffrer les données du cloud.'); return false; });
-      }).catch(function(){ if(!silencieux) status('☁ Hors-ligne / non configuré'); return false; });
+      }).catch(function(e){ var msg=String((e&&e.message)||e||'').slice(0,160);
+        if(!silencieux){ status('☁ Réception impossible'+(msg?(' : '+msg):'')); if(typeof toast==='function') toast('Synchro : réception impossible — '+(msg||'vérifiez l\'URL, la clé et la table Supabase, et que la même clé d\'espace est utilisée sur chaque appareil.')); }
+        return false; });
   };
   window.cloudSyncNow=function(){ status('☁ Synchronisation…'); return window.cloudPull(true).then(function(){ return window.cloudPushNow(); }); };
   /* ---- Contrôle d'intégrité : mêmes montants dans TOUS les dossiers (local vs cloud) ---- */
