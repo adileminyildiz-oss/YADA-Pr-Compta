@@ -8993,8 +8993,9 @@ function ecFermer(){
       return Math.abs(r2(d-c))>=0.005; });
     if(nonSoldee.length){
       var ec0=nonSoldee[0]; var d=0,c=0; (ec0.lignes||[]).forEach(function(l){ d+=(+l.debit||0); c+=(+l.credit||0); });
-      var msg='⚠ Écriture non soldée — pièce '+ecPiece(ec0)+' : Débit '+eur(r2(d))+' ≠ Crédit '+eur(r2(c))+' (écart '+eur(Math.abs(r2(d-c)))+'). Vous devez SOLDER (équilibrer) toutes les écritures avant de quitter la page.';
-      if(typeof alert==='function') alert(msg); else if(typeof toast==='function') toast(msg);
+      var msg='Pièce '+ecPiece(ec0)+' : Débit '+eur(r2(d))+' ≠ Crédit '+eur(r2(c))+' (écart '+eur(Math.abs(r2(d-c)))+').\nVous devez SOLDER (équilibrer) toutes les écritures avant de quitter la page.';
+      if(typeof window.yadaAlert==='function') window.yadaAlert(msg,'⚠ Écriture non soldée');
+      else if(typeof alert==='function') alert(msg); else if(typeof toast==='function') toast(msg);
       return;
     }
   }catch(e){}
@@ -10769,7 +10770,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v221 · noir & bleu';
+    b.textContent='YADA · v222 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -16068,6 +16069,47 @@ ${lignes}
     +'.sg-app .sgj-wrap{min-height:0 !important}'
     +'.sg-app .sgj-grid,.sg-app .sg-grid{overflow:auto !important;min-height:0 !important}'
     +'.sg-app .sgj-grid{overscroll-behavior:contain}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon118">
+/* ============================================================
+   MESSAGE D'ALERTE AUX COULEURS YADA (bleu nuit + bleu Crystal) — remplace les
+   `alert()` natifs (ex. « Écriture non soldée » au moment de quitter l'éditeur)
+   par une modale soignée, lisible, fidèle à l'identité du logiciel.
+   Apparaît au-dessus de tout (éditeur, listes) ; OK / Échap / clic dehors ferment.
+   100% additif.
+   ============================================================ */
+(function(){
+  function esc(s){ return String(s==null?'':s).replace(/[&<>]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;'})[c];}).replace(/\n/g,'<br>'); }
+  window.yadaAlert=function(msg, title){
+    var old=document.getElementById('yada-alert'); if(old) old.remove();
+    var ov=document.createElement('div'); ov.id='yada-alert'; ov.className='ya-ov';
+    ov.innerHTML='<div class="ya-card" role="alertdialog" aria-modal="true">'
+      +'<div class="ya-h"><span class="ya-t">'+esc(title||'YADA')+'</span><span class="ya-brand"><span class="ya-dot"></span>YADA</span></div>'
+      +'<div class="ya-b">'+esc(msg||'')+'</div>'
+      +'<div class="ya-f"><button class="ya-ok" type="button">OK</button></div></div>';
+    document.body.appendChild(ov);
+    function close(){ try{ ov.remove(); }catch(e){} document.removeEventListener('keydown', onKey, true); }
+    function onKey(e){ if(e.key==='Escape'||e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); close(); } }
+    ov.querySelector('.ya-ok').addEventListener('click', close);
+    ov.addEventListener('mousedown', function(e){ if(e.target===ov) close(); });
+    document.addEventListener('keydown', onKey, true);
+    setTimeout(function(){ var b=ov.querySelector('.ya-ok'); if(b) b.focus(); }, 20);
+    return close;
+  };
+  try{ var st=document.createElement('style'); st.id='ya-alert-mod'; st.textContent=
+    '.ya-ov{position:fixed;inset:0;z-index:100100;display:flex;align-items:center;justify-content:center;background:rgba(4,10,20,.55);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}'
+    +'.ya-card{width:min(460px,92vw);background:linear-gradient(150deg,#0c1a2a,#10243a);border:1px solid #1e90ff;border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.62);color:#eaf2ff;font-family:system-ui,-apple-system,sans-serif;overflow:hidden;animation:yaIn .16s ease both}'
+    +'@keyframes yaIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}'
+    +'.ya-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid rgba(30,144,255,.30)}'
+    +'.ya-h .ya-t{font-weight:800;font-size:15px;color:#5ab0ff}'
+    +'.ya-h .ya-brand{display:flex;align-items:center;gap:6px;font-weight:700;font-size:11px;letter-spacing:.06em;color:#9fb6d0}'
+    +'.ya-h .ya-dot{width:8px;height:8px;border-radius:50%;background:#1e90ff;box-shadow:0 0 8px rgba(30,144,255,.7)}'
+    +'.ya-b{padding:16px 18px;font-size:13.5px;line-height:1.55;color:#dce9fb}'
+    +'.ya-f{display:flex;justify-content:flex-end;padding:0 18px 16px}'
+    +'.ya-ok{background:linear-gradient(120deg,#5ab0ff,#0a64d6);border:none;color:#fff;font-weight:700;font-size:13.5px;padding:9px 24px;border-radius:10px;cursor:pointer}'
+    +'.ya-ok:hover{filter:brightness(1.08)}.ya-ok:focus{outline:2px solid #cfe0f5;outline-offset:2px}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
