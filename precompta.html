@@ -3621,7 +3621,12 @@ function posterFacture({type, tiersId, date, base, baseEst, taux, compteContre, 
      du collectif 401/411, comme pour les factures déposées */
   const tAux=db.tiers.find(x=>x.id===tiersId);
   if(tAux && tAux.compteAux){ const coll=c9(type==='achat'?'401':'411');
-    ecr.lignes.forEach(l=>{ if(c9(l.compte)===coll){ l.compte=tAux.compteAux; l.lib=(type==='achat'?'Fournisseur ':'Client ')+tAux.nom; } }); }
+    ecr.lignes.forEach(l=>{ if(c9(l.compte)===coll){ l.compte=tAux.compteAux; } }); }
+  /* Libellé HOMOGÈNE (identique sur toutes les lignes + e.libelle) : nom du tiers
+     + n° de facture + moyen de paiement. Affiché pareil dans la saisie et le journal. */
+  { const _nom=tAux?tAux.nom:''; const _moy=modeReglement||(db.societe&&db.societe.moyenPaiement)||'';
+    const _canon=[_nom, f.numero, _moy].filter(Boolean).join(' — ');
+    if(_nom){ ecr.lignes.forEach(l=>{ l.lib=_canon; }); ecr.libelle=f.numero+' · '+_canon; } }
   const reg={ id:uid(), factureId:f.id, type, sens:type==='achat'?'a_payer':'a_encaisser',
     statut:'attente', echeance:echeance||date, regle:0, restant:m.ttc, notes:[], echelonne:false };
   db.factures.push(f); db.ecritures.push(ecr); db.reglements.push(reg); save();
@@ -9080,7 +9085,11 @@ function ecGet(id){ return db.ecritures.find(e=>e.id===id); }
 function ecSetDate(id,v){ const e=ecGet(id); if(e){ e.date=v; ecRender(); } }
 function ecSetPiece(id,v){ const e=ecGet(id); if(e){ e.piece=v; ecRender(); } }
 /* Libellé identique sur toutes les lignes de l'écriture (saisie « par écriture »). */
-function ecSetLibAll(id,v){ const e=ecGet(id); if(!e)return; (e.lignes||[]).forEach(function(l){ l.lib=v; }); ecRender(); }
+function ecSetLibAll(id,v){ const e=ecGet(id); if(!e)return; (e.lignes||[]).forEach(function(l){ l.lib=v; });
+  /* le libellé reste IDENTIQUE partout : on synchronise aussi e.libelle (« pièce · libellé »)
+     pour que le journal de base (sgJournalGrid) et le grand-livre affichent le même libellé. */
+  try{ var pc=ecPiece(e); e.libelle=(pc?pc+' · ':'')+v; }catch(_){ e.libelle=v; }
+  ecRender(); }
 /* Un compte de tiers (401/411) n'est utilisable que s'il est : collectif (401/411000000),
    un compte auxiliaire d'un tiers existant, ou présent dans le plan comptable. */
 function ecCompteTiersUtilisable(nv){
@@ -10781,7 +10790,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v230 · noir & bleu';
+    b.textContent='YADA · v231 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -16740,6 +16749,48 @@ ${lignes}
     '.frec-card{border-left:4px solid #1e90ff}'
     +'.frec-card h2{display:flex;align-items:center;gap:8px}';
     document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon125">
+/* ============================================================
+   SAISIE / CONSULTATION — LIBELLÉ DÉVERSÉ PAR LE COMPTE.
+   Quand on saisit un COMPTE DE TIERS (401.../411..., ex. 401ALRC00) dans l'éditeur,
+   le LIBELLÉ se remplit automatiquement avec le NOM COMPLET du tiers (ex. ALR CONSEIL),
+   et reste IDENTIQUE sur toutes les lignes (et dans le journal de base / grand-livre).
+   Si l'écriture est liée à une FACTURE, le libellé devient
+   « <nom du tiers> — <n° de facture> — <moyen de paiement> ».
+   100% additif (wrap ecSetLine + helper ecLibTiers). posterFacture pose déjà ce
+   libellé canonique ; ecSetLibAll synchronise e.libelle. Aucune logique comptable modifiée.
+   ============================================================ */
+(function(){
+  window.ecLibTiers=function(e, t){
+    var nom=(t&&t.nom)||''; if(!nom) return '';
+    var fac=(db.factures||[]).find(function(f){ return f.ecritureId===e.id; });
+    var doc=(db.docs||[]).find(function(d){ return d.ecritureId===e.id; });
+    var numero=(fac&&fac.numero)||(doc&&doc.numero)||'';
+    var moyen='';
+    if(fac) moyen=fac.modeReglement||'';
+    if(!moyen && doc) moyen=doc.moyen||doc.moyenPaiement||'';
+    if(!moyen && fac){ var rg=(db.reglements||[]).find(function(r){ return r.factureId===fac.id; }); moyen=(rg&&(rg.mode||rg.modeReglement))||''; }
+    /* facture liée → nom + n° + moyen ; sinon (saisie simple) → nom seul */
+    if(fac||doc) return [nom, numero, moyen].filter(Boolean).join(' — ');
+    return nom;
+  };
+  if(typeof window.ecSetLine==='function'){
+    var _esl=window.ecSetLine;
+    window.ecSetLine=function(id,i,field,v){
+      var r=_esl.apply(this, arguments);
+      if(field==='compte'){
+        try{ var e=(typeof ecGet==='function')?ecGet(id):null;
+          if(e && e.lignes && e.lignes[i] && (e.lignes[i].compte||'').trim()){
+            var t=(typeof ecResolveTiers==='function')?ecResolveTiers(e.lignes[i].compte):null;
+            if(t && typeof ecSetLibAll==='function'){ var lib=window.ecLibTiers(e,t); if(lib){ ecSetLibAll(id, lib); } }
+          }
+        }catch(err){}
+      }
+      return r;
+    };
+  }
 })();
 </script>
 </body>
