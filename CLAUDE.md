@@ -32,7 +32,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Tiers : montants réels par ligne + un seul tiers par nom (auto-fusion) + ligne bleue dans la Consultation — v207
+---
+
+## 🟢 Dernière mise à jour — Charges & Paie : suppression des fiches de paie et des tableaux/documents de charges — v214
+**Quoi :** boutons **🗑 Supprimer** ajoutés pour retirer une **fiche de paie** (depuis la liste), un **bulletin déposé**, et un **document de charges** déposé (journal de paie). Les écritures de paie/charges restaient déjà supprimables (`pjSupprimer`, `bpSupprimerOD`, `cpSupprimerMois`, `pjReset`).
+
+**Où / comment :** `bpCard` — bouton 🗑 par fiche (`bpSupprimer`) + 🗑 par bulletin déposé (`bpSupprPiece` retire la pièce de `db.parametres.pieces`) ; `pjCard` (addon93) — `pjSupprDoc(m)` retire le document de charges du mois (`d.doc` + pièce `cat:'paie'`). Badge → **v214**.
+
+---
+
+## 🟢 MAJ précédente — Tiers : montants réels par ligne + un seul tiers par nom (auto-fusion) + ligne bleue dans la Consultation — v207
 **Quoi :** (1) la liste des Tiers affiche le **vrai total** (CA TTC clients / Dépensé TTC fournisseurs) calculé depuis les **écritures** du compte de tiers ; (2) les doublons de même nom sont **fusionnés automatiquement en un seul compte** (tous les montants regroupés) ; (3) une **ligne bleue** sépare chaque écriture dans la **Consultation des comptes** (grand-livre).
 
 **Pourquoi :** les lignes de tiers affichaient 0 pour les comptes alimentés par le FEC (pas de `db.factures`) ; plusieurs « HABITAT CONCEPT » subsistaient ; et la ligne bleue n'apparaissait pas dans le grand-livre.

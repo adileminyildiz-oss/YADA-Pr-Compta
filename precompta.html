@@ -10755,7 +10755,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v213 · noir & bleu';
+    b.textContent='YADA · v214 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -13870,6 +13870,9 @@ ${lignes}
 
   window.pjSet=function(m,key,val){ var d=pjData(m); var n=parseFloat(String(val).replace(/\s/g,'').replace(',','.')); d[key]=isNaN(n)?0:r2(n); if(typeof save==='function')save(); if(typeof render==='function')render(); };
   window.pjReset=function(m){ if(!confirm('Effacer les montants saisis pour '+moisLabel(m)+' ?'))return; pjStore()[m]={}; if(typeof save==='function')save(); if(typeof render==='function')render(); };
+  window.pjSupprDoc=function(m){ if(!confirm('Retirer le document de charges déposé ?'))return; var d=pjData(m); if(d){ delete d.doc; }
+    try{ db.parametres.pieces=(db.parametres.pieces||[]).filter(function(p){return !(p.cat==='paie'&&p.mois===m);}); }catch(e){}
+    if(typeof save==='function')save(); if(typeof toast==='function')toast('Document retiré'); if(typeof render==='function')render(); };
 
   window.pjGenerer=function(m){
     var r=pjLines(m); if(!r.L.length){ if(typeof toast==='function')toast('Saisissez au moins un montant (le journal de paie).'); return; }
@@ -13922,7 +13925,7 @@ ${lignes}
       +'<div class="sub">Déposez le journal de paie / charges du mois (l\'<b>IA reconnaît le document quand vous êtes connecté</b>, sinon saisie manuelle), vérifiez les montants ci-dessous : ils sont <b>automatiquement assimilés aux bons comptes</b>, puis générez l\'écriture <b>OD PAIE</b> équilibrée. <i>On retient toujours le total général.</i></div>'
       +'<div class="pj-depot">'
         +'<label class="btn btn-ghost btn-sm" style="cursor:pointer">📎 Déposer le document<input type="file" accept="image/*,application/pdf" style="display:none" onchange="pjFichier(\''+m+'\',this)"></label>'
-        +(d.doc?('<span class="pj-doc">📄 '+esc(d.doc.name)+'</span><button class="btn btn-ghost btn-sm" onclick="pjAnalyser(\''+m+'\')">🔎 Analyser (OCR)</button>'):'<span class="pj-doc pj-none">aucun document</span>')
+        +(d.doc?('<span class="pj-doc">📄 '+esc(d.doc.name)+'</span><button class="btn btn-ghost btn-sm" onclick="pjAnalyser(\''+m+'\')">🔎 Analyser (OCR)</button> <button class="btn btn-ghost btn-sm" onclick="pjSupprDoc(\''+m+'\')" title="Retirer le document de charges">🗑</button>'):'<span class="pj-doc pj-none">aucun document</span>')
       +'</div>'
       +'<table class="pj-t"><thead><tr><th>Rubrique du journal</th><th>Compte assimilé</th><th class="r">Montant</th><th>Sens</th></tr></thead><tbody>'+grid+'</tbody></table>'
       +'<h3 class="pj-h3">Détail de l\'écriture générée (OD PAIE)</h3>'
@@ -15326,6 +15329,9 @@ ${lignes}
     }; rd.readAsDataURL(file); });
   };
   function bpDeposes(m){ try{ return (db.parametres&&db.parametres.pieces||[]).filter(function(p){ return p.cat==='bulletin' && p.mois===m; }); }catch(e){ return []; } }
+  window.bpSupprPiece=function(id){ if(!confirm('Supprimer ce document déposé ?'))return;
+    try{ db.parametres.pieces=(db.parametres.pieces||[]).filter(function(p){return p.id!==id;}); }catch(e){}
+    if(typeof save==='function')save(); if(typeof toast==='function')toast('Document supprimé'); if(typeof render==='function')render(); };
   window.bpAnalyserBulletin=function(pieceId){ var p=(db.parametres.pieces||[]).find(function(x){return x.id===pieceId;}); if(!p)return;
     var isImg=/^image\//.test(p.type||'');
     if(!navigator.onLine || typeof window.ocrImage!=='function' || !isImg){ if(typeof toast==='function')toast(navigator.onLine?'Reconnaissance auto : images uniquement (PDF scannés sans texte → créez la fiche manuellement).':'OCR indisponible hors-ligne — créez la fiche manuellement.'); return; }
@@ -15406,10 +15412,11 @@ ${lignes}
       +'<td class="r num">'+eur(c.brut)+'</td><td class="r num">'+eur(c.netImpo)+'</td><td class="r num"><b>'+eur(c.netAPayer)+'</b></td><td class="r num">'+eur(c.totPat)+'</td>'
       +'<td class="r" style="white-space:nowrap">'
         +'<button class="btn btn-ghost btn-sm" onclick="bpEditer(\''+f.id+'\')">✎ Éditer</button> '
-        +'<button class="btn btn-ghost btn-sm" onclick="bpVoir(\''+f.id+'\')">👁</button></td></tr>'; }).join('');
+        +'<button class="btn btn-ghost btn-sm" onclick="bpVoir(\''+f.id+'\')">👁</button> '
+        +'<button class="btn btn-ghost btn-sm" onclick="bpSupprimer(\''+f.id+'\')" title="Supprimer cette fiche de paie">🗑 Supprimer</button></td></tr>'; }).join('');
     var tot=fs.reduce(function(a,f){ var c=bpCalc(f); a.brut=R2(a.brut+c.brut); a.net=R2(a.net+c.netAPayer); a.pat=R2(a.pat+c.totPat); return a; },{brut:0,net:0,pat:0});
     var deps=bpDeposes(m);
-    var depList=deps.length?('<ul class="bp-deps">'+deps.map(function(p){ return '<li><span>📄 '+esc(p.nom)+'</span> <button class="btn btn-ghost btn-sm" onclick="bpAnalyserBulletin(\''+p.id+'\')">🔎 Analyser → créer la fiche</button> <button class="btn btn-ghost btn-sm" onclick="gedVoir(\''+p.id+'\')">Voir</button></li>'; }).join('')+'</ul>'):'<div class="bp-sub" style="margin:6px 0">Aucun bulletin déposé pour ce mois.</div>';
+    var depList=deps.length?('<ul class="bp-deps">'+deps.map(function(p){ return '<li><span>📄 '+esc(p.nom)+'</span> <button class="btn btn-ghost btn-sm" onclick="bpAnalyserBulletin(\''+p.id+'\')">🔎 Analyser → créer la fiche</button> <button class="btn btn-ghost btn-sm" onclick="gedVoir(\''+p.id+'\')">Voir</button> <button class="btn btn-ghost btn-sm" onclick="bpSupprPiece(\''+p.id+'\')" title="Supprimer ce bulletin déposé">🗑</button></li>'; }).join('')+'</ul>'):'<div class="bp-sub" style="margin:6px 0">Aucun bulletin déposé pour ce mois.</div>';
     return '<div class="bp-card card">'
       +'<h2>🧾 Bulletins de paie — '+moisLabel(m)+' (génération & édition · modèle français, tout modifiable)</h2>'
       +'<div class="sub">Créez et <b>modifiez chaque élément</b> du bulletin (gains, cotisations salariales & patronales, primes, PAS) pour <b>plusieurs salariés</b>. Déposez plusieurs bulletins existants (reconnaissance OCR si connecté). À la génération d\'une fiche, YADA propose de créer l\'<b>OD de paie</b> et l\'<b>OD de charges</b> du mois ; chaque mois est indépendant.</div>'
