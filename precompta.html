@@ -10767,7 +10767,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v219 · noir & bleu';
+    b.textContent='YADA · v220 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -15965,6 +15965,24 @@ ${lignes}
 (function(){
   try{ var st=document.createElement('style'); st.id='ec-noadd-mod'; st.textContent=
     '.ec-sage .ec-table tbody tr.ec-act .ec-bt:not(.ec-bt-solde){display:none !important}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon116">
+/* ============================================================
+   CONSULTATION — JOURNAUX : molette / défilement pour voir TOUTES les écritures.
+   La zone de droite (.sg-right) est une cellule de grille CSS sans min-height:0 ;
+   son contenu (la grille du journal) débordait et était rogné par
+   .sg-app{overflow:hidden} au lieu de défiler. On rétablit le défilement vertical
+   (molette) de la grille du journal — et de la balance — sur tous les journaux.
+   100% CSS additif.
+   ============================================================ */
+(function(){
+  try{ var st=document.createElement('style'); st.id='sg-scroll-mod'; st.textContent=
+    '.sg-right{min-height:0 !important}'
+    +'.sg-app .sgj-wrap{min-height:0 !important}'
+    +'.sg-app .sgj-grid,.sg-app .sg-grid{overflow:auto !important;min-height:0 !important}'
+    +'.sg-app .sgj-grid{overscroll-behavior:contain}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>

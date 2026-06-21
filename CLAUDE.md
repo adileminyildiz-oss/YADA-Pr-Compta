@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Éditeur d'écritures : navigation clavier (Tab / Entrée) + retrait du bouton « + Ajouter une désignation » — v219
+## 🟢 Dernière mise à jour — Consultation des journaux : défilement (molette) pour voir TOUTES les écritures — v220
+**Quoi :** dans la **Consultation des comptes**, quand on sélectionne un **journal** (ACH, VTE, BQ, ODP, ODC, ODTVA, OD), la grille des écritures **défile désormais à la molette** pour voir **toutes les écritures**, même longues (ex. journal ACHATS de plusieurs centaines de lignes). Avant, le contenu **débordait** sous la fenêtre (rogné par `.sg-app{overflow:hidden}`) au lieu de défiler.
+
+**Pourquoi / cause :** la zone de droite `.sg-right` est une **cellule de grille CSS** ; sans `min-height:0`, un enfant en `overflow:auto` ne peut pas défiler (la cellule grandit au-delà de la piste et déborde). 
+
+**Où / comment :** `yada-addon116` — `<style id="sg-scroll-mod">` : `.sg-right{min-height:0}` + `.sgj-wrap{min-height:0}` + `.sgj-grid/.sg-grid{overflow:auto;min-height:0}` (+`overscroll-behavior:contain`). 100% CSS additif, aucune logique modifiée. Badge → **v220**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur d'écritures : navigation clavier (Tab / Entrée) + retrait du bouton « + Ajouter une désignation » — v219
 **Quoi :** (1) **navigation clavier façon tableur** dans l'éditeur d'écritures (`.ec-sage`) — **TAB / MAJ+TAB** = champ suivant / précédent (gauche→droite puis ligne suivante, avec bouclage) ; **ENTRÉE** = descend dans la **même colonne** (cellule du dessous), et en bas d'une écriture passe à la première ligne de l'écriture suivante. (2) **Retrait du bouton « + Ajouter une désignation »** (l'insertion se fait au **clic droit**, addon113) ; le bouton **« Solder l'écriture »** reste visible.
 
 **Pourquoi :** la validation d'un champ relance `ecRender` (table reconstruite) → le Tab/Entrée natif perdait le focus. On re-cible le champ par ses **coordonnées** après reconstruction.
