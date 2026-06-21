@@ -36,7 +36,163 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Consultation / journal éditable : pas de quitter une écriture non soldée + ligne bleue seulement après écriture soldée — v216
+## 🟢 Dernière mise à jour — Synchro cloud : SQL Supabase corrigé (colonne `enc`) — v238
+**Quoi :** l aide SQL de la carte de Paramétrage créait la table `yada_sync` sans la colonne **`enc`**, alors que le PUSH envoie `enc` (0/1, chiffrement) → l upload échouait (« column enc does not exist »). Le script crée désormais `enc int default 0` (+ `add column if not exists` pour les tables déjà créées). Badge → **v238**.
+
+---
+
+## 🟢 Dernière mise à jour — Synchronisation multi-appareils : suivi continu + dossiers ADDITIFS (le travail du PC principal sur toutes les interfaces) — v237
+**Quoi :** tout le **travail fait sur le PC principal** (dossiers créés, écritures, règles) est **suivi en continu** sur les autres appareils — **mêmes dossiers, mêmes données, mêmes règles**. (1) **PULL automatique** périodique (40 s) + au **retour au premier plan** (`visibilitychange`/`focus`) + à la **reconnexion** (`online`), en plus du push après chaque save (addon102) ; cloudPull n'applique que si le cloud est **plus récent** (horodatage, dernier gagnant). (2) **Dossiers ADDITIFS** : à la réception, le cloud (PC principal) l'emporte pour les dossiers partagés, mais **aucun dossier créé localement n'est perdu** (les dossiers présents seulement en local sont conservés puis repoussés → visibles partout).
+
+**Où / comment :** `yada-addon130` — `setInterval(cloudPull(true), 40s)` + écouteurs `visibilitychange`/`focus`/`online` (garde : pas de pull si un overlay/modale est ouvert). `applyRemote` (addon102) **fusionne** `dossiersData` et `cabinet.dossiers` (union : cloud prioritaire pour l'existant, ajout des dossiers locaux manquants). **Prérequis** : la synchronisation cloud doit être **configurée et activée** (Paramétrage → URL/clé Supabase + clé d'espace) ; sinon inactif. 100% additif, aucune logique comptable modifiée. Badge → **v237**.
+
+---
+
+## 🟢 MAJ précédente — Éditions : balances fournisseurs/clients calculées sur les ÉCRITURES (FEC + manuel) — v236
+**Quoi :** toutes les **Éditions** sont générées à partir de **tous les montants** — qu'ils proviennent de l'**import FEC** ou d'une **saisie manuelle**. La **balance générale**, le **grand-livre**, les **journaux**, le **bilan** et le **compte de résultat** itéraient déjà `db.ecritures` (FEC + manuel). Les **balances fournisseurs / clients** s'appuyaient en revanche sur `auxMvt(t)` (qui lit `db.factures`/`db.banque`) → elles **ignoraient les montants FEC** (présents en écritures mais sans `db.factures`). Désormais elles somment les **lignes d'écriture du compte de tiers** via `auxLignes(t)` → **FEC + manuel inclus**.
+
+**Où / comment :** `balanceLignes(type)` — pour `fournisseurs`/`clients`, remplacement de `auxMvt(t,null)` par la somme `débit/crédit` de `auxLignes(t)` (lignes sur le compte auxiliaire + collectif rattaché), avec filtre des comptes non mouvementés. Aucune logique comptable modifiée (calcul d'affichage uniquement). Badge → **v236**.
+
+---
+
+## 🟢 MAJ précédente — Interface FIXE (cartes/modules sans mouvement) + boutons en transparence + « Montants sans facture » repliable (fermé) — v235
+**Quoi :** (1) **tous les modules / sous-modules / cartes sont FIXES** — aucun mouvement ni animation au survol ou à l'entrée (plus de `transform`/`scale`/`translateY`/animation d'apparition), en mode **JOUR comme NUIT** ; (2) **seuls les BOUTONS** gardent un effet de **TRANSPARENCE** (opacité) au survol (`.82`) et au clic (`.62`), sans déplacement ; (3) dans les **Éditions** (Grand-livre), la carte **« Montants sans facture »** devient **repliable** (`<details>`), **FERMÉE par défaut** et **plus compacte** (un simple bandeau « ⚠ … — N ligne(s) · X € · ▸ ouvrir », cliquer pour déplier).
+
+**Où / comment :** `yada-addon129` — `<style id="fixe-ui-mod">` (injecté en dernier) : `transition:none/animation:none` + `transform:none !important` (au survol) sur `.card/.kpi/.cp-k/.cf-org/.kv2/.dossier-card/.figer-card` avec préfixe `body[data-theme]` pour **battre** les règles noir/liquid (spécificité ≥ règles thème) ; boutons `.btn{transition:opacity;transform:none}` + `:hover/:active{opacity}` ; styles `.sf-details/.sf-sum` (marqueur custom `▸/▾`). `blocSansFacture` rend un `<details>` (sans attribut `open`). 100% CSS/markup additif, aucune logique modifiée. Badge → **v235**.
+
+---
+
+## 🟢 MAJ précédente — Toutes les éditions (Grand-livre, Bilan, Compte de résultat, Journaux…) : écritures en noir sur fond blanc légèrement bleuté — v234
+**Quoi :** l'habillage de la Balance (v233) est **généralisé à toutes les éditions imprimables** (`.doc-page`) — **Grand-livre**, **Bilan**, **Compte de résultat**, **Journaux**, **centralisateur**, justificatifs : **écritures en NOIR** sur **fond BLANC légèrement bleuté** (en-têtes / lignes alternées / totaux en bleu clair, titre & filets bleus), **quel que soit le thème**. Les **factures** (`.inv-page`) ne sont pas touchées.
+
+**Où / comment :** `yada-addon128` — `<style id="doc-edit-mod">` reprend les règles de la balance mais sur **`.doc-page`** (toutes les éditions). Pour battre la règle du thème noir `body[data-theme="noir"] .doc *{color:#1b1b1b !important}` (spécificité 0,2,1), les règles texte utilisent **`body[data-theme] .doc-page *`** (même spécificité, injectées en dernier → priorité) → texte `#111418`. 100% CSS additif, aucune donnée/logique modifiée. Badge → **v234**.
+
+---
+
+## 🟢 MAJ précédente — Édition de la Balance : écritures en noir sur fond blanc légèrement bleuté — v233
+**Quoi :** l'**édition de la Balance** (Balance générale / fournisseurs / clients / personnel / immo / retenue, ouverte depuis Éditions → modale) est rendue **plus lisible** : **toutes les écritures en NOIR** (compte, libellé, montants) sur un **fond BLANC légèrement bleuté** (en-têtes bleu clair, lignes alternées bleu très clair, totaux teintés de bleu, titre & filets bleus), **quel que soit le thème** (corrige le faible contraste en mode nuit).
+
+**Où / comment :** `balanceDoc` pose la classe **`bal-doc`** sur le `.doc-page` ; `yada-addon127` injecte `<style id="bal-edit-mod">` : `.bal-doc *{color:#111418}` (noir) + `background:#fff` + accents bleus (`th` `#eaf2fb`/`#0b346e`, lignes impaires `#f5f9ff`, totaux `sub/cls/tg` en bleu clair, titre `#0b346e` souligné `#0a64d6`). 100% CSS additif, aucune donnée ni logique modifiée. Badge → **v233**.
+
+---
+
+## 🟢 MAJ précédente — Consultation (grand-livre) : lettrage manuel inter-journaux (solder le tiers : Banque ↔ Vente / Achat) — v232
+**Quoi :** dans la **Consultation des comptes**, en ouvrant le **grand-livre d'un tiers** (clic sur 411HABI00 / 401…, lecture seule), on peut désormais **lettrer manuellement** : **clic gauche** sélectionne les lignes à rapprocher — typiquement la **VENTE** (journal VT, débit) et son **ENCAISSEMENT** (journal BQ, crédit), ou l'**ACHAT** (HA, crédit) et son **PAIEMENT** (BQ, débit). Une **barre de lettrage** indique Σ Débit / Σ Crédit et **« équilibré ✓ »** ; le bouton **« Lettrer la sélection »** n'est actif que si **Débit = Crédit** → le **compte du tiers est soldé**. Boutons **Délettrer** / **Vider la sélection**. Le déplacement d'un compte (collectif 411000000 → auxiliaire 411HABI00) fait apparaître la ligne sur le tiers (recalcul des soldes), prête à lettrer.
+
+**Où / comment :** `clLignesGeneral` expose `idx`/`key` (comme `auxLignes`) ; `clRender` rend les lignes **sélectionnables** (`data-k`, `onclick="clToggleSel"`, classe `cl-sel`) + barre `.cl-letbar` (Σ sélection, état). `yada-addon126` : `clToggleSel`/`clSelVider`/`clLettrerSel`/`clDelettrerSel` (réutilisent **`lzLettrer`/`lzDelettrer`**, contrôle Σdébit=Σcrédit) ; reset de `clSel` à la navigation/ouverture. Le clic droit (→ Journal) reste disponible. Aucune logique comptable modifiée (le lettrage ne touche pas aux montants). Badge → **v232**.
+
+---
+
+## 🟢 MAJ précédente — Consultation : libellé déversé par le compte (nom du tiers) + identique partout, et facture = nom + n° + moyen — v231
+**Quoi :** (1) lors de la **saisie au journal**, quand on saisit un **compte de tiers** (401…/411…, ex. **401ALRC00**), le **libellé se remplit automatiquement** avec le **nom complet** du tiers (ex. **ALR CONSEIL**) ; (2) le libellé reste **identique partout** — même valeur dans la **saisie**, le **journal de base** (Consultation) et le **grand-livre** (toutes les lignes d'une écriture portent le même libellé) ; (3) pour une **facture enregistrée/générée**, le libellé est **« <nom du tiers> — <n° de facture> — <moyen de paiement> »**.
+
+**Où / comment :** `posterFacture` pose le libellé **canonique** (`nom — numéro — modeReglement`) sur **toutes les lignes** + `e.libelle`. `ecSetLibAll` synchronise aussi `e.libelle` (« pièce · libellé ») pour que la Consultation et le grand-livre affichent le même libellé que l'éditeur. `yada-addon125` : `window.ecLibTiers(e,t)` (nom seul si saisie simple ; nom + n° + moyen si facture liée) + **wrap `ecSetLine`** (à la saisie d'un compte résolu en tiers via `ecResolveTiers`, déverse le libellé via `ecSetLibAll`). Aucune logique comptable modifiée. Badge → **v231**.
+
+---
+
+## 🟢 MAJ précédente — Module Client : carte « 🔁 Récurrence » (prestations de service facturées en plusieurs fois) — v230
+**Quoi :** dans le **Module Client (Facturation)**, une carte **« 🔁 Récurrence — prestation de service »** crée une **prestation facturée en plusieurs fois** (ex. **Tenue Comptable** sur **12 mois**) : une **facture de prestation** est générée **pour chaque mois** (statut « à générer »), retrouvable dans **« Mes factures de vente »**. Champs : client, désignation (déf. « Tenue Comptable »), montant HT/mois, TVA, nombre de mois (déf. 12), date de 1ʳᵉ facture, conditions de paiement.
+
+**Où / comment :** `yada-addon124` — `faRecCard()` (greffé en tête de la colonne « Créer / Déposer » de `pageFacturationClient`) ; `faRecGenerer()` boucle sur N mois (`addMonthsISO`), crée des `db.docs` (type facture, **ligne `nature:'prestation'`**, `qte:1`, `pu`=montant/mois), `numero` via `nextNumUnique('FAC')`, échéance via `faEcheanceFromCond`, libellé « <prestation> — <mois> », `recurrence:{groupe,index,total,designation}`, statut `valide` non comptabilisé. Les écritures se génèrent ensuite normalement (une par mois, VTE équilibrée). Aucune logique comptable modifiée. Badge → **v230**.
+
+---
+
+## 🟢 MAJ précédente — Tiers : détection de doublons par MOTS (pluriel + mots de liaison ignorés) — ex. « Résidence(s) Picardie » — v229
+**Quoi :** la détection des doublons de tiers (v228) compare désormais aussi les **mots significatifs** : on **ignore les mots de liaison** (de, des, la, le, et…) et on **ramène au singulier** (RÉSIDENCES → RÉSIDENCE), de sorte que « **Résidences Picardie** », « Résidence Picardie », « Résidence DE Picardie », « SCI Résidence Picardie » sont reconnus comme **le même tiers** (surlignés jaune + fusionnables), **sans** confondre des entités distinctes qui partagent un mot (« Résidence Amiens » ≠ « Résidence Picardie »).
+
+**Où / comment :** `yada-addon123` — `similaire(n1,n2)` enrichi : `tokens()` (majuscules, sans accents, sans formes juridiques ni mots STOP, singulier) + `tokenKey()` ; vrai si **mêmes mots significatifs** (token-set égal), sinon inclusion, sinon **Jaccard de tokens ≥ 0,6**, sinon Dice ≥ 0,80. Aucune logique comptable modifiée. Badge → **v229**.
+
+---
+
+## 🟢 MAJ précédente — Libellé reporté automatiquement (saisie journal) + Tiers : doublons par ressemblance (jaune) + fusion globale + anti-doublon — v228
+**Quoi :** (1) **report automatique du libellé** dans la saisie au journal — une **nouvelle ligne** (clic droit « Insérer » ou « + Ajouter ») **hérite du libellé** de l'écriture (déjà identique sur toutes les lignes, v221) ; (2) **Tiers — doublons par RESSEMBLANCE** : les fournisseurs/clients dont la **dénomination se ressemble** (pas seulement identique) sont **détectés**, **surlignés en JAUNE** (tag **DOUBLON**) et regroupés ; un bouton **« ⚙️ Fusionner TOUS les doublons similaires »** regroupe chaque famille en un seul compte (SIRET différents laissés) ; à la **validation d'une fiche tiers**, si un tiers ressemblant existe déjà, on **propose de le rattacher** (anti-doublon) plutôt que d'en créer un nouveau.
+
+**Où / comment :** `ecAddLine`/`ecInsertLine` héritent de `e.lignes[0].lib`. `yada-addon123` : `norm` (majuscules + suppression formes juridiques SARL/SAS… + alphanum), `dice` (bigrammes) + `similaire` (égalité / inclusion / Dice ≥ 0,82) ; `window.tiersSimilaireExistant` ; **override `scanDoublonsTiers`** (groupes flous via union-find → `dupTiersIds` jaune) ; **override `tiersConsoliderDoublons`** (auto-fusion seulement des noms STRICTEMENT identiques, prudent) ; `tiersFusionnerSimilaires` (fusion de toutes les familles ressemblantes, SIRET divergents laissés) ; greffe `blocDoublonsTiers` (bouton « Fusionner tous ») ; garde `ficheValider` (proposition de rattachement). Aucune logique comptable modifiée. Badge → **v228**.
+
+---
+
+## 🟢 MAJ précédente — Saisie Journal de Banque : éditeur Sage + dépôt / lecture du relevé bancaire → écritures — v227
+**Quoi :** dans **Saisie journal Banque**, une carte **« 📒 Saisie & relevé de banque »** ajoute : (1) **« ✎ Saisir le journal de banque (éditeur Sage) »** qui ouvre **le même éditeur que les journaux** (`ouvrirJournalEditable('BQ', mois)` — saisie directe, clic droit, navigation clavier, copier/coller) ; (2) **dépôt d'un relevé bancaire PDF**, avec **⬇ Télécharger** et **👁 Voir (page à part)** (ouvre le PDF dans un nouvel onglet pour vérification) ; (3) **🧾 Lire le relevé → écritures** : lecture du PDF (décompression FlateDecode + décodage de la **police vectorisée**, auto-décalage), extraction des **opérations** (jour, libellé, **montant**), **aperçu de vérification** (modale : jour / libellé / compte / Débit / Crédit éditables) puis **génération des écritures BQ** via `posterBanque` (équilibrées).
+
+**Où / comment :** `yada-addon122` — greffe `pageSaisieBq` (+`rbqCard`) ; dépôt dans `db.parametres.pieces` (cat `releve`) ; `rbqVoir`/`rbqTelecharger`/`rbqSupprimer` ; lecteur PDF autonome (`extractText` + `DecompressionStream`, `shiftStr`/`autoDecode` pour les polices CID à octets nuls + glyphes décalés, chiffres compris) ; `rbqParse` (ancres tolérantes aux accents, split par « EUR », montant en fin de segment) → `rbqOuvrirApercu` → `rbqGenerer` (`posterBanque`). 100% additif, aucune logique comptable modifiée. **Limite :** l'extraction est *best-effort* (vérification humaine obligatoire avant génération ; sens Débit/Crédit et compte à confirmer ; certains relevés vectorisent les chiffres → l'OCR connecté reste le repli). Badge → **v227**.
+
+---
+
+## 🟢 MAJ précédente — Consultation des journaux : HA / VT / BQ filtrés sur le SEUL mois sélectionné (fin du cumul) — v226
+**Quoi :** dans la **Consultation des comptes**, quand on sélectionne un **mois** (janvier→décembre) dans la colonne des périodes, les journaux **HA (ACH)**, **VT (VTE)** et **BQ** affichent **uniquement les écritures de ce mois** (et plus le cumul depuis le début d'année). Tous les journaux se comportent désormais pareil (mois sélectionné uniquement) ; l'en-tête indique « — mois MM/AAAA ».
+
+**Où / comment :** `sgJournalGrid` — `const cumul=(code==='ACH'||code==='VTE')` remplacé par `const cumul=false` → le filtre devient `ym(e.date)===per` pour tous les journaux. L'éditeur (`ecEcritures` en mode `ecJournalFiltre`) filtrait déjà au mois. Affichage seul, aucune logique comptable modifiée. Badge → **v226**.
+
+---
+
+## 🟢 MAJ précédente — Rapprochement bancaire : récap de tous les rapprochements + validation au mois + cadenas multi-comptes — v225
+**Quoi :** dans le **Rapprochement bancaire**, (1) une bande **« Rapprochements bancaires effectués »** liste **tous les relevés** avec leur **état** (✓ soldé / 🔒 verrouillé / ● écart), cliquable pour ouvrir le rapprochement ; (2) un **cadenas 🔒** apparaît sur le **mois** (colonne des périodes) et sur la ligne du relevé quand c'est **verrouillé** ; (3) **validation au mois** : s'il y a **plusieurs comptes bancaires** mouvementés sur le mois, le mois n'est **« validé » (✓)** que lorsque **TOUS** sont rapprochés & soldés (sinon **◐ en attente** — aucune validation), mais le compte déjà rapproché **reste visible** dans son mois (colonne Journaux + récap).
+
+**Où / comment :** `yada-addon121` — helpers `window.rapBanquesMois(m)` (comptes 512 ayant des mouvements ce mois), `window.rapMoisStatut(m)` (`{total,faits,soldes,verrouilles,valide,verrouille}` ; `valide = soldes===total`, `verrouille = valide && tous verrouillés`), `window.rapRecapHTML()`. Greffe `pageRappro` : badges 🔒/✓/◐ par mois (regex sur les items `.it` de `.rb-per`) + injection du récap avant `.rb-top`. Édition chirurgicale de la ligne « Relevé BQ au … » (🔒 si verrouillé, ✓ si soldé). Aucune logique comptable modifiée. Badge → **v225**.
+
+---
+
+## 🟢 MAJ précédente — Fenêtre plein écran au glisser-haut + saisie sur l'écriture cliquée + sélection multi-lignes copier/coller — v224
+**Quoi :** trois améliorations de la saisie / des fenêtres : (1) **glisser une fenêtre (manipulable) vers le haut de l'écran → plein écran** (snap façon Windows, repère bleu en haut) ; (2) dans **tous les journaux**, le **clic droit « ✎ Saisir / éditer cette écriture »** ouvre l'éditeur **positionné sur l'écriture cliquée** (défilement + curseur sur la **saisie du compte** de la ligne sélectionnée, surbrillance temporaire) ; (3) **sélection multi-lignes** dans l'éditeur (glisser le pointeur sur la zone gauche/droite des lignes, ou **Maj+clic** ; **Échap** annule) puis **Ctrl/Cmd+C / Ctrl/Cmd+V** pour **copier / coller** les lignes (collées après la ligne active, et copiées en TSV dans le presse-papiers).
+
+**Où / comment :** `addon89` — `dragMove`/`dragEnd` détectent le haut de l'écran (`#wm-topzone`) → `wmMaximize(k)` (dé-flotte / sort de `sg-reduit`). `sgJournalGrid` — lignes `data-ecr`/`data-cpt` ; `addon117` transmet l'id d'écriture ; `ouvrirJournalEditable(journal,mois,ecrId,cpt)` défile + focus `input.ec-cpt` (classe `ec-focus-ecr`). `yada-addon120` — sélection (`mousedown`/glisser sur cellules hors saisie, `.ec-rowsel`), `Ctrl+C`/`Ctrl+V` (`window.ecClip`, collage `e.lignes.splice`), actif hors mode compte (`!window.ecCode`, pour ne pas gêner le lettrage). Aucune logique comptable modifiée. Badge → **v224**.
+
+---
+
+## 🟢 MAJ précédente — Confirmations & saisies aux couleurs YADA (fin des `confirm()` / `prompt()` natifs) — v223
+**Quoi :** toutes les **confirmations de suppression** et **invites de saisie** du logiciel s'affichent désormais dans des **modales soignées aux couleurs YADA (bleu nuit + bleu Crystal)** au lieu des boîtes `confirm()` / `prompt()` natives du navigateur (« …github.io indique »). Boutons **Annuler / Confirmer** (le bouton de suppression est en **rouge danger**), champ de saisie intégré pour les prompts ; **Échap / clic dehors = Annuler**, **Entrée = Confirmer / OK**. `window.alert` est aussi redirigé.
+
+**Où / comment :** `yada-addon119` — `window.yadaConfirm(msg, onYes, opts)` et `window.yadaPrompt(msg, valeur, onOk, opts)` (callback, modale `.ya-ov`/`.ya-card`, réutilise le style de `yadaAlert`/addon118 + `<style id="ya-confirm-mod">`). **~49 confirmations** et **~15 saisies** converties (fire-and-forget → callback ; séquences de prompts imbriquées ; confirmations conditionnelles via fonction `_go`/`_gen`). **2 cas laissés en natif** (garde à retour synchrone) : `quitterRappro` (renvoie `false` pour bloquer la navigation) et la renumérotation de compte tiers dans `tiersEnregistrer` (garde au milieu d'un enregistrement synchrone). Aucune logique comptable modifiée. Badge → **v223**.
+
+---
+
+## 🟢 MAJ précédente — Messages d'alerte aux couleurs YADA (fin des `alert()` natifs) — v222
+**Quoi :** le message « ⚠ Écriture non soldée » (affiché quand on tente de quitter l'éditeur avec une écriture déséquilibrée) — et plus largement les alertes — s'affichent désormais dans une **modale soignée aux couleurs YADA (bleu nuit + bleu Crystal)** au lieu de la **boîte `alert()` native** du navigateur (« …github.io indique »). En-tête avec titre + pastille **YADA**, corps lisible, bouton **OK** ; **Échap / Entrée / clic dehors** ferment. La modale passe **au-dessus** de l'éditeur et des listes (z-index élevé).
+
+**Où / comment :** `yada-addon118` — `window.yadaAlert(msg, titre)` (création d'un overlay `#yada-alert`, `<style id="ya-alert-mod">`). `ecFermer` appelle `yadaAlert(msg,'⚠ Écriture non soldée')` (repli `alert`/`toast` si indisponible). Aucune logique modifiée (le blocage de fermeture v216 reste identique). Badge → **v222**.
+
+---
+
+## 🟢 MAJ précédente — Saisie au journal : clic droit pour saisir, en-têtes répétés par ligne, navigation clavier complète (flèches) — v221
+**Quoi :** refonte de la **saisie au journal** (Consultation + éditeur `.ec-sage`) : (1) **plus de bouton « Éditer le journal du mois »** — on fait désormais **clic droit sur une écriture** du journal → « ✎ Saisir / éditer ce journal » (ouvre l'éditeur) ; (2) dans l'éditeur, le **journal**, la **pièce** et le **libellé** **suivent toutes les lignes** de l'écriture (journal + pièce + libellé affichés sur chaque ligne jusqu'au solde ; le **libellé est identique** sur toutes les lignes — édité sur la 1re ligne, répliqué via `ecSetLibAll`) ; (3) les **comptes de tiers 401000000 / 411000000** apparaissent **avec les comptes auxiliaires fournisseurs / clients** dans l'autocomplétion ; (4) **navigation clavier complète** : **↓/↑** choisissent le compte dans la liste (sinon cellule dessous/dessus), **→/←** passent au champ suivant/précédent (au bord du champ ; toujours sur les montants), **Tab/Maj+Tab** champ suivant/précédent, **Entrée** = « passer à la suite » (valide le compte sélectionné dans la liste puis avance).
+
+**Où / comment :** `ecRender` (journal/pièce/libellé sur chaque ligne, `ec-ro` en lignes suivantes, `ecSetLibAll`) ; `addon85` (`ecSuggMove`/`ecSuggConfirm` + item actif `.act`) ; `addon114` réécrit (gestion Tab/Entrée/flèches + liste de comptes) ; `addon117` (clic droit `#sgj-ctx` sur `.sgj` → `ouvrirJournalEditable` ; styles `ec-ro`/`sgj-hint`) ; `sgJournalGrid` (bouton retiré, `data-jrn`/`data-per`). Aucune logique comptable modifiée. Badge → **v221**.
+
+---
+
+## 🟢 MAJ précédente — Consultation des journaux : défilement (molette) pour voir TOUTES les écritures — v220
+**Quoi :** dans la **Consultation des comptes**, quand on sélectionne un **journal** (ACH, VTE, BQ, ODP, ODC, ODTVA, OD), la grille des écritures **défile désormais à la molette** pour voir **toutes les écritures**, même longues (ex. journal ACHATS de plusieurs centaines de lignes). Avant, le contenu **débordait** sous la fenêtre (rogné par `.sg-app{overflow:hidden}`) au lieu de défiler.
+
+**Pourquoi / cause :** la zone de droite `.sg-right` est une **cellule de grille CSS** ; sans `min-height:0`, un enfant en `overflow:auto` ne peut pas défiler (la cellule grandit au-delà de la piste et déborde). 
+
+**Où / comment :** `yada-addon116` — `<style id="sg-scroll-mod">` : `.sg-right{min-height:0}` + `.sgj-wrap{min-height:0}` + `.sgj-grid/.sg-grid{overflow:auto;min-height:0}` (+`overscroll-behavior:contain`). 100% CSS additif, aucune logique modifiée. Badge → **v220**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur d'écritures : navigation clavier (Tab / Entrée) + retrait du bouton « + Ajouter une désignation » — v219
+**Quoi :** (1) **navigation clavier façon tableur** dans l'éditeur d'écritures (`.ec-sage`) — **TAB / MAJ+TAB** = champ suivant / précédent (gauche→droite puis ligne suivante, avec bouclage) ; **ENTRÉE** = descend dans la **même colonne** (cellule du dessous), et en bas d'une écriture passe à la première ligne de l'écriture suivante. (2) **Retrait du bouton « + Ajouter une désignation »** (l'insertion se fait au **clic droit**, addon113) ; le bouton **« Solder l'écriture »** reste visible.
+
+**Pourquoi :** la validation d'un champ relance `ecRender` (table reconstruite) → le Tab/Entrée natif perdait le focus. On re-cible le champ par ses **coordonnées** après reconstruction.
+
+**Où / comment :** `yada-addon114` — écouteur `keydown` (capture) : sur Tab/Entrée dans un `input.ec-i` de `#ec-win`, `blur()` (valide) puis re-focus par coordonnées (`data-eid`/`data-li`/`cellIndex` via `cellInput`/`editInputs`/`ecrOrder`). `yada-addon115` — `<style id="ec-noadd-mod">` masque `.ec-act .ec-bt:not(.ec-bt-solde)`. Aucune logique comptable modifiée. Badge → **v219**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur d'écritures : saisie directe « tableur » (champs plats, clic droit pour insérer, date sur toutes les lignes, colonnes fixes) — v218
+**Quoi :** l'**éditeur d'écritures** (`.ec-sage`) devient une vraie grille de saisie directe, plus simple : (1) **saisie directe sur le texte ET les montants** — champs **totalement plats**, **aucune bulle / aucun cercle / aucun halo** au focus (juste un léger fond bleu) ; (2) **insérer une ligne au CLIC DROIT** (menu contextuel « ↧ Insérer une ligne » / « 🗑 Supprimer la ligne ») — le **bouton ✕ (cercle rouge)** par ligne est **masqué** ; (3) la **date** de l'écriture est **répétée sur toutes les lignes** (jusqu'au solde) en **texte éditable (jj/mm/aaaa)** — **plus aucun sélecteur de date** ; (4) **tableau à colonnes FIXES** (`table-layout:fixed`) : tout reste en place quand on **agrandit / redimensionne** la fenêtre.
+
+**Où / comment :** `yada-addon113` — `<style id="ec-tableur-mod">` (colonnes `cw-*` fixes, champs plats, ✕ masqué, menu `#ec-ctx`) + helpers `window.ecSetDateTxt(id,v)` (parse jj/mm/aaaa → ISO) et `window.ecInsertLine(id,i)` + écouteur `contextmenu` (capture) sur `tr.ec-r` de `#ec-win`. `ecRender` génère désormais `data-eid`/`data-li` par ligne, la **date-texte sur chaque ligne** (`ec-datetxt`, plus de `type=date`) et un **`<colgroup>`** à largeurs fixes. Aucune logique comptable modifiée. Badge → **v218**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur d'écritures (Compte auxiliaire / Consultation) : refonte sobre façon Sage aux couleurs YADA — v217
+**Quoi :** l'**éditeur d'écritures** façon Sage (`.ec-sage` — Compte auxiliaire, double-clic sur un compte, « Saisir une opération ») est rendu **plus sobre, plus dense et plus léger**, au plus près du **format Sage** mais aux **couleurs YADA (bleu nuit + bleu Crystal)** : (1) suppression des **bandeaux « Écriture i / N · Pièce · Équilibrée ✓ »** (moins de texte, moins de cadrage) ; (2) une **seule ligne bleu Crystal (#1e90ff, 2px)** fine **après chaque écriture SOLDÉE** (la logique v216 est inchangée : aucune ligne après une écriture non soldée) ; (3) **lignes serrées + champs compacts** (densité façon journal Sage) ; (4) ligne d'actions **allégée** (sans fond ni « Soldée ✓ », bouton « + Ajouter » discret — « Solder l'écriture » conservé) ; (5) en-tête/pied **aplatis**.
+
+**Où / comment :** `yada-addon112` injecte `<style id="ec-epure-mod">` en fin de `<head>` (prioritaire dans la cascade) ; **100% CSS**, aucune logique modifiée (séparateur conditionné au solde + fermeture bloquée tant qu'une écriture n'est pas soldée restent tels quels). Badge → **v217**.
+
+---
+
+## 🟢 MAJ précédente — Consultation / journal éditable : pas de quitter une écriture non soldée + ligne bleue seulement après écriture soldée — v216
 **Quoi :** dans l'éditeur de journal/compte (Consultation des comptes), (1) la **ligne bleue de séparation** n'apparaît **qu'après une écriture SOLDÉE** (équilibrée) — déjà le cas (`if(ok)` dans `ecRender`, ligne `ec-redrow`/`ec-soldee`) ; les écritures soldées avant une écriture modifiée gardent leur ligne ; (2) **impossible de fermer la page** tant qu'une écriture n'est pas soldée — un **message d'erreur** s'affiche à chaque tentative de sortie, avec la pièce et l'écart Débit/Crédit. Aucun changement de format/encadrement.
 
 **Où / comment :** `ecFermer` — ajout d'un contrôle : si une écriture a `Σdébit ≠ Σcrédit` (≥ 0,005), `alert(...)` détaillé et `return` (fermeture bloquée). La logique de la ligne bleue (uniquement après écriture équilibrée) était déjà en place. Badge → **v216**.
