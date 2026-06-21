@@ -5440,7 +5440,7 @@ function sgJournalGrid(code, per){
   ecr=ecr.sort((a,b)=>a.date<b.date?-1:(a.date>b.date?1:0));
   let td=0,tc=0; const rows=ecr.map((e,ei)=>{ const jour=e.date.slice(8,10); const piece=e.libelle.split(' · ')[0]; const lib=(e.libelle.split(' · ')[1]||e.libelle);
     return e.lignes.map((l,i)=>{ td+=l.debit; tc+=l.credit;
-      return `<tr class="${(i===0&&ei>0)?'sgj-ecr-sep':''}"><td>${jour}</td><td class="cpt">${(c9(l.compte)||l.compte)}</td><td></td><td>${piece}</td><td class="l">${lib}</td>
+      return `<tr class="${(i===e.lignes.length-1)?'sgj-ecr-end':''}"><td>${jour}</td><td class="cpt">${(c9(l.compte)||l.compte)}</td><td></td><td>${piece}</td><td class="l">${lib}</td>
         <td class="r">${l.debit?sageNum(l.debit):''}</td><td class="r">${l.credit?sageNum(l.credit):''}</td></tr>`; }).join('');
   }).join('');
   const ok=Math.abs(r2(td-tc))<0.005;
@@ -5871,11 +5871,11 @@ function pageCompteAux(){
   let od=0,oc=0; lignes.forEach(l=>{ if(!l.lettre){ od+=l.debit; oc+=l.credit; } });
   const ouvert=r2(od-oc); const nbOuvert=lignes.filter(l=>!l.lettre).length;
   const soldee = Math.abs(soldeFinal)<0.005 && nbOuvert===0;
-  let solde=0; let _prevE=null;
-  const rows=lignes.map(l=>{ solde=r2(solde+l.debit-l.credit);
+  let solde=0;
+  const rows=lignes.map((l,_i)=>{ solde=r2(solde+l.debit-l.credit);
     const sel=auxSel.includes(l.key); const lettreEquilibree=l.lettre&&parLettre[l.lettre]&&Math.abs(r2(parLettre[l.lettre].d-parLettre[l.lettre].c))<0.005;
-    const _sep=(_prevE!==null && l.ecritureId!==_prevE)?' lx-ecr-sep':''; _prevE=l.ecritureId;
-    return `<tr class="${sel?'sel':''} ${lettreEquilibree?'lettre-on':''}${_sep}" onclick="auxToggleSel('${l.key}')">
+    const _end=(_i===lignes.length-1 || (lignes[_i+1] && lignes[_i+1].ecritureId!==l.ecritureId))?' lx-ecr-end':'';
+    return `<tr class="${sel?'sel':''} ${lettreEquilibree?'lettre-on':''}${_end}" onclick="auxToggleSel('${l.key}')">
       <td class="bang">${l.lettre?'':'!'}</td>
       <td class="l">${frDate(l.date)}</td>
       <td class="l">${l.journal==='ACH'?'HA':l.journal==='VTE'?'VT':l.journal}</td>
@@ -10755,7 +10755,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v212 · noir & bleu';
+    b.textContent='YADA · v213 · noir & bleu';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -13326,12 +13326,12 @@ ${lignes}
     var code, nom, lignes;
     if(t){ code=sageCode(t); nom=t.nom||''; lignes=(typeof auxLignes==='function')?auxLignes(t):[]; }
     else { code=window.clCode; nom=(COMPTES[code]||COMPTES[String(code).replace(/0+$/,'')]||''); lignes=clLignesGeneral(code); }
-    var solde=0, TD=0, TC=0; var _prevE=null;
-    var rows=lignes.map(function(l){
+    var solde=0, TD=0, TC=0;
+    var rows=lignes.map(function(l,_i){
       solde=r2(solde+l.debit-l.credit); TD+=l.debit; TC+=l.credit;
       var jnl=l.journal==='ACH'?'HA':(l.journal==='VTE'?'VT':l.journal);
-      var _sep=(_prevE!==null && l.ecritureId!==_prevE)?' lx-ecr-sep':''; _prevE=l.ecritureId;
-      return '<tr class="'+_sep.trim()+'" oncontextmenu="return clMenu(event,\''+l.ecritureId+'\')" title="Clic droit : ouvrir dans le journal pour modifier">'
+      var _end=(_i===lignes.length-1 || (lignes[_i+1] && lignes[_i+1].ecritureId!==l.ecritureId))?'lx-ecr-end':'';
+      return '<tr class="'+_end+'" oncontextmenu="return clMenu(event,\''+l.ecritureId+'\')" title="Clic droit : ouvrir dans le journal pour modifier">'
         +'<td class="bang">'+(l.lettre?'':'!')+'</td>'
         +'<td class="l">'+frDate(l.date)+'</td>'
         +'<td class="l">'+jnl+'</td>'
@@ -14699,8 +14699,8 @@ ${lignes}
    écriture pour les différencier nettement. 100% additif (CSS). */
 (function(){
   try{ var st=document.createElement('style'); st.id='sgj-sep-mod'; st.textContent=
-    '.sg-app table.sgj tbody tr.sgj-ecr-sep td{border-top:2px solid #1e90ff !important}'
-    +'body[data-theme="noir"] .sg-app table.sgj tbody tr.sgj-ecr-sep td{border-top:2px solid #1e90ff !important}';
+    '.sg-app table.sgj tbody tr.sgj-ecr-end td{border-bottom:2px solid #1e90ff !important}'
+    +'body[data-theme="noir"] .sg-app table.sgj tbody tr.sgj-ecr-end td{border-bottom:2px solid #1e90ff !important}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
@@ -15718,13 +15718,13 @@ ${lignes}
 (function(){
   try{ var st=document.createElement('style'); st.id='journal-bluesep'; st.textContent=
     'body[data-page="journal"] .card .ecr + .ecr{border-top:2px solid #1e90ff !important;margin-top:14px;padding-top:14px}'
-    /* Consultation des comptes / grand-livre : fine LIGNE BLEUE entre chaque écriture */
-    +'table.lx tbody tr.lx-ecr-sep td{border-top:2px solid #1e90ff !important}'
-    +'.lx-app table.lx tbody tr.lx-ecr-sep td{border-top:2px solid #1e90ff !important}'
-    +'#cl-overlay table.lx tbody tr.lx-ecr-sep td{border-top:2px solid #1e90ff !important}'
-    /* Consultation des comptes — vue par JOURNAL (sgJournalGrid) : fine ligne bleue entre écritures */
-    +'table.sgj tbody tr.sgj-ecr-sep td{border-top:2px solid #1e90ff !important}'
-    +'.sg-app table.sgj tbody tr.sgj-ecr-sep td{border-top:2px solid #1e90ff !important}';
+    /* Consultation des comptes / grand-livre : LIGNE BLEUE après chaque écriture (sous la dernière ligne) */
+    +'table.lx tbody tr.lx-ecr-end td{border-bottom:2px solid #1e90ff !important}'
+    +'.lx-app table.lx tbody tr.lx-ecr-end td{border-bottom:2px solid #1e90ff !important}'
+    +'#cl-overlay table.lx tbody tr.lx-ecr-end td{border-bottom:2px solid #1e90ff !important}'
+    /* Consultation des comptes — vue par JOURNAL (sgJournalGrid) : ligne bleue après chaque écriture */
+    +'table.sgj tbody tr.sgj-ecr-end td{border-bottom:2px solid #1e90ff !important}'
+    +'.sg-app table.sgj tbody tr.sgj-ecr-end td{border-bottom:2px solid #1e90ff !important}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
