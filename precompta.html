@@ -10847,7 +10847,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v249 · journaux TVA';
+    b.textContent='YADA · v250 · reclassement prudent';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -17121,17 +17121,22 @@ ${lignes}
     var j=e.journal;
     if(j!=='OD' && j!=='ODP' && j!=='ODC' && j!=='ODTVA') return null;   // ne touche que les O.D.
     var L=String(e.libelle||'').toUpperCase();
-    /* vraies O.D. à ne jamais déplacer (clôture, à-nouveaux, dotations, cessions, emprunts) */
-    if(/R[EÉ]SULTAT|NOUVEAU|CL[OÔ]TURE|DOTATION|AMORTISS|CESSION|EMPRUNT|INT[EÉ]R[EÊ]T|ICNE|[EÉ]CH[EÉ]ANC/.test(L)) return null;
-    var accs=(e.lignes||[]).map(function(l){ return c9(l.compte||''); });
+    /* vraies O.D. (clôture, à-nouveaux, dotations, cessions, emprunts) → toujours en OD */
+    if(/R[EÉ]SULTAT|NOUVEAU|CL[OÔ]TURE|DOTATION|AMORTISS|CESSION|EMPRUNT|INT[EÉ]R[EÊ]T|ICNE|[EÉ]CH[EÉ]ANC/.test(L)) return 'OD';
+    var accs=(e.lignes||[]).map(function(l){ return c9(l.compte||''); }).filter(Boolean);
     var has=function(re){ return accs.some(function(a){ return re.test(a); }); };
-    /* TVA : déclaration CA3 / régularisation → ODTVA (libellé TVA ou comptes de TVA 445x) */
-    if(/\bTVA\b/.test(L) || has(/^445/)) return 'ODTVA';
-    /* PAIE : salaire brut 641 (classe 6, jamais en à-nouveaux) ou libellé paie */
-    if(has(/^641/) || /\bPAIE\b|SALAIRE|BULLETIN|R[EÉ]MUN/.test(L)) return 'ODP';
-    /* CHARGES patronales : comptes sociaux de classe 6 (645/648/631) ou libellé charges */
-    if(has(/^645/) || has(/^648/) || has(/^631/) || /COTISATION|URSSAF|PATRONAL|\bCHARGES?\b/.test(L)) return 'ODC';
-    return null;
+    var all=function(re){ return accs.length>0 && accs.every(function(a){ return re.test(a); }); };
+    /* PRUDENT : on ne reclasse que si le LIBELLÉ l'indique clairement, ou si l'écriture a la
+       SIGNATURE structurelle complète (pas la simple présence d'UN compte). Sinon → OD. */
+    /* TVA : libellé TVA, ou écriture composée UNIQUEMENT de comptes de TVA 445x */
+    if(/\bTVA\b/.test(L) || all(/^445/)) return 'ODTVA';
+    /* PAIE : libellé paie, ou salaire brut 641 AVEC personnel 421 / cotisations 645 */
+    if(/\bPAIE\b|SALAIRE|BULLETIN|R[EÉ]MUN/.test(L) || (has(/^641/) && (has(/^421/)||has(/^645/)))) return 'ODP';
+    /* CHARGES patronales : libellé charges, ou compte social classe 6 (645/648/631)
+       AVEC organisme à payer (431 URSSAF / 437 autres caisses) */
+    if(/COTISATION|URSSAF|PATRONAL|\bCHARGES?\b/.test(L) || ((has(/^645/)||has(/^648/)||has(/^631/)) && (has(/^431/)||has(/^437/)))) return 'ODC';
+    /* ni TVA ni paie ni charges → opération diverse : journal OD (répare les faux positifs) */
+    return 'OD';
   }
 
   function reclasse(arr){
