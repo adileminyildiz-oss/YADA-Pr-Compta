@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Journal comptable : facture liée (fournisseur/client) à la suite de la date — v254
+## 🟢 Dernière mise à jour — Paramétrage : bouton « Enregistrer la version actuelle & télécharger » — v255
+**Quoi :** dans **Paramétrage** (carte « Transfert manuel »), un nouveau bouton **« 💾 Enregistrer la version actuelle & télécharger »** **enregistre l'état courant dans YADA** (localStorage + cloud si activé) **puis télécharge** le fichier `precompta-AAAA-MM-JJ.json` à jour.
+
+**Comment — `yada-addon137` :** `window.exportJSONEnregistre()` = `persistActif()` → `save()` (enregistre dans YADA) → `cloudPushNow()` (push immédiat si synchro activée, sinon sans effet) → `exportJSON()` (télécharge le fichier à jour). Greffe sur `transfertManuelCard` (bouton injecté avant « ⬇️ Télécharger la base »).
+
+**Limites :** export/enregistrement uniquement (aucune logique comptable touchée). Validé : `node --check` (125 scripts). Badge → **v255 · enregistrer & télécharger**.
+
+---
+
+## 🟢 MAJ précédente — Journal comptable : facture liée (fournisseur/client) à la suite de la date — v254
 **Quoi :** dans le **module Journal comptable**, la **facture** liée à l'écriture (fournisseur ou client) s'affiche **juste après la date**, **cliquable** (voir) et **téléchargeable** (⤓).
 
 **Comment — `yada-addon136` + 1 insertion dans `pageJournal` :**

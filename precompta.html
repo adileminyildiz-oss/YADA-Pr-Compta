@@ -10850,7 +10850,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v254 · journal facture liée';
+    b.textContent='YADA · v255 · enregistrer & télécharger';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -17328,6 +17328,29 @@ ${lignes}
     +'.jrn-fac a:hover{background:rgba(30,144,255,.22);border-color:#1e90ff}'
     +'.jrn-fac a.jrn-dl{font-weight:700;padding:1px 7px}';
     document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon137">
+/* Paramétrage — bouton « Enregistrer la version actuelle & télécharger ».
+   Enregistre l'état courant DANS YADA (localStorage + cloud si activé) PUIS
+   télécharge le fichier à jour. 100% additif (greffe transfertManuelCard). */
+(function(){
+  window.exportJSONEnregistre=function(){
+    try{ if(typeof persistActif==='function') persistActif(); }catch(e){}
+    try{ if(typeof save==='function') save(); }catch(e){}                 /* enregistre dans YADA */
+    try{ if(typeof cloudPushNow==='function') cloudPushNow(); }catch(e){} /* + cloud immédiat si activé (sinon sans effet) */
+    try{ if(typeof exportJSON==='function') exportJSON(); }catch(e){}     /* télécharge le fichier à jour */
+    try{ if(typeof toast==='function') toast('Version enregistrée dans YADA ✓ — fichier téléchargé'); }catch(e){}
+  };
+  if(typeof transfertManuelCard==='function'){
+    var _t=transfertManuelCard;
+    transfertManuelCard=function(){ var h=_t();
+      if(h.indexOf('exportJSONEnregistre')>=0) return h;
+      var btn='<button class="btn btn-pri" onclick="exportJSONEnregistre()" title="Enregistre l\'état actuel dans YADA puis télécharge le fichier à jour">💾 Enregistrer la version actuelle &amp; télécharger</button> ';
+      return h.replace('<button class="btn btn-gold" onclick="exportJSON()">⬇️ Télécharger la base</button>',
+        btn+'<button class="btn btn-gold" onclick="exportJSON()">⬇️ Télécharger la base</button>');
+    };
+  }
 })();
 </script>
 </body>
