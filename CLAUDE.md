@@ -36,7 +36,22 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Reclassement étendu à la TVA : OD de TVA → journal ODTVA — v249
+## 🟢 Dernière mise à jour — Reclassement des journaux PRUDENT (les O.D. diverses restent en OD) — v250
+**Quoi :** le reclassement des journaux (addon132) devient **prudent** pour ne plus déplacer par erreur des **O.D. diverses** qui contiennent simplement un compte 445/645/641. Les écritures déplacées à tort vers ODTVA/ODC/ODP sont **ramenées en OD**.
+
+**Pourquoi :** la version v249 reclassait dès la **simple présence** d'un compte (ex. une O.D. avec une seule ligne 445 partait en ODTVA). Trop agressif → faux positifs.
+
+**Comment — `cibleJournal` réécrit (libellé + signature structurelle, défaut = OD) :**
+- **TVA → ODTVA** : libellé contient `TVA`, **ou** l'écriture est composée **uniquement** de comptes de TVA `445x` (déclaration CA3). Une O.D. avec une seule ligne 445 parmi d'autres **reste en OD**.
+- **PAIE → ODP** : libellé paie, **ou** salaire brut `641` **ET** personnel `421` / cotisations `645` (signature complète).
+- **CHARGES → ODC** : libellé charges, **ou** compte social classe 6 (`645/648/631`) **ET** organisme à payer (`431`/`437`).
+- **Défaut = OD** : tout ce qui n'est ni TVA ni paie ni charges revient/reste en **OD** (répare les faux positifs de v249). Clôture/à-nouveaux/dotations/cessions/emprunts forcés en OD.
+
+**Limites :** imputation descriptive (aucun montant/équilibre touché). Validé : `node --check` (121 scripts). Badge → **v250 · reclassement prudent**.
+
+---
+
+## 🟢 MAJ précédente — Reclassement étendu à la TVA : OD de TVA → journal ODTVA — v249
 **Quoi :** le reclassement des journaux (addon132) s'applique désormais aussi à la **TVA** : les écritures de **TVA** (déclaration CA3, régularisation) placées à tort dans le journal **OD** sont reclassées dans le journal **ODTVA (OD TVA)** — comme la paie (→ODP) et les charges (→ODC).
 
 **Comment — extension de `yada-addon132` :**
