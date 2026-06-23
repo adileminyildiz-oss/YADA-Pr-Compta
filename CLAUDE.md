@@ -36,7 +36,20 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Paramétrage / Plan comptable séparés + transfert manuel + ajout direct fournisseur/client — v245
+## 🟢 Dernière mise à jour — Édition des comptes : libellé REPORTÉ depuis la Consultation — v246
+**Quoi :** dans l'**éditeur d'écritures** (journal HA/VT/BQ/OD ouvert pour saisir/éditer), la colonne **Libellé** affiche désormais **exactement le même libellé que la Consultation des comptes / grand-livre** : le libellé de l'**écriture** (`e.libelle`, ex. « F2024-001 · DUPONT »).
+
+**Pourquoi :** la Consultation affichait `e.libelle` alors que l'éditeur montrait le libellé de la **1re ligne** (`e.lignes[0].lib`, ex. « Fournisseur DUPONT ») → les deux ne correspondaient pas. Valable pour fournisseur, client, salarié, n'importe quelle écriture.
+
+**Où / comment — `yada-addon131` + 1 édition chirurgicale :**
+- `ecRender` (cellule `.ec-lb`) : `value=${ecAttr(e.libelle||'')}` et `onchange="ecSetLibelleEcr(id, v)"` (au lieu de `e.lignes[0].lib` / `ecSetLibAll`).
+- `window.ecSetLibelleEcr(id,v)` : écrit `e.libelle=v` puis `ecRender()` → Consultation, journal de base et grand-livre restent synchronisés. La saisie d'un compte de tiers continue d'alimenter `e.libelle` via `ecSetLibAll`/`ecLibTiers` (addon125).
+
+**Limites :** le libellé est descriptif (aucun montant/équilibre touché) ; `l.lib` reste en base mais n'est plus affiché dans l'éditeur (toutes les vues lisent `e.libelle`). Validé : `node --check` (119 scripts). Badge → **v246 · libellé journal**.
+
+---
+
+## 🟢 MAJ précédente — Paramétrage / Plan comptable séparés + transfert manuel + ajout direct fournisseur/client — v245
 **Quoi :** la page « Paramétrage & plan comptable » est **scindée en deux entrées de menu** : **« Paramétrage (réglages) »** et **« Plan comptable »**. La page Paramétrage gagne une carte **« 📁 Transfert manuel (par fichier) »** (Télécharger la base / Importer). Les onglets **Fournisseur** et **Client** du plan comptable reçoivent un **formulaire d'ajout direct** de compte (401…/411…).
 
 **Où / comment :**
