@@ -4832,7 +4832,7 @@ function validerAchat(){
 function pageJournal(){
   const rows=db.ecritures.slice().sort((a,b)=>a.date<b.date?1:-1).map(e=>{
     const d=r2(e.lignes.reduce((a,l)=>a+l.debit,0)), c=r2(e.lignes.reduce((a,l)=>a+l.credit,0)); const ok=Math.abs(d-c)<0.005;
-    return `<div class="ecr"><div class="ecr-h">
+    return `<div class="ecr" data-ecr="${e.id}" oncontextmenu="return jrnCtx(event,'${e.id}')" title="Clic droit : éditer l'écriture (édition des comptes)"><div class="ecr-h">
       <span>${jrnTag(e.journal)} &nbsp;<b>${e.libelle}</b> &nbsp;<span class="mini">${e.date}</span>${e.doublon?' <span class="dup-badge" title="Doublon FEC détecté">DOUBLON</span>':''}</span>
       <span class="${ok?'balance-ok':'balance-ko'}">${ok?'Équilibrée ✓':'Déséquilibre !'} ${eur(d)}</span></div>
       <table><thead><tr><th>Compte</th><th>Intitulé</th><th class="r">Débit</th><th class="r">Crédit</th></tr></thead><tbody>
@@ -8859,8 +8859,7 @@ function dashSuivis(){
 /* ---------- JOURNAL : tri + filtre (dont OD) ---------- */
 var jrnFiltre='', jrnSort='desc', jrnSearch='';
 function jrnMatch(e){
-  if(jrnFiltre){ if(jrnFiltre==='OD'){ if(!String(e.journal).startsWith('OD')) return false; }
-    else if(e.journal!==jrnFiltre) return false; }
+  if(jrnFiltre){ if(e.journal!==jrnFiltre) return false; }   /* onglet = journal exact (OD ≠ ODP/ODC/ODTVA) */
   if(jrnSearch){ const q=jrnSearch.toLowerCase();
     const hit=(e.libelle||'').toLowerCase().includes(q) || (e.date||'').includes(q) ||
       e.lignes.some(l=>String(l.compte).includes(q)||(l.lib||'').toLowerCase().includes(q));
@@ -8872,7 +8871,7 @@ pageJournal=function(){
     .sort((a,b)=> jrnSort==='asc' ? (a.date<b.date?-1:1) : (a.date<b.date?1:-1));
   const rows=list.map(e=>{
     const d=r2(e.lignes.reduce((a,l)=>a+l.debit,0)), c=r2(e.lignes.reduce((a,l)=>a+l.credit,0)); const ok=Math.abs(d-c)<0.005;
-    return `<div class="ecr"><div class="ecr-h">
+    return `<div class="ecr" data-ecr="${e.id}" oncontextmenu="return jrnCtx(event,'${e.id}')" title="Clic droit : éditer l'écriture (édition des comptes)"><div class="ecr-h">
       <span>${jrnTag(e.journal)} &nbsp;<b>${e.libelle}</b> &nbsp;<span class="mini">${e.date}</span>${e.doublon?' <span class="dup-badge" title="Doublon FEC détecté">DOUBLON</span>':''}</span>
       <span class="${ok?'balance-ok':'balance-ko'}">${ok?'Équilibrée ✓':'Déséquilibre !'} ${eur(d)}</span></div>
       <table><thead><tr><th>Compte</th><th>Intitulé</th><th class="r">Débit</th><th class="r">Crédit</th></tr></thead><tbody>
@@ -8881,23 +8880,27 @@ pageJournal=function(){
         <td class="r num ${l.credit?'cre':''}">${l.credit?eur(l.credit):'—'}</td></tr>`).join('')}</tbody></table></div>`;
   }).join('');
   const tg=totauxCompte('4'), t4=totauxCompte('44');
-  const opt=(v,lbl)=>`<option value="${v}" ${jrnFiltre===v?'selected':''}>${lbl}</option>`;
-  return head('Journal comptable','Toutes les écritures : factures (3 lignes) et banque (2 lignes). Triez et filtrez par journal (dont OD).')+
+  /* Onglets : un par journal (regroupe les écritures du journal concerné) */
+  const jrnCounts={}; db.ecritures.forEach(e=>{ jrnCounts[e.journal]=(jrnCounts[e.journal]||0)+1; });
+  const JRN_NOMS={ACH:'HA — Achats',VTE:'VT — Ventes',BQ:'BQ — Banque',OD:'OD — Opérations diverses',ODP:'ODP — OD Paie',ODC:'ODC — OD Charges',ODTVA:'ODTVA — OD TVA'};
+  const JRN_TABS=[['','Tous'],['BQ','BQ'],['ACH','HA'],['VTE','VT'],['OD','OD'],['ODP','ODP'],['ODC','ODC'],['ODTVA','ODTVA']];
+  const jrnTabsHTML=JRN_TABS.map(t=>{ const v=t[0],lbl=t[1]; const n=(v===''?db.ecritures.length:(jrnCounts[v]||0));
+    return `<button class="jrn-tab ${jrnFiltre===v?'on':''}" onclick="jrnFiltre='${v}';render()">${lbl}<span class="jrn-c">${n}</span></button>`; }).join('');
+  return head('Journal comptable','Écritures regroupées par journal — un onglet par journal (BQ, HA, VT, OD, ODP, ODC, ODTVA).')+
    `<div class="card"><h2>Contrôle global</h2><div class="grid g4" style="margin-top:6px">
-      <div class="kpi"><div class="lbl">Écritures (filtrées)</div><div class="val">${list.length} <span class="meta">/ ${db.ecritures.length}</span></div></div>
+      <div class="kpi"><div class="lbl">Écritures (onglet)</div><div class="val">${list.length} <span class="meta">/ ${db.ecritures.length}</span></div></div>
       <div class="kpi"><div class="lbl">dont banque (BQ)</div><div class="val">${db.banque.length}</div></div>
       <div class="kpi"><div class="lbl">Mouvements comptes 4xx</div><div class="val">${eur(tg.debit)}</div><div class="meta">D ${eur(tg.debit)} · C ${eur(tg.credit)}</div></div>
       <div class="kpi"><div class="lbl">dont TVA (44x)</div><div class="val">${eur(t4.debit+t4.credit)}</div></div>
     </div></div>
-    <div class="card"><div class="row g3">
-      <div class="field"><label>Filtrer par journal</label><select onchange="jrnFiltre=this.value;render()">
-        ${opt('','Tous les journaux')}${opt('ACH','ACH — Achats')}${opt('VTE','VTE — Ventes')}${opt('BQ','BQ — Banque')}${opt('OD','OD — Opérations diverses (OD, ODP, ODTVA)')}</select></div>
+    <div class="card"><div class="jrn-tabs">${jrnTabsHTML}</div>
+    <div class="row g2" style="margin-top:12px">
       <div class="field"><label>Trier par date</label><select onchange="jrnSort=this.value;render()">
         <option value="desc" ${jrnSort==='desc'?'selected':''}>Plus récentes d'abord</option>
         <option value="asc" ${jrnSort==='asc'?'selected':''}>Plus anciennes d'abord</option></select></div>
       <div class="field"><label>Recherche (libellé, compte, date)</label><input value="${(jrnSearch||'').replace(/"/g,'&quot;')}" placeholder="ex : LOYER, 706, 2026-03" onchange="jrnSearch=this.value;render()"></div>
-    </div>${jrnFiltre||jrnSearch?`<div class="right"><button class="btn btn-ghost btn-sm" onclick="jrnFiltre='';jrnSearch='';render()">Réinitialiser les filtres</button></div>`:''}</div>`+
-   (rows?`<div class="card"><h2>Pièces comptables (${list.length})</h2>${rows}</div>`:'<div class="card"><div class="empty">Aucune écriture pour ce filtre.</div></div>');
+    </div>${jrnSearch?`<div class="right"><button class="btn btn-ghost btn-sm" onclick="jrnSearch='';render()">Effacer la recherche</button></div>`:''}</div>`+
+   (rows?`<div class="card"><h2>${jrnFiltre?('Journal '+(JRN_NOMS[jrnFiltre]||jrnFiltre)):'Toutes les pièces'} (${list.length})</h2>${rows}</div>`:`<div class="card"><div class="empty">Aucune écriture ${jrnFiltre?('dans le journal '+(JRN_NOMS[jrnFiltre]||jrnFiltre)):'pour cette recherche'}.</div></div>`);
 };
 
 /* ---------- ANALYTIQUE : revenus fixes & dépenses fixes (récurrents ≥ 3 mois) ---------- */
@@ -10847,7 +10850,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v251 · import → cloud immédiat';
+    b.textContent='YADA · v253 · journal clic droit éditer';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -17230,6 +17233,55 @@ ${lignes}
     else block(cur, mx);                          /* version plus ancienne → bloquée */
   }
   if(document.body) run(); else document.addEventListener('DOMContentLoaded', run);
+})();
+</script>
+<script id="yada-addon134">
+/* Journal comptable — barre d'ONGLETS par journal (BQ/HA/VT/OD/ODP/ODC/ODTVA).
+   Regroupe les écritures du journal sélectionné. 100% additif (style ; le markup
+   est rendu par pageJournal, le filtrage par jrnMatch en journal exact). */
+(function(){
+  try{ var st=document.createElement('style'); st.id='jrn-tabs-mod'; st.textContent=
+    '.jrn-tabs{display:flex;flex-wrap:wrap;gap:8px}'
+    +'.jrn-tab{display:inline-flex;align-items:center;gap:7px;cursor:pointer;border:1px solid #24405d;background:#16304a;color:#eaf2ff;border-radius:9px;padding:8px 14px;font:inherit;font-weight:600;font-size:13.5px;line-height:1}'
+    +'.jrn-tab:hover{border-color:#1e90ff}'
+    +'.jrn-tab.on{background:linear-gradient(120deg,#5ab0ff,#0a64d6);border:none;color:#fff}'
+    +'.jrn-tab .jrn-c{font-size:11px;background:rgba(255,255,255,.18);border-radius:20px;padding:1px 8px;font-weight:700}'
+    +'.jrn-tab.on .jrn-c{background:rgba(255,255,255,.28)}'
+    +'@media(max-width:820px){.jrn-tab{flex:1 1 auto;justify-content:center;min-height:42px}}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon135">
+/* Journal comptable — CLIC DROIT sur une écriture → édition des comptes (éditeur
+   d'écritures positionné sur l'écriture), même mécanisme que la Consultation.
+   100% additif : jrnCtx (menu contextuel) + jrnEditerEcr (ouvre l'éditeur). */
+(function(){
+  function close(){ var m=document.getElementById('jrn-ctx'); if(m) m.remove(); }
+  window.jrnEditerEcr=function(eid){
+    close();
+    var e=(db.ecritures||[]).find(function(x){ return x.id===eid; }); if(!e) return;
+    var mois=(typeof ym==='function')?ym(e.date):'';
+    if(typeof ouvrirJournalEditable==='function'){ ouvrirJournalEditable(e.journal, mois, e.id); }
+    else if(typeof ouvrirEcrituresCompte==='function' && e.lignes && e.lignes[0]){ ouvrirEcrituresCompte(e.lignes[0].compte); }
+  };
+  window.jrnCtx=function(ev, eid){
+    try{ ev.preventDefault(); ev.stopPropagation(); }catch(_){}
+    close();
+    var m=document.createElement('div'); m.id='jrn-ctx';
+    m.innerHTML='<button type="button">✎ Éditer l\'écriture (édition des comptes)</button>';
+    document.body.appendChild(m);
+    m.style.left=Math.min(ev.clientX||0,(window.innerWidth||1000)-280)+'px';
+    m.style.top=Math.min(ev.clientY||0,(window.innerHeight||700)-60)+'px';
+    m.querySelector('button').addEventListener('click', function(){ jrnEditerEcr(eid); });
+    return false;
+  };
+  document.addEventListener('click', close);
+  document.addEventListener('scroll', close, true);
+  try{ var st=document.createElement('style'); st.id='jrn-ctx-mod'; st.textContent=
+    '#jrn-ctx{position:fixed;z-index:100002;background:#0c1a2a;border:1px solid #1e90ff;border-radius:8px;box-shadow:0 14px 36px rgba(0,0,0,.55);padding:4px;min-width:240px}'
+    +'#jrn-ctx button{display:block;width:100%;text-align:left;background:transparent;border:0;color:#eaf2ff;font:13px system-ui,sans-serif;padding:9px 12px;border-radius:6px;cursor:pointer}'
+    +'#jrn-ctx button:hover{background:rgba(30,144,255,.18)}';
+    document.head.appendChild(st); }catch(e){}
 })();
 </script>
 </body>
