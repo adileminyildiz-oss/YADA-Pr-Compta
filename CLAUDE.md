@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Reclassement des journaux PRUDENT (les O.D. diverses restent en OD) — v250
+## 🟢 Dernière mise à jour — Import de données → poussée cloud IMMÉDIATE (données importées toujours à jour partout) — v251
+**Quoi :** après un **import de base** (Paramétrage → Transfert manuel → Importer), les données importées sont **poussées immédiatement vers le cloud** et deviennent la **version courante** sur tous les appareils — au lieu d'attendre le push différé (1,8 s) déclenché par `save()`.
+
+**Pourquoi :** demande utilisateur — « chaque mise à jour de données importée doit toujours être actuelle ». La poussée immédiate supprime la fenêtre de latence et fixe l'horodatage local (`TSK`), donc **aucune ancienne copie cloud ne peut écraser** les données fraîchement importées au prochain pull.
+
+**Comment — 1 édition chirurgicale d'`importJSON` :** après `save(); snapshotDB();`, ajout de `try{ if(typeof cloudPushNow==='function') cloudPushNow(); }catch(_e){}`. `cloudPushNow` (addon102) est **sans effet si la synchro n'est pas configurée** (`return Promise.resolve(false)`), donc 100% sûr hors-ligne / sans cloud.
+
+**Prérequis multi-appareils :** la synchro cloud (Pantry) doit être **activée** pour propager ; sinon l'import reste local (et conservé) sur l'appareil. Validé : `node --check` (121 scripts). Badge → **v251 · import → cloud immédiat**.
+
+---
+
+## 🟢 MAJ précédente — Reclassement des journaux PRUDENT (les O.D. diverses restent en OD) — v250
 **Quoi :** le reclassement des journaux (addon132) devient **prudent** pour ne plus déplacer par erreur des **O.D. diverses** qui contiennent simplement un compte 445/645/641. Les écritures déplacées à tort vers ODTVA/ODC/ODP sont **ramenées en OD**.
 
 **Pourquoi :** la version v249 reclassait dès la **simple présence** d'un compte (ex. une O.D. avec une seule ligne 445 partait en ODTVA). Trop agressif → faux positifs.

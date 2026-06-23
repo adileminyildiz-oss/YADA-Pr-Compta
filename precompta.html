@@ -3918,7 +3918,7 @@ function importJSON(e){
     if(!db.seq)db.seq={}; if(!db.societe)db.societe=societeDefaut(); if(!db.parametres)db.parametres=parametresDefaut();
     if(!db.plan||!db.plan.length) chargerPlanBTP();
     if(!db.journaux||!db.journaux.length) db.journaux=journauxDefaut();
-    syncComptesDuDossier(); save(); snapshotDB(); connecte=false; selRecherche=''; render(); toast('Données importées et enregistrées — sélectionnez un dossier'); }
+    syncComptesDuDossier(); save(); snapshotDB(); try{ if(typeof cloudPushNow==='function') cloudPushNow(); }catch(_e){} connecte=false; selRecherche=''; render(); toast('Données importées et enregistrées — sélectionnez un dossier'); }
     catch{ toast('Fichier invalide'); } };
   fr.readAsText(e.target.files[0]);
 }
@@ -10847,7 +10847,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v250 · reclassement prudent';
+    b.textContent='YADA · v251 · import → cloud immédiat';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
