@@ -10847,7 +10847,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v246 · libellé journal';
+    b.textContent='YADA · v247 · journaux paie/charges';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -17092,6 +17092,75 @@ ${lignes}
       if(e){ e.libelle=v; if(typeof ecRender==='function') ecRender(); }
     }catch(_){}
   };
+})();
+</script>
+<script id="yada-addon132">
+/* ============================================================
+   RECLASSEMENT DES JOURNAUX — corriger les erreurs d'imputation des O.D.
+   Repère, d'après les COMPTES et le LIBELLÉ, les écritures placées à tort dans
+   le journal « OD » (Opérations diverses) :
+     • écritures de PAIE  → journal « ODP » (OD PAIE)
+     • écritures de CHARGES (cotisations patronales) → journal « ODC » (OD CHARGES)
+   Corrige aussi les éventuels échanges ODP↔ODC.
+   Détection robuste & prudente :
+     - PAIE  : présence du compte 641 (salaire brut, classe 6) OU libellé
+               PAIE/SALAIRE/BULLETIN/RÉMUN.
+     - CHARGES: présence d'un compte social de classe 6 (645/648/631) OU libellé
+               COTISATION/URSSAF/PATRONAL/CHARGES.
+   Écritures EXCLUES (vraies O.D.) : clôture/résultat, à-nouveaux, dotations/
+   amortissements, cessions, emprunts/intérêts/échéances, TVA → laissées en l'état.
+   100% additif (sur le modèle de t2Normaliser/addon22) : migration unique
+   tous-dossiers au chargement + reclassement à chaque save + au changement de
+   dossier. Le libellé/journal est descriptif : aucun montant ni équilibre touché.
+   ============================================================ */
+(function(){
+  if(typeof c9!=='function') return;
+
+  function cibleJournal(e){
+    if(!e) return null;
+    var j=e.journal;
+    if(j!=='OD' && j!=='ODP' && j!=='ODC') return null;        // ne touche que les O.D.
+    var L=String(e.libelle||'').toUpperCase();
+    /* vraies O.D. à ne jamais déplacer */
+    if(/R[EÉ]SULTAT|NOUVEAU|CL[OÔ]TURE|DOTATION|AMORTISS|CESSION|EMPRUNT|INT[EÉ]R[EÊ]T|ICNE|[EÉ]CH[EÉ]ANC|\bTVA\b/.test(L)) return null;
+    var accs=(e.lignes||[]).map(function(l){ return c9(l.compte||''); });
+    var has=function(re){ return accs.some(function(a){ return re.test(a); }); };
+    /* PAIE : salaire brut 641 (classe 6, jamais en à-nouveaux) ou libellé paie */
+    if(has(/^641/) || /\bPAIE\b|SALAIRE|BULLETIN|R[EÉ]MUN/.test(L)) return 'ODP';
+    /* CHARGES patronales : comptes sociaux de classe 6 (645/648/631) ou libellé charges */
+    if(has(/^645/) || has(/^648/) || has(/^631/) || /COTISATION|URSSAF|PATRONAL|\bCHARGES?\b/.test(L)) return 'ODC';
+    return null;
+  }
+
+  function reclasse(arr){
+    var n=0;
+    (arr||[]).forEach(function(e){ var c=cibleJournal(e); if(c && c!==e.journal){ e.journal=c; n++; } });
+    return n;
+  }
+  function ensureJournaux(d){
+    if(!d || !Array.isArray(d.journaux)) return;
+    [['ODP','OD PAIE'],['ODC','OD CHARGES']].forEach(function(p){
+      if(!d.journaux.some(function(j){ return j && j.code===p[0]; }))
+        d.journaux.push({code:p[0], libelle:p[1], type:'O.D.', jrn:p[0], compte:''});
+    });
+  }
+  /* reclasse le dossier actif (db.*) */
+  function reclasseActif(){ var n=0; try{ n=reclasse(db.ecritures); ensureJournaux(db); }catch(e){} return n; }
+  window.reclasserJournauxPaieCharges=reclasseActif;
+
+  /* migration unique : dossier actif + tous les dossiers du portefeuille */
+  (function migrate(){ try{
+    reclasseActif();
+    if(db.dossiersData) Object.keys(db.dossiersData).forEach(function(id){ var d=db.dossiersData[id]; if(d){ reclasse(d.ecritures); ensureJournaux(d); } });
+  }catch(e){} })();
+
+  /* reclassement continu : à chaque enregistrement (édition, FEC, après synchro cloud) */
+  if(typeof save==='function'){ var _s=save; save=function(){ try{ reclasseActif(); }catch(e){} return _s.apply(this, arguments); }; }
+  /* reclassement au changement de dossier (le dataset chargé devient db.*) */
+  if(typeof chargerDossier==='function'){ var _cd=chargerDossier; chargerDossier=function(){ var r=_cd.apply(this, arguments); try{ reclasseActif(); }catch(e){} return r; }; }
+
+  /* verrouille la migration dans le stockage */
+  try{ if(typeof save==='function') save(); }catch(e){}
 })();
 </script>
 </body>

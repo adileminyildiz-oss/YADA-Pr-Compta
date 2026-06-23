@@ -36,7 +36,22 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Édition des comptes : libellé REPORTÉ depuis la Consultation — v246
+## 🟢 Dernière mise à jour — Reclassement des journaux : OD PAIE / OD CHARGES correctement imputées — v247
+**Quoi :** correction des **erreurs d'imputation** : les écritures de **paie** placées à tort dans le journal **OD** sont reclassées en **ODP (OD PAIE)**, et les écritures de **charges (cotisations patronales)** en **ODC (OD CHARGES)**. Corrige aussi les échanges ODP↔ODC.
+
+**Pourquoi :** d'anciennes écritures (versions antérieures, import FEC, etc.) restaient dans « OD » alors que la génération actuelle (`posterPaieMois`/`bpGenererODMois`) route déjà vers ODP/ODC. Les données existantes n'étaient pas corrigées.
+
+**Comment — `yada-addon132` (détection par COMPTES + LIBELLÉ, prudente) :**
+- **PAIE → ODP** : présence du compte **641** (salaire brut, classe 6) **ou** libellé `PAIE/SALAIRE/BULLETIN/RÉMUN`.
+- **CHARGES → ODC** : présence d'un compte social de classe 6 (**645/648/631**) **ou** libellé `COTISATION/URSSAF/PATRONAL/CHARGES`.
+- **Exclusions** (vraies O.D., jamais déplacées) : clôture/`RÉSULTAT`, à-nouveaux/`NOUVEAU`, dotations/amortissements, cessions, emprunts/intérêts/échéances, TVA.
+- Migration unique tous-dossiers au chargement + reclassement à chaque `save` (couvre éditions, FEC, après synchro cloud) + au changement de dossier ; `ensureJournaux` garantit ODP/ODC dans `db.journaux`. `window.reclasserJournauxPaieCharges()` exposé.
+
+**Limites :** le journal est une imputation descriptive (aucun montant/équilibre touché). Validé : `node --check` (120 scripts). Badge → **v247 · journaux paie/charges**.
+
+---
+
+## 🟢 MAJ précédente — Édition des comptes : libellé REPORTÉ depuis la Consultation — v246
 **Quoi :** dans l'**éditeur d'écritures** (journal HA/VT/BQ/OD ouvert pour saisir/éditer), la colonne **Libellé** affiche désormais **exactement le même libellé que la Consultation des comptes / grand-livre** : le libellé de l'**écriture** (`e.libelle`, ex. « F2024-001 · DUPONT »).
 
 **Pourquoi :** la Consultation affichait `e.libelle` alors que l'éditeur montrait le libellé de la **1re ligne** (`e.lignes[0].lib`, ex. « Fournisseur DUPONT ») → les deux ne correspondaient pas. Valable pour fournisseur, client, salarié, n'importe quelle écriture.
