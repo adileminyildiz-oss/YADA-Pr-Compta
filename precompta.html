@@ -10847,7 +10847,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v247 · journaux paie/charges';
+    b.textContent='YADA · v249 · journaux TVA';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -17119,12 +17119,14 @@ ${lignes}
   function cibleJournal(e){
     if(!e) return null;
     var j=e.journal;
-    if(j!=='OD' && j!=='ODP' && j!=='ODC') return null;        // ne touche que les O.D.
+    if(j!=='OD' && j!=='ODP' && j!=='ODC' && j!=='ODTVA') return null;   // ne touche que les O.D.
     var L=String(e.libelle||'').toUpperCase();
-    /* vraies O.D. à ne jamais déplacer */
-    if(/R[EÉ]SULTAT|NOUVEAU|CL[OÔ]TURE|DOTATION|AMORTISS|CESSION|EMPRUNT|INT[EÉ]R[EÊ]T|ICNE|[EÉ]CH[EÉ]ANC|\bTVA\b/.test(L)) return null;
+    /* vraies O.D. à ne jamais déplacer (clôture, à-nouveaux, dotations, cessions, emprunts) */
+    if(/R[EÉ]SULTAT|NOUVEAU|CL[OÔ]TURE|DOTATION|AMORTISS|CESSION|EMPRUNT|INT[EÉ]R[EÊ]T|ICNE|[EÉ]CH[EÉ]ANC/.test(L)) return null;
     var accs=(e.lignes||[]).map(function(l){ return c9(l.compte||''); });
     var has=function(re){ return accs.some(function(a){ return re.test(a); }); };
+    /* TVA : déclaration CA3 / régularisation → ODTVA (libellé TVA ou comptes de TVA 445x) */
+    if(/\bTVA\b/.test(L) || has(/^445/)) return 'ODTVA';
     /* PAIE : salaire brut 641 (classe 6, jamais en à-nouveaux) ou libellé paie */
     if(has(/^641/) || /\bPAIE\b|SALAIRE|BULLETIN|R[EÉ]MUN/.test(L)) return 'ODP';
     /* CHARGES patronales : comptes sociaux de classe 6 (645/648/631) ou libellé charges */
@@ -17139,7 +17141,7 @@ ${lignes}
   }
   function ensureJournaux(d){
     if(!d || !Array.isArray(d.journaux)) return;
-    [['ODP','OD PAIE'],['ODC','OD CHARGES']].forEach(function(p){
+    [['ODP','OD PAIE'],['ODC','OD CHARGES'],['ODTVA','OD TVA']].forEach(function(p){
       if(!d.journaux.some(function(j){ return j && j.code===p[0]; }))
         d.journaux.push({code:p[0], libelle:p[1], type:'O.D.', jrn:p[0], compte:''});
     });
@@ -17161,6 +17163,68 @@ ${lignes}
 
   /* verrouille la migration dans le stockage */
   try{ if(typeof save==='function') save(); }catch(e){}
+})();
+</script>
+<script id="yada-addon133">
+/* ============================================================
+   VERROU ANTI-RETOUR DE VERSION (no-downgrade) — « sur cet appareil ».
+   Dès qu'une version a été utilisée sur l'appareil, il devient IMPOSSIBLE de
+   revenir sur une version plus ANCIENNE : si une version inférieure se charge
+   (cache périmé, onglet obsolète…), elle est BLOQUÉE par un voile non
+   contournable et l'ÉCRITURE est désactivée (aucune modification possible sur
+   l'ancienne version). Un bouton « Charger la dernière version » met à jour.
+   Le « plancher » de version (le plus haut jamais exécuté) est mémorisé dans
+   localStorage ('yada-ver-max'). Combiné au service worker « réseau d'abord »
+   et à la mise à jour auto (addon103) qui ramènent la dernière version en ligne.
+   100% additif. Aucune logique comptable touchée.
+   ============================================================ */
+(function(){
+  var KEY='yada-ver-max', blocked=false;
+  function curVer(){ try{ var b=document.getElementById('yada-ver'); if(b){ var m=(b.textContent||'').match(/v(\d+)/); if(m) return parseInt(m[1],10); } }catch(e){} return 0; }
+  function getMax(){ try{ return parseInt(localStorage.getItem(KEY)||'0',10)||0; }catch(e){ return 0; } }
+  function setMax(v){ try{ localStorage.setItem(KEY, String(v)); }catch(e){} }
+  function forceUpdate(){
+    if(!navigator.onLine){ majMessageHorsLigne(); return; }
+    try{
+      if('serviceWorker' in navigator){
+        navigator.serviceWorker.getRegistration().then(function(r){ if(r){ try{ r.update(); }catch(e){} } setTimeout(function(){ try{ location.reload(); }catch(e){} }, 350); }).catch(function(){ try{ location.reload(); }catch(e){} });
+        return;
+      }
+    }catch(e){}
+    try{ location.reload(); }catch(e){}
+  }
+  window.yadaForceUpdate=forceUpdate;
+  function majMessageHorsLigne(){ var p=document.getElementById('yada-ver-lock-off'); if(p) p.style.display='block'; }
+  function showOverlay(cur, mx){
+    if(document.getElementById('yada-ver-lock')) return;
+    var ov=document.createElement('div'); ov.id='yada-ver-lock';
+    ov.style.cssText='position:fixed;inset:0;z-index:2147483647;background:rgba(6,10,18,.94);display:flex;align-items:center;justify-content:center;padding:24px;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)';
+    var off=!navigator.onLine;
+    ov.innerHTML='<div style="max-width:440px;width:100%;background:linear-gradient(160deg,#0d1830,#070b16);border:1px solid #1e90ff;border-radius:18px;padding:26px 24px;color:#eaf2ff;font-family:system-ui,-apple-system,sans-serif;box-shadow:0 20px 60px rgba(0,0,0,.6);text-align:center">'
+      +'<div style="font-size:40px;line-height:1">🔒</div>'
+      +'<h2 style="font-family:Fraunces,serif;margin:10px 0 6px;font-size:22px;color:#fff">Version obsolète</h2>'
+      +'<p style="margin:0 0 6px;font-size:14px;color:#c2cce0">Cette version (<b>v'+cur+'</b>) est plus ancienne que la dernière utilisée sur cet appareil (<b>v'+mx+'</b>).</p>'
+      +'<p style="margin:0 0 18px;font-size:14px;color:#c2cce0">Le retour en arrière est désactivé : <b>les modifications ne sont possibles que sur la dernière version</b>.</p>'
+      +'<button id="yada-ver-upd" style="width:100%;min-height:50px;border:none;border-radius:13px;font-weight:800;font-size:15px;cursor:pointer;background:linear-gradient(120deg,#0a64d6,#1e90ff);color:#fff;box-shadow:0 8px 24px rgba(10,100,214,.5)">⟳ Charger la dernière version</button>'
+      +'<p id="yada-ver-lock-off" style="display:'+(off?'block':'none')+';margin:12px 0 0;font-size:12.5px;color:#ffb4a8">Vous êtes hors-ligne — reconnectez-vous pour récupérer la dernière version.</p>'
+      +'</div>';
+    document.body.appendChild(ov);
+    var btn=document.getElementById('yada-ver-upd'); if(btn) btn.onclick=forceUpdate;
+  }
+  function block(cur, mx){
+    if(blocked) return; blocked=true;
+    /* l'ancienne version ne doit RIEN enregistrer (pas de divergence de données) */
+    try{ window.save=function(){ /* version obsolète : enregistrement désactivé */ }; }catch(e){}
+    showOverlay(cur, mx);
+  }
+  function run(){
+    var cur=curVer();
+    if(!cur){ setTimeout(run, 800); return; }   /* badge pas encore prêt */
+    var mx=getMax();
+    if(cur>=mx) setMax(cur);                      /* version courante = nouveau plancher */
+    else block(cur, mx);                          /* version plus ancienne → bloquée */
+  }
+  if(document.body) run(); else document.addEventListener('DOMContentLoaded', run);
 })();
 </script>
 </body>
