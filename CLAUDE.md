@@ -36,7 +36,21 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Paramétrage : bouton « Enregistrer la version actuelle & télécharger » — v255
+## 🟢 Dernière mise à jour — Analytique & rentabilité : section avancée sur les ÉCRITURES (KPIs + graphiques + tableaux) — v256
+**Quoi :** le module **Analytique & rentabilité** gagne une section **« 📊 Analytique avancée (sur écritures) »** calculée sur **toutes les écritures** (`db.ecritures` : factures + FEC + saisies), comme la Consultation — au lieu des seules factures.
+
+**Contenu (`yada-addon138`, 100% additif, sans bibliothèque externe) :**
+- **Filtre par exercice** (boutons année, défaut = année la plus récente des écritures).
+- **KPIs** : CA (70x), Charges (60x), Résultat, marge %, Variation de trésorerie (flux 512).
+- **4 graphiques SVG** (tooltips natifs `<title>`) : évolution mensuelle **CA vs Charges** (barres groupées), **trésorerie cumulée** (courbe), **répartition des charges** et **des produits** (donuts + légende top 6 + « Autres »).
+- **Tableaux analytiques** : résultat mensuel (CA/Charges/Résultat/Marge + total), **Top clients** (CA) et **Top fournisseurs** (dépensé) calculés depuis les comptes auxiliaires.
+- **Fonctionnalités** : **export CSV** du tableau mensuel, **impression** (`@media print`).
+
+**Calcul :** classe 7 = crédit−débit (produit), classe 6 = débit−crédit (charge), exclut « OD RÉSULTAT ». Greffe : `pageAnalytique = _pa()+anaAvancee()`. Validé : `node --check` (126 scripts) + test sur données réelles (MBC 2025 : CA 113 347 € / Charges 100 350 € / Résultat 12 997 €). Badge → **v256 · analytique avancée**.
+
+---
+
+## 🟢 MAJ précédente — Paramétrage : bouton « Enregistrer la version actuelle & télécharger » — v255
 **Quoi :** dans **Paramétrage** (carte « Transfert manuel »), un nouveau bouton **« 💾 Enregistrer la version actuelle & télécharger »** **enregistre l'état courant dans YADA** (localStorage + cloud si activé) **puis télécharge** le fichier `precompta-AAAA-MM-JJ.json` à jour.
 
 **Comment — `yada-addon137` :** `window.exportJSONEnregistre()` = `persistActif()` → `save()` (enregistre dans YADA) → `cloudPushNow()` (push immédiat si synchro activée, sinon sans effet) → `exportJSON()` (télécharge le fichier à jour). Greffe sur `transfertManuelCard` (bouton injecté avant « ⬇️ Télécharger la base »).

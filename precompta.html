@@ -10850,7 +10850,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v255 · enregistrer & télécharger';
+    b.textContent='YADA · v256 · analytique avancée';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -17351,6 +17351,160 @@ ${lignes}
         btn+'<button class="btn btn-gold" onclick="exportJSON()">⬇️ Télécharger la base</button>');
     };
   }
+})();
+</script>
+<script id="yada-addon138">
+/* ============================================================
+   ANALYTIQUE & RENTABILITÉ — section avancée sur les ÉCRITURES.
+   Exploite db.ecritures (factures + FEC + manuel, comme la Consultation) pour
+   produire : KPIs, 4 graphiques SVG (évolution mensuelle CA/charges, trésorerie
+   cumulée, répartition charges, répartition produits), tableaux analytiques
+   (résultat mensuel, top postes, top clients/fournisseurs), filtre par année,
+   export CSV + impression. 100% additif (sans bibliothèque externe).
+   ============================================================ */
+(function(){
+  if(typeof pageAnalytique!=='function') return;
+  var PAL=['#2ec28a','#5ab0ff','#e1a23c','#e1574c','#9b6cf0','#46c7d8','#d8689b','#8a98a8'];
+  function eurX(v){ try{ return eur(v); }catch(e){ return (Number(v||0).toFixed(2))+' €'; } }
+  function C9(x){ try{ return c9(x); }catch(e){ return String(x||''); } }
+
+  function anaYears(){ var s={}; (db.ecritures||[]).forEach(function(e){ var y=(e.date||'').slice(0,4); if(y) s[y]=1; }); return Object.keys(s).sort().reverse(); }
+  function anaYear(){ if(!window.anaYear){ window.anaYear=anaYears()[0]||String((new Date()).getFullYear()); } return window.anaYear; }
+  window.anaSetYear=function(y){ window.anaYear=y; if(typeof render==='function') render(); };
+
+  function compute(year){
+    var ca=0,ch=0, byMonth={}, charges={}, produits={}, treso={};
+    function mm(m){ return byMonth[m]||(byMonth[m]={ca:0,ch:0}); }
+    (db.ecritures||[]).forEach(function(e){
+      if((e.libelle||'').indexOf('OD RÉSULTAT')>=0) return;
+      var y=(e.date||'').slice(0,4); if(year && year!=='all' && y!==year) return;
+      var m=(e.date||'').slice(0,7);
+      (e.lignes||[]).forEach(function(l){
+        var k=C9(l.compte||''); var cl=k.charAt(0); var d=+l.debit||0, cr=+l.credit||0;
+        if(cl==='7'){ var vp=cr-d; ca+=vp; mm(m).ca+=vp; produits[k]=(produits[k]||0)+vp; }
+        else if(cl==='6'){ var vc=d-cr; ch+=vc; mm(m).ch+=vc; charges[k]=(charges[k]||0)+vc; }
+        if(k.slice(0,3)==='512'){ treso[m]=(treso[m]||0)+(d-cr); }
+      });
+    });
+    var tv=0; Object.keys(treso).forEach(function(m){ tv+=treso[m]; });
+    return { ca:r2(ca), ch:r2(ch), res:r2(ca-ch), tv:r2(tv), byMonth:byMonth, charges:charges, produits:produits, treso:treso };
+  }
+  function tiersRank(year){
+    var auxMap={}; (db.tiers||[]).forEach(function(t){ if(t.compteAux) auxMap[C9(t.compteAux)]=t; });
+    var acc={};
+    (db.ecritures||[]).forEach(function(e){ var y=(e.date||'').slice(0,4); if(year&&year!=='all'&&y!==year) return;
+      (e.lignes||[]).forEach(function(l){ var t=auxMap[C9(l.compte||'')]; if(!t) return; var a=acc[t.id]||(acc[t.id]={t:t,deb:0,cre:0}); a.deb+=(+l.debit||0); a.cre+=(+l.credit||0); }); });
+    var cl=[],fo=[]; Object.keys(acc).forEach(function(id){ var a=acc[id]; if(a.t.type==='client') cl.push({nom:a.t.nom,val:r2(a.deb)}); else fo.push({nom:a.t.nom,val:r2(a.cre)}); });
+    cl.sort(function(x,y){return y.val-x.val;}); fo.sort(function(x,y){return y.val-x.val;});
+    return {clients:cl, fourn:fo};
+  }
+  function topParts(obj,n){
+    var arr=Object.keys(obj).map(function(k){ return {k:k,v:obj[k]}; }).filter(function(x){return x.v>0.005;}).sort(function(a,b){return b.v-a.v;});
+    var parts=arr.slice(0,n).map(function(x,i){ return {label:(COMPTES[x.k]||x.k), val:x.v, color:PAL[i%PAL.length]}; });
+    var rest=arr.slice(n).reduce(function(s,x){return s+x.v;},0);
+    if(rest>0.005) parts.push({label:'Autres', val:r2(rest), color:'#5b6b7c'});
+    return parts;
+  }
+  function months12(year){ var a=[]; for(var i=1;i<=12;i++) a.push(year+'-'+(i<10?'0':'')+i); return a; }
+
+  /* ---------- Graphiques SVG (aucune dépendance) ---------- */
+  function svgEvolution(year,byMonth){
+    var W=640,H=240,pad=34,n=12,ms=months12(year),max=1;
+    ms.forEach(function(m){ var b=byMonth[m]||{ca:0,ch:0}; max=Math.max(max,b.ca,b.ch); });
+    var bw=(W-2*pad)/n, bar=bw*0.3, s='';
+    ms.forEach(function(m,i){ var b=byMonth[m]||{ca:0,ch:0}; var x=pad+i*bw;
+      var caH=b.ca>0?(H-2*pad)*b.ca/max:0, chH=b.ch>0?(H-2*pad)*b.ch/max:0;
+      s+='<rect x="'+(x+bw/2-bar-2)+'" y="'+(H-pad-caH)+'" width="'+bar+'" height="'+caH+'" rx="2" fill="#2ec28a"><title>'+m+' · CA '+eurX(b.ca)+'</title></rect>';
+      s+='<rect x="'+(x+bw/2+2)+'" y="'+(H-pad-chH)+'" width="'+bar+'" height="'+chH+'" rx="2" fill="#e1574c"><title>'+m+' · Charges '+eurX(b.ch)+'</title></rect>';
+      s+='<text x="'+(x+bw/2)+'" y="'+(H-pad+15)+'" font-size="10" fill="#9fb6d0" text-anchor="middle">'+(i+1<10?'0':'')+(i+1)+'</text>';
+    });
+    return '<svg viewBox="0 0 '+W+' '+H+'" class="ana-svg"><line x1="'+pad+'" y1="'+(H-pad)+'" x2="'+(W-pad)+'" y2="'+(H-pad)+'" stroke="#2a4156"/>'+s+'</svg>';
+  }
+  function svgLine(year,treso){
+    var W=640,H=210,pad=34,ms=months12(year),cum=0,pts=ms.map(function(m){ cum+=(treso[m]||0); return {m:m,v:r2(cum)}; });
+    var vals=pts.map(function(p){return p.v;}); var mn=Math.min.apply(null,[0].concat(vals)), mx=Math.max.apply(null,[1].concat(vals)); var rng=(mx-mn)||1;
+    var X=function(i){ return pad+i*((W-2*pad)/11); }, Y=function(v){ return H-pad-(v-mn)/rng*(H-2*pad); };
+    var d=pts.map(function(p,i){ return (i?'L':'M')+X(i).toFixed(1)+' '+Y(p.v).toFixed(1); }).join(' ');
+    var dots=pts.map(function(p,i){ return '<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(p.v).toFixed(1)+'" r="3.2" fill="#5ab0ff"><title>'+p.m+' · trésorerie cumulée '+eurX(p.v)+'</title></circle>'; }).join('');
+    var z=Y(0).toFixed(1);
+    return '<svg viewBox="0 0 '+W+' '+H+'" class="ana-svg"><line x1="'+pad+'" y1="'+z+'" x2="'+(W-pad)+'" y2="'+z+'" stroke="#2a4156" stroke-dasharray="3 3"/><path d="'+d+'" fill="none" stroke="#5ab0ff" stroke-width="2.2"/>'+dots+'</svg>';
+  }
+  function svgDonut(parts){
+    var total=parts.reduce(function(s,p){return s+Math.max(0,p.val);},0)||1, cx=90,cy=90,R=62,C=2*Math.PI*R,off=0,ring='';
+    parts.forEach(function(p){ var frac=Math.max(0,p.val)/total, len=frac*C;
+      ring+='<circle cx="'+cx+'" cy="'+cy+'" r="'+R+'" fill="none" stroke="'+p.color+'" stroke-width="24" stroke-dasharray="'+len.toFixed(2)+' '+(C-len).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'" transform="rotate(-90 '+cx+' '+cy+')"><title>'+p.label+' · '+eurX(p.val)+' ('+Math.round(frac*100)+'%)</title></circle>';
+      off+=len; });
+    return '<svg viewBox="0 0 180 180" class="ana-donut">'+ring+'</svg>';
+  }
+  function legend(parts){ return '<div class="ana-leg">'+parts.map(function(p){ return '<span><i style="background:'+p.color+'"></i>'+p.label+' <b>'+eurX(p.val)+'</b></span>'; }).join('')+'</div>'; }
+
+  /* ---------- Export CSV / impression ---------- */
+  window.anaExportCSV=function(){
+    var y=anaYear(), c=compute(y), ms=months12(y);
+    var rows=[['Mois','CA','Charges','Résultat','Marge %']];
+    ms.forEach(function(m){ var b=c.byMonth[m]||{ca:0,ch:0}; var res=r2(b.ca-b.ch); rows.push([m, r2(b.ca), r2(b.ch), res, b.ca?Math.round(res/b.ca*100):0]); });
+    rows.push(['TOTAL '+y, c.ca, c.ch, c.res, c.ca?Math.round(c.res/c.ca*100):0]);
+    var csv=rows.map(function(r){ return r.join(';'); }).join('\n');
+    try{ var blob=new Blob([csv],{type:'text/csv'}); var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='analytique-'+y+'.csv'; a.click(); if(typeof toast==='function') toast('Tableau analytique exporté (CSV)'); }catch(e){}
+  };
+  window.anaImprimer=function(){ try{ window.print(); }catch(e){} };
+
+  /* ---------- Rendu de la section ---------- */
+  function anaAvancee(){
+    var y=anaYear(), c=compute(y), tr=tiersRank(y), ms=months12(y);
+    var years=anaYears(); if(years.indexOf(y)<0) years.unshift(y);
+    var yrBtns=years.map(function(yy){ return '<button class="ana-yr '+(yy===y?'on':'')+'" onclick="anaSetYear(\''+yy+'\')">'+yy+'</button>'; }).join('');
+    var marge=c.ca?Math.round(c.res/c.ca*100):0;
+    var kpis='<div class="grid g4 ana-kpis">'
+      +'<div class="kpi green"><div class="lbl">Chiffre d\'affaires '+y+'</div><div class="val cre">'+eurX(c.ca)+'</div><div class="meta">comptes 70x</div></div>'
+      +'<div class="kpi red"><div class="lbl">Charges '+y+'</div><div class="val deb">'+eurX(c.ch)+'</div><div class="meta">comptes 60x</div></div>'
+      +'<div class="kpi blue"><div class="lbl">Résultat '+y+'</div><div class="val">'+eurX(c.res)+'</div><div class="meta">marge '+marge+'%</div></div>'
+      +'<div class="kpi"><div class="lbl">Variation trésorerie</div><div class="val">'+eurX(c.tv)+'</div><div class="meta">flux 512 ('+y+')</div></div>'
+      +'</div>';
+    var chargeParts=topParts(c.charges,6), prodParts=topParts(c.produits,6);
+    var charts='<div class="grid g2">'
+      +'<div class="card"><h2>📈 Évolution mensuelle — CA vs Charges</h2><div class="ana-leg"><span><i style="background:#2ec28a"></i>CA</span><span><i style="background:#e1574c"></i>Charges</span></div>'+svgEvolution(y,c.byMonth)+'</div>'
+      +'<div class="card"><h2>💧 Trésorerie cumulée (512)</h2><div class="sub">Cumul des flux de banque mois après mois</div>'+svgLine(y,c.treso)+'</div>'
+      +'</div>'
+      +'<div class="grid g2">'
+      +'<div class="card"><h2>🥧 Répartition des charges</h2><div class="ana-donutwrap">'+svgDonut(chargeParts)+legend(chargeParts)+'</div></div>'
+      +'<div class="card"><h2>🥧 Répartition des produits</h2><div class="ana-donutwrap">'+svgDonut(prodParts)+legend(prodParts)+'</div></div>'
+      +'</div>';
+    var moisRows=ms.map(function(m){ var b=c.byMonth[m]||{ca:0,ch:0}; var res=r2(b.ca-b.ch); var mg=b.ca?Math.round(res/b.ca*100):0;
+      if(!b.ca&&!b.ch) return '';
+      return '<tr><td>'+m+'</td><td class="r num cre">'+eurX(b.ca)+'</td><td class="r num deb">'+eurX(b.ch)+'</td><td class="r num '+(res>=0?'cre':'deb')+'">'+eurX(res)+'</td><td class="r num">'+mg+'%</td></tr>'; }).join('');
+    var moisTable='<div class="card"><h2>📋 Résultat mensuel '+y+'</h2>'
+      +'<div class="right" style="margin-bottom:8px;gap:8px;display:flex;justify-content:flex-end"><button class="btn btn-ghost btn-sm" onclick="anaExportCSV()">⬇️ Export CSV</button><button class="btn btn-ghost btn-sm" onclick="anaImprimer()">🖨️ Imprimer</button></div>'
+      +'<table><thead><tr><th>Mois</th><th class="r">CA</th><th class="r">Charges</th><th class="r">Résultat</th><th class="r">Marge</th></tr></thead><tbody>'
+      +(moisRows||'<tr><td colspan="5" class="empty">Aucune écriture sur '+y+'</td></tr>')
+      +'<tr class="totrow"><td><b>Total '+y+'</b></td><td class="r num cre"><b>'+eurX(c.ca)+'</b></td><td class="r num deb"><b>'+eurX(c.ch)+'</b></td><td class="r num"><b>'+eurX(c.res)+'</b></td><td class="r num"><b>'+marge+'%</b></td></tr>'
+      +'</tbody></table></div>';
+    function tiersTable(title,arr,cls){ var rows=arr.slice(0,8).map(function(x){ return '<tr><td>'+(x.nom||'—')+'</td><td class="r num '+cls+'">'+eurX(x.val)+'</td></tr>'; }).join('');
+      return '<div class="card"><h2>'+title+'</h2><table><tbody>'+(rows||'<tr><td colspan="2" class="empty">—</td></tr>')+'</tbody></table></div>'; }
+    var tiers='<div class="grid g2">'+tiersTable('🏆 Top clients (CA '+y+')',tr.clients,'cre')+tiersTable('🏭 Top fournisseurs (dépensé '+y+')',tr.fourn,'deb')+'</div>';
+
+    return '<div id="ana-avancee"><div class="card ana-head"><h2>📊 Analytique avancée (sur écritures)</h2>'
+      +'<div class="sub">Calculé sur <b>toutes les écritures</b> (factures + import FEC + saisies), comme la Consultation des comptes.</div>'
+      +'<div class="ana-yrbar"><span class="mini">Exercice :</span> '+yrBtns+'</div></div>'
+      +kpis+charts+moisTable+tiers+'</div>';
+  }
+
+  var _pa=pageAnalytique; pageAnalytique=function(){ var h=_pa(); try{ return h+anaAvancee(); }catch(e){ return h; } };
+
+  try{ var st=document.createElement('style'); st.id='ana-adv-mod'; st.textContent=
+    '#ana-avancee .ana-head{margin-top:6px}'
+    +'#ana-avancee .ana-yrbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}'
+    +'.ana-yr{cursor:pointer;border:1px solid #24405d;background:#16304a;color:#eaf2ff;border-radius:8px;padding:5px 12px;font:inherit;font-weight:600;font-size:13px}'
+    +'.ana-yr.on{background:linear-gradient(120deg,#5ab0ff,#0a64d6);border:none;color:#fff}'
+    +'.ana-svg{width:100%;height:auto;display:block;margin-top:6px}'
+    +'.ana-donutwrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap}'
+    +'.ana-donut{width:160px;height:160px;flex:0 0 160px}'
+    +'.ana-leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:#cfe0f5;margin:6px 0}'
+    +'.ana-leg span{display:inline-flex;align-items:center;gap:6px}'
+    +'.ana-leg i{width:11px;height:11px;border-radius:3px;display:inline-block}'
+    +'@media(max-width:820px){.ana-donut{flex:0 0 130px;width:130px;height:130px}}'
+    +'@media print{aside,#m-topbar,#m-tabbar,.ana-yrbar,.right{display:none !important}}';
+    document.head.appendChild(st); }catch(e){}
 })();
 </script>
 </body>
