@@ -9129,9 +9129,9 @@ function ecRender(){
     });
     body+=`<tr class="ec-act"><td colspan="11">
         <button class="ec-bt" onclick="ecAddLine('${e.id}')">+ Ajouter une désignation</button>
-        ${ok?'<span class="ec-okk">Soldée ✓</span>':`<button class="ec-bt ec-bt-solde" onclick="ecSolder('${e.id}')">Solder l'écriture</button>`}
+        ${ok?'<span class="ec-okk">Soldée ✓</span>':'<span class="ec-koo">⚠ Écriture non soldée — à solder (Débit = Crédit) avant de fermer ou de traiter une autre écriture</span>'}
       </td></tr>`;
-    if(ok) body+=`<tr class="ec-redrow"><td colspan="11"><div class="ec-soldee"></div></td></tr>`;
+    body+=`<tr class="ec-redrow ${ok?'is-ok':'is-ko'}"><td colspan="11"><div class="ec-soldee"></div></td></tr>`;
   });
   const sensTot = (totD-totC)>0.005?'D':((totC-totD)>0.005?'C':'D');
   win.innerHTML=`<div class="ec-sage">
@@ -10865,7 +10865,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v266 · correspondances factures FEC';
+    b.textContent='YADA · v267 · ligne rouge non soldée';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -17630,6 +17630,25 @@ ${lignes}
     var sum=function(o){ return r2(Object.keys(o).reduce(function(a,k){ return a+o[k]; },0)); };
     return { prod:prod, charge:charge, parClient:parClient, parFourn:parFourn, ca:sum(prod), achats:sum(charge), resultat:r2(sum(prod)-sum(charge)) };
   };
+})();
+</script>
+<script id="yada-addon145">
+/* v267 — Consultation / éditeur : ligne ROUGE sous une écriture NON soldée (avertissement),
+   ligne bleue sous une écriture soldée ; bouton « Solder l'écriture » retiré (remplacé par la ligne rouge) */
+(function(){
+  if(typeof document==='undefined') return;
+  if(document.getElementById('ec-solder-rouge-mod')) return;
+  var css=''
+    /* écriture NON soldée → filet ROUGE (spécificité > règle bleue d'addon112) */
+    +'.ec-sage .ec-table tbody tr.ec-redrow.is-ko .ec-soldee{border-top:3px solid #e1342c !important;height:0;margin:0}'
+    +'.ec-sage .ec-table tbody tr.ec-redrow.is-ko td{padding:0 !important;border:none !important}'
+    /* écriture soldée → filet bleu (séparateur, inchangé) */
+    +'.ec-sage .ec-table tbody tr.ec-redrow.is-ok .ec-soldee{border-top:2px solid #1e90ff !important;height:0;margin:0}'
+    +'.ec-sage .ec-table tbody tr.ec-redrow.is-ok td{padding:0 !important;border:none !important}'
+    /* texte d\'avertissement (remplace le bouton « Solder l\'écriture ») */
+    +'.ec-sage .ec-act .ec-koo{color:#ff6b6b !important;font-weight:600;font-size:12px}'
+    +'.ec-sage .ec-act .ec-okk{color:#5fd08a !important;font-weight:600}';
+  try{ var st=document.createElement('style'); st.id='ec-solder-rouge-mod'; st.textContent=css; document.head.appendChild(st); }catch(e){}
 })();
 </script>
 <script id="yada-addon144">

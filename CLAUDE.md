@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Modules Client / Fournisseur : factures (saisies + FEC) associées + carte de CORRESPONDANCES — v266
+## 🟢 Dernière mise à jour — Consultation / éditeur : ligne ROUGE sous une écriture non soldée + bouton « Solder l'écriture » retiré — v267
+**Quoi :** dans l'**éditeur d'écritures** (Consultation des comptes), une **ligne ROUGE** apparaît désormais sous une **écriture NON soldée** (Débit ≠ Crédit) pour **prévenir l'utilisateur qu'il doit la solder avant de fermer ou de traiter une autre écriture**. Le **bouton « Solder l'écriture »** est **retiré** et remplacé par cette ligne rouge (+ un court message d'avertissement). La **ligne bleue** reste sous une écriture **soldée** (séparateur, inchangé). Le blocage de fermeture/creation tant qu'une écriture n'est pas soldée (v216/v261) est conservé.
+
+**Comment — 2 éditions chirurgicales de `ecRender` + `yada-addon145` (CSS) :**
+- `ecRender` : la ligne d'action n'affiche plus le bouton `ecSolder` ; à la place, **« ⚠ Écriture non soldée — à solder (Débit = Crédit)… »** (`.ec-koo`). Le filet séparateur (`.ec-redrow`) est émis **après chaque écriture** avec la classe `is-ok` (soldée) ou `is-ko` (non soldée).
+- `addon145` (`<style id="ec-solder-rouge-mod">`, injecté en fin de `<head>`) : `.ec-redrow.is-ko .ec-soldee` → filet **rouge `#e1342c`** (spécificité `.ec-table tbody tr…` > règle bleue d'addon112) ; `.is-ok` → filet **bleu `#1e90ff`** ; `.ec-koo` rouge clair, `.ec-okk` vert.
+
+**Limites :** affichage uniquement (aucune logique comptable modifiée) ; `ecSolder` reste défini mais n'est plus appelé. Validé : `node --check` (133 scripts). Badge → **v267 · ligne rouge non soldée**.
+
+---
+
+## 🟢 MAJ précédente — Modules Client / Fournisseur : factures (saisies + FEC) associées + carte de CORRESPONDANCES — v266
 **Quoi :** dans le **module Client** (Suivi des factures de **vente**) et le **module Fournisseur** (Suivi des factures d'**achat**), une carte **« Correspondances — factures … (écritures VTE/ACH, FEC inclus) »** associe désormais **toutes les factures faites OU importées via le FEC** : reconstituées **depuis les écritures comptables** (journal VTE pour les ventes, ACH pour les achats), avec la **correspondance facture ↔ comptabilité**. Auparavant les suivis ne lisaient que `db.docs`/`db.factures` (saisies dans le logiciel) → **vides** pour un dossier FEC (ex. MBC : « Aucune facture de vente créée » alors que 59 écritures VTE existent).
 
 **Comment — `yada-addon144` (override `suiviFacturesVente`/`suiviFacturesAchat`, 100% additif) :**
