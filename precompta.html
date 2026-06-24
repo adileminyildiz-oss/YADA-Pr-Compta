@@ -5004,7 +5004,7 @@ function pageAnalytique(){
     return `<tr><td>${COMPTES[k]||k}</td><td class="r num ${cls}" style="padding-right:24px;white-space:nowrap">${eur(v)}</td><td style="width:150px;padding:0 8px"><div class="bar" style="margin:6px 0"><i style="width:${pct}%"></i></div></td><td class="r mini" style="padding-left:16px">${pct}%</td></tr>`;}).join('');
   const cliRows=Object.entries(a.parClient).sort((x,y)=>y[1]-x[1]).map(([k,v])=>`<tr><td>${k}</td><td class="r num cre">${eur(v)}</td></tr>`).join('');
   const fouRows=Object.entries(a.parFourn).sort((x,y)=>y[1]-x[1]).map(([k,v])=>`<tr><td>${k}</td><td class="r num deb">${eur(v)}</td></tr>`).join('');
-  return head('Analytique & rentabilité','CA exact (70x) et charges (60x) issus des écritures de factures. Identifie produits/clients rentables et postes de dépense.')+
+  return head('Analytique & rentabilité','CA (70x) et charges (60x) issus de TOUTES les écritures du dossier (factures + FEC + saisies). Identifie produits/clients rentables et postes de dépense.')+
   `<div class="grid g3">
     <div class="kpi green"><div class="lbl">Produits (CA HT)</div><div class="val cre">${eur(a.ca)}</div></div>
     <div class="kpi red"><div class="lbl">Charges HT</div><div class="val deb">${eur(a.achats)}</div></div>
@@ -10865,7 +10865,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v259 · éditeur ↓ nouvelle écriture';
+    b.textContent='YADA · v260 · analytique sur écritures';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -17585,6 +17585,42 @@ ${lignes}
       return _f.apply(this, arguments);
     };
   }
+})();
+</script>
+<script id="yada-addon141">
+/* ============================================================
+   ANALYTIQUE & RENTABILITÉ — cartes remplies depuis TOUTES les écritures.
+   `analytique()` était basé sur db.factures (vide pour un dossier alimenté par
+   FEC / saisies) → cartes vides. On le recalcule sur db.ecritures :
+   - Produits par compte (classe 7 = crédit−débit), Charges par nature (classe 6
+     = débit−crédit), CA / Charges / Résultat.
+   - CA par client / Dépenses par fournisseur depuis les comptes AUXILIAIRES
+     (débit pour les clients, crédit pour les fournisseurs) — rempli quand le
+     dossier utilise des comptes auxiliaires par tiers.
+   Exclut « OD RÉSULTAT » (clôture). Même forme de retour qu'avant. 100% additif.
+   ============================================================ */
+(function(){
+  if(typeof analytique!=='function' || typeof c9!=='function') return;
+  window.analytique=function(){
+    var prod={},charge={},parClient={},parFourn={};
+    (db.ecritures||[]).forEach(function(e){
+      if((e.libelle||'').indexOf('OD RÉSULTAT')>=0) return;
+      (e.lignes||[]).forEach(function(l){ var k=c9(l.compte||''); var cl=k.charAt(0); var d=+l.debit||0, cr=+l.credit||0;
+        if(cl==='7') prod[k]=(prod[k]||0)+(cr-d);
+        else if(cl==='6') charge[k]=(charge[k]||0)+(d-cr);
+      });
+    });
+    var auxMap={}; (db.tiers||[]).forEach(function(t){ if(t.compteAux) auxMap[c9(t.compteAux)]=t; });
+    (db.ecritures||[]).forEach(function(e){ (e.lignes||[]).forEach(function(l){ var t=auxMap[c9(l.compte||'')]; if(!t) return;
+      var nom=t.nom||'—';
+      if(t.type==='client') parClient[nom]=(parClient[nom]||0)+(+l.debit||0);
+      else parFourn[nom]=(parFourn[nom]||0)+(+l.credit||0);
+    }); });
+    function clean(o){ Object.keys(o).forEach(function(k){ o[k]=r2(o[k]); if(Math.abs(o[k])<0.005) delete o[k]; }); return o; }
+    clean(prod); clean(charge); clean(parClient); clean(parFourn);
+    var sum=function(o){ return r2(Object.keys(o).reduce(function(a,k){ return a+o[k]; },0)); };
+    return { prod:prod, charge:charge, parClient:parClient, parFourn:parFourn, ca:sum(prod), achats:sum(charge), resultat:r2(sum(prod)-sum(charge)) };
+  };
 })();
 </script>
 </body>
