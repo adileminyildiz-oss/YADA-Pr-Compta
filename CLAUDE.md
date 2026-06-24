@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Rapprochement bancaire : colonne « État » retirée du récap — v262
+## 🟢 Dernière mise à jour — Rapprochement bancaire : liste « Rapprochements bancaires effectués » retirée (haut de page) — v263
+**Quoi :** dans le **Rapprochement bancaire**, la **liste du haut** « Rapprochements bancaires effectués » (récap) est **entièrement retirée** (jugée inutile). Le reste du module (barre des périodes avec badges ✓/🔒/◐, relevé, lignes…) est **inchangé**.
+
+**Comment — `addon121` (1 retrait chirurgical) :** dans l'override `pageRappro`, suppression de l'injection `html.replace('<div class="rb-top">', rapRecapHTML()+…)`. La fonction `rapRecapHTML` reste définie mais n'est plus appelée.
+
+**Limites :** affichage uniquement. Validé : `node --check` (129 scripts). Badge → **v263 · rappro sans récap**.
+
+---
+
+## 🟢 MAJ précédente — Rapprochement bancaire : colonne « État » retirée du récap — v262
 **Quoi :** dans le **Rapprochement bancaire**, le récapitulatif « Rapprochements bancaires effectués » n'affiche plus la colonne **« État »** (pastilles `✓ Soldé` / `🔒 Verrouillé` / `● Écart` qui ressemblaient à des interrupteurs inutiles). Le récap garde Mois · Compte 512 · Relevé · Solde relevé.
 
 **Comment — `rapRecapHTML` (addon121), 2 retraits chirurgicaux :** suppression du `<th>État</th>` et de la cellule `<td>'+statut+'</td>`. Les badges de mois (✓/🔒/◐ dans la colonne Mois et sur la barre des périodes) restent inchangés.

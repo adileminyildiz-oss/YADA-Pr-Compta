@@ -10865,7 +10865,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v262 · rappro sans colonne État';
+    b.textContent='YADA · v263 · rappro sans récap';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -16519,8 +16519,7 @@ ${lignes}
           else if(s.faits>0) b=' <span class="rb-mbadge part" title="'+s.faits+'/'+s.total+' compte(s) rapproché(s) — validation du mois en attente">◐</span>';
           return '<div class="it '+cls+'" onclick="rapSetMois(\''+mois+'\')">'+inner+b+'</div>';
         });
-        /* récap de tous les rapprochements, juste sous la barre de menus */
-        html=html.replace('<div class="rb-top">', window.rapRecapHTML()+'<div class="rb-top">');
+        /* récap « Rapprochements bancaires effectués » retiré (liste inutile) — non injecté */
       }catch(e){}
       return html;
     };
