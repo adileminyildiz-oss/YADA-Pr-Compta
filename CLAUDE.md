@@ -36,8 +36,10 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Module Banque : relevé présenté PAR MOIS (choisir le mois avant de voir les écritures) — v257
-**Quoi :** dans le **module Banque**, les écritures du relevé sont désormais **présentées par mois** : une barre de **boutons mois** (avec compteur) s'affiche, et il faut **choisir un mois** pour voir ses écritures (sinon un message invite à sélectionner un mois).
+## 🟢 Dernière mise à jour — Module Banque : relevé présenté PAR ANNÉE puis PAR MOIS — v257/v258
+**Quoi :** dans le **module Banque**, les écritures du relevé sont **présentées par mois**, et si le dossier comporte **plusieurs exercices** (2025, 2026…) une barre de **boutons d'année** apparaît d'abord (avec compteur), puis les **boutons mois** de l'année choisie. Tous les relevés traités restent accessibles (rien n'est masqué) ; il faut **choisir un mois** pour voir ses écritures.
+
+**Année — v258 (`pageBanque` + `bqSetAnnee`) :** `anneesDispo` (années distinctes des écritures banque), barre `.bq-annee-bar` affichée **uniquement si >1 année** (accent or), défaut = année la plus récente ; changer d'année réinitialise le mois (`window.bqMoisSel=''`). `bqMois` n'est valide que si son année = année choisie.
 
 **Comment — `pageBanque` (édition chirurgicale) + `yada-addon139` :**
 - `pageBanque` : calcule `moisDispo` (mois distincts des écritures banque, via `ym`), `moisCount` (compteur par mois), et `bsrcMois` (écritures filtrées sur `window.bqMoisSel`). La carte « Relevé bancaire — par mois » rend la barre `.bq-mois-bar` (boutons `.bq-mois` + compteur `.bq-mc`) ; le tableau ne s'affiche **que si un mois est sélectionné**, sinon invite « 👆 Sélectionnez un mois ». Le filtre par compte bancaire (512) est conservé.

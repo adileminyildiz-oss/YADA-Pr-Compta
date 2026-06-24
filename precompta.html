@@ -5028,11 +5028,15 @@ function pageBanque(){
   const bqFiltre=window.bqFiltre512||'';
   const bq512de=(rec)=>{ const e=db.ecritures.find(x=>x.id===rec.ecritureId); if(!e)return '512000000'; const l=e.lignes.find(l=>c9(l.compte).slice(0,3)==='512'); return l?c9(l.compte):'512000000'; };
   let bsrc=db.banque.slice(); if(bqFiltre) bsrc=bsrc.filter(b=>c9(bq512de(b))===c9(bqFiltre));
-  /* Présentation PAR MOIS : on choisit le mois avant de voir les écritures. */
-  const bqMois=window.bqMoisSel||'';
-  const moisDispo=[...new Set(bsrc.map(b=>ym(b.date)))].sort().reverse();
-  const moisCount={}; bsrc.forEach(b=>{ const m=ym(b.date); moisCount[m]=(moisCount[m]||0)+1; });
-  const bsrcMois=bqMois?bsrc.filter(b=>ym(b.date)===bqMois):[];
+  /* Présentation PAR ANNÉE puis PAR MOIS : on choisit l'année (si plusieurs) puis le mois. */
+  const anneesDispo=[...new Set(bsrc.map(b=>(b.date||'').slice(0,4)))].filter(Boolean).sort().reverse();
+  const bqAnnee=(window.bqAnneeSel && anneesDispo.indexOf(window.bqAnneeSel)>=0)?window.bqAnneeSel:(anneesDispo[0]||'');
+  const anneeCount={}; bsrc.forEach(b=>{ const y=(b.date||'').slice(0,4); anneeCount[y]=(anneeCount[y]||0)+1; });
+  const bsrcAn=bqAnnee?bsrc.filter(b=>(b.date||'').slice(0,4)===bqAnnee):bsrc;
+  const moisDispo=[...new Set(bsrcAn.map(b=>ym(b.date)))].sort().reverse();
+  const moisCount={}; bsrcAn.forEach(b=>{ const m=ym(b.date); moisCount[m]=(moisCount[m]||0)+1; });
+  const bqMois=(window.bqMoisSel && (window.bqMoisSel||'').slice(0,4)===bqAnnee)?window.bqMoisSel:'';
+  const bsrcMois=bqMois?bsrcAn.filter(b=>ym(b.date)===bqMois):[];
   const mvts=bsrcMois.sort((a,b)=>a.date<b.date?1:-1).map(b=>{const t=b.tiersId?db.tiers.find(x=>x.id===b.tiersId):null;
     let let_='—'; if(b.tiersId){ const al=bankAlloue(b); let_= al<=0.005?'<span class="tag t-att">à lettrer</span>':(bankDispo(b)>0.005?'<span class="tag t-part">partiel</span>':'<span class="tag t-pay">lettré ✓</span>'); }
     return `<tr><td class="num">${b.date}</td><td class="num">${b.compte}${t?' · '+t.compteAux:''}</td><td>${t?t.nom+' — ':''}${b.libelle}</td><td class="num">${b.suivi||''}</td>
@@ -5067,7 +5071,9 @@ function pageBanque(){
       <select onchange="bqSetFiltre512(this.value)"><option value="">Tous les comptes</option>
       ${b512.map(c=>`<option value="${c.code}" ${c9(c.code)===c9(bqFiltre)?'selected':''}>${c9(c.code)} — ${c.lib}</option>`).join('')}</select>
       ${bqFiltre?`<span class="bq-filtre-on">Filtré : ${c9(bqFiltre)}</span><button class="btn btn-ghost btn-sm" onclick="bqSetFiltre512('')">✕ Tout afficher</button>`:`<span class="bq-filtre-off">${b512.length} comptes bancaires</span>`}</div>`:''}
-    <div class="bq-mois-bar"><span class="mini">Choisissez le mois :</span>
+    ${anneesDispo.length>1?`<div class="bq-mois-bar bq-annee-bar"><span class="mini">Exercice :</span>
+      ${anneesDispo.map(y=>`<button class="bq-mois bq-annee ${y===bqAnnee?'on':''}" onclick="bqSetAnnee('${y}')">${y} <span class="bq-mc">${anneeCount[y]||0}</span></button>`).join('')}</div>`:''}
+    <div class="bq-mois-bar"><span class="mini">Choisissez le mois${anneesDispo.length>1?(' ('+bqAnnee+')'):''} :</span>
       ${moisDispo.length?moisDispo.map(m=>`<button class="bq-mois ${m===bqMois?'on':''}" onclick="bqSetMois('${m}')">${(typeof moisLabel==='function'?moisLabel(m):m)} <span class="bq-mc">${moisCount[m]||0}</span></button>`).join(''):'<span class="bq-filtre-off">Aucune écriture bancaire enregistrée.</span>'}
     </div>
     ${bqMois?`<div class="sub">Mois : <b>${(typeof moisLabel==='function'?moisLabel(bqMois):bqMois)}</b> — ${bsrcMois.length} opération(s).${aLettrer?` <b class="deb">${aLettrer} mouvement(s) de tiers à rapprocher</b> (onglet « Rapprochement »).`:''}</div>
@@ -10859,7 +10865,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v257 · banque par mois';
+    b.textContent='YADA · v258 · banque par année/mois';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -17521,8 +17527,14 @@ ${lignes}
    les écritures. 100% additif (bqSetMois + style ; logique dans pageBanque). */
 (function(){
   window.bqSetMois=function(m){ window.bqMoisSel=(window.bqMoisSel===m?'':m); if(typeof render==='function') render(); };
+  /* changer d'année : on réinitialise le mois (à choisir dans la nouvelle année) */
+  window.bqSetAnnee=function(y){ window.bqAnneeSel=y; window.bqMoisSel=''; if(typeof render==='function') render(); };
   try{ var st=document.createElement('style'); st.id='bq-mois-mod'; st.textContent=
     '.bq-mois-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 14px}'
+    +'.bq-annee-bar{margin-bottom:6px}'
+    +'.bq-annee{border-color:#0a64d6}'
+    +'.bq-annee.on{background:linear-gradient(120deg,#ffdc84,#d4a73c);color:#06101f}'
+    +'.bq-annee.on .bq-mc{background:rgba(0,0,0,.18)}'
     +'.bq-mois{cursor:pointer;border:1px solid #24405d;background:#16304a;color:#eaf2ff;border-radius:8px;padding:7px 13px;font:inherit;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:7px}'
     +'.bq-mois:hover{border-color:#1e90ff}'
     +'.bq-mois.on{background:linear-gradient(120deg,#5ab0ff,#0a64d6);border:none;color:#fff}'
