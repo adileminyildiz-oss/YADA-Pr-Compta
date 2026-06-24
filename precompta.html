@@ -10867,7 +10867,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v271 · immo : comptes + édition + reprise';
+    b.textContent='YADA · v272 · débit/crédit sans flèches';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -18173,6 +18173,19 @@ ${lignes}
     +'body[data-theme="noir"] .im-cpt-scroll option{background:#0c1a2a;color:#eaf2ff}';
     document.head.appendChild(st);
   }catch(e){}
+})();
+</script>
+<script id="yada-addon149">
+/* v272 — Consultation / éditeur : masquer les petites flèches (spinners) des champs
+   numériques Débit / Crédit. 100% CSS additif. */
+(function(){
+  if(typeof document==='undefined') return;
+  if(document.getElementById('ec-nospin-mod')) return;
+  var css=''
+    +'.ec-num::-webkit-outer-spin-button,.ec-num::-webkit-inner-spin-button{-webkit-appearance:none !important;appearance:none !important;margin:0}'
+    +'.ec-sage input[type=number]::-webkit-outer-spin-button,.ec-sage input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none !important;appearance:none !important;margin:0}'
+    +'.ec-num,.ec-sage input[type=number]{-moz-appearance:textfield !important;appearance:textfield !important}';
+  try{ var st=document.createElement('style'); st.id='ec-nospin-mod'; st.textContent=css; document.head.appendChild(st); }catch(e){}
 })();
 </script>
 </body>

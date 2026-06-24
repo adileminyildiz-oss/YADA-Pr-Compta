@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Immobilisations : comptes enrichis + sélecteur à molette + reconnaissance + fiche éditable + reprise/sortie — v271
+## 🟢 Dernière mise à jour — Consultation / éditeur : flèches (spinners) des champs Débit/Crédit masquées — v272
+**Quoi :** dans la **Consultation des comptes** (saisie / édition), les champs **Débit** et **Crédit** (`<input type="number">`) affichaient les **petites flèches haut/bas** (spinners) pour augmenter/diminuer le montant. Elles sont désormais **masquées**.
+
+**Comment — `yada-addon149` (100% CSS additif, `<style id="ec-nospin-mod">`) :** `::-webkit-outer/inner-spin-button{-webkit-appearance:none}` sur `.ec-num` et `.ec-sage input[type=number]`, + `appearance:textfield` (Firefox). Aucune logique modifiée (saisie au clavier inchangée). Validé : `node --check` (137 scripts). Badge → **v272 · débit/crédit sans flèches**.
+
+---
+
+## 🟢 MAJ précédente — Immobilisations : comptes enrichis + sélecteur à molette + reconnaissance + fiche éditable + reprise/sortie — v271
 **Quoi :** refonte fonctionnelle du module **Immobilisations & Financements** (`yada-addon148`, 100% additif) :
 1. **Liste des comptes d'immobilisation enrichie** (PCG) : ajout des comptes manquants (203, 206, 208, 212, 214, 215400, 215500, 218100, 218600, 271, 274), triés par numéro, avec libellés des comptes d'amortissement (28x).
 2. **Sélecteur à molette** dans « Nouvelle immobilisation » : `<select size="8">` défilable (molette) pour voir tous les comptes.
