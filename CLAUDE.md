@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Éditeur d'écritures : ↓ crée une écriture SEULEMENT si la précédente est soldée — v261
+## 🟢 Dernière mise à jour — Rapprochement bancaire : colonne « État » retirée du récap — v262
+**Quoi :** dans le **Rapprochement bancaire**, le récapitulatif « Rapprochements bancaires effectués » n'affiche plus la colonne **« État »** (pastilles `✓ Soldé` / `🔒 Verrouillé` / `● Écart` qui ressemblaient à des interrupteurs inutiles). Le récap garde Mois · Compte 512 · Relevé · Solde relevé.
+
+**Comment — `rapRecapHTML` (addon121), 2 retraits chirurgicaux :** suppression du `<th>État</th>` et de la cellule `<td>'+statut+'</td>`. Les badges de mois (✓/🔒/◐ dans la colonne Mois et sur la barre des périodes) restent inchangés.
+
+**Limites :** affichage uniquement (aucune donnée/statut de rapprochement modifié). Validé : `node --check` (129 scripts). Badge → **v262 · rappro sans colonne État**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur d'écritures : ↓ crée une écriture SEULEMENT si la précédente est soldée — v261
 **Quoi :** dans l'éditeur (Consultation des comptes), la **flèche du bas** ne crée une **nouvelle écriture** que si l'**écriture précédente est soldée** (Débit = Crédit) et **non vide**. Sinon un message s'affiche et le curseur revient sur l'écriture à corriger.
 
 **Comment — verrou ajouté dans `window.ecAjouterEcriture` (addon140) :**
