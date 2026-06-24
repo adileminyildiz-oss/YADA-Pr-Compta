@@ -10867,7 +10867,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v273 · immo : liste fermée + écritures';
+    b.textContent='YADA · v274 · dotation accordée au compte immo';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -18124,6 +18124,8 @@ ${lignes}
           +rowT('Numéro :','numero', im.numero,'text')
           +rowT('Nature :','nature', im.nature,'text')
           +rowS('Compte :','compte', c9(im.compte), immoOpts(c9(im.compte)))
+          +rowS('Compte de dotation :','compteDot', c9(im.compteDot||'681120000'), DOT_OPTS)
+          +rowS("Compte d'amortissement :",'compteAmort', c9(im.compteAmort||compteAmortDe(im.compte)), AMORT_OPTS)
           +rowT('Montant H.T. : *','montantHT', im.montantHT,'number','0.01')
           +rowS('Taux TVA :','tauxTVA', String(im.tauxTVA!=null?im.tauxTVA:20), [['20','20 %'],['10','10 %'],['5.5','5,5 %'],['0','0 %']])
           +rowT('Date de facture :','dateFacture', im.dateFacture,'date')
