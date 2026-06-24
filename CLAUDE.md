@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Immobilisations : liste de comptes FERMÉE (cliquer pour ouvrir) + génération des écritures d'immobilisation & de dotation — v273
+## 🟢 Dernière mise à jour — Immobilisations : compte de dotation (et d'amortissement) accordé au compte d'immobilisation, visible dans Attributs — v274
+**Quoi :** dans la fiche d'immobilisation, **changer le compte d'immobilisation** met aussi à jour le **compte de dotation** (et le compte d'amortissement). Le changement était déjà appliqué en données (`imEdit` : compte → `compteAmort=compteAmortDe`, `compteDot=imDotDe`) mais les champs « Compte de dotation / d'amortissement » n'étaient affichés que dans l'onglet **Comptable** → l'accord n'était pas visible au moment du changement (fait dans **Attributs**). Désormais les deux comptes sont **affichés (et éditables) directement sous le Compte dans l'onglet Attributs** → ils se mettent à jour à l'écran dès qu'on change le compte d'immobilisation.
+
+**Comment — 1 ajout dans l'override `imDetail` (Attributs) :** après la ligne `rowS('Compte :', …)`, insertion de `rowS('Compte de dotation :','compteDot', …, DOT_OPTS)` + `rowS("Compte d'amortissement :",'compteAmort', …, AMORT_OPTS)`. `imEdit` (inchangé) recalcule `compteDot` (incorporel 20x→681110000, corporel 21x→681120000) et `compteAmort` (28x) puis `render()` → les sélecteurs reflètent l'accord ; un choix manuel reste possible. Validé : `node --check` (137 scripts). Badge → **v274 · dotation accordée au compte immo**.
+
+---
+
+## 🟢 MAJ précédente — Immobilisations : liste de comptes FERMÉE (cliquer pour ouvrir) + génération des écritures d'immobilisation & de dotation — v273
 **Quoi :** dans **Immobilisations & Financements** (`yada-addon148`, suite de v271) :
 1. Le **sélecteur de compte d'immobilisation** (modale « Nouvelle immobilisation ») n'est **plus une liste ouverte** (`<select size="8">`) : c'est un **menu déroulant fermé** que l'on **clique pour ouvrir**, puis on voit la sélection. La reconnaissance/auto-dotation reste active.
 2. **Génération des écritures** depuis l'onglet **Attributs** (section « Écritures comptables ») via 2 boutons :
