@@ -10865,7 +10865,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v261 · ↓ après solde';
+    b.textContent='YADA · v262 · rappro sans colonne État';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -16499,11 +16499,11 @@ ${lignes}
       return '<tr onclick="rapSetMois(\''+rel.mois+'\');rapSetCompte(\''+rel.compte+'\')" title="Ouvrir ce rapprochement">'
         +'<td>'+moisLbl+'<span class="rb-mb">'+mb+'</span></td>'
         +'<td class="cpt">'+c9(rel.compte)+'</td><td>au '+frDate(rel.dateFin)+'</td>'
-        +'<td class="r">'+eur(rel.solde)+'</td><td>'+statut+'</td></tr>';
+        +'<td class="r">'+eur(rel.solde)+'</td></tr>';
     }).join('');
     return '<div class="rb-recap"><div class="rb-recap-h">Rapprochements bancaires effectués'
       +'<span class="rb-recap-x" onclick="this.closest(\'.rb-recap\').classList.toggle(\'collapsed\')" title="Réduire / déplier">▾</span></div>'
-      +'<div class="rb-recap-body"><table class="rb-recap-t"><thead><tr><th>Mois</th><th>Compte 512</th><th>Relevé</th><th class="r">Solde relevé</th><th>État</th></tr></thead>'
+      +'<div class="rb-recap-body"><table class="rb-recap-t"><thead><tr><th>Mois</th><th>Compte 512</th><th>Relevé</th><th class="r">Solde relevé</th></tr></thead>'
       +'<tbody>'+rows+'</tbody></table></div></div>';
   };
   if(typeof window.pageRappro==='function'){
