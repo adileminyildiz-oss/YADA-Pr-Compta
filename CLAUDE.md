@@ -36,7 +36,20 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Analytique & rentabilité : section avancée sur les ÉCRITURES (KPIs + graphiques + tableaux) — v256
+## 🟢 Dernière mise à jour — Module Banque : relevé présenté PAR ANNÉE puis PAR MOIS — v257/v258
+**Quoi :** dans le **module Banque**, les écritures du relevé sont **présentées par mois**, et si le dossier comporte **plusieurs exercices** (2025, 2026…) une barre de **boutons d'année** apparaît d'abord (avec compteur), puis les **boutons mois** de l'année choisie. Tous les relevés traités restent accessibles (rien n'est masqué) ; il faut **choisir un mois** pour voir ses écritures.
+
+**Année — v258 (`pageBanque` + `bqSetAnnee`) :** `anneesDispo` (années distinctes des écritures banque), barre `.bq-annee-bar` affichée **uniquement si >1 année** (accent or), défaut = année la plus récente ; changer d'année réinitialise le mois (`window.bqMoisSel=''`). `bqMois` n'est valide que si son année = année choisie.
+
+**Comment — `pageBanque` (édition chirurgicale) + `yada-addon139` :**
+- `pageBanque` : calcule `moisDispo` (mois distincts des écritures banque, via `ym`), `moisCount` (compteur par mois), et `bsrcMois` (écritures filtrées sur `window.bqMoisSel`). La carte « Relevé bancaire — par mois » rend la barre `.bq-mois-bar` (boutons `.bq-mois` + compteur `.bq-mc`) ; le tableau ne s'affiche **que si un mois est sélectionné**, sinon invite « 👆 Sélectionnez un mois ». Le filtre par compte bancaire (512) est conservé.
+- `addon139` : `window.bqSetMois(m)` (toggle + `render`) + style des boutons mois (bleu nuit/Crystal, responsive).
+
+**Limites :** affichage/filtre uniquement (aucune écriture/montant modifié). Validé : `node --check` (127 scripts). Badge → **v257 · banque par mois**.
+
+---
+
+## 🟢 MAJ précédente — Analytique & rentabilité : section avancée sur les ÉCRITURES (KPIs + graphiques + tableaux) — v256
 **Quoi :** le module **Analytique & rentabilité** gagne une section **« 📊 Analytique avancée (sur écritures) »** calculée sur **toutes les écritures** (`db.ecritures` : factures + FEC + saisies), comme la Consultation — au lieu des seules factures.
 
 **Contenu (`yada-addon138`, 100% additif, sans bibliothèque externe) :**
