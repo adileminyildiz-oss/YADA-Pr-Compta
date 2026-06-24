@@ -36,7 +36,19 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Éditeur d'écritures : FLÈCHE BAS en fin de liste → nouvelle écriture — v259
+## 🟢 Dernière mise à jour — Analytique & rentabilité : cartes remplies depuis TOUTES les écritures — v260
+**Quoi :** les cartes du module **Analytique & rentabilité** (Produits par compte, Charges par nature, CA par client, Dépenses par fournisseur, KPIs CA/Charges/Résultat) étaient **vides** pour un dossier alimenté par **FEC / saisies** (car `analytique()` ne lisait que `db.factures`). Elles sont désormais **calculées sur toutes les écritures**.
+
+**Comment — `yada-addon141` (override `window.analytique`, même forme de retour) :**
+- **Produits par compte** (classe 7 = crédit−débit), **Charges par nature** (classe 6 = débit−crédit), **CA / Charges / Résultat** = sommes correspondantes. Exclut « OD RÉSULTAT ».
+- **CA par client / Dépenses par fournisseur** depuis les **comptes auxiliaires** des tiers (débit pour clients, crédit pour fournisseurs) — rempli quand le dossier utilise des comptes auxiliaires par tiers (sinon, comptes collectifs → non ventilable par tiers).
+- Profite aussi à l'**Espace Client** (suivi par client) et au hero mobile qui lisent `analytique()`.
+
+**Limites :** un dossier sans écritures (ex. société non démarrée) reste vide ; la ventilation par tiers nécessite des comptes auxiliaires. Validé : `node --check` (129 scripts) + test données réelles (MBC : CA 113 347 € / Charges 100 350 € / Résultat 12 997 €). Badge → **v260 · analytique sur écritures**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur d'écritures : FLÈCHE BAS en fin de liste → nouvelle écriture — v259
 **Quoi :** dans l'**éditeur d'écritures** (page d'édition de la Consultation des comptes), appuyer sur **flèche du bas** depuis la **dernière ligne de la dernière écriture** **crée une nouvelle écriture** à saisir (curseur placé sur la saisie du compte). L'écriture doit être **soldée** (Débit = Crédit) pour être valide.
 
 **Comment — `yada-addon140` + 1 édition d'`addon114` :**
