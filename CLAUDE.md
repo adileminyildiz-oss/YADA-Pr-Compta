@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Suivi des règlements : « Factures non réglées » depuis TOUTES les écritures (FEC inclus) — v264
+## 🟢 Dernière mise à jour — Immobilisations & Financements : zone de travail accordée au thème (bleu nuit, fin du blanc) — v265
+**Quoi :** dans le module **Immobilisations & Financements**, l'onglet **Immobilisations** affichait sa **zone de travail (`.im-screen`) en BLANC** (style Sage noir-sur-blanc) — en décalage avec les autres modules en **bleu nuit**. Elle est désormais **accordée au thème** : fond bleu nuit, accents bleu Crystal, textes clairs, **plus aucun blanc** (3 volets Périodes / Immobilisations / Détail, barre d'outils, onglets de détail, sections & lignes de la fiche). Les autres onglets (Emprunts, Crédit-bail, Locations, Taxe véhicules) utilisaient déjà des cartes `.card` au thème → inchangés.
+
+**Comment — `yada-addon143` (100% CSS additif, `<style id="im-navy-mod">`) :**
+- Surcharge **scopée `body[data-theme="noir"]`** et **injectée en fin de `<head>`** (source plus tardive) pour **battre** les anciennes règles `body[data-theme="noir"] .im-screen *{color:#1b1b1b}` / `background:#fff` (spécificité égale, dernière déclarée gagne).
+- Palette reprise des autres modules : zone `#0c1a2a`, en-têtes `linear-gradient(#16304a,#0f2236)`, lignes/bordures `rgba(30,144,255,.2)`, sélection `rgba(30,144,255,.18)` + filet `#1e90ff`, valeurs `.im-row .v` `#0a1726`/`#24405d`, libellés `#9fb6d0`, accents `#5ab0ff`. Onglet **Immobilisations** actif raccordé à la zone (au lieu du blanc).
+
+**Limites :** affichage uniquement (aucune logique/écriture modifiée) ; restylage **ciblé thème noir** (thèmes clairs inchangés, déjà cohérents avec leurs cartes claires). Validé : `node --check` (131 scripts) + balises structurelles uniques. Badge → **v265 · immo accordée au thème**.
+
+---
+
+## 🟢 MAJ précédente — Suivi des règlements : « Factures non réglées » depuis TOUTES les écritures (FEC inclus) — v264
 **Quoi :** le module **Suivi des règlements** gagne une carte **« 📄 Factures non réglées »** (sous le suivi existant, pour l'onglet courant Clients/Fournisseurs) qui liste **toutes les factures saisies OU importées via le FEC** qui **n'ont pas encore été réglées** — y compris les **clients/fournisseurs sans `db.factures`** (dossiers alimentés par FEC). Auparavant le suivi ne lisait que `db.reglements` (créé uniquement par les factures émises dans le logiciel) → la liste était **vide** pour un dossier FEC.
 
 **Comment — `yada-addon142` (override `pageReglements`, 100% additif) :**

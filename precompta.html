@@ -10865,7 +10865,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v264 · factures non réglées';
+    b.textContent='YADA · v265 · immo accordée au thème';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -17630,6 +17630,46 @@ ${lignes}
     var sum=function(o){ return r2(Object.keys(o).reduce(function(a,k){ return a+o[k]; },0)); };
     return { prod:prod, charge:charge, parClient:parClient, parFourn:parFourn, ca:sum(prod), achats:sum(charge), resultat:r2(sum(prod)-sum(charge)) };
   };
+})();
+</script>
+<script id="yada-addon143">
+/* v265 — Immobilisations & Financements : zone de travail accordée au thème (bleu nuit, fin du blanc) */
+(function(){
+  if(typeof document==='undefined') return;
+  if(document.getElementById('im-navy-mod')) return;
+  var css=''
+    /* ----- zone de travail (.im-screen) en bleu nuit comme les autres modules ----- */
+    +'body[data-theme="noir"] .im-screen,body[data-theme="noir"] .im-screen *{color:#eaf2ff !important}'
+    +'body[data-theme="noir"] .im-screen{background:#0c1a2a !important;border-color:#0a64d6 !important}'
+    /* barre d\'outils */
+    +'body[data-theme="noir"] .im-toolbar{background:#0f2236 !important;border-bottom-color:rgba(30,144,255,.22) !important}'
+    +'body[data-theme="noir"] .im-sep{background:#24405d !important}'
+    /* en-têtes de colonnes & groupes */
+    +'body[data-theme="noir"] .im-colh{background:linear-gradient(180deg,#16304a,#0f2236) !important;border-bottom:1px solid rgba(30,144,255,.22) !important}'
+    +'body[data-theme="noir"] .im-colh,body[data-theme="noir"] .im-colh *{color:#eaf2ff !important}'
+    +'body[data-theme="noir"] .im-grp{background:#102a44 !important;color:#cfe0f5 !important;border-bottom-color:rgba(30,144,255,.18) !important}'
+    /* séparateurs de colonnes */
+    +'body[data-theme="noir"] .im-per,body[data-theme="noir"] .im-list{border-right-color:rgba(30,144,255,.2) !important}'
+    /* items (périodes / immobilisations) */
+    +'body[data-theme="noir"] .im-peritem{border-bottom-color:rgba(30,144,255,.12) !important}'
+    +'body[data-theme="noir"] .im-item{border-bottom-color:rgba(30,144,255,.10) !important}'
+    +'body[data-theme="noir"] .im-peritem:hover,body[data-theme="noir"] .im-item:hover{background:rgba(30,144,255,.10) !important}'
+    +'body[data-theme="noir"] .im-peritem.on,body[data-theme="noir"] .im-item.on{background:rgba(30,144,255,.18) !important;color:#eaf2ff !important;box-shadow:inset 3px 0 0 #1e90ff !important}'
+    +'body[data-theme="noir"] .im-ck{color:#5ab0ff !important}'
+    /* onglets de détail */
+    +'body[data-theme="noir"] .im-dtabs{background:#0f2236 !important;border-bottom-color:rgba(30,144,255,.22) !important}'
+    +'body[data-theme="noir"] .im-dtab{color:#9fb6d0 !important}'
+    +'body[data-theme="noir"] .im-dtab.on{background:#0c1a2a !important;color:#eaf2ff !important;border-color:#0a64d6 !important;box-shadow:0 -2px 0 #1e90ff inset !important}'
+    +'body[data-theme="noir"] .im-dtab .im-lk{color:#5ab0ff !important}'
+    /* sections & lignes de la fiche */
+    +'body[data-theme="noir"] .im-sec{background:linear-gradient(180deg,#16304a,#0f2236) !important;border-color:rgba(30,144,255,.25) !important;color:#eaf2ff !important}'
+    +'body[data-theme="noir"] .im-screen .im-row label{color:#9fb6d0 !important}'
+    +'body[data-theme="noir"] .im-row .v{background:#0a1726 !important;border-color:#24405d !important;color:#eaf2ff !important}'
+    +'body[data-theme="noir"] .im-empty{color:#9fb6d0 !important}'
+    /* onglet « Immobilisations » actif : raccordé à la zone de travail (au lieu du blanc) */
+    +'body[data-theme="noir"] .im-tab2.on{background:#0c1a2a !important;color:#eaf2ff !important;border-color:#0a64d6 !important}'
+    +'body[data-theme="noir"] .im-tab2{color:#bcd0e3 !important}';
+  try{ var st=document.createElement('style'); st.id='im-navy-mod'; st.textContent=css; document.head.appendChild(st); }catch(e){}
 })();
 </script>
 <script id="yada-addon142">
