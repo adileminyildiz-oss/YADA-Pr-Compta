@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Éditeur : descendre sur une écriture NON soldée → ajoute une ligne à solder — v268
+## 🟢 Dernière mise à jour — Consultation : compteur des journaux PAR MOIS (zéro masqué) — v269
+**Quoi :** dans la **Consultation des comptes**, la **liste des journaux** (colonne de gauche) affichait à côté de chaque journal (ex. « O - OD OPERATIONS DIVERSES (6) ») un nombre qui était le **cumul de l'année** (ex. 214 pour ACHATS), quel que soit le mois sélectionné. Désormais le nombre = **les écritures du SEUL mois sélectionné** (cohérent avec la grille `sgJournalGrid` qui n'affiche que le mois) ; et **s'il n'y a aucune écriture ce mois-là, aucun nombre n'est affiché** (le journal apparaît sans « (n) »).
+
+**Comment — 2 éditions chirurgicales :**
+- `sgJournaux(per)` : `ecrituresJusqua(per)` (cumul depuis le début d'année) → comptage **mois-exact** `db.ecritures` filtrées par `ym(e.date)===per` (ou tout le dossier si aucun mois).
+- Ligne `jrnRows` (`pageCompta`) : `(${j.n})` → `${j.n>0?(' ('+j.n+')'):''}` → le compteur n'apparaît que si > 0 ; les journaux à 0 restent grisés (`.zero`) et sans nombre.
+
+**Limites :** affichage/comptage seulement (aucune écriture modifiée). Validé : `node --check` (134 scripts) + test données réelles (MBC : ACH total 214 ; nov. 46 / déc. 36 / juin 15 ; « OD » en novembre = 0 → masqué). Badge → **v269 · compteur journal par mois**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur : descendre sur une écriture NON soldée → ajoute une ligne à solder — v268
 **Quoi :** dans l'**éditeur d'écritures** (Consultation des comptes), quand on **descend** — **Entrée** depuis un champ Débit/Crédit, ou **flèche du bas** — depuis la **dernière ligne d'une écriture NON soldée** (Débit ≠ Crédit), une **ligne est ajoutée à CETTE écriture** pour pouvoir la solder (au lieu de quitter ou de créer une autre écriture). **Garde :** tant que la dernière ligne ajoutée n'est **pas utilisée** (aucun compte ni montant), aucune autre ligne n'est ajoutée (le curseur y est maintenu) → chaque ligne doit être remplie avant de passer à la suivante. Si l'écriture **est soldée**, le comportement normal reprend (écriture suivante / nouvelle écriture, v259/v261).
 
 **Comment — `yada-addon146` + 2 éditions d'`addon114` :**

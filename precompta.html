@@ -5464,7 +5464,9 @@ function sgComptes(tab, per){
   return [];
 }
 function sgJournaux(per){
-  const cnt={}; ecrituresJusqua(per).forEach(e=>cnt[e.journal]=(cnt[e.journal]||0)+1);
+  /* compte les écritures du SEUL mois sélectionné (per = 'AAAA-MM') — cohérent avec
+     sgJournalGrid qui n'affiche que le mois ; aucun mois sélectionné → tout le dossier */
+  const cnt={}; (db.ecritures||[]).forEach(e=>{ if(!per || ym(e.date)===per) cnt[e.journal]=(cnt[e.journal]||0)+1; });
   return [['A','ACH','HA ACHATS'],['V','VTE','VT VENTES'],['T','BQ','BQ BANQUE'],['O','ODP','ODP OD PAIE'],['O','ODC','ODC OD CHARGES'],['O','ODTVA','ODTVA OD TVA'],['O','OD','OD OPERATIONS DIVERSES']]
     .map(([L,code,name])=>({L,code,name,n:cnt[code]||0}));
 }
@@ -6163,7 +6165,7 @@ function pageCompta(){
   const perLabel=p=>{const [y,m]=p.split('-');return m+'/'+y.slice(2);};
   const verr=db.societe.moisVerrouilles||[]; const exoV=db.societe.exoVerrouille;
   const perRows=months.map(p=>`<div class="sg-peritem ${p===sgPer?'on':''} ${dispo.has(p)?'':'zero'}" onclick="sgSetPer('${p}')">${perLabel(p)}${(exoV||verr.includes(p))?' ':''}</div>`).join('');
-  const jrnRows=sgJournaux(sgPer).map(j=>`<div class="sg-jrnitem ${j.n===0?'zero':''} ${j.code===sgJrn?'on':''}" onclick="sgSetJrn('${j.code}')">${j.L} - ${j.name} (${j.n})</div>`).join('');
+  const jrnRows=sgJournaux(sgPer).map(j=>`<div class="sg-jrnitem ${j.n===0?'zero':''} ${j.code===sgJrn?'on':''}" onclick="sgSetJrn('${j.code}')">${j.L} - ${j.name}${j.n>0?(' ('+j.n+')'):''}</div>`).join('');
   const tabs=SG_TABS.map(t=>`<div class="sg-tab ${t.id===sgTab?'on':''}" onclick="sgSetTab('${t.id}')">${t.lbl}</div>`).join('');
   let rows='';
   if(sgTab==='generaux'){
@@ -10865,7 +10867,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v268 · ↓ ajoute une ligne à solder';
+    b.textContent='YADA · v269 · compteur journal par mois';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
