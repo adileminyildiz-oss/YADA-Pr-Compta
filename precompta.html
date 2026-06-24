@@ -10867,7 +10867,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v270 · KPI règlements depuis écritures';
+    b.textContent='YADA · v271 · immo : comptes + édition + reprise';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -17987,6 +17987,192 @@ ${lignes}
       return h;
     };
   }
+})();
+</script>
+<script id="yada-addon148">
+/* ============================================================
+   IMMOBILISATIONS & FINANCEMENTS — v271
+   1) Liste des comptes d'immobilisation enrichie (PCG complet) + sélecteur
+      déroulant à molette (size=8) dans « Nouvelle immobilisation ».
+   2) Association compte d'immo → compte de dotation (automatique).
+   3) Reconnaissance du compte d'immo d'après la nature / désignation
+      (téléphone → 2183, véhicule → 2182, mobilier → 2184, logiciel → 205…).
+   4) Onglets Attributs / Comptable / Fiscal ÉDITABLES (paramètres) +
+      boutons Sortie / Cession et Reprise sur dépréciation dans Attributs.
+   100% additif (réassignation de globales). Aucune logique de calcul modifiée.
+   ============================================================ */
+(function(){
+  if(typeof IMMO_COMPTES==='undefined' || typeof c9!=='function') return;
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];}); }
+
+  /* 1) comptes d'immobilisation manquants (PCG) */
+  var ADD=[
+    ['203000000','Frais de recherche et développement'],
+    ['206000000','Droit au bail'],
+    ['208000000','Autres immobilisations incorporelles'],
+    ['212000000','Agencements et aménagements de terrains'],
+    ['214000000',"Constructions sur sol d'autrui"],
+    ['215400000','Matériel industriel'],
+    ['215500000','Outillage industriel'],
+    ['218100000','Installations générales, agencements, aménagements'],
+    ['218600000','Emballages récupérables'],
+    ['271000000','Titres immobilisés'],
+    ['274000000','Prêts']
+  ];
+  ADD.forEach(function(a){ if(!IMMO_COMPTES.some(function(c){return c9(c[0])===c9(a[0]);})) IMMO_COMPTES.push(a); if(!COMPTES[a[0]]) COMPTES[a[0]]=a[1]; });
+  IMMO_COMPTES.sort(function(a,b){ return c9(a[0])<c9(b[0])?-1:1; });
+  /* libellés des comptes d'amortissement (28x) pour l'affichage */
+  IMMO_COMPTES.forEach(function(c){ var d2=c9(c[0]).slice(0,2); if(d2==='20'||d2==='21'){ var am=compteAmortDe(c[0]); if(am && !COMPTES[am]) COMPTES[am]='Amort. '+c[1]; } });
+  COMPTES['681110000']=COMPTES['681110000']||'Dotations amort. immobilisations incorporelles';
+  COMPTES['781600000']=COMPTES['781600000']||'Reprises sur dépréciations des immobilisations';
+
+  /* 2) compte de dotation associé au compte d'immo */
+  function imDotDe(cpt){ var d2=c9(cpt).slice(0,2); if(d2==='20') return '681110000'; if(d2==='21') return '681120000'; return ''; }
+  /* compte de dépréciation (29x) pour la reprise */
+  function imDeprecDe(cpt){ var root=String(c9(cpt)).replace(/0+$/,'')||String(c9(cpt)); var r=root.charAt(0)==='2'?('29'+root.slice(1)):('29'+root); return c9(r); }
+
+  /* 3) reconnaissance du compte d'immo d'après nature / désignation (texte sans accents) */
+  var IMMO_KEYS=[
+    [/(telephone|smartphone|iphone|mobile|tablette|ipad|gsm)/,'218300000'],
+    [/(ordinateur|\bpc\b|laptop|macbook|serveur|imprimante|scanner|ecran|moniteur|informatique|clavier|disque|nas|routeur|switch)/,'218300000'],
+    [/(vehicule|voiture|camion|camionnette|utilitaire|scooter|moto|velo|fourgon|remorque|transport)/,'218200000'],
+    [/(mobilier|meuble|chaise|fauteuil|armoire|etagere|rayonnage|comptoir|canape|bureau en|bureau bois)/,'218400000'],
+    [/(logiciel|licence|software|progiciel|\berp\b|site web|application|saas)/,'205000000'],
+    [/(machine|outillage|\boutil|equipement|presse|fraiseuse|industriel)/,'215000000'],
+    [/(terrain)/,'211000000'],
+    [/(construction|batiment|immeuble|entrepot|hangar)/,'213000000'],
+    [/(agencement|amenagement|installation generale|cloison|electricite|climatisation)/,'218100000'],
+    [/(fonds de commerc|fonds commercial)/,'207000000'],
+    [/(brevet|marque|concession)/,'205000000'],
+    [/(caution|depot de garantie|cautionnement)/,'275000000'],
+    [/(emballage)/,'218600000']
+  ];
+  window.imDevineCompte=function(text){ var s=String(text||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); for(var i=0;i<IMMO_KEYS.length;i++){ if(IMMO_KEYS[i][0].test(s)) return IMMO_KEYS[i][1]; } return null; };
+
+  /* options pour les sélecteurs */
+  function immoOpts(val){ return IMMO_COMPTES.map(function(c){ return '<option value="'+c[0]+'"'+(c9(String(val))===c9(c[0])?' selected':'')+'>'+esc(c9(c[0])+' — '+c[1])+'</option>'; }).join(''); }
+  var DOT_OPTS=[['681110000','681110000 — Dot. amort. incorporelles'],['681120000','681120000 — Dot. amort. corporelles']];
+  var AMORT_OPTS=(function(){ var out=[],seen={}; IMMO_COMPTES.forEach(function(c){ var d2=c9(c[0]).slice(0,2); if(d2!=='20'&&d2!=='21') return; var a=compteAmortDe(c[0]); if(a&&!seen[a]){ seen[a]=1; out.push([a, a+' — '+(COMPTES[a]||'Amortissements')]); } }); return out; })();
+
+  /* setter d'édition d'un attribut d'immobilisation */
+  window.imEdit=function(id, field, value){
+    var im=(db.immos||[]).find(function(x){return x.id===id;}); if(!im) return;
+    if(field==='compte'){ im.compte=value; im.compteAmort=compteAmortDe(value); var dd=imDotDe(value); if(dd) im.compteDot=dd; }
+    else if(field==='montantHT'||field==='valResiduelle'){ im[field]=+value||0; }
+    else if(field==='dureeMois'){ var n=parseInt(value,10); im.dureeMois=(n>0?n:im.dureeMois); }
+    else { im[field]=value; }
+    save(); render();
+  };
+  /* reprise sur dépréciation (compte 29x → 7816) */
+  window.imReprise=function(id){
+    var im=(db.immos||[]).find(function(x){return x.id===id;}); if(!im) return;
+    yadaPrompt('Reprise sur dépréciation — date (AAAA-MM-JJ) :', (typeof imYear==='function'?imYear():'2026')+'-12-31', function(d){ if(!d) return;
+      yadaPrompt('Montant de la reprise (€) :','0', function(mS){ if(mS===null) return; var mt=r2(+mS||0); if(mt<=0) return toast('Montant invalide');
+        var dep=imDeprecDe(im.compte);
+        posterOD({date:d, libelle:'REPRISE DÉPRÉCIATION '+im.numero, lignes:[
+          {compte:dep, lib:'Reprise dépréciation '+im.numero, debit:mt, credit:0},
+          {compte:'781600000', lib:'Reprise sur dépréciation des immobilisations', debit:0, credit:mt}
+        ], journal:'OD'});
+        save(); render(); toast('Reprise sur dépréciation comptabilisée ('+eur(mt)+') — débit '+c9(dep)+' / crédit 781600000.');
+      });
+    });
+  };
+  window.imAnnulerSortie=function(id){ var im=(db.immos||[]).find(function(x){return x.id===id;}); if(!im||!im.sortie) return;
+    yadaConfirm('Annuler la sortie du '+frDate(im.sortie.date)+' (réintégrer l\'immobilisation) ?', function(){ im.sortie=null; save(); render(); toast('Sortie annulée — immobilisation réintégrée.'); }); };
+
+  /* 4) Détail ÉDITABLE (Attributs / Comptable / Fiscal) */
+  if(typeof window.imDetail==='function' || typeof imDetail==='function'){
+    window.imDetail=function(im){
+      var p=immoPlan(im), row=immoRowAnnee(im, imAnnee);
+      var dtabs=[['attributs','Attributs'],['comptable','Comptable'],['fiscal','Fiscal']];
+      var tabBar='<div class="im-dtabs">'+dtabs.map(function(t){return '<div class="im-dtab '+(imDtab===t[0]?'on':'')+'" onclick="imSetDtab(\''+t[0]+'\')">'+t[1]+(t[0]!=='attributs'?' <span class="im-lk">✓</span>':'')+'</div>';}).join('')+'</div>';
+      function rowT(label, field, value, type, step){ var t=type||'text'; var sa=step?(' step="'+step+'"'):''; return '<div class="im-row"><label>'+label+'</label><input class="im-ev" type="'+t+'"'+sa+' value="'+esc(value==null?'':value)+'" onchange="imEdit(\''+im.id+'\',\''+field+'\',this.value)"></div>'; }
+      function rowS(label, field, value, opts){ var o=(typeof opts==='string')?opts:opts.map(function(s){ return '<option value="'+s[0]+'"'+(c9(String(value))===c9(String(s[0]))||String(value)===String(s[0])?' selected':'')+'>'+esc(s[1])+'</option>'; }).join(''); return '<div class="im-row"><label>'+label+'</label><select class="im-ev" onchange="imEdit(\''+im.id+'\',\''+field+'\',this.value)">'+o+'</select></div>'; }
+      var pane;
+      if(imDtab==='attributs'){
+        pane='<div class="im-sec">Informations Permanentes …</div>'
+          +rowT('Numéro :','numero', im.numero,'text')
+          +rowT('Nature :','nature', im.nature,'text')
+          +rowS('Compte :','compte', c9(im.compte), immoOpts(c9(im.compte)))
+          +rowT('Montant H.T. : *','montantHT', im.montantHT,'number','0.01')
+          +rowT('Date de facture :','dateFacture', im.dateFacture,'date')
+          +rowT('Nom du fournisseur :','fournisseur', im.fournisseur||'','text')
+          +rowT('Mise en service :','miseEnService', im.miseEnService,'date')
+          +'<div class="im-sec">Reprise et Sortie d\'immobilisation …</div>'
+          +imF('Sortie :', im.sortie?(frDate(im.sortie.date)+' — '+eur(im.sortie.prix)):'—')
+          +'<div class="im-row"><label>Actions :</label><div class="im-acts">'
+            +'<button class="btn btn-gold btn-sm" onclick="imCeder(\''+im.id+'\')">Sortie / Cession…</button> '
+            +'<button class="btn btn-ghost btn-sm" onclick="imReprise(\''+im.id+'\')">Reprise sur dépréciation…</button>'
+            +(im.sortie?(' <button class="btn btn-ghost btn-sm" onclick="imAnnulerSortie(\''+im.id+'\')">Annuler la sortie</button>'):'')
+          +'</div></div>';
+      } else {
+        var avecDerog=(imDtab==='comptable');
+        pane='<div class="im-sec">Calcul de l\'Amortissement …</div>'
+          +rowS('Mode :','type', im.type||'lineaire', [['lineaire','Linéaire'],['degressif','Dégressif']])
+          +rowT('Valeur résiduelle :','valResiduelle', im.valResiduelle||0,'number','0.01')
+          +imF("Base d'amortissement :", eur(p.base))
+          +rowT('Durée amort. prévue (mois) : *','dureeMois', im.dureeMois,'number')
+          +imF('Taux linéaire :', p.taux.toLocaleString('fr-FR',{minimumFractionDigits:3,maximumFractionDigits:3}))
+          +rowT("Date début d'amortissement :",'miseEnService', im.miseEnService,'date')
+          +imF("Date de fin d'amortissement :", frDate(p.fin))
+          +rowS('Compte de dotation :','compteDot', c9(im.compteDot||'681120000'), DOT_OPTS)
+          +rowS("Compte d'amortissement :",'compteAmort', c9(im.compteAmort||compteAmortDe(im.compte)), AMORT_OPTS)
+          +'<div class="im-sec">Résultats des calculs …</div>'
+          +imF("Base d'amortissement :", eur(p.base))
+          +imF('Dotation de la période :', eur(row.dotation))
+          +imF('Total dotation de la période :', eur(row.dotation))
+          +imF('Total amorti (hors dérog.) :', eur(row.cumul))
+          +(avecDerog?imF('Total amorti (avec dérog.) :', eur(row.cumul)):'')
+          +(avecDerog?imF('Cumul dépréciation :', eur(0)):'')
+          +imF('Valeur nette  (hors dérog.) :', eur(row.vnc))
+          +(avecDerog?imF('Valeur nette  (avec dérog.) :', eur(row.vnc)):'');
+      }
+      return tabBar+'<div class="im-pane">'+pane+'</div>';
+    };
+  }
+
+  /* sélecteur de compte à molette + auto-dotation + reconnaissance dans la modale */
+  window.imCptCascade=function(manual){ var sel=document.getElementById('im-cpt'), dot=document.getElementById('im-dot'); if(!sel) return; if(manual) sel.setAttribute('data-touched','1'); var dd=imDotDe(sel.value); if(dot && dd) dot.value=dd; };
+  window.imAutoCompte=function(){ var sel=document.getElementById('im-cpt'); if(!sel || sel.getAttribute('data-touched')) return;
+    var num=(document.getElementById('im-num')||{}).value||''; var nat=(document.getElementById('im-nat')||{}).value||'';
+    var g=imDevineCompte(num+' '+nat); if(g){ sel.value=g; window.imCptCascade(false); } };
+  window.imAdd=function(){
+    document.getElementById('modal-c').innerHTML='<div class="modal-h"><h3>Nouvelle immobilisation</h3><button class="x" onclick="closeModal()">×</button></div>'
+     +'<div class="modal-b">'
+      +'<div class="row g2">'
+        +'<div class="field"><label>Numéro / désignation</label><input id="im-num" placeholder="Ex : IPHONE 17 PRO MAX" oninput="imAutoCompte()"></div>'
+        +'<div class="field"><label>Nature</label><input id="im-nat" placeholder="Nature du bien (ex : téléphone, véhicule…)" oninput="imAutoCompte()"></div>'
+      +'</div>'
+      +'<div class="row g3">'
+        +'<div class="field"><label>Compte d\'immobilisation <span class="mini">— molette pour défiler</span></label><select id="im-cpt" size="8" class="im-cpt-scroll" onchange="imCptCascade(true)">'+immoOpts('218300000')+'</select></div>'
+        +'<div class="field"><label>Montant H.T.</label><input type="number" step="0.01" id="im-ht" value="1635.17"></div>'
+        +'<div class="field"><label>Valeur résiduelle</label><input type="number" step="0.01" id="im-vr" value="0"></div>'
+      +'</div>'
+      +'<div class="row g3">'
+        +'<div class="field"><label>Fournisseur</label><input id="im-four" placeholder="APPLE"></div>'
+        +'<div class="field"><label>Date de facture</label><input type="date" id="im-df" value="2025-10-08"></div>'
+        +'<div class="field"><label>Mise en service</label><input type="date" id="im-ms" value="2025-10-08"></div>'
+      +'</div>'
+      +'<div class="row g3">'
+        +'<div class="field"><label>Durée (mois)</label><input type="number" id="im-duree" value="36"></div>'
+        +'<div class="field"><label>Mode d\'amortissement</label><select id="im-mode"><option value="lineaire">Linéaire</option><option value="degressif">Dégressif</option></select></div>'
+        +'<div class="field"><label>Compte de dotation <span class="mini">(auto)</span></label><input id="im-dot" value="681120000"></div>'
+      +'</div>'
+      +'<div class="right"><button class="btn btn-gold" onclick="imSave()">Enregistrer l\'immobilisation</button></div>'
+     +'</div>';
+    document.getElementById('modal').classList.add('show');
+    setTimeout(function(){ try{ window.imCptCascade(false); }catch(_){ } }, 10);
+  };
+
+  /* styles : champs éditables du détail + sélecteur à molette */
+  try{ var st=document.createElement('style'); st.id='im-edit-mod'; st.textContent=
+    '.im-row .im-ev{flex:1;font:inherit;font-size:12.5px;padding:5px 9px;border-radius:5px;border:1px solid var(--line-strong);background:#fffefb;color:var(--ink);min-height:16px}'
+    +'.im-acts{flex:1;display:flex;gap:8px;flex-wrap:wrap}'
+    +'.im-cpt-scroll{min-height:150px}'
+    +'body[data-theme="noir"] .im-screen .im-ev{background:#0a1726 !important;border-color:#24405d !important;color:#eaf2ff !important}'
+    +'body[data-theme="noir"] .im-cpt-scroll option{background:#0c1a2a;color:#eaf2ff}';
+    document.head.appendChild(st);
+  }catch(e){}
 })();
 </script>
 </body>

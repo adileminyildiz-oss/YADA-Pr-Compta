@@ -36,7 +36,22 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Suivi des règlements : cartes KPI du haut remplies depuis les factures non réglées (FEC inclus) — v270
+## 🟢 Dernière mise à jour — Immobilisations : comptes enrichis + sélecteur à molette + reconnaissance + fiche éditable + reprise/sortie — v271
+**Quoi :** refonte fonctionnelle du module **Immobilisations & Financements** (`yada-addon148`, 100% additif) :
+1. **Liste des comptes d'immobilisation enrichie** (PCG) : ajout des comptes manquants (203, 206, 208, 212, 214, 215400, 215500, 218100, 218600, 271, 274), triés par numéro, avec libellés des comptes d'amortissement (28x).
+2. **Sélecteur à molette** dans « Nouvelle immobilisation » : `<select size="8">` défilable (molette) pour voir tous les comptes.
+3. **Association compte d'immo → compte de dotation automatique** : incorporel (20x) → `681110000`, corporel (21x) → `681120000`, financier (26/27) → aucune. Mise à jour auto à la sélection.
+4. **Reconnaissance du compte d'après la nature / désignation** : téléphone/ordinateur → 2183, véhicule → 2182, mobilier → 2184, logiciel/licence → 205, machine/outillage → 215, terrain → 211, construction → 213, caution → 275… (`imDevineCompte`, texte sans accents). Auto-proposé tant que l'utilisateur n'a pas choisi manuellement.
+5. **Onglets Attributs / Comptable / Fiscal ÉDITABLES** (paramètres) : Numéro, Nature, Compte, Montant HT, Dates, Fournisseur, Mode, Durée, Valeur résiduelle, Compte de dotation, Compte d'amortissement — modifiables (`imEdit` → `save`+`render`). Les **résultats** (dotation, cumul, VNC) restent **calculés** (immoPlan/immoRowAnnee).
+6. **Attributs — boutons Sortie / Cession** (`imCeder`, comptabilisation VNC 675/amort/immo/512/775 existante) et **Reprise sur dépréciation** (`imReprise` → OD : débit 29x dépréciation / crédit `781600000`), + « Annuler la sortie » si une sortie existe.
+
+**Comment :** override de `imAdd` (modale + handlers `imAutoCompte`/`imCptCascade`) et de `imDetail` (rendu éditable `imEdit`/`imReprise`/`imAnnulerSortie`) ; `IMMO_COMPTES` enrichi/trié ; mapping `imDotDe`/`imDeprecDe` ; `<style id="im-edit-mod">` (champs `.im-ev`, sélecteur `.im-cpt-scroll`).
+
+**Limites :** reconnaissance par mots-clés (heuristique, modifiable manuellement) ; terrains (211) reçoivent un compte de dotation par défaut (non amortis en réalité — durée/dotation à la main) ; calculs d'amortissement inchangés. Validé : `node --check` (136 scripts) + test reconnaissance/association (iPhone→2183/681120000, logiciel→205/681110000, dépôt→275/—). Badge → **v271 · immo : comptes + édition + reprise**.
+
+---
+
+## 🟢 MAJ précédente — Suivi des règlements : cartes KPI du haut remplies depuis les factures non réglées (FEC inclus) — v270
 **Quoi :** dans le **Suivi des règlements**, les **4 cartes KPI du haut** (Total dû / Dont en retard / Dont indemnités de recouvrement / Tiers en alerte) restaient à **0,00 €** pour un dossier alimenté par **FEC** (elles ne lisaient que `db.reglements`, vide). Elles sont désormais **remplies à partir des factures non réglées dérivées des écritures** (mêmes données que la carte « Factures non réglées » de v264) **quand le suivi `db.reglements` est vide** pour l'onglet courant — sinon l'existant (factures du logiciel) est conservé.
 
 **Comment — `yada-addon147` (override `pageReglements`, 100% additif) :**
