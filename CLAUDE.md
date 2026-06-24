@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Consultation : compteur des journaux PAR MOIS (zéro masqué) — v269
+## 🟢 Dernière mise à jour — Suivi des règlements : cartes KPI du haut remplies depuis les factures non réglées (FEC inclus) — v270
+**Quoi :** dans le **Suivi des règlements**, les **4 cartes KPI du haut** (Total dû / Dont en retard / Dont indemnités de recouvrement / Tiers en alerte) restaient à **0,00 €** pour un dossier alimenté par **FEC** (elles ne lisaient que `db.reglements`, vide). Elles sont désormais **remplies à partir des factures non réglées dérivées des écritures** (mêmes données que la carte « Factures non réglées » de v264) **quand le suivi `db.reglements` est vide** pour l'onglet courant — sinon l'existant (factures du logiciel) est conservé.
+
+**Comment — `yada-addon147` (override `pageReglements`, 100% additif) :**
+- `window.regKPIDepuisEcritures(type)` parcourt `window.regOpenGroups(type)` (factures non réglées = lignes non lettrées du compte de tiers) et calcule : **Total dû** (= montants + indemnités), **Dont en retard**, **Dont indemnités** (40 €), **Tiers en alerte** (≥3 factures en retard). **Échéance estimée** = date d'écriture + délai de paiement par défaut (`db.societe.delaiPaiement`, sinon 30 j) ; en retard si échéance < aujourd'hui.
+- Greffe : si **aucun règlement ouvert** dans `db.reglements` pour le sens courant (`a_encaisser`/`a_payer`), les valeurs des 4 cartes (`.reg-k .v`) sont remplacées par regex sur leurs libellés (sinon inchangées).
+
+**Limites :** retard/indemnités **estimés** (faute d'échéance saisie sur les écritures FEC) ; pour un dossier avec `db.reglements` (échéances réelles) le calcul existant est conservé. Affichage/calcul seulement. Validé : `node --check` (135 scripts) + test données réelles (MBC clients Total dû 29 692,40 € / 720 € indemnités / 1 alerte · MBC fourn. 12 644,15 € · ALR clients 1 820 €). Badge → **v270 · KPI règlements depuis écritures**.
+
+---
+
+## 🟢 MAJ précédente — Consultation : compteur des journaux PAR MOIS (zéro masqué) — v269
 **Quoi :** dans la **Consultation des comptes**, la **liste des journaux** (colonne de gauche) affichait à côté de chaque journal (ex. « O - OD OPERATIONS DIVERSES (6) ») un nombre qui était le **cumul de l'année** (ex. 214 pour ACHATS), quel que soit le mois sélectionné. Désormais le nombre = **les écritures du SEUL mois sélectionné** (cohérent avec la grille `sgJournalGrid` qui n'affiche que le mois) ; et **s'il n'y a aucune écriture ce mois-là, aucun nombre n'est affiché** (le journal apparaît sans « (n) »).
 
 **Comment — 2 éditions chirurgicales :**

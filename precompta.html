@@ -10867,7 +10867,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v269 · compteur journal par mois';
+    b.textContent='YADA · v270 · KPI règlements depuis écritures';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -17927,6 +17927,62 @@ ${lignes}
       try{
         var type=(window.regOnglet==='fournisseur')?'fournisseur':'client';
         h+=window.regFacturesNonRegleesCard(type);
+      }catch(e){}
+      return h;
+    };
+  }
+})();
+</script>
+<script id="yada-addon147">
+/* v270 — Suivi des règlements : cartes KPI du haut remplies depuis les factures
+   NON RÉGLÉES (écritures, FEC inclus) quand le suivi db.reglements est vide.
+   Total dû / Dont en retard / Dont indemnités (40 €) / Tiers en alerte (≥3 impayés).
+   Retard & indemnité estimés via échéance = date d'écriture + délai de paiement
+   par défaut (db.societe.delaiPaiement, sinon 30 j). 100% additif. */
+(function(){
+  if(typeof window==='undefined') return;
+  function joursEntre(a,b){ try{ return Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/86400000); }catch(e){ return 0; } }
+  function addDaysISO(iso,n){ try{ var d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+(+n||0)); return d.toISOString().slice(0,10); }catch(e){ return iso; } }
+
+  /* KPI dérivés des factures non réglées (regOpenGroups de l'addon142) */
+  window.regKPIDepuisEcritures=function(type){
+    type=(type==='fournisseur')?'fournisseur':'client';
+    var groupes=(typeof window.regOpenGroups==='function')?window.regOpenGroups(type):{};
+    var today=(typeof todayStr==='function'?todayStr():new Date().toISOString().slice(0,10));
+    var delai=(db.societe && db.societe.delaiPaiement!=null)?(parseInt(db.societe.delaiPaiement,10)||0):30;
+    var fr=(db.societe && db.societe.fraisRecouvrement!=null)?(+db.societe.fraisRecouvrement||0):40;
+    var totDu=0, totRetard=0, totFrais=0, nbAlertes=0, nbFactures=0;
+    Object.keys(groupes).forEach(function(k){
+      var g=groupes[k]; var lateCount=0;
+      (g.lignes||[]).forEach(function(x){
+        var ech=addDaysISO(x.date, delai); var late=joursEntre(ech, today)>0; var frais=late?fr:0;
+        totDu=r2(totDu + x.montant + frais); totFrais=r2(totFrais+frais); nbFactures++;
+        if(late){ totRetard=r2(totRetard + x.montant + frais); lateCount++; }
+      });
+      if(k!=='__nid' && lateCount>=3) nbAlertes++;
+    });
+    return { totDu:r2(totDu), totRetard:r2(totRetard), totFrais:r2(totFrais), nbAlertes:nbAlertes, nbFactures:nbFactures };
+  };
+
+  /* greffe : remplir les KPI du haut UNIQUEMENT si le suivi db.reglements est vide
+     pour l'onglet courant (cartes à 0 — dossier FEC) ; sinon laisser l'existant. */
+  if(typeof window.pageReglements==='function'){
+    var _pr=window.pageReglements;
+    window.pageReglements=function(){
+      var h=_pr.apply(this, arguments);
+      try{
+        var type=(window.regOnglet==='fournisseur')?'fournisseur':'client';
+        var sens=(type==='fournisseur')?'a_payer':'a_encaisser';
+        var hasOpen=(db.reglements||[]).some(function(r){ return r.sens===sens && r.statut!=='regle'; });
+        if(!hasOpen){
+          var K=window.regKPIDepuisEcritures(type);
+          if(K.nbFactures>0){
+            h=h.replace(/(<div class="l">Total dû \(frais inclus\)<\/div><div class="v">)[^<]*(<\/div>)/, '$1'+eur(K.totDu)+'$2');
+            h=h.replace(/(<div class="l">Dont en retard<\/div><div class="v">)[^<]*(<\/div>)/, '$1'+eur(K.totRetard)+'$2');
+            h=h.replace(/(<div class="l">Dont indemnités de recouvrement<\/div><div class="v">)[^<]*(<\/div>)/, '$1'+eur(K.totFrais)+'$2');
+            h=h.replace(/(<div class="l">(?:Clients|Fournisseurs) en alerte[^<]*<\/div><div class="v">)[^<]*(<\/div>)/, '$1'+K.nbAlertes+'$2');
+          }
+        }
       }catch(e){}
       return h;
     };
