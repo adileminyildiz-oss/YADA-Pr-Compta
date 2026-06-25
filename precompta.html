@@ -10867,7 +10867,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v276 · consultation : flèches d\'exercice';
+    b.textContent='YADA · v277 · banque : paramètres de saisie + contrepartie auto';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -18259,6 +18259,129 @@ ${lignes}
     +'body[data-theme="noir"] .sg-exolbl{color:#eaf2ff !important}'
     +'@media(max-width:760px){.sg-exolbl{display:none}}';
   try{ var st=document.createElement('style'); st.id='sg-exonav-mod'; st.textContent=css; document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon151">
+/* ============================================================
+   ÉDITEUR D'ÉCRITURES — barre « Traitements » au-dessus du filtre +
+   « Paramètres de saisie » (panneau latéral façon Sage Génération Expert).
+   Option principale : « Validation automatique de la ligne » → en JOURNAL DE
+   BANQUE (BQ), la 2e ligne est générée automatiquement avec la contrepartie
+   512000000, le montant MIROIR (débit↔crédit) et le même libellé ; la pièce
+   reprend le moyen de paiement (VIR/CHQ/CB…). Même date / journal / pièce /
+   libellé (déjà partagés au niveau de l'écriture). 100% additif.
+   ============================================================ */
+(function(){
+  if(typeof document==='undefined') return;
+
+  function ecSaisieCfg(){ try{ var c=JSON.parse(localStorage.getItem('yada-ec-saisie')||'{}'); if(!c||typeof c!=='object') c={}; if(c.moyen==null) c.moyen='VIR'; return c; }catch(e){ return {moyen:'VIR'}; } }
+  window.ecSaisieCfg=ecSaisieCfg;
+
+  /* ----- barre Traitements injectée AU-DESSUS du filtre ----- */
+  window.ecToggleTraitements=function(ev){ if(ev&&ev.stopPropagation) ev.stopPropagation(); var dd=document.getElementById('ec-trt-dd'); if(dd) dd.classList.toggle('open'); };
+  document.addEventListener('click', function(){ var dd=document.getElementById('ec-trt-dd'); if(dd) dd.classList.remove('open'); });
+
+  if(typeof window.ecRender==='function'){
+    var _er=window.ecRender;
+    window.ecRender=function(){ _er.apply(this, arguments); try{
+      var win=document.getElementById('ec-win'); if(!win) return;
+      var fb=win.querySelector('.ec-filtbar'); if(!fb) return;          /* le filtre doit exister */
+      if(win.querySelector('.ec-trtbar')) return;                       /* déjà injectée */
+      var bar=document.createElement('div'); bar.className='ec-trtbar';
+      bar.innerHTML='<div class="ec-trt-menu"><button class="ec-trt-btn" onclick="ecToggleTraitements(event)">Traitements ▾</button>'
+        +'<div class="ec-trt-dd" id="ec-trt-dd"><button onclick="ecOuvrirParamSaisie()">⚙ Paramètres de saisie…</button></div></div>'
+        +(ecSaisieCfg().valAuto?'<span class="ec-trt-on">● contrepartie banque automatique</span>':'');
+      fb.parentNode.insertBefore(bar, fb);                              /* AU-DESSUS du filtre */
+    }catch(e){} };
+  }
+
+  /* ----- panneau latéral « Paramètres de saisie » ----- */
+  window.ecOuvrirParamSaisie=function(){
+    var cfg=ecSaisieCfg();
+    var old=document.getElementById('ec-param-drawer'); if(old) old.remove();
+    function ck(id,on){ return '<input type="checkbox" id="'+id+'"'+(on?' checked':'')+'>'; }
+    var d=document.createElement('div'); d.id='ec-param-drawer'; d.className='ec-param-drawer';
+    d.innerHTML='<div class="ec-pd-h">Paramètres de saisie<button class="ec-pd-x" onclick="ecParamFermer()">×</button></div>'
+      +'<div class="ec-pd-b">'
+        +'<label class="ec-pd-row ec-pd-main">'+ck('ecp-valauto',cfg.valAuto)+' <b>Avec validation automatique de la ligne</b><div class="ec-pd-hint">En journal de banque : la 2ᵉ ligne reprend la contrepartie <b>512000000</b>, le <b>montant miroir</b> (débit↔crédit) et le même libellé ; la pièce reprend le moyen de paiement.</div></label>'
+        +'<label class="ec-pd-row">Moyen de paiement <span class="ec-pd-hint2">(repris dans la pièce)</span><select id="ecp-moyen">'+['VIR','CHQ','CB','PRLV','ESP'].map(function(m){return '<option'+(cfg.moyen===m?' selected':'')+'>'+m+'</option>';}).join('')+'</select></label>'
+        +'<div class="ec-pd-sep"></div>'
+        +'<label class="ec-pd-row">'+ck('ecp-sansdates',cfg.sansPropDates)+' Sans propagation des dates</label>'
+        +'<label class="ec-pd-row">'+ck('ecp-sanspieces',cfg.sansPropPieces)+' Sans propagation des pièces</label>'
+        +'<label class="ec-pd-row">'+ck('ecp-incr',cfg.incrementPiece)+' Avec incrémentation du numéro de pièce</label>'
+        +'<label class="ec-pd-row">'+ck('ecp-cpj',cfg.contrepartieJour)+' Contrepartie journalière</label>'
+      +'</div>'
+      +'<div class="ec-pd-f"><button class="ec-pd-cancel" onclick="ecParamFermer()">Annuler</button><button class="ec-pd-ok" onclick="ecParamSave()">OK</button></div>';
+    document.body.appendChild(d);
+    setTimeout(function(){ d.classList.add('open'); }, 10);
+  };
+  window.ecParamFermer=function(){ var d=document.getElementById('ec-param-drawer'); if(d){ d.classList.remove('open'); setTimeout(function(){ try{ d.remove(); }catch(e){} }, 200); } };
+  window.ecParamSave=function(){
+    var g=function(id){ return document.getElementById(id); };
+    var cfg=ecSaisieCfg();
+    cfg.valAuto=!!(g('ecp-valauto')&&g('ecp-valauto').checked);
+    cfg.moyen=(g('ecp-moyen')&&g('ecp-moyen').value)||'VIR';
+    cfg.sansPropDates=!!(g('ecp-sansdates')&&g('ecp-sansdates').checked);
+    cfg.sansPropPieces=!!(g('ecp-sanspieces')&&g('ecp-sanspieces').checked);
+    cfg.incrementPiece=!!(g('ecp-incr')&&g('ecp-incr').checked);
+    cfg.contrepartieJour=!!(g('ecp-cpj')&&g('ecp-cpj').checked);
+    try{ localStorage.setItem('yada-ec-saisie', JSON.stringify(cfg)); }catch(e){}
+    window.ecParamFermer();
+    if(typeof toast==='function') toast('Paramètres de saisie enregistrés'+(cfg.valAuto?' — contrepartie banque automatique activée':''));
+    if(typeof ecRender==='function') ecRender();
+  };
+
+  /* ----- contrepartie automatique en JOURNAL DE BANQUE ----- */
+  if(typeof window.ecSetLine==='function'){
+    var _esl=window.ecSetLine;
+    window.ecSetLine=function(id,i,field,v){
+      _esl(id,i,field,v);
+      try{
+        var cfg=ecSaisieCfg(); if(!cfg.valAuto) return;
+        var e=(typeof ecGet==='function')?ecGet(id):null; if(!e || String(e.journal)!=='BQ') return;
+        if(i!==0) return;                          /* on agit depuis la 1ʳᵉ ligne */
+        if((e.lignes||[]).length>2) return;        /* ne pas perturber une écriture multi-lignes */
+        if(!e.lignes[1]) e.lignes.push({compte:'',lib:'',debit:0,credit:0});
+        var l0=e.lignes[0], l1=e.lignes[1];
+        l1.compte='512000000';                     /* contrepartie banque */
+        if(l0.lib) l1.lib=l0.lib;                   /* même libellé */
+        var dd=+l0.debit||0, cc=+l0.credit||0;      /* montant miroir */
+        if(dd>0){ l1.debit=0; l1.credit=dd; } else if(cc>0){ l1.credit=0; l1.debit=cc; } else { l1.debit=0; l1.credit=0; }
+        if(!e.piece && cfg.moyen) e.piece=cfg.moyen; /* moyen de paiement dans la pièce */
+        if(typeof ecRender==='function') ecRender();
+      }catch(_){}
+    };
+  }
+
+  /* ----- styles ----- */
+  try{ var st=document.createElement('style'); st.id='ec-trt-mod'; st.textContent=
+     '.ec-trtbar{display:flex;align-items:center;gap:12px;padding:4px 12px;background:#0b1118;border-bottom:1px solid #16212e}'
+    +'.ec-trt-menu{position:relative}'
+    +'.ec-trt-btn{font:inherit;font-size:12px;font-weight:600;color:#eaf2ff;background:#16304a;border:1px solid #24405d;border-radius:6px;padding:4px 12px;cursor:pointer}'
+    +'.ec-trt-btn:hover{background:#0a64d6;border-color:#1e90ff}'
+    +'.ec-trt-dd{position:absolute;top:calc(100% + 4px);left:0;min-width:220px;background:#0c1a2a;border:1px solid #24405d;border-radius:8px;box-shadow:0 12px 34px rgba(0,0,0,.5);padding:5px;display:none;z-index:30}'
+    +'.ec-trt-dd.open{display:block}'
+    +'.ec-trt-dd button{display:block;width:100%;text-align:left;font:inherit;font-size:12.5px;color:#eaf2ff;background:none;border:none;border-radius:6px;padding:8px 10px;cursor:pointer}'
+    +'.ec-trt-dd button:hover{background:rgba(30,144,255,.18)}'
+    +'.ec-trt-on{font-size:11.5px;color:#5fd08a;font-weight:600}'
+    +'.ec-param-drawer{position:fixed;top:0;right:0;height:100vh;width:min(360px,92vw);background:#0c1a2a;border-left:1px solid #1e90ff;box-shadow:-14px 0 40px rgba(0,0,0,.55);z-index:100000;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .2s ease;color:#eaf2ff;font-family:system-ui,sans-serif}'
+    +'.ec-param-drawer.open{transform:translateX(0)}'
+    +'.ec-pd-h{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;font-weight:700;font-size:14px;background:linear-gradient(120deg,#16304a,#0f2236);border-bottom:1px solid #1e90ff}'
+    +'.ec-pd-x{background:none;border:none;color:#eaf2ff;font-size:22px;line-height:1;cursor:pointer}'
+    +'.ec-pd-b{flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px}'
+    +'.ec-pd-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12.5px;color:#cfe0f5;cursor:pointer}'
+    +'.ec-pd-row input[type=checkbox]{width:16px;height:16px;accent-color:#1e90ff}'
+    +'.ec-pd-main{background:rgba(30,144,255,.10);border:1px solid rgba(30,144,255,.3);border-radius:9px;padding:10px 12px}'
+    +'.ec-pd-main b{color:#eaf2ff}'
+    +'.ec-pd-hint{flex:1 1 100%;font-size:11px;color:#9fb6d0;margin-top:3px}'
+    +'.ec-pd-hint2{font-size:11px;color:#9fb6d0}'
+    +'.ec-pd-row select{margin-left:auto;font:inherit;font-size:12.5px;padding:4px 8px;border-radius:6px;border:1px solid #24405d;background:#0a1726;color:#eaf2ff}'
+    +'.ec-pd-sep{height:1px;background:rgba(30,144,255,.2);margin:2px 0}'
+    +'.ec-pd-f{display:flex;justify-content:flex-end;gap:10px;padding:12px 16px;border-top:1px solid #16212e}'
+    +'.ec-pd-cancel{font:inherit;font-size:12.5px;background:#24405d;color:#eaf2ff;border:none;border-radius:7px;padding:8px 16px;cursor:pointer}'
+    +'.ec-pd-ok{font:inherit;font-size:12.5px;font-weight:600;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#fff;border:none;border-radius:7px;padding:8px 18px;cursor:pointer}';
+    document.head.appendChild(st);
+  }catch(e){}
 })();
 </script>
 </body>
