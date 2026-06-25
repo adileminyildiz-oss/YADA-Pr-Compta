@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Éditeur : en journal de BANQUE, la 2ᵉ ligne génère automatiquement la contrepartie 512000000 — v282
+## 🟢 Dernière mise à jour — Éditeur : Entrée sur le montant valide d'abord → si l'écriture est soldée, PAS de 3ᵉ ligne fantôme — v283
+**Quoi :** dans l'**éditeur d'écritures**, après avoir validé le **montant de la 2ᵉ ligne**, si l'écriture est **soldée** (Débit = Crédit), appuyer sur **Entrée** ne génère **plus de 3ᵉ ligne** (vide) parasite. Avant, Entrée appelait la logique « descendre/solder » **avant** que le montant saisi ne soit validé → l'écriture paraissait déséquilibrée → une ligne était ajoutée à tort. Désormais, Entrée depuis un champ Débit/Crédit **valide d'abord le montant** (`blur`), puis : écriture **soldée** → nouvelle écriture (curseur sur la date), **jamais** de 3ᵉ ligne ; **non soldée** → ligne ajoutée à solder (inchangé). Vaut pour **tous les modes** (avec ou sans validation automatique).
+
+**Comment — 1 édition chirurgicale (`addon114`, branche Entrée) :** la branche « blur d'abord » (introduite en v279 pour la validation automatique) s'applique désormais à **tous** les champs Débit/Crédit (`if(col===6||col===7)` au lieu de `if(_cfg.valAuto && …)`) : `inp.blur()` valide le montant (équilibre à jour + contrepartie banque v277/v282 si activée), puis l'équilibre est recalculé sur des données fraîches avant de décider d'ajouter une ligne ou de passer à une nouvelle écriture.
+
+**Limites :** navigation/saisie seulement. Validé : `node --check` (141 scripts). Badge → **v283 · pas de 3e ligne si écriture soldée**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur : en journal de BANQUE, la 2ᵉ ligne génère automatiquement la contrepartie 512000000 — v282
 **Quoi :** dans l'**éditeur d'écritures**, quand on ajoute la **2ᵉ ligne** d'une **écriture de banque** (journal BQ) — en descendant pour la solder, ou via « + Ajouter » — son **compte est automatiquement 512000000** (banque) avec le **montant miroir** (débit↔crédit de la 1ʳᵉ ligne), ce qui **solde** l'écriture. Avant, la 2ᵉ ligne s'ajoutait avec un compte vide (`000000000`). Indépendant du mode « validation automatique » (v277) : c'est désormais le comportement par défaut pour le journal BQ.
 
 **Comment — 1 édition chirurgicale (`ecAddLine`) :** si `e.journal==='BQ'` et qu'on ajoute la **2ᵉ ligne** (`e.lignes.length===1`), la nouvelle ligne reçoit `compte:'512000000'` + montant miroir (`débit l0 → crédit`, `crédit l0 → débit`). Le libellé est déjà repris de la 1ʳᵉ ligne. Les lignes au-delà de la 2ᵉ restent vides (écritures multi-lignes inchangées).
