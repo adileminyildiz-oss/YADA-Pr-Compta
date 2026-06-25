@@ -36,7 +36,19 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Immobilisations : compte de dotation (et d'amortissement) accordé au compte d'immobilisation, visible dans Attributs — v274
+## 🟢 Dernière mise à jour — Immobilisations : nature → compte → compte de dotation (chaîne stricte, sans décalage) — v275
+**Quoi :** la création d'une immobilisation suit désormais une **chaîne stricte** conforme à la demande : (1) la **Nature est obligatoire** (saisie bloquée sinon) ; (2) la nature **détermine le compte d'immobilisation** (reconnaissance — véhicule → `218200000`, téléphone → `218300000`, mobilier → `218400000`, logiciel → `205000000`…) ; (3) le compte d'immobilisation **détermine le compte de dotation** (le compte d'**amortissement 28x**, obtenu en **insérant un « 8 » après le premier chiffre** : `218200000` → `281820000`). Les comptes dérivés sont **lecture seule** (aucune valeur ne correspondant pas n'est possible) et **se mettent à jour automatiquement** quand le compte d'immobilisation change.
+
+**Comment — `yada-addon148` (édité) :**
+- `imSave` : **Nature requise** ; `compteAmort=compteAmortDe(cpt)` (28x, règle « +8 »), `compteDot=imDotDe(cpt)` (charge 6811, interne à l'écriture) — dérivés du compte, plus lus depuis un champ libre.
+- Modale : champ « Compte de dotation » désormais **lecture seule** (`im-dotdisp`), mis à jour par `imCptCascade` = `c9(compteAmortDe(compte))`. Nature marquée `*` (obligatoire).
+- Fiche (`imDetail`, onglets Attributs **et** Comptable) : les anciens sélecteurs éditables 6811/28x sont remplacés par **une ligne lecture seule** « Compte de dotation : <28x> (accordé au compte d'immo) ». `imEdit` recalcule `compteAmort`/`compteDot` à chaque changement de compte → l'affichage suit.
+
+**Note comptable :** le « compte de dotation » au sens de l'utilisateur = le compte d'**amortissement 28x** (crédité de l'OD de dotation). L'écriture de dotation reste **débit 6811 (dotation aux amortissements) / crédit 28x** (équilibrée). Validé : `node --check` (137 scripts) + dérivation testée (véhicule 218200000 → 281820000, logiciel 205 → 280500000…). Badge → **v275 · nature → compte → dotation (strict)**.
+
+---
+
+## 🟢 MAJ précédente — Immobilisations : compte de dotation (et d'amortissement) accordé au compte d'immobilisation, visible dans Attributs — v274
 **Quoi :** dans la fiche d'immobilisation, **changer le compte d'immobilisation** met aussi à jour le **compte de dotation** (et le compte d'amortissement). Le changement était déjà appliqué en données (`imEdit` : compte → `compteAmort=compteAmortDe`, `compteDot=imDotDe`) mais les champs « Compte de dotation / d'amortissement » n'étaient affichés que dans l'onglet **Comptable** → l'accord n'était pas visible au moment du changement (fait dans **Attributs**). Désormais les deux comptes sont **affichés (et éditables) directement sous le Compte dans l'onglet Attributs** → ils se mettent à jour à l'écran dès qu'on change le compte d'immobilisation.
 
 **Comment — 1 ajout dans l'override `imDetail` (Attributs) :** après la ligne `rowS('Compte :', …)`, insertion de `rowS('Compte de dotation :','compteDot', …, DOT_OPTS)` + `rowS("Compte d'amortissement :",'compteAmort', …, AMORT_OPTS)`. `imEdit` (inchangé) recalcule `compteDot` (incorporel 20x→681110000, corporel 21x→681120000) et `compteAmort` (28x) puis `render()` → les sélecteurs reflètent l'accord ; un choix manuel reste possible. Validé : `node --check` (137 scripts). Badge → **v274 · dotation accordée au compte immo**.

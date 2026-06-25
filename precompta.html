@@ -10867,7 +10867,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v274 · dotation accordée au compte immo';
+    b.textContent='YADA · v275 · nature → compte → dotation (strict)';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -18124,8 +18124,7 @@ ${lignes}
           +rowT('Numéro :','numero', im.numero,'text')
           +rowT('Nature :','nature', im.nature,'text')
           +rowS('Compte :','compte', c9(im.compte), immoOpts(c9(im.compte)))
-          +rowS('Compte de dotation :','compteDot', c9(im.compteDot||'681120000'), DOT_OPTS)
-          +rowS("Compte d'amortissement :",'compteAmort', c9(im.compteAmort||compteAmortDe(im.compte)), AMORT_OPTS)
+          +imF('Compte de dotation :', c9(im.compteAmort||compteAmortDe(im.compte))+' <span class="mini">(accordé au compte d\'immo)</span>')
           +rowT('Montant H.T. : *','montantHT', im.montantHT,'number','0.01')
           +rowS('Taux TVA :','tauxTVA', String(im.tauxTVA!=null?im.tauxTVA:20), [['20','20 %'],['10','10 %'],['5.5','5,5 %'],['0','0 %']])
           +rowT('Date de facture :','dateFacture', im.dateFacture,'date')
@@ -18153,8 +18152,7 @@ ${lignes}
           +imF('Taux linéaire :', p.taux.toLocaleString('fr-FR',{minimumFractionDigits:3,maximumFractionDigits:3}))
           +rowT("Date début d'amortissement :",'miseEnService', im.miseEnService,'date')
           +imF("Date de fin d'amortissement :", frDate(p.fin))
-          +rowS('Compte de dotation :','compteDot', c9(im.compteDot||'681120000'), DOT_OPTS)
-          +rowS("Compte d'amortissement :",'compteAmort', c9(im.compteAmort||compteAmortDe(im.compte)), AMORT_OPTS)
+          +imF('Compte de dotation :', c9(im.compteAmort||compteAmortDe(im.compte))+' <span class="mini">(accordé au compte d\'immo)</span>')
           +'<div class="im-sec">Résultats des calculs …</div>'
           +imF("Base d'amortissement :", eur(p.base))
           +imF('Dotation de la période :', eur(row.dotation))
@@ -18170,7 +18168,7 @@ ${lignes}
   }
 
   /* sélecteur de compte à molette + auto-dotation + reconnaissance dans la modale */
-  window.imCptCascade=function(manual){ var sel=document.getElementById('im-cpt'), dot=document.getElementById('im-dot'); if(!sel) return; if(manual) sel.setAttribute('data-touched','1'); var dd=imDotDe(sel.value); if(dot && dd) dot.value=dd; };
+  window.imCptCascade=function(manual){ var sel=document.getElementById('im-cpt'); if(!sel) return; if(manual) sel.setAttribute('data-touched','1'); var disp=document.getElementById('im-dotdisp'); if(disp) disp.value=c9(compteAmortDe(sel.value)); };
   window.imAutoCompte=function(){ var sel=document.getElementById('im-cpt'); if(!sel || sel.getAttribute('data-touched')) return;
     var num=(document.getElementById('im-num')||{}).value||''; var nat=(document.getElementById('im-nat')||{}).value||'';
     var g=imDevineCompte(num+' '+nat); if(g){ sel.value=g; window.imCptCascade(false); } };
@@ -18179,7 +18177,7 @@ ${lignes}
      +'<div class="modal-b">'
       +'<div class="row g2">'
         +'<div class="field"><label>Numéro / désignation</label><input id="im-num" placeholder="Ex : IPHONE 17 PRO MAX" oninput="imAutoCompte()"></div>'
-        +'<div class="field"><label>Nature</label><input id="im-nat" placeholder="Nature du bien (ex : téléphone, véhicule…)" oninput="imAutoCompte()"></div>'
+        +'<div class="field"><label>Nature * <span class="mini">(obligatoire — détermine le compte)</span></label><input id="im-nat" placeholder="Ex : véhicule, téléphone, mobilier…" oninput="imAutoCompte()"></div>'
       +'</div>'
       +'<div class="field" style="margin-bottom:12px"><label>Compte d\'immobilisation <span class="mini">(cliquer pour ouvrir la liste)</span></label><select id="im-cpt" class="im-cpt-scroll" onchange="imCptCascade(true)">'+immoOpts('218300000')+'</select></div>'
       +'<div class="row g3">'
@@ -18195,7 +18193,7 @@ ${lignes}
       +'<div class="row g3">'
         +'<div class="field"><label>Durée (mois)</label><input type="number" id="im-duree" value="36"></div>'
         +'<div class="field"><label>Mode d\'amortissement</label><select id="im-mode"><option value="lineaire">Linéaire</option><option value="degressif">Dégressif</option></select></div>'
-        +'<div class="field"><label>Compte de dotation <span class="mini">(auto)</span></label><input id="im-dot" value="681120000"></div>'
+        +'<div class="field"><label>Compte de dotation <span class="mini">(auto — accordé au compte d\'immo)</span></label><input id="im-dotdisp" readonly value="281830000" style="opacity:.9"></div>'
       +'</div>'
       +'<div class="right"><button class="btn btn-gold" onclick="imSave()">Enregistrer l\'immobilisation</button></div>'
      +'</div>';
@@ -18206,13 +18204,15 @@ ${lignes}
   window.imSave=function(){
     var g=function(id){ return document.getElementById(id); }; var cpt=g('im-cpt').value;
     var num=(g('im-num').value||'').trim(); if(!num) return toast('Numéro / désignation requis');
-    var im={ id:uid(), numero:num, nature:(g('im-nat').value||num).trim(), compte:cpt,
-      compteAmort:compteAmortDe(cpt), compteDot:(g('im-dot').value||'681120000').trim(),
+    var nat=(g('im-nat').value||'').trim(); if(!nat) return toast('La nature de l\'immobilisation est requise (elle détermine le compte).');
+    /* comptes strictement dérivés du compte d'immobilisation (aucun décalage possible) */
+    var im={ id:uid(), numero:num, nature:nat, compte:cpt,
+      compteAmort:compteAmortDe(cpt), compteDot:(imDotDe(cpt)||'681120000'),
       montantHT:+g('im-ht').value||0, valResiduelle:+g('im-vr').value||0, tauxTVA:(g('im-tva')?(+g('im-tva').value||0):20),
       fournisseur:(g('im-four').value||'').trim(), dateFacture:g('im-df').value, miseEnService:g('im-ms').value,
       dureeMois:+g('im-duree').value||12, type:g('im-mode').value, sortie:null };
     db.immos=db.immos||[]; db.immos.push(im); imSelId=im.id; save(); closeModal(); render();
-    toast('Immobilisation « '+num+' » créée — générez l\'écriture d\'immobilisation puis la dotation (onglet Attributs).');
+    toast('Immobilisation « '+num+' » créée — compte de dotation '+c9(im.compteAmort)+' accordé au compte '+c9(cpt)+'.');
   };
 
   /* styles : champs éditables du détail + sélecteur à molette */
