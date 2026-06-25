@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Saisie banque (validation automatique) : Entrée valide le montant → contrepartie 512 → Entrée passe à la nouvelle écriture (curseur sur la date) — v279
+## 🟢 Dernière mise à jour — Éditeur d'écritures : défilement PRÉSERVÉ (plus de saut en haut) + suppression de masse des écritures sélectionnées (alerte ≥ 3) — v280
+**Quoi :** dans l'**éditeur d'écritures** (Consultation / journaux) : (1) à **chaque modification**, la **vue reste fixe** sur l'écriture en cours — le tableau ne **saute plus en haut** (on garde la visibilité sur l'écriture traitée) ; (2) on peut **sélectionner plusieurs écritures** (glisser / Maj+clic sur la zone gauche/droite des lignes) puis **clic droit → « Supprimer les N écritures sélectionnées »** → **suppression de masse**. Le **message d'alerte de confirmation n'apparaît qu'à partir de 3 écritures** ; pour 1 ou 2, la suppression est directe.
+
+**Comment — `yada-addon153` + 2 greffes :**
+- **Défilement** : wrap de `ecRender` qui mémorise `scrollTop` de `.ec-tablewrap` avant le rendu et le restaure après (+ `requestAnimationFrame`), donc le rebuild `innerHTML` ne réinitialise plus le défilement.
+- **Suppression de masse** : `addon120` expose `window.ecSelectedEcritureIds()` (eid distincts de la sélection) ; `addon113` (menu clic droit) ajoute l'entrée « 🗑 Supprimer … écritures sélectionnées » quand l'écriture cliquée est dans la sélection ; `ecSupprimerEcrituresSelection()` filtre `db.ecritures`/`db.odiv` sur les ids, `yadaConfirm` **uniquement si ≥ 3** (sinon direct), puis `save`+`ecRender`.
+
+**Limites :** la sélection se fait via le mode multi-lignes existant (hors mode compte/lettrage) ; la suppression retire les écritures (et les O.D. liées) sans cascader sur d'éventuelles factures liées. Validé : `node --check` (141 scripts). Badge → **v280 · scroll fixe + suppression de masse**.
+
+---
+
+## 🟢 MAJ précédente — Saisie banque (validation automatique) : Entrée valide le montant → contrepartie 512 → Entrée passe à la nouvelle écriture (curseur sur la date) — v279
 **Quoi :** en **mode « validation automatique de la ligne »** (Paramètres de saisie, v277), le flux clavier de l'éditeur en **journal de banque** suit la demande : on saisit la 1ʳᵉ ligne (date → pièce → compte → libellé → montant), **Entrée valide le montant** → la **2ᵉ ligne (contrepartie 512000000, montant miroir, même libellé/date/pièce) se génère** et **solde** l'écriture, le curseur se place sur son montant ; **Entrée de nouveau crée une nouvelle écriture** avec le **curseur sur la DATE** de la ligne créée (on recommence au début de la ligne). Hors mode validation automatique, le comportement précédent (v268) est conservé.
 
 **Comment — 2 éditions chirurgicales :**
