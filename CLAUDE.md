@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Module TIERS : renommage + boutons Modifier / Supprimer par tiers + changement de type (Fournisseur / Client–Société / Client–Particulier) — v278
+## 🟢 Dernière mise à jour — Saisie banque (validation automatique) : Entrée valide le montant → contrepartie 512 → Entrée passe à la nouvelle écriture (curseur sur la date) — v279
+**Quoi :** en **mode « validation automatique de la ligne »** (Paramètres de saisie, v277), le flux clavier de l'éditeur en **journal de banque** suit la demande : on saisit la 1ʳᵉ ligne (date → pièce → compte → libellé → montant), **Entrée valide le montant** → la **2ᵉ ligne (contrepartie 512000000, montant miroir, même libellé/date/pièce) se génère** et **solde** l'écriture, le curseur se place sur son montant ; **Entrée de nouveau crée une nouvelle écriture** avec le **curseur sur la DATE** de la ligne créée (on recommence au début de la ligne). Hors mode validation automatique, le comportement précédent (v268) est conservé.
+
+**Comment — 2 éditions chirurgicales :**
+- `addon114` (Enter) : si `ecSaisieCfg().valAuto` && champ Débit/Crédit → `inp.blur()` **valide d'abord le montant** (déclenche la contrepartie banque de v277 via `ecSetLine`), puis : si l'écriture est **soldée** et qu'on n'est pas sur la dernière ligne → focus sur le montant de la **contrepartie** ; si déjà sur la dernière ligne soldée → `ecAjouterEcriture()` (nouvelle écriture) ou écriture suivante ; si **non soldée** → `ecDescendre` (ligne à solder).
+- `addon140` (`ecAjouterEcriture`) : en mode validation auto, le curseur de la nouvelle écriture se place sur `input.ec-datetxt` (la **date**) au lieu du compte.
+
+**Limites :** flux activé uniquement quand la **validation automatique** est cochée (opt-in) ; réutilise la contrepartie banque (v277) et `ecDescendre` (v268). Validé : `node --check` (140 scripts). Badge → **v279 · Entrée valide + contrepartie + nouvelle ligne**.
+
+---
+
+## 🟢 MAJ précédente — Module TIERS : renommage + boutons Modifier / Supprimer par tiers + changement de type (Fournisseur / Client–Société / Client–Particulier) — v278
 **Quoi :** le **module Tiers** est renommé **« TIERS »** (entrée de menu + titre de page + libellé mobile). Dans les listes (Fournisseurs / Clients – Sociétés / Clients – Particuliers), chaque ligne reçoit une colonne **Actions** avec **✎ Modifier** et **🗑 Supprimer**. La **suppression** est désormais autorisée pour tous les tiers (avertissement si le tiers est mouvementé : ses écritures sont conservées mais ne sont plus rattachées à une fiche). La **fiche d'édition** gagne un sélecteur **« Type du tiers »** à 3 options : **Fournisseur**, **Client – Société**, **Client – Particulier**.
 
 **Comment — `yada-addon152` :**

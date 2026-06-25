@@ -10867,7 +10867,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v278 · TIERS : modifier (type) + supprimer';
+    b.textContent='YADA · v279 · banque : Entrée valide + contrepartie + nouvelle ligne';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -16197,6 +16197,36 @@ ${lignes}
 
     if(k==='Tab'){ e.preventDefault(); moveField(e.shiftKey?-1:1); return; }
     if(k==='Enter'){ e.preventDefault();
+      var _cfg=(typeof ecSaisieCfg==='function')?ecSaisieCfg():{};
+      /* MODE VALIDATION AUTOMATIQUE (saisie rapide banque) : sur un champ Débit/Crédit,
+         valider le montant d'abord (déclenche la contrepartie banque 512 + montant miroir),
+         puis avancer — sur la contrepartie générée, puis vers une nouvelle écriture (date). */
+      if(_cfg.valAuto && (col===6||col===7)){
+        inp.blur();                                      /* valide le montant → contrepartie auto + ecRender */
+        var w2=ecWin()||w; var e2=(typeof ecGet==='function')?ecGet(eid):null;
+        if(e2){
+          var _d=0,_c=0; (e2.lignes||[]).forEach(function(l){ _d+=(+l.debit||0); _c+=(+l.credit||0); });
+          var _bal=Math.abs(r2(_d-_c))<0.005 && (_d>0||_c>0);
+          var _last=e2.lignes.length-1;
+          var _trL=w2.querySelector('tr.ec-r[data-eid="'+eid+'"][data-li="'+_last+'"]');
+          var _rows=Array.prototype.slice.call(w2.querySelectorAll('tr.ec-r'));
+          var _end=_trL && _rows.length && _rows.indexOf(_trL)===_rows.length-1;
+          if(_bal){
+            if(li<_last){                                /* la contrepartie vient d'être générée → son montant */
+              var _ac=((+e2.lignes[_last].credit||0)>0)?7:6;
+              var _t=cellInput(w2,eid,_last,_ac); if(_t){ focusEl(_t); return; }
+            }
+            if(_end && typeof window.ecAjouterEcriture==='function'){ window.ecAjouterEcriture(); return; }   /* nouvelle écriture (curseur sur la date) */
+            var _idx=_rows.indexOf(_trL); var _nx=_rows[_idx+1]; if(_nx){ var _ni=_nx.querySelector('input.ec-i'); if(_ni){ focusEl(_ni); return; } }
+            return;
+          } else {                                       /* non soldée → ajouter une ligne à solder */
+            if(typeof window.ecDescendre==='function' && window.ecDescendre(eid)) return;
+            if(_end && typeof window.ecAjouterEcriture==='function'){ window.ecAjouterEcriture(); return; }
+            return;
+          }
+        }
+        return;
+      }
       /* sur la DERNIÈRE ligne d'une écriture, depuis un champ Débit/Crédit : descendre
          = solder. Si l'écriture n'est pas soldée, on ajoute une ligne à CETTE écriture. */
       var nse=w.querySelector('tr.ec-r[data-eid="'+eid+'"][data-li="'+(li+1)+'"]');
@@ -17598,7 +17628,10 @@ ${lignes}
       if(typeof ecRender==='function') ecRender();
       setTimeout(function(){ try{ var w=document.getElementById('ec-win'); if(!w) return;
         var row=w.querySelector('tr.ec-r[data-eid="'+e.id+'"][data-li="0"]'); if(!row) return;
-        row.scrollIntoView({block:'center'}); var inp=row.querySelector('input.ec-cpt'); if(inp){ inp.focus(); if(inp.select) inp.select(); } }catch(_){ } }, 60);
+        row.scrollIntoView({block:'center'});
+        var _va=(typeof ecSaisieCfg==='function' && ecSaisieCfg().valAuto);
+        var inp=(_va?row.querySelector('input.ec-datetxt'):null)||row.querySelector('input.ec-cpt')||row.querySelector('input.ec-i');
+        if(inp){ inp.focus(); if(inp.select) inp.select(); } }catch(_){ } }, 60);
       if(typeof toast==='function') toast('Nouvelle écriture — saisissez puis soldez-la (Débit = Crédit)');
       return e.id;
     }catch(_){ return null; }
