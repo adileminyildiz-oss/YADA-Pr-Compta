@@ -10875,7 +10875,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v283 · pas de 3e ligne si écriture soldée';
+    b.textContent='YADA · v284 · flèche bas valide aussi (pas de 3e ligne)';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -16249,13 +16249,36 @@ ${lignes}
       }
       moveField(1); return; }      /* passer à la suite */
     if(k==='ArrowDown'){ e.preventDefault();
-      /* dernière ligne de l'écriture courante : descendre = solder.
-         Si l'écriture n'est pas soldée → ajouter une ligne à CETTE écriture. */
       var nsd=w.querySelector('tr.ec-r[data-eid="'+eid+'"][data-li="'+(li+1)+'"]');
+      /* dernière ligne, champ Débit/Crédit : VALIDER le montant d'abord (pas de 3e ligne fantôme si soldée),
+         puis descendre vers la prochaine ligne / une nouvelle écriture (si dernière du journal). */
+      if(!nsd && (col===6||col===7)){
+        inp.blur();
+        var aw=ecWin()||w; var ae=(typeof ecGet==='function')?ecGet(eid):null;
+        if(ae){
+          var ad=0,ac=0; (ae.lignes||[]).forEach(function(l){ ad+=(+l.debit||0); ac+=(+l.credit||0); });
+          var abal=Math.abs(r2(ad-ac))<0.005 && (ad>0||ac>0);
+          var alast=ae.lignes.length-1;
+          var atrL=aw.querySelector('tr.ec-r[data-eid="'+eid+'"][data-li="'+alast+'"]');
+          var arows=Array.prototype.slice.call(aw.querySelectorAll('tr.ec-r'));
+          var aend=atrL && arows.length && arows.indexOf(atrL)===arows.length-1;
+          if(abal){                                       /* soldée → PAS de 3e ligne */
+            if(li<alast){ var aac=((+ae.lignes[alast].credit||0)>0)?7:6; var at=cellInput(aw,eid,alast,aac); if(at){ focusEl(at); return; } }
+            if(aend && typeof window.ecAjouterEcriture==='function'){ window.ecAjouterEcriture(); return; }   /* dernière écriture → nouvelle écriture (curseur sur la date) */
+            var aidx=arows.indexOf(atrL); var anx=arows[aidx+1]; if(anx){ var ani=anx.querySelector('input.ec-i'); if(ani){ focusEl(ani); return; } }   /* sinon → écriture suivante */
+            return;
+          } else {                                        /* non soldée → ajouter une ligne à solder */
+            if(typeof window.ecDescendre==='function' && window.ecDescendre(eid)) return;
+            if(aend && typeof window.ecAjouterEcriture==='function'){ window.ecAjouterEcriture(); return; }
+            return;
+          }
+        }
+        return;
+      }
+      /* autres champs de la dernière ligne : descendre = solder (ajout d'une ligne si non soldée) */
       if(!nsd && typeof window.ecDescendre==='function'){
         if(window.ecDescendre(eid)) return;
       }
-      /* tout en bas (dernière ligne de la dernière écriture) → nouvelle écriture à saisir */
       var _rows=Array.prototype.slice.call(w.querySelectorAll('tr.ec-r'));
       if(_rows.length && _rows.indexOf(tr)===_rows.length-1 && typeof window.ecAjouterEcriture==='function'){ window.ecAjouterEcriture(); return; }
       moveRow(1); return; }
