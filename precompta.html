@@ -10867,7 +10867,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v279 · banque : Entrée valide + contrepartie + nouvelle ligne';
+    b.textContent='YADA · v280 · éditeur : scroll fixe + suppression de masse';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -16095,9 +16095,12 @@ ${lignes}
     if(!tr || !win.contains(tr)) return;
     ev.preventDefault(); ecCtxClose();
     var eid=tr.getAttribute('data-eid'); var li=parseInt(tr.getAttribute('data-li'),10);
+    var _selIds=(typeof window.ecSelectedEcritureIds==='function')?window.ecSelectedEcritureIds():[];
+    var _selHere=_selIds.indexOf(eid)>=0;
     var m=document.createElement('div'); m.id='ec-ctx';
     m.innerHTML='<button type="button" data-a="ins">↧ Insérer une ligne</button>'
-              +'<button type="button" data-a="del">🗑 Supprimer la ligne</button>';
+              +'<button type="button" data-a="del">🗑 Supprimer la ligne</button>'
+              +(_selHere?('<button type="button" data-a="delecr">🗑 Supprimer '+(_selIds.length>1?('les '+_selIds.length+' écritures sélectionnées'):'l\'écriture sélectionnée')+'</button>'):'');
     document.body.appendChild(m);
     var x=Math.min(ev.clientX, (window.innerWidth||1000)-210);
     var y=Math.min(ev.clientY, (window.innerHeight||700)-100);
@@ -16107,6 +16110,7 @@ ${lignes}
       var b=e.target.closest('button'); if(!b) return;
       var a=b.getAttribute('data-a'); ecCtxClose();
       if(a==='ins'){ window.ecInsertLine(eid, isNaN(li)?-1:li); }
+      else if(a==='delecr' && typeof window.ecSupprimerEcrituresSelection==='function'){ window.ecSupprimerEcrituresSelection(); }
       else if(a==='del' && typeof ecDelLine==='function'){ ecDelLine(eid, isNaN(li)?0:li); }
     });
   }, true);
@@ -16450,6 +16454,8 @@ ${lignes}
   function paint(w){ rows(w).forEach(function(tr){ if(selKeys[keyOf(tr)]) tr.classList.add('ec-rowsel'); else tr.classList.remove('ec-rowsel'); }); }
   function clearSel(){ selKeys={}; var w=ecWin(); if(w) paint(w); }
   window.ecClearRowSel=clearSel;
+  /* écritures (eid) distinctes présentes dans la sélection — pour la suppression de masse */
+  window.ecSelectedEcritureIds=function(){ var seen={},out=[]; Object.keys(selKeys).forEach(function(k){ var id=k.split('|')[0]; if(!seen[id]){ seen[id]=1; out.push(id); } }); return out; };
   function selectRange(w,a,b){ selKeys={}; var R=rows(w); var lo=Math.min(a,b),hi=Math.max(a,b); for(var i=lo;i<=hi;i++){ if(R[i]) selKeys[keyOf(R[i])]=1; } paint(w);
     if(R[hi]){ window.ecLastRow={eid:R[hi].getAttribute('data-eid'), li:+R[hi].getAttribute('data-li')}; } }
 
@@ -18505,6 +18511,48 @@ ${lignes}
       ? 'Supprimer le tiers « '+t.nom+' » ? Il est mouvementé : ses écritures seront conservées mais ne seront plus rattachées à une fiche tiers.'
       : 'Supprimer le tiers « '+t.nom+' » ?';
     yadaConfirm(msg, function(){ db.tiers=(db.tiers||[]).filter(function(x){return x.id!==id;}); save(); if(typeof closeModal==='function') closeModal(); render(); toast('Tiers supprimé'); }, {danger:true});
+  };
+})();
+</script>
+<script id="yada-addon153">
+/* ============================================================
+   ÉDITEUR D'ÉCRITURES — (1) défilement PRÉSERVÉ à chaque ecRender (la vue reste
+   sur l'écriture en cours, plus de saut en haut). (2) SUPPRESSION DE MASSE des
+   écritures sélectionnées via clic droit → « Supprimer … écritures sélectionnées »
+   (message d'alerte uniquement à partir de 3 écritures). 100% additif.
+   ============================================================ */
+(function(){
+  if(typeof window==='undefined') return;
+
+  /* (1) préserver le scrollTop de la zone de la table à chaque rendu de l'éditeur */
+  if(typeof window.ecRender==='function'){
+    var _er=window.ecRender;
+    window.ecRender=function(){
+      var sc=document.querySelector('#ec-win .ec-tablewrap'); var y=sc?sc.scrollTop:0;
+      var r=_er.apply(this, arguments);
+      try{ if(y){
+        var sc2=document.querySelector('#ec-win .ec-tablewrap');
+        if(sc2){ sc2.scrollTop=y; if(window.requestAnimationFrame) requestAnimationFrame(function(){ var s3=document.querySelector('#ec-win .ec-tablewrap'); if(s3) s3.scrollTop=y; }); }
+      } }catch(e){}
+      return r;
+    };
+  }
+
+  /* (2) suppression de masse des écritures sélectionnées */
+  window.ecSupprimerEcrituresSelection=function(){
+    var ids=(typeof window.ecSelectedEcritureIds==='function')?window.ecSelectedEcritureIds():[];
+    if(!ids.length) return;
+    var go=function(){
+      db.ecritures=(db.ecritures||[]).filter(function(e){ return ids.indexOf(e.id)<0; });
+      try{ db.odiv=(db.odiv||[]).filter(function(o){ return ids.indexOf(o.ecritureId)<0; }); }catch(_){}
+      if(typeof window.ecClearRowSel==='function') window.ecClearRowSel();
+      if(typeof save==='function') save();
+      if(typeof ecRender==='function') ecRender();
+      if(typeof toast==='function') toast(ids.length+' écriture(s) supprimée(s)');
+    };
+    if(ids.length>=3 && typeof yadaConfirm==='function'){
+      yadaConfirm('Supprimer les '+ids.length+' écritures sélectionnées ? Cette action est définitive.', go, {danger:true});
+    } else { go(); }   /* 1 ou 2 écritures : suppression directe (pas de message) */
   };
 })();
 </script>
