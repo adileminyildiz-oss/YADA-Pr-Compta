@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Éditeur : Entrée sur le montant valide d'abord → si l'écriture est soldée, PAS de 3ᵉ ligne fantôme — v283
+## 🟢 Dernière mise à jour — Éditeur : la FLÈCHE DU BAS valide aussi le montant (comme Entrée) → pas de 3ᵉ ligne fantôme, curseur sur la prochaine ligne — v284
+**Quoi :** v283 avait corrigé la touche **Entrée** ; la **flèche du bas** générait encore une 3ᵉ ligne parasite quand l'écriture était soldée. Désormais, **flèche du bas** depuis un champ Débit/Crédit de la dernière ligne **valide d'abord le montant** (`blur`), puis : écriture **soldée** → **pas de 3ᵉ ligne** ; on **descend vers la prochaine ligne** — nouvelle écriture (curseur sur la **date**) **seulement si c'est la dernière écriture du journal**, sinon on passe à l'écriture suivante ; écriture **non soldée** → ligne ajoutée à solder (inchangé). Le curseur suit ainsi la suite chronologique.
+
+**Comment — 1 édition chirurgicale (`addon114`, branche `ArrowDown`) :** sur la dernière ligne, si le champ est Débit/Crédit (`col===6||col===7`), on applique la même logique « blur d'abord » que la branche Entrée (v283) : `inp.blur()` → recalcul de l'équilibre sur données fraîches → soldée : `ecAjouterEcriture()` si dernière écriture (sinon focus de l'écriture suivante), **jamais** `ecDescendre` ; non soldée : `ecDescendre` (ligne à solder). Les autres champs gardent le comportement précédent.
+
+**Limites :** navigation/saisie seulement. Validé : `node --check` (141 scripts). Badge → **v284 · flèche bas valide aussi**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur : Entrée sur le montant valide d'abord → si l'écriture est soldée, PAS de 3ᵉ ligne fantôme — v283
 **Quoi :** dans l'**éditeur d'écritures**, après avoir validé le **montant de la 2ᵉ ligne**, si l'écriture est **soldée** (Débit = Crédit), appuyer sur **Entrée** ne génère **plus de 3ᵉ ligne** (vide) parasite. Avant, Entrée appelait la logique « descendre/solder » **avant** que le montant saisi ne soit validé → l'écriture paraissait déséquilibrée → une ligne était ajoutée à tort. Désormais, Entrée depuis un champ Débit/Crédit **valide d'abord le montant** (`blur`), puis : écriture **soldée** → nouvelle écriture (curseur sur la date), **jamais** de 3ᵉ ligne ; **non soldée** → ligne ajoutée à solder (inchangé). Vaut pour **tous les modes** (avec ou sans validation automatique).
 
 **Comment — 1 édition chirurgicale (`addon114`, branche Entrée) :** la branche « blur d'abord » (introduite en v279 pour la validation automatique) s'applique désormais à **tous** les champs Débit/Crédit (`if(col===6||col===7)` au lieu de `if(_cfg.valAuto && …)`) : `inp.blur()` valide le montant (équilibre à jour + contrepartie banque v277/v282 si activée), puis l'équilibre est recalculé sur des données fraîches avant de décider d'ajouter une ligne ou de passer à une nouvelle écriture.
