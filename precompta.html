@@ -4072,7 +4072,7 @@ const PAGES=[
   {id:'dash',ico:'◧',sec:'Pilotage',lbl:'Tableau de bord'},
   {id:'societe',ico:'',sec:'Pilotage',lbl:'Sociétés (portefeuille)'},
   {id:'client',ico:'',sec:'Espace Client',lbl:'Espace Client'},
-  {id:'tiers',ico:'⊞',sec:'Référentiel',lbl:'Tiers (clients / fournisseurs)'},
+  {id:'tiers',ico:'⊞',sec:'Référentiel',lbl:'TIERS'},
   {id:'facturation',ico:'⤳',sec:'Ventes',lbl:'Client'},
   {id:'achats',ico:'⎙',sec:'Achats',lbl:'Fournisseur'},
   {id:'compta',ico:'▦',sec:'Comptabilité',lbl:'Consultation des comptes'},
@@ -4286,7 +4286,7 @@ function pageTiers(){
   const F =db.tiers.filter(t=>t.type==='fournisseur');
   const CS=db.tiers.filter(t=>t.type==='client'&&t.categorie!=='particulier');
   const CP=db.tiers.filter(t=>t.type==='client'&&t.categorie==='particulier');
-  return head('Tiers — clients & fournisseurs','À la réception d\'une facture, le tiers reconnu pré-affecte automatiquement ses comptes de charge/produit et de TVA. Cliquez sur une dénomination pour la fiche complète.')+
+  return head('TIERS','Fournisseurs et clients (sociétés / particuliers). Chaque tiers peut être modifié (dont son type) ou supprimé. À la réception d\'une facture, le tiers reconnu pré-affecte automatiquement ses comptes de charge/produit et de TVA.')+
   `<div class="card"><h2>Recherche</h2><div class="sub">Tapez n'importe quelle information : nom, compte, e-mail, SIRET, téléphone, adresse…</div>
     <input id="ti-search" placeholder="Rechercher un fournisseur ou un client…" oninput="filtreTiers()" autocomplete="off">
     <div id="ti-results"></div></div>`+
@@ -10867,7 +10867,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v277 · banque : paramètres de saisie + contrepartie auto';
+    b.textContent='YADA · v278 · TIERS : modifier (type) + supprimer';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -14778,7 +14778,7 @@ ${lignes}
   function isClient(){ try{ return document.body && document.body.getAttribute('data-role')==='client'; }catch(e){ return false; } }
 
   /* ---------- Repères : bouton Retour + titre de page ---------- */
-  var LABELS={ client:'Accueil', facturation:'Mes factures', achats:'Réception factures', tiers:'Clients & fournisseurs' };
+  var LABELS={ client:'Accueil', facturation:'Mes factures', achats:'Réception factures', tiers:'TIERS' };
   function updateTopbar(){
     var bar=document.getElementById('m-topbar'); if(!bar) return;
     var cur=(typeof current!=='undefined')?current:'client';
@@ -18382,6 +18382,97 @@ ${lignes}
     +'.ec-pd-ok{font:inherit;font-size:12.5px;font-weight:600;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#fff;border:none;border-radius:7px;padding:8px 18px;cursor:pointer}';
     document.head.appendChild(st);
   }catch(e){}
+})();
+</script>
+<script id="yada-addon152">
+/* ============================================================
+   MODULE TIERS — renommé « TIERS ». Boutons ✎ Modifier / 🗑 Supprimer par tiers,
+   et changement de type via un sélecteur (Fournisseur / Client – Société /
+   Client – Particulier) dans la fiche d'édition. 100% additif.
+   ============================================================ */
+(function(){
+  if(typeof window==='undefined') return;
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];}); }
+  function tiersMvt(t){ var a=c9(t.compteAux||'');
+    return (db.ecritures||[]).some(function(e){ return (e.lignes||[]).some(function(l){ return c9(l.compte)===a; }); })
+      || (db.factures||[]).some(function(f){ return f.tiersId===t.id; })
+      || (db.banque||[]).some(function(b){ return b.tiersId===t.id; }); }
+  function valDe(t){ return t.type==='fournisseur' ? 'fournisseur' : (t.categorie==='particulier' ? 'client-particulier' : 'client-societe'); }
+
+  /* ----- liste : colonne Actions (Modifier / Supprimer) ----- */
+  if(typeof window.sectionTiers==='function' || typeof sectionTiers==='function'){
+    window.sectionTiers=function(title,list,kind){
+      var isC=kind==='client';
+      var rows=(list||[]).map(function(t){ var s=statsTiers(t.id); var _dup=window.dupTiersIds&&window.dupTiersIds.has(t.id);
+        return '<tr class="'+(_dup?'dup-tiers':'')+(t.nouveau?' new-tiers':'')+'">'
+          +'<td><button class="linkname" onclick="openTiers(\''+t.id+'\')">'+esc(t.nom)+'</button>'+(_dup?' <span class="dup-tag">DOUBLON</span>':'')+(t.nouveau?' <span class="new-tag" title="Créé par le client — à vérifier/compléter">NOUVEAU</span>':'')+'</td>'
+          +'<td class="num">'+(t.compteAux||(isC?'411':'401'))+'</td>'
+          +'<td class="num">'+t.compteContre+' <span class="mini">'+(COMPTES[t.compteContre]||'')+'</span></td>'
+          +'<td class="r num">'+t.taux+' %</td>'
+          +'<td class="r num">'+eur(s.ttc)+'</td>'
+          +'<td class="r num '+(isC?'cre':'deb')+'">'+eur(s.tva)+'</td>'
+          +'<td class="r" style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="tiersEditer(\''+t.id+'\')">✎ Modifier</button> <button class="btn btn-ghost btn-sm" title="Supprimer le tiers" onclick="tiersSupprimer(\''+t.id+'\')">🗑</button></td>'
+          +'</tr>';
+      }).join('');
+      return '<div class="card"><h2>'+title+'</h2><div class="sub">'+(list?list.length:0)+' fiche(s) — ✎ pour modifier (type compris), 🗑 pour supprimer, ou cliquez sur un nom pour la fiche complète</div>'
+        +'<table><thead><tr><th>Dénomination</th><th>Compte tiers</th><th>Compte '+(isC?'produit':'charge')+'</th><th class="r">Taux</th>'
+        +'<th class="r">'+(isC?'CA TTC':'Dépensé TTC')+'</th><th class="r">TVA '+(isC?'collectée':'payée')+'</th><th></th></tr></thead>'
+        +'<tbody>'+(rows||'<tr><td colspan=7 class=empty>Aucune fiche</td></tr>')+'</tbody></table></div>';
+    };
+  }
+
+  /* ----- édition : sélecteur de TYPE injecté dans la modale ----- */
+  if(typeof window.tiersEditer==='function'){
+    var _te=window.tiersEditer;
+    window.tiersEditer=function(id){ _te(id); try{
+      var t=(db.tiers||[]).find(function(x){return x.id===id;}); if(!t) return;
+      var mb=document.querySelector('#modal-c .modal-b'); if(!mb || document.getElementById('te-type3')) return;
+      var cur=valDe(t);
+      var wrap=document.createElement('div'); wrap.className='field'; wrap.style.marginBottom='10px';
+      wrap.innerHTML='<label>Type du tiers</label><select id="te-type3" onchange="tiersAppliquerType(\''+id+'\',this.value)">'
+        +'<option value="fournisseur"'+(cur==='fournisseur'?' selected':'')+'>Fournisseur</option>'
+        +'<option value="client-societe"'+(cur==='client-societe'?' selected':'')+'>Client – Société</option>'
+        +'<option value="client-particulier"'+(cur==='client-particulier'?' selected':'')+'>Client – Particulier</option></select>';
+      mb.insertBefore(wrap, mb.firstChild);
+    }catch(e){} };
+  }
+
+  /* applique le changement de type (et la catégorie) */
+  window.tiersAppliquerType=function(id, val){
+    var t=(db.tiers||[]).find(function(x){return x.id===id;}); if(!t) return;
+    var newType, newCat;
+    if(val==='fournisseur'){ newType='fournisseur'; newCat=null; }
+    else if(val==='client-particulier'){ newType='client'; newCat='particulier'; }
+    else { newType='client'; newCat='societe'; }
+    if(val===valDe(t)) return;
+    var flip=(t.type!==newType);
+    function apply(){
+      if(flip){
+        var oldC9=c9(t.compteAux||'');
+        var newAux=(typeof genAux==='function')?genAux(newType, t.nom):((newType==='client'?'411':'401')+(c9(t.compteAux||'').slice(3)));
+        (db.ecritures||[]).forEach(function(e){ (e.lignes||[]).forEach(function(l){ if(c9(l.compte)===oldC9){ l.compte=newAux; } }); });
+        t.compteAux=newAux; t.compteAuxCustom=false;
+        t.compteContre=(newType==='client')?'706000000':'606000000';
+        t.compteTVA=(newType==='client')?'44571':'44566';
+      }
+      t.type=newType; if(newType==='client'){ t.categorie=newCat; } else { delete t.categorie; }
+      save(); render();
+      if(typeof tiersEditer==='function') tiersEditer(id);   /* ré-ouvre la fiche au nouveau type */
+      toast('Type du tiers : '+(newType==='fournisseur'?'Fournisseur':(newCat==='particulier'?'Client – Particulier':'Client – Société')));
+    }
+    if(flip && tiersMvt(t)){
+      yadaConfirm('Changer le type de « '+t.nom+' » (Fournisseur ↔ Client) ? Le compte tiers passera en '+(newType==='client'?'411':'401')+' et les écritures du tiers seront rattachées au nouveau compte (montants inchangés).', apply, {});
+    } else { apply(); }
+  };
+
+  /* ----- suppression : autorisée (avertissement si mouvementé) ----- */
+  window.tiersSupprimer=function(id){ var t=(db.tiers||[]).find(function(x){return x.id===id;}); if(!t) return;
+    var mvt=tiersMvt(t);
+    var msg=mvt
+      ? 'Supprimer le tiers « '+t.nom+' » ? Il est mouvementé : ses écritures seront conservées mais ne seront plus rattachées à une fiche tiers.'
+      : 'Supprimer le tiers « '+t.nom+' » ?';
+    yadaConfirm(msg, function(){ db.tiers=(db.tiers||[]).filter(function(x){return x.id!==id;}); save(); if(typeof closeModal==='function') closeModal(); render(); toast('Tiers supprimé'); }, {danger:true});
+  };
 })();
 </script>
 </body>

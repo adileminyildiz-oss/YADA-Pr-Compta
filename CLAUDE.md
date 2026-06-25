@@ -36,7 +36,21 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Éditeur : barre « Traitements » + « Paramètres de saisie » (panneau latéral) + contrepartie banque automatique — v277
+## 🟢 Dernière mise à jour — Module TIERS : renommage + boutons Modifier / Supprimer par tiers + changement de type (Fournisseur / Client–Société / Client–Particulier) — v278
+**Quoi :** le **module Tiers** est renommé **« TIERS »** (entrée de menu + titre de page + libellé mobile). Dans les listes (Fournisseurs / Clients – Sociétés / Clients – Particuliers), chaque ligne reçoit une colonne **Actions** avec **✎ Modifier** et **🗑 Supprimer**. La **suppression** est désormais autorisée pour tous les tiers (avertissement si le tiers est mouvementé : ses écritures sont conservées mais ne sont plus rattachées à une fiche). La **fiche d'édition** gagne un sélecteur **« Type du tiers »** à 3 options : **Fournisseur**, **Client – Société**, **Client – Particulier**.
+
+**Comment — `yada-addon152` :**
+- Renommage : `lbl:'TIERS'` (nav), `head('TIERS', …)` (`pageTiers`), `LABELS.tiers='TIERS'` (mobile).
+- `sectionTiers` (override) : colonne Actions (`tiersEditer`/`tiersSupprimer`), 7 colonnes.
+- `tiersEditer` (wrap) : injecte un `<select id="te-type3">` (3 options) en tête de la modale → `tiersAppliquerType(id, val)`.
+- `tiersAppliquerType` : applique `type`/`categorie` ; si bascule **Fournisseur ↔ Client**, régénère le **compte auxiliaire** (`genAux`, préfixe 401↔411), **rattache les écritures** du tiers au nouveau compte (montants inchangés → équilibre préservé) et réinitialise compteContre (606/706) + compteTVA (44566/44571) ; confirmation `yadaConfirm` si le tiers est mouvementé.
+- `tiersSupprimer` (override) : suppression autorisée + avertissement si mouvementé (l'ancienne version la bloquait).
+
+**Limites :** la bascule de type d'un tiers mouvementé déplace ses lignes d'écriture vers le nouveau compte (choix explicite, confirmé) ; les comptes de contrepartie/TVA repassent aux valeurs par défaut du nouveau type (modifiables ensuite). Validé : `node --check` (140 scripts). Badge → **v278 · TIERS modifier/supprimer**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur : barre « Traitements » + « Paramètres de saisie » (panneau latéral) + contrepartie banque automatique — v277
 **Quoi :** dans l'**éditeur d'écritures** (Consultation → Journal de Banque, saisie/édition), une barre **« Traitements ▾ »** apparaît **au-dessus du filtre** (façon Sage Génération Expert). Son menu ouvre **« ⚙ Paramètres de saisie… »** → un **panneau latéral** (drawer, glisse depuis la droite) avec les options d'aide à la saisie manuelle de la banque. Option principale : **« Avec validation automatique de la ligne »** → en **journal de banque (BQ)**, dès qu'on saisit la **1ʳᵉ ligne**, la **2ᵉ ligne est générée automatiquement** : compte **512000000** (contrepartie), **montant miroir** (débit↔crédit), **même libellé**, et la **pièce reprend le moyen de paiement** (VIR/CHQ/CB/PRLV/ESP). Date / journal / pièce / libellé sont déjà partagés au niveau de l'écriture.
 
 **Comment — `yada-addon151` :** `ecSaisieCfg()` (config persistée `localStorage 'yada-ec-saisie'`) ; greffe `ecRender` → injecte `.ec-trtbar` **avant** `.ec-filtbar` ; `ecOuvrirParamSaisie`/`ecParamSave`/`ecParamFermer` (panneau `#ec-param-drawer`, cases : validation auto, moyen, sans propagation dates/pièces, incrémentation pièce, contrepartie journalière) ; **wrap `ecSetLine`** : si `valAuto` && `e.journal==='BQ'` && édition de la ligne 0 && ≤2 lignes → ligne 1 = `512000000` + montant miroir + libellé + pièce=moyen. `<style id="ec-trt-mod">` (barre, dropdown, drawer bleu nuit).
