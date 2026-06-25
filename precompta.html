@@ -10867,7 +10867,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v280 · éditeur : scroll fixe + suppression de masse';
+    b.textContent='YADA · v281 · nouvelle écriture : curseur sur la date';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -17635,8 +17635,8 @@ ${lignes}
       setTimeout(function(){ try{ var w=document.getElementById('ec-win'); if(!w) return;
         var row=w.querySelector('tr.ec-r[data-eid="'+e.id+'"][data-li="0"]'); if(!row) return;
         row.scrollIntoView({block:'center'});
-        var _va=(typeof ecSaisieCfg==='function' && ecSaisieCfg().valAuto);
-        var inp=(_va?row.querySelector('input.ec-datetxt'):null)||row.querySelector('input.ec-cpt')||row.querySelector('input.ec-i');
+        /* curseur sur la DATE de la nouvelle écriture (modifiable), puis Entrée pour continuer la ligne */
+        var inp=row.querySelector('input.ec-datetxt')||row.querySelector('input.ec-cpt')||row.querySelector('input.ec-i');
         if(inp){ inp.focus(); if(inp.select) inp.select(); } }catch(_){ } }, 60);
       if(typeof toast==='function') toast('Nouvelle écriture — saisissez puis soldez-la (Débit = Crédit)');
       return e.id;

@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Éditeur d'écritures : défilement PRÉSERVÉ (plus de saut en haut) + suppression de masse des écritures sélectionnées (alerte ≥ 3) — v280
+## 🟢 Dernière mise à jour — Éditeur : nouvelle écriture → curseur sur la DATE (modifiable) puis Entrée continue la ligne — v281
+**Quoi :** après avoir saisi une écriture, la **nouvelle écriture** proposée place désormais le **curseur sur la DATE** (sélectionnée, donc modifiable tout de suite) **pour toutes les écritures** — plus seulement en mode validation automatique (v279). On peut ajuster la date puis appuyer sur **Entrée** pour **continuer à saisir la ligne** (date → pièce → compte → libellé → montant), champ par champ.
+
+**Comment — 1 édition chirurgicale (`addon140`, `ecAjouterEcriture`) :** le focus de la 1ʳᵉ ligne de la nouvelle écriture cible **inconditionnellement** `input.ec-datetxt` (la date) au lieu du compte (`var inp=row.querySelector('input.ec-datetxt')||…`). La date étant un `input.ec-i`, la navigation clavier d'`addon114` (Entrée → champ suivant) s'applique → Entrée depuis la date passe à la pièce/au compte.
+
+**Limites :** affichage/navigation seulement (aucune logique comptable modifiée). Validé : `node --check` (141 scripts). Badge → **v281 · nouvelle écriture : curseur sur la date**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur d'écritures : défilement PRÉSERVÉ (plus de saut en haut) + suppression de masse des écritures sélectionnées (alerte ≥ 3) — v280
 **Quoi :** dans l'**éditeur d'écritures** (Consultation / journaux) : (1) à **chaque modification**, la **vue reste fixe** sur l'écriture en cours — le tableau ne **saute plus en haut** (on garde la visibilité sur l'écriture traitée) ; (2) on peut **sélectionner plusieurs écritures** (glisser / Maj+clic sur la zone gauche/droite des lignes) puis **clic droit → « Supprimer les N écritures sélectionnées »** → **suppression de masse**. Le **message d'alerte de confirmation n'apparaît qu'à partir de 3 écritures** ; pour 1 ou 2, la suppression est directe.
 
 **Comment — `yada-addon153` + 2 greffes :**
