@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Immobilisations : nature → compte → compte de dotation (chaîne stricte, sans décalage) — v275
+## 🟢 Dernière mise à jour — Consultation des comptes : flèches d'exercice ⟲ ⟳ (année précédente / suivante) — v276
+**Quoi :** dans la **barre de titre de la Consultation des comptes**, deux **flèches tournantes** sont ajoutées — **⟲ à gauche** (exercice **précédent**, N-1) et **⟳ à droite** (exercice **suivant**, N+1), encadrant un libellé « Exercice <année> ». À l'appui : si l'exercice **n'existe pas**, un **message de prévention** s'affiche (« Créer l'exercice… ? » avec **Annuler** pour rester sur l'année courante / **Confirmer** pour le créer) ; si l'exercice **existe déjà**, **bascule directe** sur cette année (les écritures saisies + FEC de l'exercice s'affichent). **Tous les modules suivent l'année traitée** : l'exercice actif (`db.societe.exoDebut/exoFin`) est global, et la Consultation (périodes via `monthsExo`/`exoYear`), la TVA (CA3), le Bilan/Compte de résultat, les Immobilisations (`imYear`), le Rapprochement… s'y rattachent.
+
+**Comment :** les flèches appellent les fonctions **existantes** `exPrecedent()` / `exSuivant()` (qui gèrent déjà : `yadaConfirm` de création si l'exercice manque — sinon bascule directe — puis `exoDebut/exoFin` mis à jour, `sgPer=null`, `save`+`render`). Greffe : insertion de `.sg-exonav` (boutons `.sg-exoarr` + `.sg-exolbl`) dans le `.sg-title` de `pageCompta` ; `yada-addon150` (`<style id="sg-exonav-mod">`) pour le style (boutons arrondis, bleu Crystal au survol, libellé masqué < 760 px). Validé : `node --check` (138 scripts). Badge → **v276 · flèches d'exercice**.
+
+---
+
+## 🟢 MAJ précédente — Immobilisations : nature → compte → compte de dotation (chaîne stricte, sans décalage) — v275
 **Quoi :** la création d'une immobilisation suit désormais une **chaîne stricte** conforme à la demande : (1) la **Nature est obligatoire** (saisie bloquée sinon) ; (2) la nature **détermine le compte d'immobilisation** (reconnaissance — véhicule → `218200000`, téléphone → `218300000`, mobilier → `218400000`, logiciel → `205000000`…) ; (3) le compte d'immobilisation **détermine le compte de dotation** (le compte d'**amortissement 28x**, obtenu en **insérant un « 8 » après le premier chiffre** : `218200000` → `281820000`). Les comptes dérivés sont **lecture seule** (aucune valeur ne correspondant pas n'est possible) et **se mettent à jour automatiquement** quand le compte d'immobilisation change.
 
 **Comment — `yada-addon148` (édité) :**

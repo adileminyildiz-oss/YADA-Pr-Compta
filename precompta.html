@@ -6202,7 +6202,7 @@ function pageCompta(){
   const resTxt=(res>=0?'Bénéfice':'Perte')+' : '+sageNum(res)+' E';
   const finPer=sgPer?(function(){ const [y,m]=sgPer.split('-').map(Number); const dj=new Date(y, m, 0).getDate(); return String(dj).padStart(2,'0')+'/'+String(m).padStart(2,'0')+'/'+y; })():'31/12/'+year;
   return `<div class="sg-app ${window.sgReduit?'sg-reduit':''}">
-    <div class="sg-title">${(db.societe&&db.societe.dossierNom)||'PRÉCOMPTA'} 01/${year.slice(2)}-12/${year.slice(2)} (E) — Comptabilité
+    <div class="sg-title"><span class="sg-exonav"><button class="sg-exoarr" title="Exercice précédent (année N-1)" onclick="event.stopPropagation();exPrecedent()">⟲</button><span class="sg-exolbl">Exercice ${year}</span><button class="sg-exoarr" title="Exercice suivant (année N+1)" onclick="event.stopPropagation();exSuivant()">⟳</button></span>${(db.societe&&db.societe.dossierNom)||'PRÉCOMPTA'} 01/${year.slice(2)}-12/${year.slice(2)} (E) — Comptabilité
       <span class="sg-win"><span class="sg-wbtn" title="Réduire la fenêtre" onclick="event.stopPropagation();sgReduireFenetre()">─</span><span class="sg-wbtn" title="${window.sgReduit?'Agrandir (plein écran)':'Réduire la fenêtre'}" onclick="event.stopPropagation();sgToggleReduit()">${window.sgReduit?'▣':'▢'}</span><span class="sg-wbtn" title="Fermer" onclick="event.stopPropagation();fileFermer()">✕</span></span></div>
     <div class="sg-menu"><span class="mi" onclick="event.stopPropagation();toggleFichier()">Fichier
         <div class="sg-dd" id="sg-fichier">
@@ -10867,7 +10867,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v275 · nature → compte → dotation (strict)';
+    b.textContent='YADA · v276 · consultation : flèches d\'exercice';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -18236,6 +18236,29 @@ ${lignes}
     +'.ec-sage input[type=number]::-webkit-outer-spin-button,.ec-sage input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none !important;appearance:none !important;margin:0}'
     +'.ec-num,.ec-sage input[type=number]{-moz-appearance:textfield !important;appearance:textfield !important}';
   try{ var st=document.createElement('style'); st.id='ec-nospin-mod'; st.textContent=css; document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon150">
+/* v276 — Consultation des comptes : 2 flèches tournantes (⟲ ⟳) dans la barre de titre
+   pour traiter l'exercice précédent (gauche) / suivant (droite). Elles appellent
+   exPrecedent()/exSuivant() (qui proposent de CRÉER l'exercice avec un message de
+   prévention « Annuler / Confirmer » s'il n'existe pas, ou basculent directement
+   s'il existe déjà). L'exercice actif (db.societe.exoDebut/exoFin) étant global,
+   TOUS les modules suivent l'année traitée. 100% CSS additif. */
+(function(){
+  if(typeof document==='undefined') return;
+  if(document.getElementById('sg-exonav-mod')) return;
+  var css=''
+    +'.sg-exonav{position:absolute;left:12px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:8px;z-index:4}'
+    +'.sg-exoarr{cursor:pointer;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.14);color:#fff;border-radius:7px;min-width:26px;height:23px;font-size:15px;line-height:1;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;font-weight:700}'
+    +'.sg-exoarr:hover{background:#0a64d6;border-color:#1e90ff}'
+    +'.sg-exoarr:active{opacity:.7}'
+    +'.sg-exolbl{color:#fff;font-weight:600;font-size:11.5px;white-space:nowrap;letter-spacing:.02em}'
+    +'body[data-theme="noir"] .sg-exoarr{background:rgba(30,144,255,.20);border-color:#1e90ff;color:#eaf2ff}'
+    +'body[data-theme="noir"] .sg-exoarr:hover{background:#0a64d6}'
+    +'body[data-theme="noir"] .sg-exolbl{color:#eaf2ff !important}'
+    +'@media(max-width:760px){.sg-exolbl{display:none}}';
+  try{ var st=document.createElement('style'); st.id='sg-exonav-mod'; st.textContent=css; document.head.appendChild(st); }catch(e){}
 })();
 </script>
 </body>
