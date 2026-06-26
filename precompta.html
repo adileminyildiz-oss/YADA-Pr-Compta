@@ -4947,7 +4947,7 @@ function pageTVA(){
     <table><thead><tr><th>Mois</th><th class="r">Collectée</th><th class="r">Déductible</th><th class="r">À payer</th><th class="r">Crédit reporté</th><th>État</th><th>Échéance</th></tr></thead><tbody>
     ${mois.map(x=>{const t=tvaDuMois(x); const est=tvaEstNeant(x); const val=db.societe.tvaNeant&&db.societe.tvaNeant[x];
       const etat= val?'<span class="tag t-pay">Néant validé ✓</span>':(est?'<span class="tag t-att">Néant à valider</span>':(odTvaDejaPostee(x)?'<span class="tag t-pay">déclaré ✓</span>':'<span class="tag t-att">à déclarer</span>'));
-      return `<tr style="cursor:pointer" onclick="tvaSetMois('${x}')"><td>${moisLabel(x)}</td><td class="r num">${est?'—':eur(t.col)}</td><td class="r num">${est?'—':eur(t.ded)}</td>
+      return `<tr style="cursor:pointer" onclick="tvaSetMois('${x}')"><td>${moisLabel(x)}</td><td class="r num cre">${est?'—':eur(t.col)}</td><td class="r num deb">${est?'—':eur(t.ded)}</td>
       <td class="r num">${t.aDecaisser?eur(t.aDecaisser):'—'}</td><td class="r num">${t.credit?eur(t.credit):'—'}</td>
       <td>${etat}</td>
       <td class="num">${(db.societe.tvaLimite&&db.societe.tvaLimite[x])?frDate(db.societe.tvaLimite[x]):'—'}</td></tr>`}).join('')}
@@ -4971,7 +4971,7 @@ function vueCA12(mois){
     <div class="sub">Suivi plus fin mois par mois, à titre de contrôle interne (même base que la CA3).</div>
     <table><thead><tr><th>Mois</th><th class="r">Collectée</th><th class="r">Déductible</th><th class="r">Nette</th><th>État</th></tr></thead><tbody>
     ${mois.map(x=>{const t=tvaDuMois(x); const est=tvaEstNeant(x);
-      return `<tr><td>${moisLabel(x)}</td><td class="r num cre">${est?'—':eur(t.col)}</td><td class="r num deb">${est?'—':eur(t.ded)}</td>
+      return `<tr><td>${moisLabel(x)}</td><td class="r num">${est?'—':eur(t.col)}</td><td class="r num">${est?'—':eur(t.ded)}</td>
       <td class="r num">${est?'<span class="mini">Néant</span>':eur(t.net)}</td>
       <td>${est?'<span class="tag t-att">Néant</span>':'<span class="tag t-pay">TVA</span>'}</td></tr>`}).join('')}
     </tbody></table>
@@ -10888,7 +10888,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v313';
+    b.textContent='YADA · v314';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }

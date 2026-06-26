@@ -36,7 +36,22 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Module TVA : éléments accordés au système (rouge/vert → bleu Crystal) — v313
+## 🟢 Dernière mise à jour — Module TVA : suivi annuel CA3 en vert/rouge, suivi mensuel CA12 en bleu — v314
+**Quoi :** ajustement des deux tableaux de suivi TVA selon la demande (« les deux points ») :
+1. **Tableau « Suivi annuel de la TVA » (CA3)** — les colonnes **Collectée** et **Déductible** **retrouvent leur coloration comptable** : **vert** (classe `cre`) pour la collectée, **rouge** (classe `deb`) pour la déductible (c'était neutralisé en v313 ; rétabli pour la lisibilité comptable).
+2. **Tableau « Suivi mensuel détaillé (CA3) » de la vue régime CA12** (réel simplifié) — les mêmes colonnes **Collectée / Déductible** passent au **texte neutre du thème (bleu système)** (classe `r num`), comme le reste du module.
+
+La barre des mois « Néant » reste en bleu-gris neutre `#9fb6d0` (v313 conservé).
+
+**Comment — 2 retouches chirurgicales dans `pageTVA` :**
+- Suivi annuel (CA3) : `<td class="r num">` → `<td class="r num cre">` (collectée) et `<td class="r num deb">` (déductible).
+- Suivi mensuel détaillé (CA12) : `<td class="r num cre">`/`<td class="r num deb">` → `<td class="r num">` (neutre).
+
+**Limites :** couleurs d'affichage uniquement (aucun montant/logique modifié). Validé : `node --check` (150 scripts) + accolades CSS équilibrées (2010/2010) + Playwright (équilibre OK, badge v314, 0 pageerror). Badge → **v314**.
+
+---
+
+## 🟢 MAJ précédente — Module TVA : éléments accordés au système (rouge/vert → bleu Crystal) — v313
 **Quoi :** dans le **Module TVA (CA3)**, les **éléments en rouge / vert** (« l'écriture » et « la forme ») passent au **bleu Crystal** comme le reste du système : (1) la barre des mois — le sous-libellé **« Néant »** des mois sans TVA, qui s'affichait en **magenta/rouge `#b08`**, passe au **bleu-gris neutre `#9fb6d0`** (cohérent avec les autres sous-libellés) ; (2) le tableau **« Suivi annuel de la TVA »** — les colonnes **Collectée** (qui était en **vert**, classe `cre`) et **Déductible** (en **rouge**, classe `deb`) repassent au **texte neutre du thème** (classe `r num`), les en-têtes de colonnes nommant déjà la nature des montants. Le mois actif et les onglets/segments de régime étaient déjà en bleu (v311/v312).
 
 **Comment — 2 retouches chirurgicales dans `pageTVA` :**
