@@ -36,7 +36,22 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Éditeur (BANQUE) : montant de la 1ʳᵉ ligne → 2ᵉ ligne copiée en miroir pour solder — v287
+## 🟢 Dernière mise à jour — Tous les modules suivent l'EXERCICE traité dans la Consultation des comptes — v288
+**Quoi :** correction de la demande v276. Le **point d'ancrage de toute l'application = l'exercice (année) traité dans la Consultation des comptes** (`db.societe.exoDebut/exoFin` → `exoYear()`). Quand on **bascule d'exercice** (flèches ⟲⟳, menu Exercice), **tous les modules affichent et génèrent désormais sur cet exercice** : si on traite **2025**, la Banque, l'Analytique, le Journal comptable, etc. affichent 2025 ; si on passe à **2026**, tout bascule sur 2026. Granularité : **mois si le module gère les mois, sinon année**.
+
+**Pourquoi :** en v276 seules les fonctions lisant déjà l'exercice suivaient (TVA, Bilan/Compte de résultat, Immobilisations `imYear`, Rapprochement). **Banque** et **Analytique avancée** choisissaient leur **propre année** (« la plus récente des écritures »), et le **Journal comptable** affichait **toutes les années mélangées**. De plus, basculer d'exercice ne réinitialisait pas les sélecteurs de période propres aux modules → ils restaient sur l'ancienne année.
+
+**Comment — 3 éditions chirurgicales + `yada-addon156` :**
+- **Banque** (`pageBanque`) : l'année par défaut = `exoYear()` (au lieu de l'année de données la plus récente) ; l'exercice traité est toujours présent dans la barre d'années.
+- **Analytique avancée** (`anaYear`) : année par défaut = `exoYear()`.
+- **Journal comptable** (`jrnMatch`) : filtre ajouté `(e.date).slice(0,4)===exoYear()` → n'affiche que les écritures de l'exercice traité.
+- **`yada-addon156`** : `window.exoSyncPeriodes()` remet à `null` les sélecteurs locaux (`sgPer`, `sjMois`, `imAnnee`, `window.bqAnneeSel/bqMoisSel`, `window.anaYear`) ; **wrap de `exSuivant`/`exPrecedent`/`exPeriode`** → à chaque bascule d'exercice, chaque module se re-défaut sur le nouvel exercice.
+
+**Limites :** la propagation se fait sur l'**année** d'exercice (les modules à mois gardent leur sélecteur de mois, re-défaut sur le 1ᵉ/dernier mois de l'exercice) ; le graphe « 12 derniers mois glissants » du tableau de bord reste glissant (par nature). Validé : `node --check` (144 scripts) + test Playwright (équilibre des écritures OK ; exoYear/anaYear/jrnMatch/exoSyncPeriodes suivent l'exercice 2025↔2026, 0 pageerror). Badge → **v288 · tous les modules suivent l'exercice traité**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur (BANQUE) : montant de la 1ʳᵉ ligne → 2ᵉ ligne copiée en miroir pour solder — v287
 **Quoi :** dans la **Consultation des comptes** (éditeur d'écritures), en **journal de banque (BQ)**, dès qu'on **saisit (ou modifie) le montant** (Débit ou Crédit) de la **1ʳᵉ ligne** d'une écriture, le **montant de la 2ᵉ ligne est copié en miroir** (Débit↔Crédit) sur la **contrepartie banque 512000000** → la 1ʳᵉ ligne est **soldée** automatiquement. Complète v286 (qui pose le compte 512 + le miroir à la saisie du **compte**) : ici le miroir suit aussi quand on saisit le **montant**.
 
 **Comment — `yada-addon155` (wrap de `window.ecSetLine`) :** sur `field==='debit'||'credit'` et `i===0`, si `e.journal==='BQ'` et écriture **≤ 2 lignes**, on crée au besoin la 2ᵉ ligne (compte `512000000`), et si elle est bien la **banque** (vide → on pose 512 ; sinon on respecte un compte choisi) on recopie le **montant miroir** (D>0 → crédit ; C>0 → débit), reprend le libellé si vide, puis `ecRender()`. Aucune logique comptable modifiée.

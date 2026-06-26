@@ -5030,7 +5030,10 @@ function pageBanque(){
   let bsrc=db.banque.slice(); if(bqFiltre) bsrc=bsrc.filter(b=>c9(bq512de(b))===c9(bqFiltre));
   /* Présentation PAR ANNÉE puis PAR MOIS : on choisit l'année (si plusieurs) puis le mois. */
   const anneesDispo=[...new Set(bsrc.map(b=>(b.date||'').slice(0,4)))].filter(Boolean).sort().reverse();
-  const bqAnnee=(window.bqAnneeSel && anneesDispo.indexOf(window.bqAnneeSel)>=0)?window.bqAnneeSel:(anneesDispo[0]||'');
+  /* la Banque suit l'EXERCICE traité dans la Consultation (exoYear) — l'année reste toujours présente dans la barre */
+  const _exoY=(typeof exoYear==='function')?exoYear():(anneesDispo[0]||'');
+  if(_exoY && anneesDispo.indexOf(_exoY)<0){ anneesDispo.push(_exoY); anneesDispo.sort().reverse(); }
+  const bqAnnee=(window.bqAnneeSel && anneesDispo.indexOf(window.bqAnneeSel)>=0)?window.bqAnneeSel:(_exoY||anneesDispo[0]||'');
   const anneeCount={}; bsrc.forEach(b=>{ const y=(b.date||'').slice(0,4); anneeCount[y]=(anneeCount[y]||0)+1; });
   const bsrcAn=bqAnnee?bsrc.filter(b=>(b.date||'').slice(0,4)===bqAnnee):bsrc;
   const moisDispo=[...new Set(bsrcAn.map(b=>ym(b.date)))].sort().reverse();
@@ -8876,6 +8879,7 @@ function dashSuivis(){
 /* ---------- JOURNAL : tri + filtre (dont OD) ---------- */
 var jrnFiltre='', jrnSort='desc', jrnSearch='';
 function jrnMatch(e){
+  if(typeof exoYear==='function' && (e.date||'').slice(0,4)!==exoYear()) return false;  /* exercice traité (Consultation) */
   if(jrnFiltre){ if(e.journal!==jrnFiltre) return false; }   /* onglet = journal exact (OD ≠ ODP/ODC/ODTVA) */
   if(jrnSearch){ const q=jrnSearch.toLowerCase();
     const hit=(e.libelle||'').toLowerCase().includes(q) || (e.date||'').includes(q) ||
@@ -10875,7 +10879,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v287 · banque : montant 1ʳᵉ ligne → 2ᵉ ligne miroir';
+    b.textContent='YADA · v288 · tous les modules suivent l\'exercice traité';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -17471,7 +17475,7 @@ ${lignes}
   function C9(x){ try{ return c9(x); }catch(e){ return String(x||''); } }
 
   function anaYears(){ var s={}; (db.ecritures||[]).forEach(function(e){ var y=(e.date||'').slice(0,4); if(y) s[y]=1; }); return Object.keys(s).sort().reverse(); }
-  function anaYear(){ if(!window.anaYear){ window.anaYear=anaYears()[0]||String((new Date()).getFullYear()); } return window.anaYear; }
+  function anaYear(){ if(!window.anaYear){ window.anaYear=((typeof exoYear==='function')?exoYear():'')||anaYears()[0]||String((new Date()).getFullYear()); } return window.anaYear; }
   window.anaSetYear=function(y){ window.anaYear=y; if(typeof render==='function') render(); };
 
   function compute(year){
@@ -18681,6 +18685,36 @@ ${lignes}
     }catch(_){}
     return r;
   };
+})();
+</script>
+<script id="yada-addon156">
+/* ============================================================
+   TOUS LES MODULES SUIVENT L'EXERCICE TRAITÉ DANS LA CONSULTATION.
+   Le point d'ancrage = l'exercice (db.societe.exoDebut/exoFin, = exoYear()).
+   Quand on bascule d'exercice dans la Consultation (flèches ⟲⟳, menu Exercice),
+   on REMET À ZÉRO les sélections de période propres à chaque module
+   (Banque : année/mois ; Analytique : année ; Saisie banque : mois ;
+   Immobilisations : année) → au prochain rendu, chaque module se RE-DÉFAUT
+   sur l'exercice traité. Les défauts ont déjà été rattachés à exoYear()
+   (Banque, Analytique) et le Journal comptable est filtré sur l'exercice.
+   100% additif — wrap de exSuivant/exPrecedent/exPeriode. Rien cassé.
+   ============================================================ */
+(function(){
+  /* remet les sélecteurs de période locaux à null → re-défaut sur l'exercice courant */
+  window.exoSyncPeriodes=function(){
+    try{ if(typeof sgPer!=='undefined') sgPer=null; }catch(_){}       /* Consultation (mois) */
+    try{ if(typeof sjMois!=='undefined') sjMois=null; }catch(_){}     /* Saisie journal banque (mois) */
+    try{ if(typeof imAnnee!=='undefined') imAnnee=null; }catch(_){}   /* Immobilisations (année → imYear=exoYear) */
+    try{ window.bqAnneeSel=null; window.bqMoisSel=''; }catch(_){}      /* Banque (année/mois) */
+    try{ window.anaYear=null; }catch(_){}                             /* Analytique avancée (année) */
+  };
+  /* à chaque bascule d'exercice, on synchronise les modules */
+  ['exSuivant','exPrecedent','exPeriode'].forEach(function(fn){
+    if(typeof window[fn]==='function'){
+      var _o=window[fn];
+      window[fn]=function(){ try{ window.exoSyncPeriodes(); }catch(_){} return _o.apply(this, arguments); };
+    }
+  });
 })();
 </script>
 </body>
