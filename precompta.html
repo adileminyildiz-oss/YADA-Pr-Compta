@@ -177,16 +177,16 @@
     background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 26px,#f0f0f0 26px,#f0f0f0 27px)}
   .sg-peritem{padding:5px 4px;text-align:center;border-bottom:1px solid #f0f0f0;cursor:pointer;color:#333}
   .sg-peritem:hover{background:#f1f1f1}
-  .sg-peritem.on{background:#57b88b;color:#fff;font-weight:700}
+  .sg-peritem.on{background:#1e90ff;color:#fff;font-weight:700}
   .sg-jrnitem{padding:5px 9px;border-bottom:1px solid #f4f4f4;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#222}
   .sg-jrnitem:hover{background:#f1f1f1}
-  .sg-jrnitem.on{background:#d2eede}
+  .sg-jrnitem.on{background:#dbeafe}
   .sg-jrnitem.zero{color:#9a9a9a}
   .sg-right{display:flex;flex-direction:column;min-width:0}
   .sg-tabs{display:flex;background:#e7e7e7;border-bottom:1px solid #cfcfcf;overflow:hidden}
   .sg-tab{padding:9px 16px;cursor:pointer;border-right:1px solid #d3d3d3;color:#333;white-space:nowrap;font-size:12px;background:#e2e2e2}
   .sg-tab:hover{background:#ececec}
-  .sg-tab.on{background:#fff;font-weight:700;border-top:2px solid #2fa46a;color:#111}
+  .sg-tab.on{background:#fff;font-weight:700;border-top:2px solid #0a64d6;color:#111}
   .sg-tabnav{margin-left:auto;display:flex;gap:3px;align-items:center;padding:0 6px;color:#666}
   .sg-tabnav span{border:1px solid #c7c7c7;background:#f3f3f3;border-radius:3px;padding:1px 6px;cursor:default;font-size:11px}
   .sg-grid{flex:1;overflow:auto;
@@ -1217,10 +1217,10 @@ body[data-theme="noir"] .sg-right{ border-color:#cfe0f5 !important; }
 body[data-theme="noir"] .sg-colh{ background:#eef4fb !important; border-color:#cfe0f5 !important; }
 body[data-theme="noir"] .sg-peritem,
 body[data-theme="noir"] .sg-jrnitem{ border-bottom-color:#eef2f8 !important; }
-body[data-theme="noir"] .sg-peritem.on{ background:#57b88b !important; }
+body[data-theme="noir"] .sg-peritem.on{ background:#0a64d6 !important; }
 body[data-theme="noir"] .sg-peritem.on,
 body[data-theme="noir"] .sg-peritem.on *{ color:#fff !important; }
-body[data-theme="noir"] .sg-jrnitem.on{ background:#d2eede !important; }
+body[data-theme="noir"] .sg-jrnitem.on{ background:rgba(30,144,255,.28) !important; color:#eaf2ff !important; }
 body[data-theme="noir"] .sg-tab{ background:#eef2f7 !important; border-color:#cfe0f5 !important; }
 body[data-theme="noir"] .sg-tab.on{ background:#fff !important; border-top:2px solid #0a64d6 !important; }
 
@@ -10888,7 +10888,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v310';
+    b.textContent='YADA · v311';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }

@@ -36,7 +36,19 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Qualité d'affichage : netteté du texte + bleu CRYSTAL + style plus épuré (hors page dossier) — v310
+## 🟢 Dernière mise à jour — Consultation : sélections (période / journal / onglet) accordées au système (vert → bleu Crystal) — v311
+**Quoi :** dans la **Consultation des comptes**, les **éléments de sélection** qui s'affichaient en **VERT** (ne correspondant pas au système bleu) passent au **bleu Crystal** : la **période active** (mois sélectionné, ex. « 12/25 »), le **journal actif** (ex. « A - HA ACHATS »), et le **liseré de l'onglet actif** (Comptes Généraux / Fournisseurs divers…). C'était surtout visible en **Mode nuit**, où le mois sélectionné restait vert (`#57b88b`) malgré le thème bleu.
+
+**Comment — 5 retouches CSS chirurgicales :**
+- `.sg-peritem.on` (période) : `#57b88b` → `#1e90ff` (base) ; surcharge nuit `#57b88b !important` → `#0a64d6`.
+- `.sg-jrnitem.on` (journal) : `#d2eede` → `#dbeafe` (base) ; surcharge nuit `#d2eede !important` → `rgba(30,144,255,.28)` + texte clair.
+- `.sg-tab.on` (onglet) : liseré `border-top #2fa46a` → `#0a64d6`.
+
+**Limites :** couleurs d'affichage uniquement (aucune logique modifiée). Validé : `node --check` (150 scripts) + accolades CSS équilibrées + Playwright (Mode nuit : période active = `rgb(10,100,214)` bleu, onglet liseré bleu, plus aucun vert sur les sélections ; équilibre OK ; 0 pageerror). Badge → **v311**.
+
+---
+
+## 🟢 MAJ précédente — Qualité d'affichage : netteté du texte + bleu CRYSTAL + style plus épuré (hors page dossier) — v310
 **Quoi :** passe de **qualité d'affichage** globale (Jour + Nuit) : **lissage des polices** (`-webkit-font-smoothing:antialiased` + `text-rendering:optimizeLegibility`) → texte plus net ; **bleu CRYSTAL** (`#1e90ff`) sur la sélection de texte, l'**anneau de focus** des champs, les **onglets/segments actifs**, les **liens** et les **valeurs KPI** (mode nuit) ; **lisibilité** des textes secondaires (sous-titres/libellés) renforcée par thème ; **ombres plus nettes/pro** sur les cartes internes. La **formule marketing** du hero (qui chevauchait le nom de la société) est **retirée** pour un rendu net. **La page de sélection des dossiers n'est PAS touchée** (`.login-*`/`.dossier-card` exclus).
 
 **Où / comment :** `yada-addon-qualite-affichage` injecte `<style id="qualite-affichage">` en dernier (après jour/nuit-charme). Global, hors page dossier. Validé : `node --check` (150), équilibre (d-ama/d-sci42), captures @2x (jour + nuit nets, KPI bleu Crystal, hero propre, 0 pageerror). Badge → **v310**.
