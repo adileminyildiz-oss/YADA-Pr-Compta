@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Charges & Paie : indicateurs verts accordés au système (bleu Crystal) — v312
+## 🟢 Dernière mise à jour — Module TVA : éléments accordés au système (rouge/vert → bleu Crystal) — v313
+**Quoi :** dans le **Module TVA (CA3)**, les **éléments en rouge / vert** (« l'écriture » et « la forme ») passent au **bleu Crystal** comme le reste du système : (1) la barre des mois — le sous-libellé **« Néant »** des mois sans TVA, qui s'affichait en **magenta/rouge `#b08`**, passe au **bleu-gris neutre `#9fb6d0`** (cohérent avec les autres sous-libellés) ; (2) le tableau **« Suivi annuel de la TVA »** — les colonnes **Collectée** (qui était en **vert**, classe `cre`) et **Déductible** (en **rouge**, classe `deb`) repassent au **texte neutre du thème** (classe `r num`), les en-têtes de colonnes nommant déjà la nature des montants. Le mois actif et les onglets/segments de régime étaient déjà en bleu (v311/v312).
+
+**Comment — 2 retouches chirurgicales dans `pageTVA` :**
+- Barre des mois : `style="color:#b08"` (Néant) → `style="color:#9fb6d0"`.
+- Suivi annuel : `<td class="r num cre">` (collectée) et `<td class="r num deb">` (déductible) → `<td class="r num">` (neutre).
+
+**Limites :** couleurs d'affichage uniquement (aucun montant/logique modifié) ; les classes globales `cre`/`deb` (vert/rouge comptable) restent intactes ailleurs ; la vue régime **CA12** (réel simplifié) conserve sa coloration. Validé : `node --check` (150 scripts) + accolades CSS équilibrées (2010/2010) + Playwright (équilibre OK, `#b08` retiré, badge v313, 0 pageerror). Badge → **v313**.
+
+---
+
+## 🟢 MAJ précédente — Charges & Paie : indicateurs verts accordés au système (bleu Crystal) — v312
 **Quoi :** dans le module **Charges & Paie**, les **éléments verts** de la barre du haut passent au **bleu Crystal** (comme les autres modules) : la **pastille « ✓ Mois saisi »** (`.cp-pill.ok`, qui était vert `#5bbf8a` sur fond vert) et les **sous-libellés « ✓ saisi »** des onglets de mois (`.cp-mtab .v`). La pastille **« ● Mois non saisi »** reste en rouge (avertissement « à faire »), et le mois actif était déjà en bleu.
 
 **Comment — 3 retouches CSS :**

@@ -4885,7 +4885,7 @@ function pageTVA(){
   const neant=tvaEstNeant(m); const neantValide=db.societe.tvaNeant&&db.societe.tvaNeant[m];
   // bandeau de mois cliquables jan→déc
   const moisBar=mois.map(x=>{ const est=tvaEstNeant(x); const val=db.societe.tvaNeant&&db.societe.tvaNeant[x]; const od=odTvaDejaPostee(x);
-    const cls=x===m?'on':''; const etat= val?'<span class="v">Néant ✓</span>':(est?'<span class="v" style="color:#b08">Néant</span>':(od?'<span class="v">déclaré ✓</span>':'<span class="v">&nbsp;</span>'));
+    const cls=x===m?'on':''; const etat= val?'<span class="v">Néant ✓</span>':(est?'<span class="v" style="color:#9fb6d0">Néant</span>':(od?'<span class="v">déclaré ✓</span>':'<span class="v">&nbsp;</span>'));
     return `<button class="cp-mtab ${cls}" onclick="tvaSetMois('${x}')">${moisLabel(x)}${etat}</button>`; }).join('');
   const SEUIL_REMB=760;
   const blocTaux=(titre,bucket,sens)=>{
@@ -4947,7 +4947,7 @@ function pageTVA(){
     <table><thead><tr><th>Mois</th><th class="r">Collectée</th><th class="r">Déductible</th><th class="r">À payer</th><th class="r">Crédit reporté</th><th>État</th><th>Échéance</th></tr></thead><tbody>
     ${mois.map(x=>{const t=tvaDuMois(x); const est=tvaEstNeant(x); const val=db.societe.tvaNeant&&db.societe.tvaNeant[x];
       const etat= val?'<span class="tag t-pay">Néant validé ✓</span>':(est?'<span class="tag t-att">Néant à valider</span>':(odTvaDejaPostee(x)?'<span class="tag t-pay">déclaré ✓</span>':'<span class="tag t-att">à déclarer</span>'));
-      return `<tr style="cursor:pointer" onclick="tvaSetMois('${x}')"><td>${moisLabel(x)}</td><td class="r num cre">${est?'—':eur(t.col)}</td><td class="r num deb">${est?'—':eur(t.ded)}</td>
+      return `<tr style="cursor:pointer" onclick="tvaSetMois('${x}')"><td>${moisLabel(x)}</td><td class="r num">${est?'—':eur(t.col)}</td><td class="r num">${est?'—':eur(t.ded)}</td>
       <td class="r num">${t.aDecaisser?eur(t.aDecaisser):'—'}</td><td class="r num">${t.credit?eur(t.credit):'—'}</td>
       <td>${etat}</td>
       <td class="num">${(db.societe.tvaLimite&&db.societe.tvaLimite[x])?frDate(db.societe.tvaLimite[x]):'—'}</td></tr>`}).join('')}
@@ -10888,7 +10888,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v312';
+    b.textContent='YADA · v313';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
