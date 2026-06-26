@@ -10888,7 +10888,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v318';
+    b.textContent='YADA · v319';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -19199,7 +19199,12 @@ ${lignes}
       +'body[data-theme] aside .side-foot button{background:rgba(30,144,255,.16) !important;border:1px solid rgba(30,144,255,.40) !important;color:#dfeaff !important}'
       +'body[data-theme] aside .side-foot button:hover{background:rgba(30,144,255,.30) !important}'
       +'body[data-theme] aside nav::-webkit-scrollbar{width:7px}'
-      +'body[data-theme] aside nav::-webkit-scrollbar-thumb{background:rgba(30,144,255,.45);border-radius:6px}';
+      +'body[data-theme] aside nav::-webkit-scrollbar-thumb{background:rgba(30,144,255,.45);border-radius:6px}'
+      /* ----- Fenêtre « Nouvelle facture » : panneau de gauche identique à la barre latérale (dégradé de bleu OPAQUE, sans transparence) ----- */
+      +'#nf-overlay .nf-form{background:linear-gradient(180deg,#103a73 0%,#0b2a52 45%,#071a33 100%) !important;-webkit-backdrop-filter:none !important;backdrop-filter:none !important;border-right:1px solid rgba(30,144,255,.55) !important}'
+      +'#nf-overlay .nf-form-body{background:transparent !important}'
+      +'#nf-overlay .nf-form::-webkit-scrollbar{width:7px}'
+      +'#nf-overlay .nf-form::-webkit-scrollbar-thumb{background:rgba(30,144,255,.45);border-radius:6px}';
     document.head.appendChild(st);
   }catch(e){}
 

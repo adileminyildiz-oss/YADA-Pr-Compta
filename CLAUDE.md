@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Barre latérale : dégradé de bleu OPAQUE (sans transparence), contenu symétrique & sans débordement — v318
+## 🟢 Dernière mise à jour — Fenêtre « Nouvelle facture » : panneau de gauche identique à la barre latérale (dégradé de bleu opaque) — v319
+**Quoi :** à la demande, le **panneau de gauche de la fenêtre « Nouvelle facture »** (formulaire de la **facturation client** — et cabinet, même fenêtre) reçoit le **même dégradé de bleu opaque que la barre latérale** : **plus aucune transparence** (avant, `.nf-form{background:var(--card)}` valait `rgba(16,26,42,.72)` en Mode Nuit → on voyait le tableau de bord derrière). Le panneau est désormais **plein**, accordé à la barre latérale.
+
+**Comment — `yada-addon160` (1 ajout, surcharge `#nf-overlay .nf-form` injectée en dernier, spécificité id+classe → bat `var(--card)`) :** `#nf-overlay .nf-form{background:linear-gradient(180deg,#103a73,#0b2a52,#071a33) !important;backdrop-filter:none !important;border-right:1px solid rgba(30,144,255,.55)}` (même dégradé que `aside` en v318) ; `.nf-form-body` transparent (laisse voir le dégradé) ; barre de défilement fine bleue. L'en-tête `.nf-bar` était déjà en dégradé bleu.
+
+**Limites :** habillage uniquement (aucune logique modifiée). Validé : `node --check` (151 scripts, 0 erreur) + accolades addon160 équilibrées (53/53) + Playwright (`.nf-form` `background` = dégradé bleu opaque identique à la barre latérale, `backdrop-filter:none`, 0 pageerror ; équilibre des écritures ✅). Badge → **v319**.
+
+---
+
+## 🟢 MAJ précédente — Barre latérale : dégradé de bleu OPAQUE (sans transparence), contenu symétrique & sans débordement — v318
 **Quoi :** à la demande, la **barre latérale** (`aside`) reçoit un **dégradé de bleu opaque** — **aucune transparence**, on ne voit **plus le fond** derrière (l'ancien rendu Mode Nuit laissait un **fond noir + un flou `backdrop-filter`** transparent). Le contenu est rendu **symétrique** (marges latérales égales) et **sans débordement** (aucun élément qui dépasse, libellés tronqués proprement, défilement vertical contenu).
 
 **Comment — `yada-addon160` (`<style id="fa-a4-format-mod">`, surcharge `body[data-theme] aside` injectée en dernier → bat les règles de thème) :**
