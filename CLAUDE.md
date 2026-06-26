@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Synchro cloud : message d'échec affiché UNE SEULE FOIS par session (plus à chaque enregistrement) — v305
+## 🟢 Dernière mise à jour — Module Fournisseur (Achats, cabinet) : même disposition que le module Client (pleine largeur, sans split 2 colonnes) — v306
+**Quoi :** dans l'espace **cabinet**, le **module Fournisseur (Achats)** adopte désormais la **même disposition que le module Client (Facturation)** : **pleine largeur**, cartes **empilées sur toute la largeur**, au lieu d'être scindé en **2 colonnes** (« Actions / Suivi & historique »). Le module Client était déjà en pleine largeur depuis la v199 ; le module Fournisseur le rejoint pour une présentation cohérente (capture de facture, suivi, correspondances… affichés en grand).
+
+**Comment — 1 édition chirurgicale d'`addon73` :** le wrap de `pageAchats` (cabinet) ne fait plus `split(h, …)` (2 colonnes `.cli-2col`) → il renvoie `_pa()` tel quel, exactement comme `pageFacturation` (Client). Le helper `split()` reste défini (inutilisé pour Achats). L'espace **Client mobile** (`pageAchatsClient`) et son éventuelle mise en page restent inchangés.
+
+**Limites :** affichage uniquement (aucune fonction/écriture modifiée). Validé : `node --check` (148 scripts) + Playwright (cabinet : `pageAchats()` et `pageFacturation()` ne contiennent plus `.cli-2col` → 0 ; 0 pageerror). Badge → **v306**.
+
+---
+
+## 🟢 MAJ précédente — Synchro cloud : message d'échec affiché UNE SEULE FOIS par session (plus à chaque enregistrement) — v305
 **Quoi :** le **bandeau rouge d'échec de synchronisation** (« ☁ Échec de l'envoi : … » / « Réception impossible … », ex. l'erreur Supabase `PGRST205 : table yada_sync introuvable`) n'apparaît désormais **qu'une seule fois par session** — à la **première tentative** (à l'ouverture) — au lieu de réapparaître à **chaque enregistrement / mise à jour** (la poussée cloud est débattue après chaque `save`, donc l'erreur se répétait sans cesse). Après la première fois, les échecs de **synchro automatique** sont **silencieux** pour le reste de la session.
 
 **Comment — `yada-addon102` (3 retouches) :** un drapeau de session `cloudErrShown` + un helper `cloudErr(txt, toastMsg)` qui n'affiche `status()` + `toast()` **que si `cloudErrShown` est faux** (puis le passe à vrai). Les branches d'erreur de `cloudPushNow` (envoi) et `cloudPull` (réception) appellent `cloudErr(...)` au lieu de `status()`/`toast()` directs. Les actions **manuelles** (« Tester la connexion » `cloudTest`, contrôle d'intégrité) gardent leur retour d'erreur **non filtré** (diagnostic à la demande). Le drapeau se réinitialise au **rechargement** (nouvelle session).

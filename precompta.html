@@ -10885,7 +10885,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v305';
+    b.textContent='YADA · v306';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -12688,8 +12688,10 @@ ${lignes}
      colonne \u00e9troite) pour une liste de g\u00e9n\u00e9ration plus grande et lisible. */
   if(typeof pageFacturation==='function'){ var _pf=pageFacturation;
     pageFacturation=function(){ return _pf(); }; }
+  /* Achats cabinet (Fournisseur) : MÊME disposition que le module Client (Facturation) —
+     pleine largeur, sans split en 2 colonnes (cartes empilées sur toute la largeur). */
   if(typeof pageAchats==='function'){ var _pa=pageAchats;
-    pageAchats=function(){ var h=_pa(); return isCab()? split(h, /Capture|Saisir|Nouvelle|Importer|Autoliquidation|saisie/i) : h; }; }
+    pageAchats=function(){ return _pa(); }; }
 })();
 </script>
 <script id="yada-addon74">
