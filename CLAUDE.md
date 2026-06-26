@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Module Fournisseur (Achats, cabinet) : même disposition que le module Client (pleine largeur, sans split 2 colonnes) — v306
+## 🟢 Dernière mise à jour — Consultation : flèches d'exercice sobres (chevrons ‹ › au lieu de ⟲ ⟳) — v307
+**Quoi :** dans la barre de titre de la **Consultation des comptes**, les **flèches de changement d'année** (exercice précédent / suivant, autour de « Exercice <année> ») passent des glyphes **⟲ ⟳** (qui évoquaient un « rafraîchir/tourner ») à de **simples chevrons ‹ ›** — plus **sobres, simples et intuitifs** (gauche = précédent, droite = suivant). Le comportement est inchangé (`exPrecedent()` / `exSuivant()`).
+
+**Comment — 2 retouches chirurgicales :** dans `pageCompta` (`.sg-title`), `>⟲</button>` → `>‹</button>` et `>⟳</button>` → `>›</button>` ; dans `addon150` (`.sg-exoarr`), `font-size` 15→18px, `font-weight` 700→600, `padding` ajusté pour que les chevrons restent bien lisibles. Les titres/`title` (« Exercice précédent/suivant ») et les fonctions restent identiques.
+
+**Limites :** affichage uniquement (aucune logique modifiée). Validé : `node --check` (148 scripts) + Playwright (boutons `.sg-exoarr` = ‹ → `exPrecedent()` / › → `exSuivant()`, libellé « Exercice 2026 » ; équilibre OK ; 0 pageerror). Badge → **v307**.
+
+---
+
+## 🟢 MAJ précédente — Module Fournisseur (Achats, cabinet) : même disposition que le module Client (pleine largeur, sans split 2 colonnes) — v306
 **Quoi :** dans l'espace **cabinet**, le **module Fournisseur (Achats)** adopte désormais la **même disposition que le module Client (Facturation)** : **pleine largeur**, cartes **empilées sur toute la largeur**, au lieu d'être scindé en **2 colonnes** (« Actions / Suivi & historique »). Le module Client était déjà en pleine largeur depuis la v199 ; le module Fournisseur le rejoint pour une présentation cohérente (capture de facture, suivi, correspondances… affichés en grand).
 
 **Comment — 1 édition chirurgicale d'`addon73` :** le wrap de `pageAchats` (cabinet) ne fait plus `split(h, …)` (2 colonnes `.cli-2col`) → il renvoie `_pa()` tel quel, exactement comme `pageFacturation` (Client). Le helper `split()` reste défini (inutilisé pour Achats). L'espace **Client mobile** (`pageAchatsClient`) et son éventuelle mise en page restent inchangés.
