@@ -10879,7 +10879,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v288 · tous les modules suivent l\'exercice traité';
+    b.textContent='YADA · v289 · clic droit : supprimer les lignes sélectionnées';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -16107,12 +16107,11 @@ ${lignes}
     if(!tr || !win.contains(tr)) return;
     ev.preventDefault(); ecCtxClose();
     var eid=tr.getAttribute('data-eid'); var li=parseInt(tr.getAttribute('data-li'),10);
-    var _selIds=(typeof window.ecSelectedEcritureIds==='function')?window.ecSelectedEcritureIds():[];
-    var _selHere=_selIds.indexOf(eid)>=0;
+    var _selLines=(typeof window.ecSelectedLineRefs==='function')?window.ecSelectedLineRefs():[];
+    var _delLbl=(_selLines.length>1)?('🗑 Supprimer les '+_selLines.length+' lignes sélectionnées'):'🗑 Supprimer la ligne';
     var m=document.createElement('div'); m.id='ec-ctx';
     m.innerHTML='<button type="button" data-a="ins">↧ Insérer une ligne</button>'
-              +'<button type="button" data-a="del">🗑 Supprimer la ligne</button>'
-              +(_selHere?('<button type="button" data-a="delecr">🗑 Supprimer '+(_selIds.length>1?('les '+_selIds.length+' écritures sélectionnées'):'l\'écriture sélectionnée')+'</button>'):'');
+              +'<button type="button" data-a="del">'+_delLbl+'</button>';
     document.body.appendChild(m);
     var x=Math.min(ev.clientX, (window.innerWidth||1000)-210);
     var y=Math.min(ev.clientY, (window.innerHeight||700)-100);
@@ -16122,8 +16121,11 @@ ${lignes}
       var b=e.target.closest('button'); if(!b) return;
       var a=b.getAttribute('data-a'); ecCtxClose();
       if(a==='ins'){ window.ecInsertLine(eid, isNaN(li)?-1:li); }
-      else if(a==='delecr' && typeof window.ecSupprimerEcrituresSelection==='function'){ window.ecSupprimerEcrituresSelection(); }
-      else if(a==='del' && typeof ecDelLine==='function'){ ecDelLine(eid, isNaN(li)?0:li); }
+      else if(a==='del'){
+        var _refs=(typeof window.ecSelectedLineRefs==='function')?window.ecSelectedLineRefs():[];
+        if(_refs.length && typeof window.ecSupprimerLignesSelection==='function'){ window.ecSupprimerLignesSelection(); }
+        else if(typeof ecDelLine==='function'){ ecDelLine(eid, isNaN(li)?0:li); }
+      }
     });
   }, true);
 
@@ -16491,6 +16493,22 @@ ${lignes}
   window.ecClearRowSel=clearSel;
   /* écritures (eid) distinctes présentes dans la sélection — pour la suppression de masse */
   window.ecSelectedEcritureIds=function(){ var seen={},out=[]; Object.keys(selKeys).forEach(function(k){ var id=k.split('|')[0]; if(!seen[id]){ seen[id]=1; out.push(id); } }); return out; };
+  /* références {eid,li} des LIGNES sélectionnées */
+  window.ecSelectedLineRefs=function(){ return Object.keys(selKeys).map(function(k){ var p=k.split('|'); return {eid:p[0], li:+p[1]}; }); };
+  /* supprimer TOUTES les lignes sélectionnées (sur une ou plusieurs écritures) */
+  window.ecSupprimerLignesSelection=function(){
+    var keys=Object.keys(selKeys); if(!keys.length) return 0;
+    var byE={}; keys.forEach(function(k){ var p=k.split('|'); (byE[p[0]]=byE[p[0]]||[]).push(+p[1]); });
+    Object.keys(byE).forEach(function(id){ var e=(typeof ecGet==='function')?ecGet(id):null; if(!e||!e.lignes) return;
+      byE[id].sort(function(a,b){return b-a;}).forEach(function(li){ if(e.lignes[li]) e.lignes.splice(li,1); });
+      if(!e.lignes.length) e.lignes.push({compte:'',lib:'',debit:0,credit:0});   /* jamais d'écriture à 0 ligne */
+    });
+    clearSel();
+    if(typeof save==='function') save();
+    if(typeof ecRender==='function') ecRender();
+    if(typeof toast==='function') toast(keys.length+' ligne(s) supprimée(s)');
+    return keys.length;
+  };
   function selectRange(w,a,b){ selKeys={}; var R=rows(w); var lo=Math.min(a,b),hi=Math.max(a,b); for(var i=lo;i<=hi;i++){ if(R[i]) selKeys[keyOf(R[i])]=1; } paint(w);
     if(R[hi]){ window.ecLastRow={eid:R[hi].getAttribute('data-eid'), li:+R[hi].getAttribute('data-li')}; } }
 
