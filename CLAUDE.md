@@ -36,7 +36,20 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Badge de version : libellé retiré (« YADA · vNNN » seul) + déplacé à gauche — v297
+## 🟢 Dernière mise à jour — Barre latérale : boutons d'actions rapides réduits + emoji du « Mode nuit/jour » retiré — v298
+**Quoi :** dans la **barre latérale** (bas, `.side-foot` — Déconnexion, Mode nuit/jour, Changer de dossier, Télécharger la base, Importer, Ne pas enregistrer, Réinitialiser), les **boutons sont rendus plus compacts** (actions rapides qui prennent moins de place), en **gardant la même disposition** (pile verticale). L'**emoji** du bouton **« Mode nuit / Mode jour »** (🌙 / ☀️) est **retiré** → libellé texte seul.
+
+**Comment — 4 retouches chirurgicales :**
+- CSS `.side-foot` : `gap` 6→3px, `padding-top` 12→8px, `margin-top` 8→6px.
+- CSS `.side-foot button` : `font-size` 11,5→**10px**, `padding` 7px→**4px 7px**, `border-radius` 7→6px (+`line-height:1.2`).
+- CSS `.theme-toggle-side` (bouton Mode nuit) : `font-size` 12→**10,5px**, `padding` 9/10→**5/8px**, `border-radius` 10→6px, ombre allégée.
+- JS : retrait de l'emoji dans le HTML statique (`Mode nuit`) **et** dans `maj()` (`Mode jour`/`Mode nuit`).
+
+**Limites :** affichage uniquement (les autres emojis ⇆/⬇️/↩️/↺ restent, seul celui du Mode nuit/jour est retiré, conformément à la demande). Validé : `node --check` (147 scripts) + accolades CSS équilibrées + Playwright (libellé « Mode nuit » sans emoji ; font 10,5/10px, padding réduits, gap 3px ; 0 pageerror). Badge → **v298**.
+
+---
+
+## 🟢 MAJ précédente — Badge de version : libellé retiré (« YADA · vNNN » seul) + déplacé à gauche — v297
 **Quoi :** le **badge de version** (repère de déploiement, `#yada-ver`) n'affiche plus le **libellé descriptif** de la mise à jour — uniquement **« YADA · v<version> »** — et il est **déplacé en bas à GAUCHE** (au lieu du bas à droite).
 
 **Comment — `yada-addon37` (2 retouches) :** `textContent='YADA · v297'` (plus de suffixe descriptif) ; `style.cssText` passe de `right:10px;bottom:10px` à **`left:12px;bottom:82px`** (empilé au-dessus des indicateurs d'enregistrement `#yada-save-ind` à `bottom:10px` et de synchro `#yada-cloud-ind` à `bottom:46px`, pour éviter tout chevauchement). Le **format `YADA · vNNN` est conservé** → les lectures de version (`runningVer`, contrôle de mise à jour `/YADA · v(\d+)/`, plancher anti-rétro v248, CI `version.json`) continuent de fonctionner.

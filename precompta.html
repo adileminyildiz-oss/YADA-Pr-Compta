@@ -49,10 +49,10 @@
   .nav-btn:hover{background:rgba(255,255,255,.06);color:#fff}
   .nav-btn.active{background:var(--gold);color:#241c05;font-weight:600}
   .nav-btn .ico{width:16px;text-align:center;opacity:.9}
-  .side-foot{flex:0 0 auto;margin-top:8px;display:flex;flex-direction:column;gap:6px;padding-top:12px;
+  .side-foot{flex:0 0 auto;margin-top:6px;display:flex;flex-direction:column;gap:3px;padding-top:8px;
     border-top:1px solid rgba(255,255,255,.12)}
-  .side-foot button{font:inherit;font-size:11.5px;background:rgba(255,255,255,.07);color:#dfe6e2;
-    border:1px solid rgba(255,255,255,.1);padding:7px;border-radius:7px;cursor:pointer}
+  .side-foot button{font:inherit;font-size:10px;line-height:1.2;background:rgba(255,255,255,.07);color:#dfe6e2;
+    border:1px solid rgba(255,255,255,.1);padding:4px 7px;border-radius:6px;cursor:pointer}
   .side-foot button:hover{background:rgba(255,255,255,.14)}
 
   main{padding:26px 30px 60px;max-width:1180px}
@@ -3338,10 +3338,10 @@ body[data-theme="jour"] #yada-daynight{ border-color:#0a84ff; background:#ffffff
 body .side-foot button.theme-toggle-side,
 body[data-theme="noir"] .side-foot button.theme-toggle-side,
 body[data-theme^="liquid"] .side-foot button.theme-toggle-side,
-body[data-theme="jour"] .side-foot button.theme-toggle-side{ font:inherit !important; font-size:12px !important; font-weight:700 !important; width:100%;
-  padding:9px 10px !important; border-radius:10px !important; cursor:pointer; text-align:center;
+body[data-theme="jour"] .side-foot button.theme-toggle-side{ font:inherit !important; font-size:10.5px !important; font-weight:700 !important; width:100%;
+  padding:5px 8px !important; border-radius:6px !important; cursor:pointer; text-align:center;
   background:linear-gradient(120deg,#1e90ff,#0a64d6) !important; color:#fff !important; border:1px solid #4da3ff !important;
-  box-shadow:0 4px 14px rgba(10,80,200,.35) !important; transition:filter .15s, transform .12s; }
+  box-shadow:0 2px 8px rgba(10,80,200,.3) !important; transition:filter .15s, transform .12s; }
 body[data-theme="noir"] .side-foot button.theme-toggle-side:hover,
 body .side-foot button.theme-toggle-side:hover{ filter:brightness(1.1) !important; }
 body .side-foot button.theme-toggle-side:active{ transform:translateY(1px); }
@@ -3443,7 +3443,7 @@ tr.fa-sel-row td{ background:rgba(30,144,255,.14) !important; box-shadow:inset 3
       <small>Système intégré · CA3</small></div>
     <nav id="nav"></nav>
     <div class="side-foot">
-      <button id="theme-toggle-side" class="theme-toggle-side" onclick="toggleJourNuit()">🌙 Mode nuit</button>
+      <button id="theme-toggle-side" class="theme-toggle-side" onclick="toggleJourNuit()">Mode nuit</button>
       <button onclick="retourSelectionDossier()">⇆ Changer de dossier</button>
       <button onclick="exportJSON()">⬇️ Télécharger la base</button>
       <button onclick="document.getElementById('imp').click()">Importer</button>
@@ -10885,7 +10885,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v297';
+    b.textContent='YADA · v298';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -12917,8 +12917,8 @@ ${lignes}
   /* Le bouton vit dans la barre latérale (#theme-toggle-side), en remplacement
      des 3 anciens boutons de thème. Son libellé/icône change avec le thème. */
   function maj(){ var b=document.getElementById('theme-toggle-side'); if(!b) return;
-    if(estJour()){ b.textContent='☀️ Mode jour'; b.title='Mode jour — cliquer pour passer en mode nuit'; }
-    else { b.textContent='🌙 Mode nuit'; b.title='Mode nuit — cliquer pour passer en mode jour'; }
+    if(estJour()){ b.textContent='Mode jour'; b.title='Mode jour — cliquer pour passer en mode nuit'; }
+    else { b.textContent='Mode nuit'; b.title='Mode nuit — cliquer pour passer en mode jour'; }
   }
   window.toggleJourNuit=function(){
     var t=estJour()?'noir':'jour';
