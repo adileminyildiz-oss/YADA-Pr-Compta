@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Consultation : flèches d'exercice sobres (chevrons ‹ › au lieu de ⟲ ⟳) — v307
+## 🟢 Dernière mise à jour — Mode NUIT : habillage « charme » BLEU & NOIR (dégradé global, lignes bleu vif, boutons à effet bleu, cartes fixes) — v308
+**Quoi :** le **Mode Nuit** (`data-theme="noir"`) reçoit le même traitement que le Mode Jour mais en **bleu & noir** : **dégradé global bleu→noir** posé sur le `body` (plein écran, sans cadrage, **transmis à tout le logiciel** — login + pages internes), **lignes en BLEU VIF lumineux** (barre en tête de chaque KPI et avant chaque titre de carte, halo `box-shadow` bleu), **tables** à en-tête bleu nuit + survol bleu, **cartes dossier** en dégradé bleu→noir avec **bord bleu vif** et avatar lumineux, **boutons** avec **effet bleu au survol ET à l'appui** (`:hover`/`:active` → halo + glow bleu), **scrollbar** bleue. **Cartes & modules FIXES** (aucun mouvement : `transform:none`, seul le bleu varie).
+
+**Où / comment :** `yada-addon-nuit-charme` injecte `<style id="nuit-charme">` en dernier, **100% scopé `body[data-theme="noir"]`** ; conteneurs (`.layout`/`main`/`.login-wrap`/`.mod-wrap`/`.dash-wrap`) transparents pour laisser voir le dégradé. **MODE JOUR inchangé.** Validé : `node --check` (149), équilibre (d-ama/d-sci42), captures (login + tableau de bord bleu/noir, lignes bleu vif, 0 pageerror). Badge → **v308**.
+
+---
+
+## 🟢 MAJ précédente — Consultation : flèches d'exercice sobres (chevrons ‹ › au lieu de ⟲ ⟳) — v307
 **Quoi :** dans la barre de titre de la **Consultation des comptes**, les **flèches de changement d'année** (exercice précédent / suivant, autour de « Exercice <année> ») passent des glyphes **⟲ ⟳** (qui évoquaient un « rafraîchir/tourner ») à de **simples chevrons ‹ ›** — plus **sobres, simples et intuitifs** (gauche = précédent, droite = suivant). Le comportement est inchangé (`exPrecedent()` / `exSuivant()`).
 
 **Comment — 2 retouches chirurgicales :** dans `pageCompta` (`.sg-title`), `>⟲</button>` → `>‹</button>` et `>⟳</button>` → `>›</button>` ; dans `addon150` (`.sg-exoarr`), `font-size` 15→18px, `font-weight` 700→600, `padding` ajusté pour que les chevrons restent bien lisibles. Les titres/`title` (« Exercice précédent/suivant ») et les fonctions restent identiques.

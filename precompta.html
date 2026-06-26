@@ -10885,7 +10885,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v307';
+    b.textContent='YADA · v308';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -16085,6 +16085,43 @@ ${lignes}
     +'body[data-theme="jour"] ::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#5aa0ff,#0a64d6)}'
     +'body[data-theme="jour"]{scrollbar-color:#5aa0ff transparent;scrollbar-width:thin}';
   try{ var st=document.createElement('style'); st.id='jour-charme'; st.textContent=css; document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon-nuit-charme">
+/* ============================================================
+   MODE NUIT — habillage « charme » BLEU & NOIR : dégradé global (login + logiciel,
+   plein écran sans cadrage), lignes en BLEU VIF, effet bleu au survol/appui des
+   boutons, cartes & modules FIXES. 100% scopé body[data-theme="noir"].
+   ============================================================ */
+(function(){
+  var css=''
+    +'body[data-theme="noir"]{background:linear-gradient(158deg,#103a73 0%,#0c2a52 24%,#0a1d38 48%,#070f1e 74%,#06080f 100%)!important;background-attachment:fixed!important}'
+    +'body[data-theme="noir"] .layout,body[data-theme="noir"] main,body[data-theme="noir"] main.login-bleed,body[data-theme="noir"] main.fullbleed,body[data-theme="noir"] main.fullbleed .mod-wrap,body[data-theme="noir"] main.fullbleed .dash-wrap,body[data-theme="noir"] .login-wrap{background:transparent!important}'
+    +'body[data-theme="noir"] .kpi{position:relative;overflow:hidden;border:1px solid rgba(30,144,255,.30)!important;box-shadow:0 10px 30px rgba(0,0,0,.5),0 0 0 1px rgba(30,144,255,.07)!important}'
+    +'body[data-theme="noir"] .kpi::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,#1e90ff,#5ab0ff)!important;box-shadow:0 0 16px rgba(30,144,255,.7)}'
+    +'body[data-theme="noir"] .card h2{position:relative;padding-left:16px!important}'
+    +'body[data-theme="noir"] .card h2::before{content:"";position:absolute;left:0;top:1px;bottom:1px;width:5px;border-radius:4px;background:linear-gradient(180deg,#5ab0ff,#1e90ff)!important;box-shadow:0 0 14px rgba(30,144,255,.65)}'
+    +'body[data-theme="noir"] .card{border:1px solid rgba(30,144,255,.22)!important}'
+    +'body[data-theme="noir"] thead th{background:rgba(30,144,255,.14)!important;color:#bfe0ff!important;border-bottom:2px solid rgba(30,144,255,.5)!important}'
+    +'body[data-theme="noir"] td,body[data-theme="noir"] th{border-bottom-color:rgba(30,144,255,.16)!important}'
+    +'body[data-theme="noir"] tbody tr:hover td{background:rgba(30,144,255,.12)!important}'
+    +'body[data-theme="noir"] .dossier-card{background:linear-gradient(160deg,#123a70 0%,#0d2546 46%,#0a1830 100%)!important;border:1px solid rgba(30,144,255,.45)!important;box-shadow:0 16px 40px rgba(0,0,0,.55),0 0 0 1px rgba(30,144,255,.12)!important}'
+    +'body[data-theme="noir"] .dossier-card .dc-av{background:linear-gradient(135deg,#2f9bff,#0a64d6)!important;box-shadow:0 0 16px rgba(30,144,255,.7)!important}'
+    +'body[data-theme="noir"] .dossier-card .dc-open{color:#5ab0ff!important}'
+    +'body[data-theme="noir"] .dossier-card .dc-badge.on{background:rgba(30,144,255,.20)!important;color:#7fc4ff!important}'
+    +'body[data-theme="noir"] .login-sub,body[data-theme="noir"] .login-brand small{color:#9fc4ef!important}'
+    +'body[data-theme="noir"] #ec-hero,body[data-theme="noir"] #ec-hero.cab-hero{border:1px solid rgba(90,176,255,.55)!important;box-shadow:0 18px 46px rgba(0,0,0,.5),0 0 0 1px rgba(30,144,255,.15)!important}'
+    +'body[data-theme="noir"] .btn{transition:box-shadow .15s,filter .12s!important}'
+    +'body[data-theme="noir"] .btn:hover{box-shadow:0 0 0 2px rgba(30,144,255,.42),0 8px 22px rgba(10,80,200,.45)!important;filter:brightness(1.08)}'
+    +'body[data-theme="noir"] .btn:active{box-shadow:0 0 0 3px rgba(30,144,255,.68),0 0 22px rgba(30,144,255,.6)!important;filter:brightness(1.2)}'
+    +'body[data-theme="noir"] .card,body[data-theme="noir"] .kpi,body[data-theme="noir"] .dossier-card,body[data-theme="noir"] .cp-k,body[data-theme="noir"] .cf-org{transform:none!important;transition:box-shadow .18s,border-color .18s!important}'
+    +'body[data-theme="noir"] .card:hover,body[data-theme="noir"] .kpi:hover,body[data-theme="noir"] .dossier-card:hover,body[data-theme="noir"] .cp-k:hover{transform:none!important;border-color:rgba(30,144,255,.5)!important;box-shadow:0 14px 36px rgba(0,0,0,.55),0 0 0 1px rgba(30,144,255,.2)!important}'
+    +'body[data-theme="noir"] ::-webkit-scrollbar{width:10px;height:10px}'
+    +'body[data-theme="noir"] ::-webkit-scrollbar-track{background:transparent}'
+    +'body[data-theme="noir"] ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#2f7fe0,#0a3d8f);border-radius:8px;border:2px solid #0a0f1a}'
+    +'body[data-theme="noir"] ::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#5aa0ff,#1e90ff)}'
+    +'body[data-theme="noir"]{scrollbar-color:#2f7fe0 transparent;scrollbar-width:thin}';
+  try{ var st=document.createElement('style'); st.id='nuit-charme'; st.textContent=css; document.head.appendChild(st); }catch(e){}
 })();
 </script>
 <script id="yada-addon112">
