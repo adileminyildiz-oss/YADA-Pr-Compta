@@ -10875,7 +10875,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v286 · banque : 1ʳᵉ ligne tiers → 2ᵉ ligne 512 auto';
+    b.textContent='YADA · v287 · banque : montant 1ʳᵉ ligne → 2ᵉ ligne miroir';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -18639,6 +18639,44 @@ ${lignes}
         if(dd>0){ l1.debit=0; l1.credit=(typeof r2==='function')?r2(dd):dd; }
         else if(cc>0){ l1.credit=0; l1.debit=(typeof r2==='function')?r2(cc):cc; }
       }
+      if(typeof ecRender==='function') ecRender();
+    }catch(_){}
+    return r;
+  };
+})();
+</script>
+<script id="yada-addon155">
+/* ============================================================
+   CONSULTATION / éditeur — JOURNAL DE BANQUE (BQ) :
+   en saisissant le MONTANT (débit/crédit) de la 1ʳᵉ ligne d'une écriture,
+   le montant de la 2ᵉ ligne est COPIÉ EN MIROIR (débit↔crédit) pour
+   SOLDER la 1ʳᵉ ligne (contrepartie banque 512000000).
+   Complète v286 (qui pose le compte 512 + le miroir à la saisie du compte) :
+   ici le miroir suit aussi quand on saisit / modifie le montant.
+   100% additif — wrap de window.ecSetLine. Aucune logique comptable modifiée.
+   ============================================================ */
+(function(){
+  if(typeof window.ecSetLine!=='function') return;
+  var _esl=window.ecSetLine;
+  window.ecSetLine=function(id,i,field,v){
+    var r=_esl.apply(this, arguments);
+    try{
+      if((field!=='debit' && field!=='credit') || +i!==0) return r;  /* montant de la 1ʳᵉ ligne */
+      var e=(typeof ecGet==='function')?ecGet(id):null;
+      if(!e || String(e.journal)!=='BQ') return r;                   /* uniquement le journal de banque */
+      var l0=e.lignes && e.lignes[0]; if(!l0) return r;
+      if((e.lignes||[]).length>2) return r;                          /* ne pas perturber une écriture multi-lignes (split) */
+      if(!e.lignes[1]) e.lignes.push({compte:'512000000',lib:'',debit:0,credit:0});
+      var l1=e.lignes[1];
+      var c1=String(l1.compte||'').trim();
+      /* n'agir que si la 2ᵉ ligne est la banque (vide → on pose 512 ; sinon on respecte un compte choisi) */
+      if(c1==='') l1.compte='512000000';
+      else if(c1!=='512000000' && (typeof c9!=='function' || c9(c1)!=='512000000')) return r;
+      var dd=+l0.debit||0, cc=+l0.credit||0;                         /* montant miroir pour solder */
+      if(dd>0){ l1.debit=0; l1.credit=(typeof r2==='function')?r2(dd):dd; }
+      else if(cc>0){ l1.credit=0; l1.debit=(typeof r2==='function')?r2(cc):cc; }
+      else { l1.debit=0; l1.credit=0; }
+      if(l0.lib && !l1.lib) l1.lib=l0.lib;
       if(typeof ecRender==='function') ecRender();
     }catch(_){}
     return r;

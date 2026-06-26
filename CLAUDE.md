@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Éditeur (BANQUE) : compte de tiers en 1ʳᵉ ligne → 2ᵉ ligne 512000000 automatique — v286
+## 🟢 Dernière mise à jour — Éditeur (BANQUE) : montant de la 1ʳᵉ ligne → 2ᵉ ligne copiée en miroir pour solder — v287
+**Quoi :** dans la **Consultation des comptes** (éditeur d'écritures), en **journal de banque (BQ)**, dès qu'on **saisit (ou modifie) le montant** (Débit ou Crédit) de la **1ʳᵉ ligne** d'une écriture, le **montant de la 2ᵉ ligne est copié en miroir** (Débit↔Crédit) sur la **contrepartie banque 512000000** → la 1ʳᵉ ligne est **soldée** automatiquement. Complète v286 (qui pose le compte 512 + le miroir à la saisie du **compte**) : ici le miroir suit aussi quand on saisit le **montant**.
+
+**Comment — `yada-addon155` (wrap de `window.ecSetLine`) :** sur `field==='debit'||'credit'` et `i===0`, si `e.journal==='BQ'` et écriture **≤ 2 lignes**, on crée au besoin la 2ᵉ ligne (compte `512000000`), et si elle est bien la **banque** (vide → on pose 512 ; sinon on respecte un compte choisi) on recopie le **montant miroir** (D>0 → crédit ; C>0 → débit), reprend le libellé si vide, puis `ecRender()`. Aucune logique comptable modifiée.
+
+**Limites :** scope **banque** + **montant de la 1ʳᵉ ligne** ; les écritures multi-lignes (> 2) et les 2ᵉ lignes sur un autre compte (split) sont préservées. Validé : `node --check` (143 scripts). Badge → **v287 · banque : montant 1ʳᵉ ligne → 2ᵉ ligne miroir**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur (BANQUE) : compte de tiers en 1ʳᵉ ligne → 2ᵉ ligne 512000000 automatique — v286
 **Quoi :** dans la **Consultation des comptes** (éditeur d'écritures), en **journal de banque (BQ)**, dès qu'on **saisit un compte de tiers** (classe 4 : 401…/411…/421…/43…/45…) sur la **1ʳᵉ ligne** d'une écriture, le **compte de la 2ᵉ ligne devient automatiquement 512000000** (banque), avec le **montant miroir** (débit↔crédit) pour solder l'écriture. Vaut pour **toute écriture BQ** — indépendamment de l'option « validation automatique » (v277), qui ne s'active que si elle est cochée. Si la 2ᵉ ligne est déjà renseignée avec un autre compte (écriture multi-lignes / split), elle **n'est pas écrasée**.
 
 **Comment — `yada-addon154` (wrap de `window.ecSetLine`) :** sur `field==='compte'` et `i===0`, si `e.journal==='BQ'` et que le compte de la 1ʳᵉ ligne est de **classe 4** (`charAt(0)==='4'`), et que l'écriture a **≤ 2 lignes**, on crée au besoin la 2ᵉ ligne, on force `compte='512000000'` **seulement si elle est vide ou déjà la banque**, on reprend le libellé (si vide) et on pose le **montant miroir** (si aucun montant n'y figure encore), puis `ecRender()`. Aucune logique comptable modifiée.
