@@ -10888,7 +10888,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v317';
+    b.textContent='YADA · v318';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -19184,7 +19184,22 @@ ${lignes}
       +'.side-foot{gap:5px !important;padding-top:10px !important}'
       +'.side-foot button{font-size:11px !important;line-height:1.25 !important;padding:6px 10px !important;border-radius:7px !important}'
       +'.theme-toggle-side{font-size:11px !important;padding:7px 10px !important;border-radius:7px !important}'
-      +'}';
+      +'}'
+      /* ----- Barre latérale : DÉGRADÉ DE BLEU opaque (aucune transparence, on ne voit pas le fond), contenu symétrique, sans débordement (tous thèmes) ----- */
+      +'body[data-theme] aside{background:linear-gradient(180deg,#103a73 0%,#0b2a52 45%,#071a33 100%) !important;'
+      +'-webkit-backdrop-filter:none !important;backdrop-filter:none !important;'
+      +'border-right:1px solid rgba(30,144,255,.55) !important;box-shadow:1px 0 0 rgba(30,144,255,.15) !important;'
+      +'padding:20px 16px 14px !important;overflow:hidden !important}'
+      +'body[data-theme] aside nav{padding-left:0 !important;padding-right:0 !important;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin}'
+      +'body[data-theme] aside .brand{padding:4px 10px 2px !important}'
+      +'body[data-theme] aside .nav-sec{padding-left:12px !important;padding-right:12px !important}'
+      +'body[data-theme] aside .nav-btn{width:100% !important;box-sizing:border-box !important;overflow:hidden !important;text-overflow:ellipsis !important;white-space:nowrap !important}'
+      +'body[data-theme] aside .side-foot{padding-left:0 !important;padding-right:0 !important}'
+      +'body[data-theme] aside .side-foot button,body[data-theme] aside .theme-toggle-side{width:100% !important;box-sizing:border-box !important;text-align:center !important;overflow:hidden !important;text-overflow:ellipsis !important;white-space:nowrap !important}'
+      +'body[data-theme] aside .side-foot button{background:rgba(30,144,255,.16) !important;border:1px solid rgba(30,144,255,.40) !important;color:#dfeaff !important}'
+      +'body[data-theme] aside .side-foot button:hover{background:rgba(30,144,255,.30) !important}'
+      +'body[data-theme] aside nav::-webkit-scrollbar{width:7px}'
+      +'body[data-theme] aside nav::-webkit-scrollbar-thumb{background:rgba(30,144,255,.45);border-radius:6px}';
     document.head.appendChild(st);
   }catch(e){}
 
