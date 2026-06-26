@@ -36,7 +36,19 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Éditeur (HA/VT) : compte de tiers → TVA + charge/produit générés depuis TIERS, TTC → HT + TVA auto — v293
+## 🟢 Dernière mise à jour — Éditeur : panneau « Compte sélectionné » (bas de l'éditeur) — infos du compte cliqué, tous journaux — v294
+**Quoi :** dans l'**éditeur d'écritures** (Consultation des comptes), la **zone en bas à droite** (à côté de « tx TVA / Tiers / Échéance / mode Règlement ») affiche désormais, **à chaque sélection d'un compte sur une ligne** (clic / focus / saisie), les **informations du compte** — et ce **sur tous les journaux** :
+- **Compte de TIERS sélectionné** → 3 lignes : **compte de tiers + libellé** (Fournisseur/Client + nom, ou libellé de l'écriture), **compte de TVA + libellé**, **compte de charge/produit + libellé** (lus dans l'écriture).
+- **Compte de TVA sélectionné** → **libellé du compte de TVA**.
+- **Compte de charge / produit sélectionné** → **libellé du compte de charge / produit**.
+
+**Comment — `yada-addon158` :** un panneau `#ec-accinfo` est greffé dans `.ec-fields` (la barre du bas). Des écouteurs `focusin`/`click`/`input` sur `#ec-win` mémorisent `{eid, compte}` de la ligne sélectionnée, puis `paint()` classe le compte (tiers via `ecResolveTiers` ou préfixe `40/41` ; TVA = `445…` ; charge = `6…` ; produit = `7…`) et affiche les lignes. Pour un tiers, les comptes de TVA et de charge/produit sont **lus dans les lignes de l'écriture** (fonctionne aussi pour les comptes collectifs `401000000`/`411000000` issus du FEC). Libellés via `COMPTES` (repli `db.plan`). Greffe `ecRender` → le panneau est repeint après chaque rendu. `<style id="ec-accinfo-mod">` (thème bleu nuit).
+
+**Limites :** affichage seul (aucune écriture modifiée) ; pour un tiers collectif sans fiche, le libellé du tiers = libellé de l'écriture. Validé : `node --check` (146 scripts) + Playwright (tiers → tiers+TVA+charge avec libellés ; TVA → libellé TVA ; charge → libellé charge ; équilibre OK ; 0 pageerror). Badge → **v294 · panneau « compte sélectionné »**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur (HA/VT) : compte de tiers → TVA + charge/produit générés depuis TIERS, TTC → HT + TVA auto — v293
 **Quoi :** dans l'**éditeur d'écritures** (Consultation des comptes), en **journal Achats (HA = ACH)** ou **Ventes (VT = VTE)**, dès qu'on **saisit un compte de tiers** (401…/411…) sur la **1ʳᵉ ligne**, l'application **récupère dans le module TIERS** le **taux de TVA**, le **compte de TVA** et le **compte de charge** (achat) / **produit** (vente), et **génère automatiquement les 2 lignes de contrepartie**. Puis, dès qu'on **saisit le montant TTC** sur la ligne du tiers, le **HT et la TVA sont calculés automatiquement** → l'écriture est **soldée** ; on peut valider et passer à une autre.
 - **ACH (fournisseur)** : `401…` crédit TTC | `445660000` (compteTVA du tiers) débit TVA | `60x` (compteContre) débit HT.
 - **VTE (client)** : `411…` débit TTC | `445710000` (compteTVA du tiers) crédit TVA | `70x` (compteContre) crédit HT.

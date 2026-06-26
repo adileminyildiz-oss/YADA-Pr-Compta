@@ -10879,7 +10879,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v293 · saisie assistée HA/VT (tiers → TVA + HT auto)';
+    b.textContent='YADA · v294 · panneau « compte sélectionné » (bas éditeur)';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -18803,6 +18803,100 @@ ${lignes}
     }catch(_){}
     return r;
   };
+})();
+</script>
+<script id="yada-addon158">
+/* ============================================================
+   CONSULTATION / éditeur — PANNEAU « COMPTE SÉLECTIONNÉ » (bas de l'éditeur, à droite).
+   À chaque sélection d'un compte sur une ligne (TOUS les journaux), la zone du bas
+   affiche les informations du compte :
+   • compte de TIERS → compte de tiers (+ libellé) + compte de TVA (+ libellé)
+     + compte de charge/produit (+ libellé) de l'écriture ;
+   • compte de TVA → libellé du compte de TVA ;
+   • compte de charge / produit → libellé du compte de charge / produit.
+   100% additif (listeners focus/click/input + greffe ecRender). Aucune logique modifiée.
+   ============================================================ */
+(function(){
+  function ecWin(){ var ov=document.getElementById('ec-overlay'); if(!ov||!ov.classList.contains('show')) return null; return document.getElementById('ec-win'); }
+  function C9(x){ return (typeof c9==='function')?c9(x):String(x||''); }
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function libOf(code){
+    try{
+      if(typeof COMPTES!=='undefined'){ var v=COMPTES[code]||COMPTES[C9(code)]; if(v) return v; }
+      if(typeof db!=='undefined' && db && db.plan && db.plan.length){
+        var p=db.plan.find(function(x){ return C9(x.compte||x.num||x.code)===C9(code); });
+        if(p) return p.libelle||p.nom||p.lib||'';
+      }
+    }catch(_){}
+    return '';
+  }
+  function rowsTiers(eid, compte){
+    var e=(typeof ecGet==='function')?ecGet(eid):null;
+    var c9c=C9(compte), rows=[];
+    var t=(typeof ecResolveTiers==='function')?ecResolveTiers(compte):null;
+    var tiersLib = t ? ((t.type==='fournisseur'?'Fournisseur ':'Client ')+(t.nom||'')) : ((e&&e.libelle)||'Tiers');
+    rows.push(['Compte de tiers', c9c, tiersLib]);
+    if(e){ (e.lignes||[]).forEach(function(l){
+      var lc=C9(l.compte); if(!lc || lc===c9c) return;
+      if(lc.slice(0,3)==='445'){ rows.push(['Compte de TVA', lc, libOf(l.compte)||'TVA']); }
+      else if(lc.charAt(0)==='6'){ rows.push(['Compte de charge', lc, libOf(l.compte)||'Charge']); }
+      else if(lc.charAt(0)==='7'){ rows.push(['Compte de produit', lc, libOf(l.compte)||'Produit']); }
+    }); }
+    return rows;
+  }
+  function infoRows(eid, compte){
+    compte=String(compte||'').trim(); if(!compte) return null;
+    var c9c=C9(compte);
+    var isTiers = (typeof ecResolveTiers==='function' && ecResolveTiers(compte)) || /^4(0|1)/.test(c9c);
+    if(isTiers) return rowsTiers(eid, compte);
+    if(c9c.slice(0,3)==='445') return [['Compte de TVA', c9c, libOf(compte)||'TVA']];
+    if(c9c.charAt(0)==='6') return [['Compte de charge', c9c, libOf(compte)||'Charge']];
+    if(c9c.charAt(0)==='7') return [['Compte de produit', c9c, libOf(compte)||'Produit']];
+    return [['Compte', c9c, libOf(compte)||'']];
+  }
+  function html(rows){
+    if(!rows||!rows.length) return '<div class="ec-ai-empty">Sélectionnez un compte pour voir ses informations</div>';
+    return '<div class="ec-ai-title">Compte sélectionné</div>'+rows.map(function(r){
+      return '<div class="ec-ai-row"><span class="ec-ai-k">'+esc(r[0])+'</span><span class="ec-ai-c">'+esc(r[1])+'</span><span class="ec-ai-l">'+esc(r[2])+'</span></div>';
+    }).join('');
+  }
+  window.ecAccSel = window.ecAccSel || null;   /* {eid, compte} */
+  function ensurePanel(){
+    var w=ecWin(); if(!w) return null;
+    var fields=w.querySelector('.ec-fields'); if(!fields) return null;
+    var panel=fields.querySelector('#ec-accinfo');
+    if(!panel){ panel=document.createElement('div'); panel.id='ec-accinfo'; panel.className='ec-accinfo'; fields.appendChild(panel); }
+    return panel;
+  }
+  function paint(){ var panel=ensurePanel(); if(!panel) return; var s=window.ecAccSel; panel.innerHTML = s ? html(infoRows(s.eid, s.compte)) : html(null); }
+  window.ecAccInfoPaint=paint;
+  function fromInput(inp){
+    if(!inp||!inp.closest) return;
+    var w=ecWin(); if(!w||!w.contains(inp)) return;
+    var tr=inp.closest('tr.ec-r'); if(!tr) return;
+    var cptIn = (inp.classList && inp.classList.contains('ec-cpt')) ? inp : tr.querySelector('input.ec-cpt');
+    window.ecAccSel = { eid: tr.getAttribute('data-eid'), compte: cptIn ? cptIn.value : '' };
+    paint();
+  }
+  document.addEventListener('focusin', function(ev){ fromInput(ev.target); }, true);
+  document.addEventListener('input', function(ev){ if(ev.target&&ev.target.classList&&ev.target.classList.contains('ec-cpt')) fromInput(ev.target); }, true);
+  document.addEventListener('click', function(ev){
+    var w=ecWin(); if(!w) return;
+    var tr=ev.target&&ev.target.closest?ev.target.closest('tr.ec-r'):null;
+    if(tr&&w.contains(tr)){ var c=tr.querySelector('input.ec-cpt'); window.ecAccSel={eid:tr.getAttribute('data-eid'), compte:c?c.value:''}; paint(); }
+  }, true);
+  if(typeof window.ecRender==='function'){ var _er=window.ecRender; window.ecRender=function(){ var r=_er.apply(this,arguments); try{ paint(); }catch(_){} return r; }; }
+  try{ var st=document.createElement('style'); st.id='ec-accinfo-mod'; st.textContent=
+     '.ec-accinfo{margin-left:auto;flex:1 1 360px;min-width:260px;max-width:660px;align-self:stretch;background:#0a1726;border:1px solid #24405d;border-radius:7px;padding:7px 10px;overflow:auto;max-height:128px}'
+    +'.ec-accinfo .ec-ai-title{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:#5ab0ff;font-weight:700;margin-bottom:5px}'
+    +'.ec-accinfo .ec-ai-row{display:flex;gap:10px;align-items:baseline;padding:2px 0;border-bottom:1px solid rgba(30,144,255,.12)}'
+    +'.ec-accinfo .ec-ai-row:last-child{border-bottom:0}'
+    +'.ec-accinfo .ec-ai-k{flex:0 0 128px;font-size:10.5px;color:#9fb6d0}'
+    +'.ec-accinfo .ec-ai-c{flex:0 0 92px;font-variant-numeric:tabular-nums;color:#eaf2ff;font-weight:600}'
+    +'.ec-accinfo .ec-ai-l{flex:1;color:#cfe0f5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+    +'.ec-accinfo .ec-ai-empty{font-size:11.5px;color:#7a8696;font-style:italic;align-self:center}'
+    +'@media(max-width:760px){.ec-accinfo{flex-basis:100%;margin-left:0;max-width:none}}';
+    document.head.appendChild(st); }catch(e){}
 })();
 </script>
 </body>
