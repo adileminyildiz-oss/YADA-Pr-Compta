@@ -36,7 +36,19 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Barre latérale encore élargie (272 → 300 px) + entrées de navigation plus aérées — v317
+## 🟢 Dernière mise à jour — Barre latérale : dégradé de bleu OPAQUE (sans transparence), contenu symétrique & sans débordement — v318
+**Quoi :** à la demande, la **barre latérale** (`aside`) reçoit un **dégradé de bleu opaque** — **aucune transparence**, on ne voit **plus le fond** derrière (l'ancien rendu Mode Nuit laissait un **fond noir + un flou `backdrop-filter`** transparent). Le contenu est rendu **symétrique** (marges latérales égales) et **sans débordement** (aucun élément qui dépasse, libellés tronqués proprement, défilement vertical contenu).
+
+**Comment — `yada-addon160` (`<style id="fa-a4-format-mod">`, surcharge `body[data-theme] aside` injectée en dernier → bat les règles de thème) :**
+- **Fond** : `background:linear-gradient(180deg,#103a73,#0b2a52,#071a33)` **opaque** ; `backdrop-filter:none` (supprime le flou/transparence v308) ; bord droit bleu `rgba(30,144,255,.55)`.
+- **Symétrie / pas de débordement** : `aside{padding:20px 16px 14px;overflow:hidden}` (marges latérales égales) ; `nav{padding 0 ; overflow-y:auto ; overflow-x:hidden}` ; `.nav-btn{width:100%;box-sizing:border-box;text-overflow:ellipsis;white-space:nowrap}` (libellés longs tronqués, plus de débordement horizontal) ; outils du bas `.side-foot button`/`.theme-toggle-side` **pleine largeur, centrés** (verre bleu lisible sur fond opaque) ; barre de défilement fine bleue.
+- Appliqué à **tous les thèmes** (`body[data-theme] aside`), mobile compris.
+
+**Limites :** habillage/mise en page uniquement (aucune logique modifiée). Validé : `node --check` (151 scripts, 0 erreur) + accolades addon160 équilibrées (49/49) + Playwright (aside `background` = dégradé bleu opaque, `backdrop-filter:none`, padding symétrique `20px 16px 14px`, `scrollWidth ≤ clientWidth` → aucun débordement, 0 pageerror). Badge → **v318**.
+
+---
+
+## 🟢 MAJ précédente — Barre latérale encore élargie (272 → 300 px) + entrées de navigation plus aérées — v317
 **Quoi :** à la demande (« élargir la barre latérale »), la **barre latérale est encore élargie** sur les pages applicatives : la colonne de navigation passe de **272 px à 300 px** (desktop), avec un **padding latéral légèrement augmenté** (`aside` 18 → 20 px) et des **entrées de menu plus aérées** (`.nav-btn` police 14 px, padding 9/13 px) pour que les outils respirent mieux. La page de sélection des dossiers (`.layout.solo`) reste en **pleine largeur** (correctif v316 conservé via `.layout:not(.solo)`).
 
 **Comment — 1 retouche dans `yada-addon160` (`<style id="fa-a4-format-mod">`) :** `.layout:not(.solo){grid-template-columns:272px 1fr}` → **`300px 1fr`** ; `aside{padding:22px 20px 16px}` ; ajout `.nav-btn{font-size:14px;padding:9px 13px}`. Mobile (≤820 px) inchangé.
