@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Consultation (page principale) : panneau « Compte sélectionné » dans la barre du bas — v296
+## 🟢 Dernière mise à jour — Badge de version : libellé retiré (« YADA · vNNN » seul) + déplacé à gauche — v297
+**Quoi :** le **badge de version** (repère de déploiement, `#yada-ver`) n'affiche plus le **libellé descriptif** de la mise à jour — uniquement **« YADA · v<version> »** — et il est **déplacé en bas à GAUCHE** (au lieu du bas à droite).
+
+**Comment — `yada-addon37` (2 retouches) :** `textContent='YADA · v297'` (plus de suffixe descriptif) ; `style.cssText` passe de `right:10px;bottom:10px` à **`left:12px;bottom:82px`** (empilé au-dessus des indicateurs d'enregistrement `#yada-save-ind` à `bottom:10px` et de synchro `#yada-cloud-ind` à `bottom:46px`, pour éviter tout chevauchement). Le **format `YADA · vNNN` est conservé** → les lectures de version (`runningVer`, contrôle de mise à jour `/YADA · v(\d+)/`, plancher anti-rétro v248, CI `version.json`) continuent de fonctionner.
+
+**Convention de suite :** à chaque version, le badge se met simplement à `YADA · v<NNN>` (sans libellé). Validé : `node --check` (147 scripts) + Playwright (badge = « YADA · v297 », `left:12px` / `bottom:82px`, 0 pageerror). Badge → **v297**.
+
+---
+
+## 🟢 MAJ précédente — Consultation (page principale) : panneau « Compte sélectionné » dans la barre du bas — v296
 **Quoi :** reprise de la fonction v294 (panneau de l'éditeur) **sur la page principale de Consultation des comptes** (la grille en lecture, pas l'éditeur). À chaque **clic sur une ligne d'écriture** de la grille (`sgJournalGrid`, **tous les journaux**), la **barre du bas** (`.sg-status`, zone encerclée par l'utilisateur) affiche les **informations du compte cliqué** :
 - **Compte de TIERS** → compte de tiers + libellé (Fournisseur/Client + nom, ou libellé de l'écriture), compte de TVA + libellé, compte de charge/produit + libellé (lus dans l'écriture).
 - **Compte de TVA** → libellé du compte de TVA.
