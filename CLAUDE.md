@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Facture : toujours au format A4 (multi-pages) + barre latérale élargie — v315
+## 🟢 Dernière mise à jour — Correctif : page de sélection des dossiers écrasée par l'élargissement de la barre latérale — v316
+**Quoi :** correction d'un **bug introduit en v315**. L'élargissement de la barre latérale utilisait `.layout{grid-template-columns:272px 1fr !important}` ; comme l'`!important` l'emporte sur `.layout.solo{grid-template-columns:1fr}` (sans `!important`), la **page de connexion / sélection des dossiers** (rendue avec `.layout.solo`, sans barre latérale — voir `render()` : `if(!connecte){ layout.classList.add('solo') … }`) se retrouvait forcée en **deux colonnes 272 px / 1fr** → les **cartes de dossier** et le bouton **« Créer un dossier »** étaient **tassés dans une colonne étroite** à gauche.
+
+**Comment — 1 retouche chirurgicale dans `yada-addon160` :** la règle d'élargissement cible désormais **`.layout:not(.solo)`** (au lieu de `.layout`) → la barre latérale reste élargie sur les pages applicatives, et la page de sélection des dossiers (`.layout.solo`) **retrouve sa pleine largeur (1fr)**.
+
+**Limites :** mise en page uniquement (aucune logique modifiée). Validé : `node --check` (151 scripts, 0 erreur) + Playwright (page dossiers `.layout.solo` → grille pleine largeur `1fr`, plus de cartes tassées, 0 pageerror ; barre latérale toujours `272px 1fr` sur les pages applicatives). Badge → **v316**.
+
+---
+
+## 🟢 MAJ précédente — Facture : toujours au format A4 (multi-pages) + barre latérale élargie — v315
 **Quoi :** deux demandes sur la **facture de vente** et l'interface :
 1. **Facture toujours en A4** — la feuille de facture (`.inv-page`) devient une **vraie page A4 (210 × 297 mm)** à l'écran (aperçu en direct + modale) : le **vide se remplit jusqu'au bas** de la page (« le champ vide s'adapte »), et **si les désignations dépassent**, le contenu est **reporté sur une 2ᵉ/3ᵉ page A4** sans couper les lignes/blocs — **aussi bien à l'enregistrement PDF qu'à l'impression**. L'aperçu A4 en direct est **ajusté en largeur** pour tenir dans son cadre.
 2. **Barre latérale élargie** — la colonne de navigation passe de **236 px à 272 px** (desktop) et les **boutons d'outils du bas** (`.side-foot`) sont **plus aérés** (police 11 px, padding 6/10 px, espacement 5 px) pour ne plus être « étouffants ».

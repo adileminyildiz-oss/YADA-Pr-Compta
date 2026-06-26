@@ -10888,7 +10888,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v315';
+    b.textContent='YADA · v316';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -19178,7 +19178,7 @@ ${lignes}
       +'#fa-a4-wrap .fa-a4-paper{display:block !important;overflow:auto !important;text-align:left}'
       /* ----- Barre latérale élargie + outils du bas plus aérés ----- */
       +'@media (min-width:821px){'
-      +'.layout{grid-template-columns:272px 1fr !important}'
+      +'.layout:not(.solo){grid-template-columns:272px 1fr !important}'
       +'aside{padding:22px 18px 16px !important}'
       +'.side-foot{gap:5px !important;padding-top:10px !important}'
       +'.side-foot button{font-size:11px !important;line-height:1.25 !important;padding:6px 10px !important;border-radius:7px !important}'
