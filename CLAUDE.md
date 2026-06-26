@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Tous les modules suivent l'EXERCICE traité dans la Consultation des comptes — v288
+## 🟢 Dernière mise à jour — Éditeur : clic droit « Supprimer la ligne » supprime TOUTES les lignes sélectionnées (plus de « Supprimer l'écriture sélectionnée ») — v289
+**Quoi :** dans l'**éditeur d'écritures** (Consultation des comptes), après avoir **sélectionné plusieurs lignes** (glisser / Maj+clic sur la zone gauche/droite des lignes), le **clic droit** ne propose plus **« Supprimer l'écriture sélectionnée »** (ni « les N écritures sélectionnées »). À la place, l'entrée **« 🗑 Supprimer la ligne »** (qui devient **« 🗑 Supprimer les N lignes sélectionnées »** quand plusieurs lignes sont sélectionnées) **supprime toutes les lignes sélectionnées** par l'utilisateur — sur une ou plusieurs écritures. Sans sélection, elle supprime simplement la ligne cliquée (comportement inchangé).
+
+**Comment — 3 éditions chirurgicales :**
+- **`yada-addon120`** : expose `window.ecSelectedLineRefs()` (`[{eid,li}]` des lignes sélectionnées) et `window.ecSupprimerLignesSelection()` (supprime chaque ligne, **index décroissant** par écriture pour ne pas décaler ; jamais d'écriture à 0 ligne ; `save`+`ecRender`).
+- **`yada-addon113`** (menu contextuel) : retrait de l'entrée `delecr` (« Supprimer l'écriture sélectionnée ») ; le libellé de **« Supprimer la ligne »** devient dynamique selon le nombre de lignes sélectionnées ; l'action `del` appelle `ecSupprimerLignesSelection()` s'il y a une sélection, sinon `ecDelLine` (ligne cliquée).
+
+**Limites :** suppression directe (pas de message de confirmation — demande explicite) ; la fonction v280 `ecSupprimerEcrituresSelection` reste définie mais n'est plus appelée. Validé : `node --check` (144 scripts) + Playwright (équilibre OK, fonctions présentes & sûres sans sélection, 0 pageerror). Badge → **v289 · clic droit : supprimer les lignes sélectionnées**.
+
+---
+
+## 🟢 MAJ précédente — Tous les modules suivent l'EXERCICE traité dans la Consultation des comptes — v288
 **Quoi :** correction de la demande v276. Le **point d'ancrage de toute l'application = l'exercice (année) traité dans la Consultation des comptes** (`db.societe.exoDebut/exoFin` → `exoYear()`). Quand on **bascule d'exercice** (flèches ⟲⟳, menu Exercice), **tous les modules affichent et génèrent désormais sur cet exercice** : si on traite **2025**, la Banque, l'Analytique, le Journal comptable, etc. affichent 2025 ; si on passe à **2026**, tout bascule sur 2026. Granularité : **mois si le module gère les mois, sinon année**.
 
 **Pourquoi :** en v276 seules les fonctions lisant déjà l'exercice suivaient (TVA, Bilan/Compte de résultat, Immobilisations `imYear`, Rapprochement). **Banque** et **Analytique avancée** choisissaient leur **propre année** (« la plus récente des écritures »), et le **Journal comptable** affichait **toutes les années mélangées**. De plus, basculer d'exercice ne réinitialisait pas les sélecteurs de période propres aux modules → ils restaient sur l'ancienne année.
