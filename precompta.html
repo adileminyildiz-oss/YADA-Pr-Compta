@@ -10885,7 +10885,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v298';
+    b.textContent='YADA · v299';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -16233,6 +16233,30 @@ ${lignes}
          en mode validation auto, et surtout équilibre à jour), PUIS décider. Si l'écriture
          est soldée, on NE génère PAS de 3e ligne ; sinon on ajoute une ligne à solder. */
       if(col===6||col===7){
+        var ejrE=(typeof ecGet==='function'&&ecGet(eid))?String(ecGet(eid).journal||''):'';
+        if(ejrE!=='BQ'){
+          /* Hors banque : Entrée sur DÉBIT → CRÉDIT (on doit pouvoir accéder au crédit).
+             Sur CRÉDIT → passer à la suite UNIQUEMENT si l'écriture est soldée ; tant
+             qu'elle n'est pas soldée, on NAVIGUE sans jamais insérer de ligne. */
+          if(col===6){ moveField(1); return; }            /* débit → crédit */
+          inp.blur();                                     /* col 7 : valide le crédit */
+          var wN=ecWin()||w; var eN=(typeof ecGet==='function')?ecGet(eid):null;
+          if(eN){
+            var nd=0,nc=0; (eN.lignes||[]).forEach(function(l){ nd+=(+l.debit||0); nc+=(+l.credit||0); });
+            var nbal=Math.abs(r2(nd-nc))<0.005 && (nd>0||nc>0);
+            var nlast=eN.lignes.length-1;
+            var ntrL=wN.querySelector('tr.ec-r[data-eid="'+eid+'"][data-li="'+nlast+'"]');
+            var nrows=Array.prototype.slice.call(wN.querySelectorAll('tr.ec-r'));
+            var nend=ntrL && nrows.length && nrows.indexOf(ntrL)===nrows.length-1;
+            if(nbal && li>=nlast){                         /* soldée + dernière ligne → nouvelle écriture / écriture suivante */
+              if(nend && typeof window.ecAjouterEcriture==='function'){ window.ecAjouterEcriture(); return; }
+              var nidx=nrows.indexOf(ntrL); var nnx=nrows[nidx+1]; if(nnx){ var nni=nnx.querySelector('input.ec-i'); if(nni){ focusEl(nni); return; } }
+              return;
+            }
+            moveField(1); return;                          /* non soldée OU pas la dernière ligne → navigation, sans insertion */
+          }
+          moveField(1); return;
+        }
         inp.blur();                                      /* valide le montant → contrepartie auto + ecRender */
         var w2=ecWin()||w; var e2=(typeof ecGet==='function')?ecGet(eid):null;
         if(e2){
@@ -16286,7 +16310,8 @@ ${lignes}
             if(aend && typeof window.ecAjouterEcriture==='function'){ window.ecAjouterEcriture(); return; }   /* dernière écriture → nouvelle écriture (curseur sur la date) */
             var aidx=arows.indexOf(atrL); var anx=arows[aidx+1]; if(anx){ var ani=anx.querySelector('input.ec-i'); if(ani){ focusEl(ani); return; } }   /* sinon → écriture suivante */
             return;
-          } else {                                        /* non soldée → ajouter une ligne à solder */
+          } else {                                        /* non soldée */
+            if(String(ae.journal||'')!=='BQ'){ return; }  /* hors banque : interdit d'insérer une ligne tant que non soldée */
             if(typeof window.ecDescendre==='function' && window.ecDescendre(eid)) return;
             if(aend && typeof window.ecAjouterEcriture==='function'){ window.ecAjouterEcriture(); return; }
             return;

@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Barre latérale : boutons d'actions rapides réduits + emoji du « Mode nuit/jour » retiré — v298
+## 🟢 Dernière mise à jour — Éditeur (hors banque) : Entrée sur DÉBIT → CRÉDIT + insertion d'une ligne interdite tant que non soldée — v299
+**Quoi :** dans l'**éditeur d'écritures** (Consultation des comptes), pour **tous les journaux SAUF la banque (BQ)** : la touche **Entrée** depuis le champ **Débit** amène désormais le curseur sur le **Crédit** (on peut enfin accéder au crédit) — au lieu d'insérer une écriture/ligne parasite. L'**insertion d'une nouvelle ligne n'est possible qu'une fois l'écriture soldée** (Débit = Crédit) : tant qu'elle **n'est pas soldée**, **aucune ligne n'est insérée** — Entrée se contente de **naviguer** (pour atteindre/compléter le crédit). Une fois **soldée**, Entrée depuis la dernière ligne **passe à une nouvelle écriture**. Le **journal de banque (BQ) conserve son comportement** (contrepartie 512 / ajout de ligne pour solder, v279→v287).
+
+**Comment — 2 éditions chirurgicales d'`addon114` :**
+- **Entrée** : une branche **`e.journal!=='BQ'`** ajoutée en tête du bloc `col===6||col===7` → **Débit (col 6)** = `moveField(1)` (→ Crédit) ; **Crédit (col 7)** = `blur` (valide) puis, **uniquement si soldée et dernière ligne**, nouvelle écriture (`ecAjouterEcriture`) / écriture suivante, **sinon `moveField(1)`** (navigation, jamais d'insertion). Le bloc banque (`inp.blur()` + logique v283/v285) reste inchangé pour BQ.
+- **Flèche bas** : dans la branche « non soldée » de la dernière ligne, garde **`if(journal!=='BQ') return;`** → plus d'insertion de ligne hors banque tant que non soldée (BQ garde `ecDescendre`).
+
+**Limites :** ne touche que la navigation clavier ; l'écriture se solde via ses lignes existantes (assist HA/VT v293, lignes FEC, ou clic droit « Insérer une ligne » v292 en HA/VT). Validé : `node --check` (147 scripts) + Playwright (OD : Entrée Débit→Crédit col 7, non soldée → aucune insertion ; OD soldée → nouvelle écriture ; BQ non soldée → ligne ajoutée 1→2 ; équilibre OK ; 0 pageerror). Badge → **v299**.
+
+---
+
+## 🟢 MAJ précédente — Barre latérale : boutons d'actions rapides réduits + emoji du « Mode nuit/jour » retiré — v298
 **Quoi :** dans la **barre latérale** (bas, `.side-foot` — Déconnexion, Mode nuit/jour, Changer de dossier, Télécharger la base, Importer, Ne pas enregistrer, Réinitialiser), les **boutons sont rendus plus compacts** (actions rapides qui prennent moins de place), en **gardant la même disposition** (pile verticale). L'**emoji** du bouton **« Mode nuit / Mode jour »** (🌙 / ☀️) est **retiré** → libellé texte seul.
 
 **Comment — 4 retouches chirurgicales :**
