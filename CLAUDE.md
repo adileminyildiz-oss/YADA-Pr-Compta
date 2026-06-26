@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Éditeur : panneau « Compte sélectionné » (bas de l'éditeur) — infos du compte cliqué, tous journaux — v294
+## 🟢 Dernière mise à jour — Module TIERS : moyen de paiement préféré (liste fermée VIR/PRLV/CHQ/CB/ESP) — v295
+**Quoi :** dans le **module TIERS**, la fiche d'édition (Modifier — <tiers>) gagne un champ **« Moyen de paiement préféré »** — une **liste déroulante fermée** à choisir parmi : **VIR (Virement)**, **PRLV (Prélèvement)**, **CHQ (Chèque)**, **CB (Carte Bancaire)**, **ESP (Espèces)** (+ « — » vide). Disponible pour **tous les tiers** : **Fournisseurs**, **Clients – Sociétés** et **Clients – Particuliers** (la fiche est commune aux 3 types). Le choix est **enregistré** sur le tiers (`t.modeReglement`, code VIR/PRLV/CHQ/CB/ESP) et **repré-sélectionné** à la réouverture.
+
+**Comment — 2 éditions chirurgicales :**
+- `tiersEditer` : ajout d'un `<select id="te-moyen">` (groupé en ligne avec l'IBAN) ; les options viennent de `MOYENS=[VIR,PRLV,CHQ,CB,ESP]` ; pré-sélection via une normalisation du `modeReglement` existant (mots complets « Virement »/« Prélèvement »… reconnus → code).
+- `tiersEnregistrer` : `if(#te-moyen) t.modeReglement = valeur`.
+
+**Limites :** stocke le **code** (VIR/PRLV…) ; les anciennes valeurs en toutes lettres sont reconnues à l'affichage de la liste mais ré-enregistrées en code. Validé : `node --check` (146 scripts) + Playwright (fournisseur & client : 5 options exactes, sauvegarde PRLV, re-sélection à la réouverture ; équilibre OK ; 0 pageerror). Badge → **v295 · TIERS moyen de paiement préféré**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur : panneau « Compte sélectionné » (bas de l'éditeur) — infos du compte cliqué, tous journaux — v294
 **Quoi :** dans l'**éditeur d'écritures** (Consultation des comptes), la **zone en bas à droite** (à côté de « tx TVA / Tiers / Échéance / mode Règlement ») affiche désormais, **à chaque sélection d'un compte sur une ligne** (clic / focus / saisie), les **informations du compte** — et ce **sur tous les journaux** :
 - **Compte de TIERS sélectionné** → 3 lignes : **compte de tiers + libellé** (Fournisseur/Client + nom, ou libellé de l'écriture), **compte de TVA + libellé**, **compte de charge/produit + libellé** (lus dans l'écriture).
 - **Compte de TVA sélectionné** → **libellé du compte de TVA**.
