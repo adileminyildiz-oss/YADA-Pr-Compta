@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Éditeur : sélectionner toutes les lignes d'une écriture → l'écriture entière est supprimée (plus de 1ʳᵉ ligne vide laissée) — v290
+## 🟢 Dernière mise à jour — Éditeur : le curseur passe sur le LIBELLÉ à chaque ligne (modifiable partout, tous journaux) — v291
+**Quoi :** dans l'**éditeur d'écritures** (Consultation des comptes), pendant la **saisie au clavier** (Tab / Entrée / flèches), le **curseur passe désormais aussi sur le libellé** — sur **toutes les lignes** de l'écriture, pas seulement la première — afin de pouvoir **modifier le libellé** à tout moment. Vaut pour **tous les journaux**. Avant, le libellé n'était éditable que sur la 1ʳᵉ ligne (répété en lecture seule sur les suivantes) ; en saisie de banque, le flux amenait le curseur sur la 2ᵉ ligne (contrepartie 512) où le libellé était inaccessible.
+
+**Comment — 1 édition chirurgicale de `ecRender` (cellule `ec-lb`) :** le libellé devient un **`<input class="ec-i">` sur chaque ligne** (au lieu d'un `<span class="ec-ro">` sur les lignes ≥ 2), toujours lié à `e.libelle` via `onchange="ecSetLibelleEcr(id, v)"`. La navigation clavier (`addon114`, basée sur les `input.ec-i`) inclut donc le libellé sur chaque ligne. `ecSetLibelleEcr` met à jour `e.libelle` et re-rend → le libellé **reste identique sur toutes les lignes** (invariant v221 préservé).
+
+**Limites :** seul le **libellé** devient éditable sur toutes les lignes (la **pièce** reste éditable sur la 1ʳᵉ ligne uniquement). Validé : `node --check` (144 scripts) + Playwright (Tab depuis le compte de la 2ᵉ ligne → libellé col 5 ; édition du libellé depuis la L2 met à jour `e.libelle` ; équilibre des écritures OK ; 0 pageerror). Badge → **v291 · curseur passe sur le libellé (toutes lignes)**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur : sélectionner toutes les lignes d'une écriture → l'écriture entière est supprimée (plus de 1ʳᵉ ligne vide laissée) — v290
 **Quoi :** complément de la v289. Dans l'**éditeur d'écritures**, quand on **sélectionne toutes les lignes d'une écriture** (donc l'écriture entière) et qu'on **supprime** (clic droit → « Supprimer les N lignes sélectionnées »), **l'écriture entière est retirée** — on ne laisse **plus une première ligne vide** derrière. Si seules **certaines** lignes d'une écriture sont sélectionnées, elle conserve ses lignes restantes (inchangé). Vaut pour **plusieurs écritures** à la fois.
 
 **Comment — 1 édition de `ecSupprimerLignesSelection` (`yada-addon120`) :** après avoir splicé les lignes sélectionnées (index décroissant), toute écriture qui se retrouve à **0 ligne** est **retirée du stockage** (`db.ecritures=db.ecritures.filter(e=>removeIds.indexOf(e.id)<0)` + `db.odiv` filtré sur `ecritureId`) **au lieu** d'y pousser une ligne vide. `save`+`ecRender` ; toast « N ligne(s) supprimée(s) · M écriture(s) retirée(s) ».

@@ -9125,7 +9125,7 @@ function ecRender(){
         <td class="ec-c ec-jrn">${e.journal||''}</td>
         <td class="ec-l ec-pc">${first?`<input class="ec-i" value="${ecAttr(ecPiece(e))}" onchange="ecSetPiece('${e.id}',this.value)">`:`<span class="ec-ro">${ecAttr(ecPiece(e))}</span>`}</td>
         <td class="ec-l"><input class="ec-i ec-cpt" value="${ecAttr(l.compte)}" autocomplete="off" onfocus="this.select()" onmouseup="return false" oninput="ecSuggest(this,'${e.id}',${i})" onblur="ecSuggClose()" onchange="ecSetLine('${e.id}',${i},'compte',this.value)"></td>
-        <td class="ec-l ec-lb">${first?`<input class="ec-i" value="${ecAttr(e.libelle||'')}" onchange="ecSetLibelleEcr('${e.id}',this.value)">`:`<span class="ec-ro">${ecAttr(e.libelle||'')}</span>`}</td>
+        <td class="ec-l ec-lb"><input class="ec-i" value="${ecAttr(e.libelle||'')}" onchange="ecSetLibelleEcr('${e.id}',this.value)"></td>
         <td class="ec-n"><input class="ec-i ec-num" type="number" step="0.01" value="${l.debit||''}" onchange="ecSetLine('${e.id}',${i},'debit',this.value)"></td>
         <td class="ec-n"><input class="ec-i ec-num" type="number" step="0.01" value="${l.credit||''}" onchange="ecSetLine('${e.id}',${i},'credit',this.value)"></td>
         <td class="ec-n ec-solde">${mine&&Math.abs(solde)>0.005?sageNum(solde)+' '+sSens:''}</td>
@@ -10879,7 +10879,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v290 · supprimer une écriture entière (sélection)';
+    b.textContent='YADA · v291 · curseur passe sur le libellé (toutes lignes)';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;right:10px;bottom:10px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
