@@ -10885,7 +10885,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v299';
+    b.textContent='YADA · v300';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -15994,6 +15994,7 @@ ${lignes}
   function seen(){ try{ return localStorage.getItem('yada-whatsnew')===VER; }catch(e){ return false; } }
   function mark(){ try{ localStorage.setItem('yada-whatsnew',VER); }catch(e){} }
   function show(){
+    return; /* bandeau « Nouveautés » désactivé (demande utilisateur — ne plus l'afficher) */
     if(seen() || document.getElementById('yada-wn')) return;
     var d=document.createElement('div'); d.id='yada-wn';
     d.innerHTML='<div class="wn-card">'
@@ -16021,6 +16022,40 @@ ${lignes}
     +'#yada-wn .wn-ok{background:#1e90ff;border:none;color:#fff;font-weight:700;padding:8px 16px;border-radius:9px;cursor:pointer}';
     document.head.appendChild(st); }catch(e){}
   if(document.body) setTimeout(show,800); else document.addEventListener('DOMContentLoaded',function(){ setTimeout(show,800); });
+})();
+</script>
+<script id="yada-addon-jour-charme">
+/* ============================================================
+   MODE JOUR — habillage « charme » : bleu + blanc plus soignés, surlignements
+   qui tapent à l'œil, formules marketing. 100% scopé body[data-theme="jour"]
+   (le MODE NUIT n'est PAS touché). Injecté en dernier → prioritaire dans la cascade.
+   ============================================================ */
+(function(){
+  var css=''
+    +'body[data-theme="jour"] .kpi{position:relative;overflow:hidden;background:linear-gradient(180deg,#ffffff,#eef5ff)!important;border:1px solid rgba(10,132,255,.30)!important;box-shadow:0 10px 26px rgba(10,80,200,.12)!important}'
+    +'body[data-theme="jour"] .kpi::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:linear-gradient(90deg,#0a84ff,#0050c8)!important}'
+    +'body[data-theme="jour"] .kpi .val:not(.deb):not(.cre){color:#0a4fc0!important;font-weight:800!important;letter-spacing:.2px}'
+    +'body[data-theme="jour"] .kpi .lbl{text-transform:uppercase;letter-spacing:.6px;font-weight:700;color:#3f5a86!important}'
+    +'body[data-theme="jour"] .kpi .meta{color:#5577a3!important}'
+    +'body[data-theme="jour"] .card{background:linear-gradient(180deg,#ffffff,#fafdff)!important;border:1px solid rgba(10,132,255,.24)!important;box-shadow:0 10px 30px rgba(10,60,160,.09)!important}'
+    +'body[data-theme="jour"] .card h2{position:relative;padding-left:16px!important}'
+    +'body[data-theme="jour"] .card h2::before{content:"";position:absolute;left:0;top:1px;bottom:1px;width:6px;border-radius:4px;background:linear-gradient(180deg,#0a84ff,#0050c8)!important;box-shadow:0 0 0 3px rgba(10,132,255,.12)}'
+    +'body[data-theme="jour"] .card .sub{color:#5577a3!important}'
+    +'body[data-theme="jour"] thead th{background:#eaf2ff!important;color:#0b346e!important;font-weight:700;border-bottom:2px solid rgba(10,132,255,.30)!important}'
+    +'body[data-theme="jour"] tbody tr:nth-child(even) td{background:#f6faff!important}'
+    +'body[data-theme="jour"] tbody tr:hover td{background:#e6f0ff!important}'
+    +'body[data-theme="jour"] .ec-tile,body[data-theme="jour"] .ec-shortcuts a,body[data-theme="jour"] .ec-shortcuts .ec-tile{background:#ffffff!important;border:1px solid rgba(10,132,255,.28)!important;color:#0b346e!important;box-shadow:0 6px 18px rgba(10,70,180,.10)!important}'
+    +'body[data-theme="jour"] .ec-tile:hover,body[data-theme="jour"] .ec-shortcuts a:hover{background:#eef5ff!important;border-color:#0a84ff!important}'
+    +'body[data-theme="jour"] #ec-hero,body[data-theme="jour"] #ec-hero.cab-hero{background:linear-gradient(125deg,#0a84ff 0%,#0a5fd6 55%,#0040b0 100%)!important;box-shadow:0 18px 46px rgba(10,70,190,.34)!important;border:1px solid #4da3ff!important}'
+    +'body[data-theme="jour"] #ec-hero.cab-hero::after{content:"\\2728 Une comptabilit\\00e9 claire et ma\\00eetris\\00e9e \\2014 vos chiffres justes, en un coup d\\2019\\0153il.";display:block;margin-top:12px;font-size:13px;font-weight:600;color:#dbeaff!important;letter-spacing:.2px}'
+    +'body[data-theme="jour"] .btn-pri,body[data-theme="jour"] .btn-gold{box-shadow:0 6px 16px rgba(10,80,200,.30)!important}'
+    +'body[data-theme="jour"] .seg button.on,body[data-theme="jour"] .cp-mtab.on{box-shadow:0 6px 16px rgba(10,80,200,.28)!important}'
+    +'body[data-theme="jour"] ::-webkit-scrollbar{width:10px;height:10px}'
+    +'body[data-theme="jour"] ::-webkit-scrollbar-track{background:transparent}'
+    +'body[data-theme="jour"] ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#7fb4ff,#2f7fe0);border-radius:8px;border:2px solid #ffffff}'
+    +'body[data-theme="jour"] ::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#5aa0ff,#0a64d6)}'
+    +'body[data-theme="jour"]{scrollbar-color:#5aa0ff transparent;scrollbar-width:thin}';
+  try{ var st=document.createElement('style'); st.id='jour-charme'; st.textContent=css; document.head.appendChild(st); }catch(e){}
 })();
 </script>
 <script id="yada-addon112">

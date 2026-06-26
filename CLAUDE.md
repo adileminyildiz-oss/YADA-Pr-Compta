@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Éditeur (hors banque) : Entrée sur DÉBIT → CRÉDIT + insertion d'une ligne interdite tant que non soldée — v299
+## 🟢 Dernière mise à jour — Mode JOUR : habillage « charme » bleu & blanc + formule marketing + bandeau Nouveautés retiré — v300
+**Quoi :** le **Mode Jour** (`data-theme="jour"`) est rendu **plus convaincant** : accents/dégradés **bleus**, **surlignements qui tapent à l'œil** (barre bleue en tête de chaque KPI et avant chaque titre de carte), **tables** en-tête bleu + zébrage, **hero** plus riche avec **formule marketing** (« ✨ Une comptabilité claire et maîtrisée — vos chiffres justes, en un coup d'œil. »), **scrollbar** fine et bleue. Le **bandeau « Nouveautés »** (addon111) est **désactivé**. **Le MODE NUIT n'est pas touché.**
+
+**Où / comment :** `yada-addon-jour-charme` injecte `<style id="jour-charme">` en dernier, **100% scopé `body[data-theme="jour"]`** (couleurs uniquement, aucun mouvement — règle v235 ; rouge/vert comptables conservés). `addon111.show()` retourne immédiatement. Validé : `node --check`, équilibre (d-ama/d-sci42), captures Playwright (jour embelli, popup absent, 0 pageerror). Badge → **v300**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur (hors banque) : Entrée sur DÉBIT → CRÉDIT + insertion d'une ligne interdite tant que non soldée — v299
 **Quoi :** dans l'**éditeur d'écritures** (Consultation des comptes), pour **tous les journaux SAUF la banque (BQ)** : la touche **Entrée** depuis le champ **Débit** amène désormais le curseur sur le **Crédit** (on peut enfin accéder au crédit) — au lieu d'insérer une écriture/ligne parasite. L'**insertion d'une nouvelle ligne n'est possible qu'une fois l'écriture soldée** (Débit = Crédit) : tant qu'elle **n'est pas soldée**, **aucune ligne n'est insérée** — Entrée se contente de **naviguer** (pour atteindre/compléter le crédit). Une fois **soldée**, Entrée depuis la dernière ligne **passe à une nouvelle écriture**. Le **journal de banque (BQ) conserve son comportement** (contrepartie 512 / ajout de ligne pour solder, v279→v287).
 
 **Comment — 2 éditions chirurgicales d'`addon114` :**
