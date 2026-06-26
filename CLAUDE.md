@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Consultation : sélections (période / journal / onglet) accordées au système (vert → bleu Crystal) — v311
+## 🟢 Dernière mise à jour — Charges & Paie : indicateurs verts accordés au système (bleu Crystal) — v312
+**Quoi :** dans le module **Charges & Paie**, les **éléments verts** de la barre du haut passent au **bleu Crystal** (comme les autres modules) : la **pastille « ✓ Mois saisi »** (`.cp-pill.ok`, qui était vert `#5bbf8a` sur fond vert) et les **sous-libellés « ✓ saisi »** des onglets de mois (`.cp-mtab .v`). La pastille **« ● Mois non saisi »** reste en rouge (avertissement « à faire »), et le mois actif était déjà en bleu.
+
+**Comment — 3 retouches CSS :**
+- `.cp-pill.ok` : `background:#163a2c;color:#5bbf8a;border:#2c6b4e` (vert) → `background:#0d2740;color:#5ab0ff;border:#1e90ff` (bleu).
+- `.cp-mtab .v` : `color:#5bbf8a` → `#5ab0ff` ; `.cp-mtab.on .v` : `#9fe0bf` → `#cfe0ff`.
+
+**Limites :** couleurs d'affichage uniquement ; le rouge « non saisi » est conservé (sémantique d'alerte). Validé : `node --check` (150 scripts) + accolades CSS équilibrées + Playwright (module rendu, plus de vert sur les indicateurs, équilibre OK, 0 pageerror). Badge → **v312**.
+
+---
+
+## 🟢 MAJ précédente — Consultation : sélections (période / journal / onglet) accordées au système (vert → bleu Crystal) — v311
 **Quoi :** dans la **Consultation des comptes**, les **éléments de sélection** qui s'affichaient en **VERT** (ne correspondant pas au système bleu) passent au **bleu Crystal** : la **période active** (mois sélectionné, ex. « 12/25 »), le **journal actif** (ex. « A - HA ACHATS »), et le **liseré de l'onglet actif** (Comptes Généraux / Fournisseurs divers…). C'était surtout visible en **Mode nuit**, où le mois sélectionné restait vert (`#57b88b`) malgré le thème bleu.
 
 **Comment — 5 retouches CSS chirurgicales :**

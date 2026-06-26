@@ -340,15 +340,15 @@
   .cp-topbar .meta{font-size:12.5px;color:#9fb0ab;margin-top:3px}
   .cp-topbar .meta b{color:#e8d9b8}
   .cp-pill{font-size:13px;font-weight:700;padding:8px 16px;border-radius:30px;white-space:nowrap}
-  .cp-pill.ok{background:#163a2c;color:#5bbf8a;border:1px solid #2c6b4e}
+  .cp-pill.ok{background:#0d2740;color:#5ab0ff;border:1px solid #1e90ff}
   .cp-pill.no{background:#3a241f;color:#e09a8c;border:1px solid #6b3a2c}
   .cp-monthbar{display:flex;gap:6px;overflow-x:auto;padding:10px 26px;background:#fffdf8;border-bottom:1px solid var(--line)}
   .cp-mtab{flex:0 0 auto;font:inherit;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:9px;border:1px solid var(--line-strong);
     background:#fff;color:var(--ink-soft);cursor:pointer;transition:.12s;white-space:nowrap}
   .cp-mtab:hover{border-color:var(--gold)}
   .cp-mtab.on{background:var(--ink);color:#f6f2e9;border-color:var(--ink)}
-  .cp-mtab .v{display:block;font-size:10px;color:#5bbf8a;font-weight:700;margin-top:1px}
-  .cp-mtab.on .v{color:#9fe0bf}
+  .cp-mtab .v{display:block;font-size:10px;color:#5ab0ff;font-weight:700;margin-top:1px}
+  .cp-mtab.on .v{color:#cfe0ff}
   .cp-scroll{flex:1;overflow:auto;padding:22px 26px 40px}
   .cp-kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
   @media(max-width:1100px){.cp-kgrid{grid-template-columns:repeat(2,1fr)}}
@@ -10888,7 +10888,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v311';
+    b.textContent='YADA · v312';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
