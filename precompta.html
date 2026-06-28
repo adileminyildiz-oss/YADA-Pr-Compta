@@ -10888,7 +10888,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v326';
+    b.textContent='YADA · v327';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -19533,6 +19533,107 @@ ${lignes}
       return _r.apply(this,arguments);
     };
   }
+})();
+</script>
+<script id="yada-addon164">
+/* ============================================================
+   NAVIGATION (espace cabinet) — modules principaux + sous-modules dépliables.
+   8 modules principaux : Comptabilité, Fournisseurs, Clients, Tiers,
+   Immobilisations et Financement, Charges et Paie, TVA, Banque.
+   Les autres pages deviennent des SOUS-MODULES, listés uniquement quand on
+   clique sur le module principal (plusieurs modules peuvent rester ouverts,
+   état mémorisé). Pages hors comptabilité gardées en sections séparées
+   (Pilotage en haut, Dossier & réglages en bas). Renommages demandés
+   (Consultation → Analyse, Éditions, …). 100% additif (override buildNav
+   pour le cabinet ; la navigation Client n'est pas modifiée).
+   ============================================================ */
+(function(){
+  if(typeof buildNav!=='function') return;
+  var LS='yada-modnav-open';
+  function openSet(){ try{ return new Set(JSON.parse(localStorage.getItem(LS)||'[]')); }catch(e){ return new Set(); } }
+  function saveOpen(s){ try{ var a=[]; s.forEach(function(k){ a.push(k); }); localStorage.setItem(LS, JSON.stringify(a)); }catch(e){} }
+  window.modnavToggle=function(key){ var s=openSet(); if(s.has(key)) s.delete(key); else s.add(key); saveOpen(s); try{ buildNav(); }catch(e){} };
+
+  /* renommages / libellés par id de page */
+  var LBL={ compta:'Analyse', editions:'Éditions', journal:'Journal comptable', fec:'Import / Export FEC',
+    reglements:'Suivi des règlements', analytique:'Analytique & rentabilité', plancomptable:'Plan comptable',
+    ia:'Assistant IA', immos:'Immobilisations & Financements', fraiskm:'Frais km & carburant',
+    banque:'Banque (512)', saisiebq:'Saisie journal Banque', rappro:'Rapprochement (lettrage)' };
+  function pget(id){ return (typeof PAGES!=='undefined'?PAGES:[]).find(function(p){ return p.id===id; }); }
+  function lbl(id){ return LBL[id] || (pget(id)?pget(id).lbl:id); }
+  function ico(id){ return (pget(id)&&pget(id).ico)||'•'; }
+
+  var PILOTAGE=['dash','societe','client'];
+  var MODULES=[
+    {key:'m-compta', nom:'Comptabilité', ico:'▦', subs:['compta','journal','editions','fec','reglements','analytique','plancomptable','ia']},
+    {key:'m-fourn', nom:'Fournisseurs', ico:'⎙', page:'achats'},
+    {key:'m-clients', nom:'Clients', ico:'⤳', page:'facturation'},
+    {key:'m-tiers', nom:'Tiers', ico:'⊞', page:'tiers'},
+    {key:'m-immo', nom:'Immobilisations et Financement', ico:'▤', subs:['immos','fraiskm']},
+    {key:'m-paie', nom:'Charges et Paie', ico:'◴', page:'chargespaie'},
+    {key:'m-tva', nom:'TVA', ico:'%', page:'tva'},
+    {key:'m-banque', nom:'Banque', ico:'▣', subs:['banque','saisiebq','rappro']}
+  ];
+  var REGLAGES=['dossier','infosociete','coffre','parametrage'];
+
+  function mkSec(txt){ var s=document.createElement('div'); s.className='nav-sec'; s.textContent=txt; return s; }
+  function mkPageBtn(id, extraCls){
+    var b=document.createElement('button'); b.className='nav-btn '+(extraCls||'')+(id===current?' active':'');
+    b.innerHTML='<span class="ico">'+ico(id)+'</span><span class="nl">'+lbl(id)+'</span>';
+    b.onclick=function(){ current=id; render(); };
+    return b;
+  }
+
+  function buildCabinet(){
+    var nav=document.getElementById('nav'); if(!nav) return; nav.innerHTML='';
+    var op=openSet();
+    /* Pilotage (section simple) */
+    nav.appendChild(mkSec('Pilotage'));
+    PILOTAGE.forEach(function(id){ if(pget(id)) nav.appendChild(mkPageBtn(id)); });
+    /* Modules principaux */
+    nav.appendChild(mkSec('Modules'));
+    MODULES.forEach(function(m){
+      if(m.page){
+        var b=document.createElement('button'); b.className='nav-btn nav-main'+(current===m.page?' active':'');
+        b.innerHTML='<span class="ico">'+m.ico+'</span><span class="nl">'+m.nom+'</span>';
+        b.onclick=(function(pid){ return function(){ current=pid; render(); }; })(m.page);
+        nav.appendChild(b);
+      } else {
+        var isOpen=op.has(m.key);
+        var subActive=m.subs.indexOf(current)>=0;
+        var h=document.createElement('button');
+        h.className='nav-btn nav-main nav-grp-h'+(isOpen?' open':'')+(subActive?' has-active':'');
+        h.innerHTML='<span class="ico">'+m.ico+'</span><span class="nl">'+m.nom+'</span><span class="nav-chev">'+(isOpen?'▾':'▸')+'</span>';
+        h.onclick=(function(k){ return function(){ modnavToggle(k); }; })(m.key);
+        nav.appendChild(h);
+        if(isOpen){
+          var wrap=document.createElement('div'); wrap.className='nav-sub';
+          m.subs.forEach(function(id){ if(pget(id)) wrap.appendChild(mkPageBtn(id,'nav-sub-btn')); });
+          nav.appendChild(wrap);
+        }
+      }
+    });
+    /* Dossier & réglages (section simple) */
+    nav.appendChild(mkSec('Dossier & réglages'));
+    REGLAGES.forEach(function(id){ if(pget(id)) nav.appendChild(mkPageBtn(id)); });
+  }
+
+  var _bn=buildNav;
+  buildNav=function(){
+    if(window.sessionRole==='client'){ return _bn.apply(this,arguments); }
+    try{ buildCabinet(); }catch(e){ return _bn.apply(this,arguments); }
+  };
+
+  try{ var st=document.createElement('style'); st.id='modnav-mod'; st.textContent=
+    '#nav .nav-btn .nl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
+    +'#nav .nav-main{font-weight:600}'
+    +'#nav .nav-grp-h .nav-chev{margin-left:auto;font-size:11px;opacity:.75;flex:0 0 auto}'
+    +'#nav .nav-main.has-active{color:#cfe0ff}'
+    +'#nav .nav-main.has-active .nl{font-weight:700}'
+    +'#nav .nav-sub{display:flex;flex-direction:column;gap:2px;margin:2px 0 8px 14px;padding-left:4px;border-left:2px solid rgba(30,144,255,.30)}'
+    +'#nav .nav-sub-btn{padding-left:12px !important;font-size:13px}'
+    +'#nav .nav-sub-btn .ico{opacity:.8}';
+    document.head.appendChild(st); }catch(e){}
 })();
 </script>
 </body>
