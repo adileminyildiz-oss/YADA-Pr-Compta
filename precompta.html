@@ -4074,7 +4074,7 @@ const PAGES=[
   {id:'client',ico:'',sec:'Espace Client',lbl:'Espace Client'},
   {id:'tiers',ico:'⊞',sec:'Référentiel',lbl:'TIERS'},
   {id:'facturation',ico:'⤳',sec:'Ventes',lbl:'Client'},
-  {id:'achats',ico:'⎙',sec:'Achats',lbl:'Fournisseur'},
+  {id:'achats',ico:'⎙',sec:'Achats',lbl:'Fournisseurs'},
   {id:'compta',ico:'▦',sec:'Comptabilité',lbl:'Consultation des comptes'},
   {id:'chargespaie',ico:'',sec:'Comptabilité',lbl:'Charges et Paie'},
   {id:'journal',ico:'≣',sec:'Comptabilité',lbl:'Journal comptable'},
@@ -10888,7 +10888,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v327';
+    b.textContent='YADA · v328';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -19634,6 +19634,45 @@ ${lignes}
     +'#nav .nav-sub-btn{padding-left:12px !important;font-size:13px}'
     +'#nav .nav-sub-btn .ico{opacity:.8}';
     document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon165">
+/* ============================================================
+   MODULE FOURNISSEURS (cabinet) :
+   1) Suppression de la carte « Correspondances » (sens achat).
+   2) Dépôt de facture fournisseur disponible dans le module (dropzone +
+      lecture auto), en plus de la capture manuelle/OCR.
+   3) Génération d'écritures proposée : la carte cabinet des dépôts
+      (depotsCabinetCard, comptabilisation = écriture ACH) reste affichée.
+   100% additif (greffes pageAchats / correspondancesCard, cabinet uniquement).
+   ============================================================ */
+(function(){
+  /* 1) retirer la carte Correspondances du module Fournisseurs (achat) */
+  if(typeof window.correspondancesCard==='function'){
+    var _cc=window.correspondancesCard;
+    window.correspondancesCard=function(sens){
+      if(sens==='achat') return '';            /* supprimée côté Fournisseurs */
+      return _cc.apply(this,arguments);         /* conservée côté Clients (vente) */
+    };
+  }
+  /* 2) injecter le dépôt de facture fournisseur dans le module (cabinet) */
+  if(typeof pageAchats==='function'){
+    var _pa=pageAchats;
+    pageAchats=function(){
+      var h=_pa.apply(this,arguments);
+      try{
+        if((window.sessionRole||'cabinet')!=='client' && typeof depotFacturesCard==='function' && h.indexOf('fdep-achat')<0){
+          var dep=depotFacturesCard('achat','Déposer une facture fournisseur',
+            'Déposez la facture reçue (PDF/photo) : lecture automatique du montant TTC, calcul TVA/HT, puis génération de l\'écriture proposée ci-dessous.');
+          /* insérer le dépôt juste avant la carte « Capture d'une facture » */
+          if(h.indexOf('<div class="card"><h2>Capture')>=0){
+            h=h.replace('<div class="card"><h2>Capture', dep+'<div class="card"><h2>Capture');
+          } else { h=dep+h; }
+        }
+      }catch(e){}
+      return h;
+    };
+  }
 })();
 </script>
 </body>

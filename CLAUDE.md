@@ -36,7 +36,20 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Navigation (cabinet) : 8 modules principaux + sous-modules dépliables — v327
+## 🟢 Dernière mise à jour — Module Fournisseurs (cabinet) : dépôt de facture + génération d'écritures, carte Correspondances retirée, « Fournisseur » → « Fournisseurs » — v328
+**Quoi :** dans le **module Fournisseurs** (espace cabinet) :
+1. **Renommage** « Fournisseur » → **« Fournisseurs »** (libellé de page/menu, `PAGES` id `achats`).
+2. **Carte « Correspondances » supprimée** du module (sens **achat**) ; elle est **conservée côté Clients** (sens vente).
+3. **Dépôt de facture fournisseur** ajouté dans le module (dropzone + lecture auto TTC/TVA/HT, via `depotFacturesCard('achat')`) — en plus de la capture manuelle/OCR.
+4. **Génération d'écritures proposée** : la carte cabinet des dépôts (`depotsCabinetCard('achat')`, comptabilisation → écriture ACH) reste affichée + la carte « Capture d'une facture » (génère l'écriture).
+
+**Comment — `yada-addon165` (100% additif, cabinet uniquement) :** wrap `correspondancesCard` → renvoie `''` si `sens==='achat'` (Clients/vente intacts) ; wrap `pageAchats` → insère `depotFacturesCard('achat', …)` **juste avant** la carte « Capture d'une facture » (`h.replace('<div class="card"><h2>Capture', dep+…)`, garde anti-doublon `fdep-achat`). Libellé : `PAGES` `achats` `lbl:'Fournisseur'` → `'Fournisseurs'`.
+
+**Limites :** la génération depuis un dépôt passe par la carte cabinet (Recevoir → Comptabiliser) ; la capture directe (manuelle/OCR) génère aussi l'écriture. Validé : `node --check` (158 scripts, 0 erreur) + accolades addon165 (10/10) + Playwright (libellé « Fournisseurs », dropzone `fdep-achat` présent, Capture présent, dépôts cabinet présent, Correspondances achat retirée mais vente conservée, équilibre ✅, 0 pageerror). Badge → **v328**.
+
+---
+
+## 🟢 MAJ précédente — Navigation (cabinet) : 8 modules principaux + sous-modules dépliables — v327
 **Quoi :** la barre de navigation (espace cabinet) est réorganisée en **8 modules principaux** : **Comptabilité, Fournisseurs, Clients, Tiers, Immobilisations et Financement, Charges et Paie, TVA, Banque**. Les autres pages deviennent des **sous-modules**, **listés uniquement quand on clique** sur le module principal (plusieurs modules peuvent rester ouverts, état mémorisé). Les pages hors comptabilité restent en **sections séparées** : **Pilotage** en haut (Tableau de bord, Sociétés, Espace Client) et **Dossier & réglages** en bas (Société & dossier, Informations société, Coffre-fort, Paramétrage).
 
 **Sous-modules de Comptabilité** (+ renommages demandés) : **Analyse** (ex-« Consultation des comptes »), **Journal comptable**, **Éditions** (ex-« Éditions (Balance, Grand livre…) »), **Import / Export FEC**, **Suivi des règlements**, **Analytique & rentabilité**, **Plan comptable**, **Assistant IA**. Modules à page unique (Fournisseurs, Clients, Tiers, Charges et Paie, TVA) = **bouton direct** (pas de sous-liste). Banque → Banque (512) · Saisie journal Banque · Rapprochement. Immobilisations et Financement → Immobilisations & Financements · Frais km & carburant.
