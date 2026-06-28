@@ -10896,7 +10896,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v338';
+    b.textContent='YADA · v339';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -15273,7 +15273,10 @@ ${lignes}
       +'</div></div>';
   }
   window.factParamCard=factParamCard;
-  function greffe(name){ if(typeof window[name]==='function'){ var _o=window[name]; window[name]=function(){ var h=_o.apply(this,arguments); try{ h+=factParamCard(); }catch(e){} return h; }; } }
+  /* La carte « Paramètres de facturation » est réservée à l'espace CABINET :
+     côté client elle apparaissait en double (le wrapper pageFacturation appelle
+     pageFacturationClient, tous deux greffés) → retirée de l'Espace Client (v339). */
+  function greffe(name){ if(typeof window[name]==='function'){ var _o=window[name]; window[name]=function(){ var h=_o.apply(this,arguments); try{ if((window.sessionRole||'cabinet')!=='client') h+=factParamCard(); }catch(e){} return h; }; } }
   greffe('pageFacturation'); greffe('pageFacturationClient');
 
   try{ var st=document.createElement('style'); st.id='fparam-mod'; st.textContent=

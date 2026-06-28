@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Barre de recherche retirée de la barre latérale (raccourci ⌘K conservé) — v338
+## 🟢 Dernière mise à jour — Espace Client : carte « Paramètres de facturation » en double retirée — v339
+**Quoi :** dans l'**Espace Client** (page Facturation client), la carte **« ⚙️ Paramètres de facturation »** apparaissait **en double**. Cause : `addon104` greffait `factParamCard()` **à la fois** sur `pageFacturation` et `pageFacturationClient` ; or côté client le wrapper `pageFacturation` **appelle** `pageFacturationClient()` (bascule de rôle) → la carte était ajoutée deux fois. Cette carte regroupe des **réglages cabinet** (mentions de la facture A4 : condition de TVA, moyen de paiement, indemnité de recouvrement, escompte, RIB) → elle est désormais **réservée à l'espace Cabinet** et **retirée de l'Espace Client** (ce qui supprime aussi le doublon).
+
+**Comment — 1 édition chirurgicale d'`addon104` :** le helper `greffe()` n'ajoute `factParamCard()` que si `(window.sessionRole||'cabinet')!=='client'` → côté client les deux wrappers sont sans effet ; côté cabinet, **une seule** carte. Aucune logique modifiée.
+
+**Limites :** affichage uniquement. Validé : `node --check` (165 scripts, 0 erreur) + Playwright (client : `fparam-card` ×0 via `pageFacturationClient` **et** via `pageFacturation` ; cabinet : ×1 ; équilibre ✅, 0 pageerror). Badge → **v339**.
+
+---
+
+## 🟢 MAJ précédente — Barre de recherche retirée de la barre latérale (raccourci ⌘K conservé) — v338
 **Quoi :** à la demande, la **barre de recherche** « 🔎 Rechercher… ⌘K » (ajoutée en v335 en tête de la barre latérale) est **retirée**. Le **raccourci clavier ⌘K / Ctrl+K** reste actif (la palette de commandes peut toujours s'ouvrir) ; seule la barre visible disparaît.
 
 **Comment — 1 édition chirurgicale d'`yada-addon170` :** `injectBar()` n'insère plus la barre — elle se contente de **supprimer** toute `.cmdk-search` éventuellement présente (idempotent, re-greffé sur `render`). Le reste de la palette (`cmdkOpen`/`cmdkClose`, overlay, filtre) est inchangé ; styles `.cmdk-search` laissés inutilisés (sans effet).
