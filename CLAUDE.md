@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — DA « phase 1 » (d'après image de référence) : fond ardoise plat, cartes épurées, interface plus compacte — v334
+## 🟢 Dernière mise à jour — DA « phase 2 » (1/3) : barre de recherche + palette de commandes ⌘K — v335
+**Quoi :** suite de la refonte DA (d'après l'image de référence). Ajout d'une **barre de recherche** en tête de la **barre latérale** (« 🔎 Rechercher…  ⌘K ») et d'une **palette de commandes ⌘K** (raccourci **⌘K / Ctrl+K**, ou clic sur la barre) : une fenêtre centrée permet d'**aller directement à n'importe quel module** — saisie → **filtre instantané** (insensible aux accents, sur le libellé et la section), **↑/↓** pour choisir, **Entrée** pour ouvrir, **Échap** ou clic à l'extérieur pour fermer. Accent **BLEU** conservé.
+
+**Comment — `yada-addon170` (100% additif) :** `<style id="cmdk-mod">` (barre `.cmdk-search`, overlay `#cmdk-ov`, palette `#cmdk-box`, items `.cmdk-it` au survol/sélection en dégradé bleu) ; `dests()` construit la liste depuis **`PAGES`** (filtrée par rôle : client → `CLIENT_PAGES` + Espace Client) ; `open()/close()/paint()/goItem()` ; la navigation réutilise **`current=<id>; render()`** (aucune logique modifiée) ; barre re-greffée en tête de `#nav` à chaque rendu (idempotent) ; ouverture bloquée tant que le logiciel n'est pas ouvert (`connecte`).
+
+**Limites :** la palette navigue vers les **modules** (pas encore vers les dossiers/actions) ; reste de la phase 2 à venir : **en-tête dossier à chips** (À revoir / Tenue cabinet + Marquer revu / Déverser), **KPI en pavés à icône**, **restyle des graphiques**. Validé : `node --check` (163 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (`cmdkOpen`/`cmdkClose` exposés, style injecté, filtre « tva » → « Module TVA (CA3) », équilibre ✅ — 34 écritures, 0 pageerror). Badge → **v335**.
+
+---
+
+## 🟢 MAJ précédente — DA « phase 1 » (d'après image de référence) : fond ardoise plat, cartes épurées, interface plus compacte — v334
 **Quoi :** première passe de **refonte de la direction artistique** (d'après l'image de référence fournie), en **Mode Nuit** : **fond ardoise plat sombre** (`#0b0e13`, fini le dégradé bleu v308 sur la zone de contenu), **cartes épurées** (ardoise unie `#12161d`, bord discret `rgba(255,255,255,.08)`, **sans ombre**, coins 12 px), et **interface plus compacte (« dézoom »)** : marges des volets réduites, grilles resserrées (gap 14 px), KPI/cartes/titres/tableaux à typo et paddings réduits. **Accent BLEU conservé** (choix utilisateur).
 
 **Comment — `yada-addon169` (100% CSS, scopé `body[data-theme="noir"]`, injecté en dernier → prime sur v308) :** `<style id="da-ref-mod">` : fond plat sur `.layout:not(.solo)` + `mod-wrap`/`dash-wrap` ; restyle `.card`/`.kpi` (fond uni, bord, sans ombre, `::after` sheen masqué) ; densité (paddings/font-size réduits sur volets, grilles, KPI, `h2`, `th/td`) ; barre bleue de KPI amincie.
