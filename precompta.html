@@ -6788,17 +6788,12 @@ function afficherPropositionFEC(dansExoCourant){
       <div class="right"><button class="btn btn-ghost" onclick="annulerImportFEC()">Annuler</button>
         <button class="btn btn-pri" onclick="confirmerImportFEC(false)">Intégrer dans le dossier courant</button></div></div>`;
   } else {
-    r.innerHTML=`<div class="card" style="border-color:var(--blue)"><h2>Créer un nouveau dossier pour ce FEC ?</h2>
+    r.innerHTML=`<div class="card" style="border-color:var(--blue)"><h2>Intégrer le FEC dans le dossier courant</h2>
       <p>Fichier <b>${p.fichier}</b> · ${nbLignes} ligne(s) · écritures du <b>${frDate(p.dMin)}</b> au <b>${frDate(p.dMax)}</b>.</p>
-      <p>Ces dates ne correspondent pas à l'exercice courant. Vous pouvez créer un <b>nouveau dossier</b> avec une <b>nouvelle période d'exercice</b> ; si le nom du dossier et les dates concordent, le FEC sera automatiquement pris en compte.</p>
-      <div class="row g3">
-        <div class="field"><label>Nom du dossier</label><input id="fecnd-nom" value="${db.societe.dossierNom}"></div>
-        <div class="field"><label>Début d'exercice</label><input type="date" id="fecnd-debut" value="${p.exoDebut}"></div>
-        <div class="field"><label>Fin d'exercice</label><input type="date" id="fecnd-fin" value="${p.exoFin}"></div>
-      </div>
+      <p>Ces dates débordent de l'exercice courant (${frDate(db.societe.exoDebut)} → ${frDate(db.societe.exoFin)}) du dossier <b>${db.societe.dossierNom}</b>. L'import sera <b>intégré dans ce dossier</b> et l'exercice sera <b>élargi automatiquement</b> pour couvrir toutes les écritures du fichier.</p>
       <div class="right"><button class="btn btn-ghost" onclick="annulerImportFEC()">Annuler</button>
-        <button class="btn btn-gold" onclick="confirmerImportFEC(true)">Créer le dossier & intégrer le FEC</button></div>
-      <div class="hint">L'exercice proposé est déduit des dates du fichier (modifiable). L'<b>exercice suivant (N+1)</b> sera aussi ouvert automatiquement, pour traiter l'année du FEC et l'année en cours dans le même dossier.</div></div>`;
+        <button class="btn btn-pri" onclick="confirmerImportFEC(false)">Intégrer dans le dossier courant</button></div>
+      <div class="hint">Aucun nouveau dossier n'est créé : le FEC est rattaché au dossier déjà ouvert.</div></div>`;
   }
 }
 function annulerImportFEC(){ fecPending=null; const r=document.getElementById('fec-result'); if(r)r.innerHTML=''; toast('Import annulé'); }
@@ -6868,49 +6863,23 @@ function integrerFEC(data, exoD, exoF){
 }
 function confirmerImportFEC(nouveauDossier){
   const p=fecPending; if(!p) return;
-  let cr, dossierNom, exoD, exoF;
-  if(nouveauDossier){
-    const nom=((document.getElementById('fecnd-nom')||{}).value||'Dossier importé').trim();
-    const debut=(document.getElementById('fecnd-debut')||{}).value||p.exoDebut;
-    const fin=(document.getElementById('fecnd-fin')||{}).value||p.exoFin;
-    if(p.dMin<debut || p.dMax>fin){
-      return toast('Les dates du FEC ('+frDate(p.dMin)+'→'+frDate(p.dMax)+') ne tiennent pas dans l\'exercice saisi');
-    }
-    // créer un NOUVEAU dataset isolé (sans toucher au dossier actif)
-    persistActif();
-    const soc=Object.assign(societeDefaut(),{ raison:nom, dossierNom:nom, dossierCode:nom.replace(/\s/g,'').slice(0,6).toUpperCase(),
-      exoDebut:debut, exoFin:fin, exercices:[debut+'|'+fin, addAnnees(debut,1)+'|'+addAnnees(fin,1)] });
-    const ds=datasetVide(soc);
-    const newId='d-'+uid();
-    db.dossiersData[newId]=ds;
-    // intégrer dans CE dataset
-    withDataset(ds, ()=>{ chargerPlanBTP(); cr=integrerFEC(p.data, debut, fin);
-      logFEC({ sens:'import', fichier:p.fichier, format:p.fmt, nbEcr:cr.nEcr, nbLignes:cr.nLignes, rejets:cr.rejetsDate+cr.rejetsEq,
-        nBanque:cr.nBanque, nTiers:cr.nTiers, dossier:nom, exercice:frDate(debut)+'→'+frDate(fin), nouveauDossier:true }); });
-    // référencer dans le portefeuille du cabinet
-    if(!db.cabinet) db.cabinet=cabinetDefaut();
-    if(!db.cabinet.dossiers.some(x=>x.id===newId)){
-      db.cabinet.dossiers.push({ id:newId, nom, forme:soc.formeJur, siren:soc.siren, activite:soc.activite, ville:soc.ville,
-        actif:true, favori:false, factFourn:ds.factures.filter(f=>f.type==='achat').length, factClient:ds.factures.filter(f=>f.type==='vente').length,
-        docsManquants:0, portail:'Qonto', importeFEC:true });
-      db.cabinet.total=(db.cabinet.total||db.cabinet.dossiers.length);
-      if(db.cabinet.dossiers.length>db.cabinet.total) db.cabinet.total=db.cabinet.dossiers.length;
-    }
-    // activer le nouveau dossier
-    chargerDossier(newId);
-    dossierNom=nom; exoD=debut; exoF=fin;
-  } else {
-    exoD=db.societe.exoDebut; exoF=db.societe.exoFin;
-    cr=integrerFEC(p.data, exoD, exoF);
-    logFEC({ sens:'import', fichier:p.fichier, format:p.fmt, nbEcr:cr.nEcr, nbLignes:cr.nLignes, rejets:cr.rejetsDate+cr.rejetsEq,
-      nBanque:cr.nBanque, nTiers:cr.nTiers, dossier:db.societe.dossierNom, exercice:frDate(exoD)+'→'+frDate(exoF), nouveauDossier:false });
-    dossierNom=db.societe.dossierNom;
-  }
+  /* Intégration UNIQUEMENT dans le dossier déjà créé (courant). Aucun nouveau
+     dossier n'est créé. L'exercice courant est élargi si nécessaire pour couvrir
+     toutes les écritures du FEC (sinon elles seraient rejetées hors période). */
+  let cr, dossierNom, exoD=db.societe.exoDebut, exoF=db.societe.exoFin;
+  if(p.dMin<exoD) exoD=p.dMin;
+  if(p.dMax>exoF) exoF=p.dMax;
+  const exoElargi=(exoD!==db.societe.exoDebut || exoF!==db.societe.exoFin);
+  db.societe.exoDebut=exoD; db.societe.exoFin=exoF;
+  cr=integrerFEC(p.data, exoD, exoF);
+  logFEC({ sens:'import', fichier:p.fichier, format:p.fmt, nbEcr:cr.nEcr, nbLignes:cr.nLignes, rejets:cr.rejetsDate+cr.rejetsEq,
+    nBanque:cr.nBanque, nTiers:cr.nTiers, dossier:db.societe.dossierNom, exercice:frDate(exoD)+'→'+frDate(exoF), nouveauDossier:false });
+  dossierNom=db.societe.dossierNom;
   save(); snapshotDB(); sgPer=null; fecPending=null;
   const r=document.getElementById('fec-result');
   if(r) r.innerHTML=`<div class="card" style="border-color:var(--credit)"><h2 class="cre">FEC intégré ✓</h2>
-    <p>${cr.nEcr} écriture(s) et ${cr.nLignes} ligne(s) intégrées dans le dossier <b>${dossierNom}</b> (${frDate(exoD)} → ${frDate(exoF)})${nouveauDossier?' — nouveau dossier créé':''}.</p>
-    ${nouveauDossier?`<p class="cre">Exercice suivant <b>${(parseInt(exoD.slice(0,4))+1)}</b> également ouvert : vous pouvez traiter <b>${exoD.slice(0,4)}</b> et <b>${(parseInt(exoD.slice(0,4))+1)}</b> dans ce dossier (menu Fichier/Exercice → « Exercice suivant »).</p>`:''}
+    <p>${cr.nEcr} écriture(s) et ${cr.nLignes} ligne(s) intégrées dans le dossier <b>${dossierNom}</b> (${frDate(exoD)} → ${frDate(exoF)}).</p>
+    ${exoElargi?`<p class="cre">Exercice du dossier élargi à <b>${frDate(exoD)} → ${frDate(exoF)}</b> pour couvrir toutes les écritures du fichier.</p>`:''}
     <p>Reconstruction : <b>${cr.nBanque}</b> mouvement(s) bancaire(s), <b>${cr.nTiers}</b> tiers (fournisseurs / clients) recréés.</p>
     ${cr.rejetsDate?`<p class="deb">${cr.rejetsDate} écriture(s) hors exercice rejetée(s) (ex. ${cr.datesRejet.join(', ')}).</p>`:''}
     ${cr.rejetsEq?`<p class="deb">${cr.rejetsEq} écriture(s) déséquilibrée(s) rejetée(s).</p>`:''}
@@ -6921,7 +6890,7 @@ function confirmerImportFEC(nouveauDossier){
   toast('FEC intégré dans « '+dossierNom+' » : '+cr.nEcr+' écritures, '+cr.nBanque+' mvts banque, '+cr.nTiers+' tiers');
 }
 function pageFEC(){
-  return head('Import / Export FEC','Fichier des Écritures Comptables. À l\'import, le fichier n\'est accepté que s\'il respecte les dates de l\'exercice courant (période d\'un an). À l\'export, choisissez le format de sortie.')+
+  return head('Import / Export FEC','Fichier des Écritures Comptables. À l\'import, le fichier est intégré dans le dossier courant (déjà créé) ; si ses dates débordent de l\'exercice, celui-ci est élargi automatiquement. À l\'export, choisissez le format de sortie.')+
   `<div class="card"><h2>Exercice courant</h2>
     <div class="kv"><span>Période d'activité</span><div><b>${frDate(db.societe.exoDebut)}</b> → <b>${frDate(db.societe.exoFin)}</b></div>
       <span>Société</span><div>${db.societe.raison} (${db.societe.formeJur})</div></div>
@@ -6933,7 +6902,7 @@ function pageFEC(){
     </div>
     <div class="hint">Nom de fichier normalisé : SIREN + « FEC » + date de clôture (AAAAMMJJ).</div></div>
   <div class="card"><h2>Importer un FEC</h2>
-    <div class="sub">L'import <b>intègre réellement toutes les écritures</b> du fichier. Si les dates ne correspondent pas à l'exercice courant, le logiciel propose de <b>créer un nouveau dossier</b> avec la période adéquate.</div>
+    <div class="sub">L'import <b>intègre réellement toutes les écritures</b> du fichier <b>dans le dossier courant</b> (déjà créé). Si les dates débordent de l'exercice courant, celui-ci est <b>élargi automatiquement</b> pour les couvrir — aucun nouveau dossier n'est créé.</div>
     <div class="row g2">
       <div class="field"><label>Format d'import</label><select id="fec-imfmt">
         <option>Format FEC</option><option>Sage XML</option><option>Sage ONE</option><option>Ciel Compta</option>
@@ -10896,7 +10865,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v342';
+    b.textContent='YADA · v343';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }

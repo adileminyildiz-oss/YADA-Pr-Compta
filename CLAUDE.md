@@ -36,7 +36,19 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Accent « bleu flashy » (électrique + halo) sur certains éléments — v342
+## 🟢 Dernière mise à jour — Import FEC : intégration UNIQUEMENT dans le dossier déjà créé (création de dossier retirée) — v343
+**Quoi :** dans **Import / Export FEC**, la fonction **« Créer un nouveau dossier pour ce FEC ? »** (formulaire Nom/Début/Fin + bouton « Créer le dossier & intégrer le FEC ») est **retirée**. Désormais le FEC est **toujours intégré dans le dossier courant (déjà créé)**. Si les dates du fichier débordent de l'exercice courant, **l'exercice du dossier est élargi automatiquement** (union) pour couvrir toutes les écritures (sinon elles seraient rejetées hors période) — **aucun nouveau dossier n'est créé**.
+
+**Comment — 3 éditions chirurgicales :**
+- `afficherPropositionFEC` (branche hors-exercice) : le formulaire de création est remplacé par un panneau **« Intégrer le FEC dans le dossier courant »** (bouton → `confirmerImportFEC(false)`).
+- `confirmerImportFEC` : la branche `nouveauDossier` (nouveau dataset + référencement portefeuille + `chargerDossier`) est supprimée ; intégration directe dans `db` courant avec `exoD=min(exoDebut,dMin)` / `exoF=max(exoFin,dMax)` (mise à jour `db.societe.exoDebut/exoFin`).
+- Textes (`pageFEC` head + sous-titre de la carte) mis à jour.
+
+**Limites :** l'exercice courant peut être élargi (union) pour accueillir le FEC. Validé : `node --check` (167 scripts, 0 erreur) + Playwright (FEC daté hors exercice → intégré dans le dossier courant « ALR CONSEIL », `nEcr` 19→20, exercice élargi à 2099, **0 nouveau dossier**, équilibre ✅, 0 pageerror). Badge → **v343**.
+
+---
+
+## 🟢 MAJ précédente — Accent « bleu flashy » (électrique + halo) sur certains éléments — v342
 **Quoi :** à la demande, un **bleu flashy électrique avec halo lumineux** est appliqué (Mode Nuit) sur les éléments choisis : **boutons principaux (CTA `.btn-pri`)**, **entrée de nav active + bouton « Outils »**, **valeurs KPI + icônes/barres d'accent**, **titres de cartes (h2) + liens + anneau de focus**. Le **vert / rouge comptable des KPI** (`.val.cre` / `.val.deb`) est **préservé**.
 
 **Comment — `yada-addon174` (100% CSS additif, scopé `body[data-theme="noir"]`, injecté en dernier) :** `<style id="flashy-blue-mod">` — CTA en dégradé `#37a4ff→#0a64d6` + `box-shadow` halo bleu ; `.nav-btn.active` dégradé bleu + glow `rgba(30,144,255,.75)` ; `.sf-toggle` (Outils) bord/halo renforcés + icône lumineuse ; `.kpi .val` bleu `#3aa8ff` + `text-shadow` (sauf `cre`/`deb` conservés), `.kpi-ic` bleu + glow ; `.card h2` `#5ab0ff` + glow, liens `#3aa8ff`, focus `outline #37a4ff` + halo. Aucune logique modifiée.
