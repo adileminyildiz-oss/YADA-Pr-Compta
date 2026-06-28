@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Barre latérale : outils du bas regroupés derrière une seule touche « ⚙ Outils » — v333
+## 🟢 Dernière mise à jour — DA « phase 1 » (d'après image de référence) : fond ardoise plat, cartes épurées, interface plus compacte — v334
+**Quoi :** première passe de **refonte de la direction artistique** (d'après l'image de référence fournie), en **Mode Nuit** : **fond ardoise plat sombre** (`#0b0e13`, fini le dégradé bleu v308 sur la zone de contenu), **cartes épurées** (ardoise unie `#12161d`, bord discret `rgba(255,255,255,.08)`, **sans ombre**, coins 12 px), et **interface plus compacte (« dézoom »)** : marges des volets réduites, grilles resserrées (gap 14 px), KPI/cartes/titres/tableaux à typo et paddings réduits. **Accent BLEU conservé** (choix utilisateur).
+
+**Comment — `yada-addon169` (100% CSS, scopé `body[data-theme="noir"]`, injecté en dernier → prime sur v308) :** `<style id="da-ref-mod">` : fond plat sur `.layout:not(.solo)` + `mod-wrap`/`dash-wrap` ; restyle `.card`/`.kpi` (fond uni, bord, sans ombre, `::after` sheen masqué) ; densité (paddings/font-size réduits sur volets, grilles, KPI, `h2`, `th/td`) ; barre bleue de KPI amincie.
+
+**Limites :** phase 1 = palette/cartes/densité uniquement (structure inchangée — la barre de recherche ⌘K, l'en-tête dossier à chips et le restyle des graphiques de l'image restent à faire en phases suivantes ; l'accent reste bleu, non olive). Validé : `node --check` (162 scripts, 0 erreur) + Playwright (`dash-wrap` fond `#0b0e13`, carte `#12161d` sans ombre, paddings/KPI compacts, équilibre ✅, 0 pageerror). Badge → **v334**.
+
+---
+
+## 🟢 MAJ précédente — Barre latérale : outils du bas regroupés derrière une seule touche « ⚙ Outils » — v333
 **Quoi :** les **7 boutons du bas** (Déconnexion, Mode nuit, Changer de dossier, Télécharger la base, Importer, Ne pas enregistrer, Réinitialiser) ne sont **plus affichés en permanence** : seule **une touche « ⚙ Outils »** est visible ; au **clic**, un **menu flottant** les révèle au-dessus du bouton. Le menu est en **position absolue** → il **n'occupe aucune place** dans la barre latérale, donc **la barre garde sa forme/hauteur** même quand on **déplie un module** (le contenu ne déborde plus). Re-clic ou clic à l'extérieur referme le menu.
 
 **Comment — `yada-addon168` (100% additif) :** `setup()` (greffé sur `render`, idempotent) déplace tous les enfants de `.side-foot` dans un conteneur `.sf-menu` (flottant, masqué) et insère la touche `.sf-toggle`. Un **balayage à chaque rendu** récupère tout bouton ajouté après coup (ex. « Déconnexion » d'`addSideBtn`) vers le menu → aucun bouton parasite hors menu. `<style id="sf-menu-mod">` (touche pilule, menu `position:absolute;bottom:100%`, chevron animé). Les wrappers existants (`applyRole`, bascule jour/nuit) continuent de fonctionner (boutons toujours descendants de `.side-foot`).
