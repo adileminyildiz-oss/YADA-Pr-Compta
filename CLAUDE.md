@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — DA « phase 2 » (3/3) : KPI en pavés à icône — v337
+## 🟢 Dernière mise à jour — Barre de recherche retirée de la barre latérale (raccourci ⌘K conservé) — v338
+**Quoi :** à la demande, la **barre de recherche** « 🔎 Rechercher… ⌘K » (ajoutée en v335 en tête de la barre latérale) est **retirée**. Le **raccourci clavier ⌘K / Ctrl+K** reste actif (la palette de commandes peut toujours s'ouvrir) ; seule la barre visible disparaît.
+
+**Comment — 1 édition chirurgicale d'`yada-addon170` :** `injectBar()` n'insère plus la barre — elle se contente de **supprimer** toute `.cmdk-search` éventuellement présente (idempotent, re-greffé sur `render`). Le reste de la palette (`cmdkOpen`/`cmdkClose`, overlay, filtre) est inchangé ; styles `.cmdk-search` laissés inutilisés (sans effet).
+
+**Limites :** aucune logique modifiée. Validé : `node --check` (165 scripts, 0 erreur) + Playwright (0 `.cmdk-search`, `cmdkOpen` toujours disponible, équilibre ✅, 0 pageerror). Badge → **v338**.
+
+---
+
+## 🟢 MAJ précédente — DA « phase 2 » (3/3) : KPI en pavés à icône — v337
 **Quoi :** dernière étape de la phase 2 (d'après l'image de référence). Chaque **KPI** (tableau de bord, modules, espace client) reçoit un **petit carré d'icône arrondi à gauche**, coloré selon la nature de l'indicateur : **↗** produits/CA (vert), **↘** charges/dépenses (rouge), **Σ** résultat (bleu), **%** TVA, **▮** trésorerie/banque, **⊞** tiers/dossiers, **≣** factures/écritures, **◧** par défaut. La carte passe en **grille** (icône | libellé/valeur/méta) et le rendu devient **plat** (barreau latéral `::before` et reflet `::after` d'origine neutralisés). Accent **BLEU** conservé.
 
 **Comment — `yada-addon172` (100% additif, scopé `body[data-theme="noir"]`) :** `<style id="kpi-pave-mod">` (grille `44px 1fr`, carré `.kpi-ic`, couleurs par variante green/red/blue, masquage des pseudo-éléments d'origine) ; `deco()` parcourt `.dash-wrap/.mod-wrap/.cli-col .kpi`, insère un `<span class="kpi-ic">` (idempotent) avec un glyphe choisi par **classe** (green/red/blue) puis par **mots-clés du libellé** ; re-greffé sur `render()`. Aucune logique comptable modifiée.
