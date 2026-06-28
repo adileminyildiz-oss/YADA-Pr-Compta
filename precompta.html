@@ -10896,7 +10896,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v333';
+    b.textContent='YADA · v334';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -19833,6 +19833,40 @@ ${lignes}
     +'padding:8px !important;box-shadow:0 -12px 36px rgba(0,0,0,.6) !important;z-index:60 !important;'
     +'max-height:58vh !important;overflow:auto !important}'
     +'.side-foot .sf-menu input[type=file]{display:none !important}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon169">
+/* ============================================================
+   DA « phase 1 » — d'après l'image de référence : fond ardoise plat sombre,
+   cartes épurées, interface plus compacte (« dézoom »). Accent BLEU conservé.
+   Scopé Mode Nuit (body[data-theme="noir"]), injecté en dernier → prime sur
+   l'habillage v308. 100% CSS additif (aucune logique modifiée).
+   ============================================================ */
+(function(){
+  try{ var st=document.createElement('style'); st.id='da-ref-mod'; st.textContent=
+    /* ----- Fond ardoise PLAT (fini le dégradé bleu) sur la zone de contenu ----- */
+    'body[data-theme="noir"] .layout:not(.solo){background:#0b0e13 !important}'
+    +'body[data-theme="noir"] main.fullbleed .mod-wrap,body[data-theme="noir"] main.fullbleed .dash-wrap{background:#0b0e13 !important}'
+    /* ----- Cartes épurées : ardoise unie, bord discret, sans grosse ombre ----- */
+    +'body[data-theme="noir"] .card,body[data-theme="noir"] .mod-wrap .card,body[data-theme="noir"] .dash-wrap .card,body[data-theme="noir"] .cli-col>.card{'
+    +'background:#12161d !important;border:1px solid rgba(255,255,255,.08) !important;border-radius:12px !important;box-shadow:none !important}'
+    +'body[data-theme="noir"] .card::after,body[data-theme="noir"] .mod-wrap .card::after,body[data-theme="noir"] .dash-wrap .card::after{display:none !important}'
+    +'body[data-theme="noir"] .kpi{background:#12161d !important;border:1px solid rgba(255,255,255,.08) !important;border-radius:12px !important;box-shadow:none !important}'
+    /* ----- DENSITÉ (« dézoom ») : marges/typo plus compactes ----- */
+    +'body[data-theme="noir"] main.fullbleed .mod-wrap,body[data-theme="noir"] main.fullbleed .dash-wrap{padding:18px 22px 48px !important}'
+    +'body[data-theme="noir"] .dash-wrap .grid,body[data-theme="noir"] .mod-wrap .grid{gap:14px !important;margin-bottom:14px !important}'
+    +'body[data-theme="noir"] .card{padding:15px 17px !important;margin-bottom:14px !important}'
+    +'body[data-theme="noir"] .kpi{padding:13px 16px !important}'
+    +'body[data-theme="noir"] .kpi .val{font-size:21px !important}'
+    +'body[data-theme="noir"] .kpi .lbl{font-size:11px !important}'
+    +'body[data-theme="noir"] .card h2{font-size:15px !important;margin-bottom:8px !important}'
+    +'body[data-theme="noir"] .page-head h1,body[data-theme="noir"] .dash-wrap h1{font-size:20px !important}'
+    +'body[data-theme="noir"] .sub,body[data-theme="noir"] .page-head p{font-size:12px !important}'
+    +'body[data-theme="noir"] table th{padding:7px 9px !important;font-size:10.5px !important}'
+    +'body[data-theme="noir"] table td{padding:6px 9px !important;font-size:12.5px !important}'
+    /* la barre bleue en tête de KPI (v308) : amincie pour un rendu plus plat/épuré */
+    +'body[data-theme="noir"] .kpi::before{height:2px !important;box-shadow:none !important}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
