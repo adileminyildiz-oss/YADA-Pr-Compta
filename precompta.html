@@ -10896,7 +10896,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v334';
+    b.textContent='YADA · v335';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -19868,6 +19868,151 @@ ${lignes}
     /* la barre bleue en tête de KPI (v308) : amincie pour un rendu plus plat/épuré */
     +'body[data-theme="noir"] .kpi::before{height:2px !important;box-shadow:none !important}';
     document.head.appendChild(st); }catch(e){}
+})();
+</script>
+
+<script id="yada-addon170">
+/* ============================================================
+   DA « phase 2 » (1/3) — Barre de recherche + palette de commandes ⌘K.
+   - Une barre de recherche cliquable « 🔎 Rechercher…  ⌘K » est insérée en
+     tête de la barre latérale (au-dessus de la navigation), à chaque rendu
+     (idempotent).
+   - ⌘K (ou Ctrl+K) ouvre une palette centrée pour aller directement à
+     n'importe quel module ; saisie → filtre instantané, ↑/↓ pour choisir,
+     Entrée pour ouvrir, Échap pour fermer, clic à l'extérieur pour fermer.
+   - 100% additif : la navigation réutilise current=<id>+render() (aucune
+     logique modifiée). Respecte le rôle (client → CLIENT_PAGES).
+   ============================================================ */
+(function(){
+  try{
+    /* ---------- styles ---------- */
+    var st=document.createElement('style'); st.id='cmdk-mod'; st.textContent=
+      /* barre de recherche dans la barre latérale */
+      '.cmdk-search{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;margin:0 0 10px;padding:8px 10px;'
+      +'background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;color:#aeb9cc;'
+      +'font:500 12px system-ui,sans-serif;cursor:pointer;text-align:left;transition:background .15s,border-color .15s}'
+      +'.cmdk-search:hover{background:rgba(30,144,255,.14);border-color:rgba(30,144,255,.4);color:#eaf0ff}'
+      +'.cmdk-search .cmdk-ico{opacity:.85}'
+      +'.cmdk-search .cmdk-ph{flex:1}'
+      +'.cmdk-search .cmdk-kbd{font:600 10px ui-monospace,monospace;padding:2px 6px;border-radius:6px;'
+      +'background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14);color:#cfe0ff}'
+      /* overlay + palette */
+      +'#cmdk-ov{position:fixed;inset:0;z-index:100000;display:none;background:rgba(4,7,12,.55);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}'
+      +'#cmdk-ov.on{display:block}'
+      +'#cmdk-box{position:absolute;left:50%;top:14vh;transform:translateX(-50%);width:min(560px,92vw);'
+      +'background:#12161d;border:1px solid rgba(255,255,255,.12);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.6);overflow:hidden}'
+      +'#cmdk-box .cmdk-inwrap{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08)}'
+      +'#cmdk-box .cmdk-inwrap .ic{font-size:16px;color:#5ab0ff}'
+      +'#cmdk-in{flex:1;background:transparent;border:0;outline:0;color:#eaf0ff;font:500 15px system-ui,sans-serif}'
+      +'#cmdk-in::placeholder{color:#7d8aa3}'
+      +'#cmdk-list{max-height:46vh;overflow:auto;padding:6px}'
+      +'.cmdk-it{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:9px;cursor:pointer;color:#dCEAFB}'
+      +'.cmdk-it .ci{width:20px;text-align:center;color:#5ab0ff;font-size:14px}'
+      +'.cmdk-it .ct{flex:1;font:500 13.5px system-ui,sans-serif}'
+      +'.cmdk-it .cs{font:600 10px system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:#7d8aa3}'
+      +'.cmdk-it.sel,.cmdk-it:hover{background:linear-gradient(120deg,rgba(30,144,255,.22),rgba(30,144,255,.10))}'
+      +'.cmdk-it.sel .cs,.cmdk-it:hover .cs{color:#9fc4ff}'
+      +'.cmdk-empty{padding:22px 16px;text-align:center;color:#7d8aa3;font:500 13px system-ui,sans-serif}';
+    document.head.appendChild(st);
+
+    var norm=function(s){ return (s||'').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); };
+    var SEL=0, ITEMS=[];
+
+    function dests(){
+      var pages=(typeof PAGES!=='undefined'?PAGES:[]);
+      var role=(typeof window.sessionRole!=='undefined'?window.sessionRole:'cabinet');
+      var out=[];
+      pages.forEach(function(p){
+        if(role==='client'){
+          var ok=(p.id==='client')||((window.CLIENT_PAGES||[]).indexOf(p.id)>=0);
+          if(!ok) return;
+        }
+        out.push({id:p.id, lbl:p.lbl, sec:p.sec, ico:(p.ico||'›')});
+      });
+      return out;
+    }
+
+    function ensure(){
+      var ov=document.getElementById('cmdk-ov');
+      if(ov) return ov;
+      ov=document.createElement('div'); ov.id='cmdk-ov';
+      ov.innerHTML='<div id="cmdk-box" role="dialog" aria-label="Rechercher un module">'
+        +'<div class="cmdk-inwrap"><span class="ic">🔎</span>'
+        +'<input id="cmdk-in" type="text" placeholder="Rechercher un module, une page…" autocomplete="off" spellcheck="false"></div>'
+        +'<div id="cmdk-list"></div></div>';
+      document.body.appendChild(ov);
+      ov.addEventListener('mousedown', function(e){ if(e.target===ov) close(); });
+      ov.querySelector('#cmdk-in').addEventListener('input', function(){ paint(); });
+      ov.querySelector('#cmdk-in').addEventListener('keydown', function(e){
+        if(e.key==='ArrowDown'){ e.preventDefault(); SEL=Math.min(SEL+1, ITEMS.length-1); paintSel(); }
+        else if(e.key==='ArrowUp'){ e.preventDefault(); SEL=Math.max(SEL-1, 0); paintSel(); }
+        else if(e.key==='Enter'){ e.preventDefault(); if(ITEMS[SEL]) goItem(ITEMS[SEL]); }
+        else if(e.key==='Escape'){ e.preventDefault(); close(); }
+      });
+      return ov;
+    }
+
+    function paint(){
+      var ov=ensure(); var q=norm(ov.querySelector('#cmdk-in').value.trim());
+      var all=dests();
+      ITEMS = q ? all.filter(function(d){ return norm(d.lbl).indexOf(q)>=0 || norm(d.sec).indexOf(q)>=0; }) : all;
+      SEL=0;
+      var list=ov.querySelector('#cmdk-list');
+      if(!ITEMS.length){ list.innerHTML='<div class="cmdk-empty">Aucun module trouvé</div>'; return; }
+      list.innerHTML=ITEMS.map(function(d,i){
+        return '<div class="cmdk-it'+(i===0?' sel':'')+'" data-i="'+i+'">'
+          +'<span class="ci">'+(d.ico||'›')+'</span><span class="ct">'+d.lbl+'</span><span class="cs">'+(d.sec||'')+'</span></div>';
+      }).join('');
+      Array.prototype.forEach.call(list.querySelectorAll('.cmdk-it'), function(el){
+        el.addEventListener('mouseenter', function(){ SEL=+el.getAttribute('data-i'); paintSel(); });
+        el.addEventListener('click', function(){ var i=+el.getAttribute('data-i'); if(ITEMS[i]) goItem(ITEMS[i]); });
+      });
+    }
+    function paintSel(){
+      var list=document.getElementById('cmdk-list'); if(!list) return;
+      Array.prototype.forEach.call(list.querySelectorAll('.cmdk-it'), function(el){
+        var on=(+el.getAttribute('data-i')===SEL); el.classList.toggle('sel', on);
+        if(on && el.scrollIntoView) el.scrollIntoView({block:'nearest'});
+      });
+    }
+    function goItem(d){
+      close();
+      try{ current=d.id; if(typeof render==='function') render(); }catch(e){}
+    }
+    function open(){
+      if(typeof connecte!=='undefined' && !connecte) return; /* uniquement logiciel ouvert */
+      var ov=ensure(); ov.classList.add('on');
+      var inp=ov.querySelector('#cmdk-in'); inp.value=''; paint();
+      setTimeout(function(){ try{ inp.focus(); }catch(e){} }, 10);
+    }
+    function close(){ var ov=document.getElementById('cmdk-ov'); if(ov) ov.classList.remove('on'); }
+    window.cmdkOpen=open; window.cmdkClose=close;
+
+    /* raccourci clavier ⌘K / Ctrl+K */
+    document.addEventListener('keydown', function(e){
+      if((e.metaKey||e.ctrlKey) && (e.key==='k'||e.key==='K')){
+        e.preventDefault();
+        var ov=document.getElementById('cmdk-ov');
+        if(ov && ov.classList.contains('on')) close(); else open();
+      }
+    });
+
+    /* barre de recherche en tête de la navigation (idempotent, re-greffée à chaque rendu) */
+    function injectBar(){
+      try{
+        if(typeof connecte!=='undefined' && !connecte) return;
+        var nav=document.getElementById('nav'); if(!nav) return;
+        if(nav.previousElementSibling && nav.previousElementSibling.classList && nav.previousElementSibling.classList.contains('cmdk-search')) return;
+        if(nav.parentNode.querySelector('.cmdk-search')) return;
+        var b=document.createElement('button'); b.type='button'; b.className='cmdk-search';
+        b.innerHTML='<span class="cmdk-ico">🔎</span><span class="cmdk-ph">Rechercher…</span><span class="cmdk-kbd">⌘K</span>';
+        b.onclick=open;
+        nav.parentNode.insertBefore(b, nav);
+      }catch(e){}
+    }
+    if(typeof render==='function'){ var _r=render; render=function(){ var x=_r.apply(this,arguments); injectBar(); return x; }; }
+    if(document.readyState!=='loading') injectBar(); else document.addEventListener('DOMContentLoaded', injectBar);
+  }catch(e){}
 })();
 </script>
 </body>
