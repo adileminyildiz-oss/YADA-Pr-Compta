@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Espace Client : carte « Paramètres de facturation » en double retirée — v339
+## 🟢 Dernière mise à jour — Barre latérale : stabilité au clic + bouton « Outils » modernisé — v340
+**Quoi :** deux retouches de la **barre latérale** (espace cabinet).
+1. **Stabilité au clic** — en dépliant un module, la nav débordait → une **barre de défilement apparaissait et rétrécissait la largeur** (texte re-tronqué), donnant l'impression que la **taille d'écriture / l'espacement** changeaient. La **gouttière de défilement est désormais réservée** (`scrollbar-gutter:stable`) → largeur constante ; la **police est unifiée** (sous-modules 13 → 14px, même hauteur que les modules) et l'**espacement entre entrées est fixe** (la barre **défile** au lieu de se compresser).
+2. **Bouton « Outils » modernisé** — la touche du bas reçoit un **design plus récent** : **pastille à icône carrée bleue** (dégradé), libellé « Outils », **chevron animé**, fond en **dégradé bleu + halo au survol** (léger soulèvement), coins arrondis 13 px.
+
+**Comment — `yada-addon173` (100% additif) :** `<style id="sidebar-stable-mod">` (desktop : `#nav{scrollbar-gutter:stable}`, `.nav-btn/.nav-sub-btn` taille/espacement uniformes ; bouton `.sf-toggle.sf-tog-new` restylé avec spécificité supérieure → prime sur addon168) ; `modToggle()` (greffé sur `render`, idempotent) ajoute la classe `sf-tog-new` et le markup à icône (`.sf-ic` / `.sf-lbl` / `.sf-caret`). Aucune logique modifiée.
+
+**Limites :** habillage/mise en page. Validé : `node --check` (166 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (toggle : `border-radius:13px`, fond dégradé bleu, bord `rgba(30,144,255,.45)`, icône pastille ; nav `scrollbar-gutter:stable` ; équilibre ✅, 0 pageerror). Badge → **v340**.
+
+---
+
+## 🟢 MAJ précédente — Espace Client : carte « Paramètres de facturation » en double retirée — v339
 **Quoi :** dans l'**Espace Client** (page Facturation client), la carte **« ⚙️ Paramètres de facturation »** apparaissait **en double**. Cause : `addon104` greffait `factParamCard()` **à la fois** sur `pageFacturation` et `pageFacturationClient` ; or côté client le wrapper `pageFacturation` **appelle** `pageFacturationClient()` (bascule de rôle) → la carte était ajoutée deux fois. Cette carte regroupe des **réglages cabinet** (mentions de la facture A4 : condition de TVA, moyen de paiement, indemnité de recouvrement, escompte, RIB) → elle est désormais **réservée à l'espace Cabinet** et **retirée de l'Espace Client** (ce qui supprime aussi le doublon).
 
 **Comment — 1 édition chirurgicale d'`addon104` :** le helper `greffe()` n'ajoute `factParamCard()` que si `(window.sessionRole||'cabinet')!=='client'` → côté client les deux wrappers sont sans effet ; côté cabinet, **une seule** carte. Aucune logique modifiée.

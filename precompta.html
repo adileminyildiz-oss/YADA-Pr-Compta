@@ -10896,7 +10896,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v339';
+    b.textContent='YADA · v340';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -19822,10 +19822,10 @@ ${lignes}
   try{ var st=document.createElement('style'); st.id='sf-menu-mod'; st.textContent=
     '.side-foot{position:relative !important;border-top:0 !important;padding-top:8px !important;margin-top:6px !important}'
     /* la touche unique */
-    +'.side-foot .sf-toggle{width:100% !important;box-sizing:border-box !important;display:flex !important;align-items:center !important;justify-content:space-between !important;gap:8px !important;'
+    +'aside .side-foot button.sf-toggle.sf-tog-new{width:100% !important;box-sizing:border-box !important;display:flex !important;align-items:center !important;justify-content:space-between !important;gap:8px !important;'
     +'font:600 11.5px system-ui,Segoe UI,sans-serif !important;padding:9px 12px !important;border-radius:10px !important;'
     +'background:rgba(255,255,255,.06) !important;border:1px solid rgba(255,255,255,.14) !important;color:#e8eef6 !important;cursor:pointer !important;transition:background .15s !important}'
-    +'.side-foot .sf-toggle:hover{background:rgba(255,255,255,.13) !important}'
+    +'aside .side-foot button.sf-toggle.sf-tog-new:hover{background:rgba(255,255,255,.13) !important}'
     +'.side-foot .sf-caret{font-size:10px;opacity:.7;transition:transform .15s}'
     +'.side-foot.open .sf-caret{transform:rotate(180deg)}'
     /* le menu flottant (n\'occupe pas d\'espace dans la barre → forme conservée) */
@@ -20155,6 +20155,68 @@ ${lignes}
     }
     if(typeof render==='function'){ var _r=render; render=function(){ var x=_r.apply(this,arguments); deco(); return x; }; }
     if(document.readyState!=='loading') deco(); else document.addEventListener('DOMContentLoaded', deco);
+  }catch(e){}
+})();
+</script>
+
+<script id="yada-addon173">
+/* ============================================================
+   BARRE LATÉRALE — (1) stabilité au clic + (2) bouton « Outils » modernisé.
+   (1) Quand on déplie un module, la nav débordait → une barre de défilement
+       apparaissait et RÉTRÉCISSAIT la largeur (texte re-tronqué) : impression
+       que la taille d'écriture / l'espacement changeaient. On RÉSERVE la
+       gouttière de défilement (scrollbar-gutter:stable) → largeur constante ;
+       on UNIFIE la taille de police (sous-modules 13 → 14px) et l'espacement.
+   (2) La touche « ⚙ Outils » reçoit un design plus moderne (pastille à icône
+       carrée bleue, libellé, chevron animé, dégradé + halo au survol).
+   100% additif (CSS injecté en dernier + petite greffe sur le markup de la
+   touche). Aucune logique modifiée.
+   ============================================================ */
+(function(){
+  try{
+    /* ---- (2) markup moderne de la touche Outils (idempotent, re-greffé) ---- */
+    function modToggle(){
+      try{
+        var tog=document.querySelector('aside .side-foot .sf-toggle'); if(!tog) return;
+        tog.classList.add('sf-tog-new'); /* classe dédiée → nos styles priment (spécificité) */
+        if(tog.querySelector('.sf-ic')) return; /* déjà modernisé */
+        tog.innerHTML='<span class="sf-ic">⚙</span><span class="sf-lbl">Outils</span><span class="sf-caret">⌄</span>';
+      }catch(e){}
+    }
+    if(typeof render==='function'){ var _r=render; render=function(){ var x=_r.apply(this,arguments); try{ modToggle(); }catch(e){} return x; }; }
+    if(document.readyState!=='loading') modToggle(); else document.addEventListener('DOMContentLoaded', modToggle);
+
+    var st=document.createElement('style'); st.id='sidebar-stable-mod'; st.textContent=
+      /* ---- (1) stabilité : gouttière réservée + tailles/espacements uniformes (desktop) ---- */
+      '@media (min-width:821px){'
+      +'#nav{scrollbar-gutter:stable !important;overflow-y:auto !important}'
+      /* tous les boutons (modules ET sous-modules) à la même taille de police et même hauteur */
+      +'#nav .nav-btn,#nav .nav-sub-btn{font-size:14px !important;line-height:1.25 !important;padding:9px 13px !important;box-sizing:border-box !important;margin:0 !important}'
+      +'#nav .nav-sub-btn{padding-left:14px !important}'
+      /* espacement constant entre les entrées (la barre défile au lieu de se compresser) */
+      +'#nav{gap:3px !important}'
+      +'#nav .nav-sub{margin:3px 0 8px 14px !important;gap:3px !important}'
+      +'}'
+      /* ---- (2) bouton « Outils » modernisé (prime sur addon168, même sélecteur + source plus tardive) ---- */
+      +'aside .side-foot button.sf-toggle.sf-tog-new{display:flex !important;align-items:center !important;gap:10px !important;justify-content:flex-start !important;'
+      +'width:100% !important;box-sizing:border-box !important;padding:9px 11px !important;border-radius:13px !important;cursor:pointer !important;'
+      +'font:600 12.5px system-ui,Segoe UI,sans-serif !important;color:#eaf2ff !important;'
+      +'background:linear-gradient(135deg,rgba(30,144,255,.26),rgba(30,144,255,.07)) !important;'
+      +'border:1px solid rgba(30,144,255,.45) !important;'
+      +'box-shadow:0 2px 12px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.10) !important;'
+      +'transition:background .18s,box-shadow .18s,transform .12s !important}'
+      +'aside .side-foot button.sf-toggle.sf-tog-new:hover{background:linear-gradient(135deg,rgba(30,144,255,.40),rgba(30,144,255,.16)) !important;'
+      +'box-shadow:0 6px 20px rgba(30,144,255,.34),inset 0 1px 0 rgba(255,255,255,.14) !important;transform:translateY(-1px) !important}'
+      +'aside .side-foot button.sf-toggle.sf-tog-new:active{transform:translateY(0) scale(.99) !important}'
+      /* la pastille d\'icône carrée arrondie */
+      +'aside .side-foot button.sf-toggle.sf-tog-new .sf-ic{flex:0 0 auto;width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;'
+      +'font-size:14px;line-height:1;background:linear-gradient(135deg,#3b9bff,#0a64d6);color:#fff;'
+      +'box-shadow:0 2px 8px rgba(10,100,214,.5)}'
+      +'aside .side-foot button.sf-toggle.sf-tog-new .sf-lbl{flex:1;text-align:left;letter-spacing:.02em}'
+      +'aside .side-foot button.sf-toggle.sf-tog-new .sf-caret{flex:0 0 auto;font-size:12px;opacity:.8;transition:transform .18s}'
+      +'aside .side-foot.open button.sf-toggle.sf-tog-new{background:linear-gradient(135deg,rgba(30,144,255,.44),rgba(30,144,255,.18)) !important}'
+      +'aside .side-foot.open button.sf-toggle.sf-tog-new .sf-caret{transform:rotate(180deg)}';
+    document.head.appendChild(st);
   }catch(e){}
 })();
 </script>
