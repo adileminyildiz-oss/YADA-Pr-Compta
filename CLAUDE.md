@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — DA « phase 2 » (2/3) : badge de STATUT du dossier dans l'en-tête de page — v336
+## 🟢 Dernière mise à jour — DA « phase 2 » (3/3) : KPI en pavés à icône — v337
+**Quoi :** dernière étape de la phase 2 (d'après l'image de référence). Chaque **KPI** (tableau de bord, modules, espace client) reçoit un **petit carré d'icône arrondi à gauche**, coloré selon la nature de l'indicateur : **↗** produits/CA (vert), **↘** charges/dépenses (rouge), **Σ** résultat (bleu), **%** TVA, **▮** trésorerie/banque, **⊞** tiers/dossiers, **≣** factures/écritures, **◧** par défaut. La carte passe en **grille** (icône | libellé/valeur/méta) et le rendu devient **plat** (barreau latéral `::before` et reflet `::after` d'origine neutralisés). Accent **BLEU** conservé.
+
+**Comment — `yada-addon172` (100% additif, scopé `body[data-theme="noir"]`) :** `<style id="kpi-pave-mod">` (grille `44px 1fr`, carré `.kpi-ic`, couleurs par variante green/red/blue, masquage des pseudo-éléments d'origine) ; `deco()` parcourt `.dash-wrap/.mod-wrap/.cli-col .kpi`, insère un `<span class="kpi-ic">` (idempotent) avec un glyphe choisi par **classe** (green/red/blue) puis par **mots-clés du libellé** ; re-greffé sur `render()`. Aucune logique comptable modifiée.
+
+**Limites :** habillage uniquement (Mode Nuit) ; **phase 2 terminée** (⌘K v335 · badge de statut v336 · KPI à icône v337). Restera le restyle fin des graphiques en option. Validé : `node --check` (165 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (KPI : icônes ↗/↘/Σ/% injectées, `display:grid`, équilibre ✅, 0 pageerror). Badge → **v337**.
+
+---
+
+## 🟢 MAJ précédente — DA « phase 2 » (2/3) : badge de STATUT du dossier dans l'en-tête de page — v336
 **Quoi :** suite de la refonte DA. Un **badge de statut** (pastille colorée) est ajouté **à droite du titre de chaque page** (en-tête `.page-head`) et reflète l'état de **tenue du dossier actif** : **À faire** (rouge) · **En cours** (bleu) · **À revoir** (ambre) · **Tenue cabinet ✓** (vert). Conformément à la demande, **le badge est l'unique contrôle (pas de boutons d'action)** : un **clic** ouvre un petit menu pour **changer le statut** → enregistré sur le dossier (persistant). Le nom du dossier est rappelé en petit dans le badge.
 
 **Comment — `yada-addon171` (100% additif) :** `<style id="dstat-mod">` (pastille `.dstat-chip` + menu `.dstat-menu`, 4 couleurs de statut) ; `dossierActif()` lit `db.cabinet.dossiers` via `db.activeId` ; statut stocké dans **`dossier.statutTenue`** (persisté par `save()`) ; `dstatToggle`/`dstatSet` (changement + `save`+`render`) ; fermeture du menu au clic extérieur. **Greffe sur `head()`** : insère le badge comme 2ᵉ enfant de `.page-head` (flex → à droite), **sauf** écran non connecté et **portefeuille** (`current==='societe'`). Aucune logique comptable modifiée.

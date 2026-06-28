@@ -10896,7 +10896,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v336';
+    b.textContent='YADA · v337';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -20100,6 +20100,66 @@ ${lignes}
         }catch(e){ return html; }
       };
     }
+  }catch(e){}
+})();
+</script>
+
+<script id="yada-addon172">
+/* ============================================================
+   DA « phase 2 » (3/3) — KPI en pavés à icône (image de référence).
+   Chaque KPI reçoit un petit carré d'icône arrondi à gauche (couleur selon
+   la nature : vert produits ↗ / rouge charges ↘ / bleu résultat Σ / etc.),
+   et la mise en page passe en grille (icône | libellé/valeur/méta).
+   Le barreau latéral et le reflet (::before/::after) sont neutralisés pour
+   un rendu plat conforme à la DA. 100% additif, scopé Mode Nuit.
+   ============================================================ */
+(function(){
+  try{
+    var st=document.createElement('style'); st.id='kpi-pave-mod'; st.textContent=
+      /* mise en page grille : carré d'icône (col1) + texte (col2) */
+      'body[data-theme="noir"] .dash-wrap .kpi,body[data-theme="noir"] .mod-wrap .kpi,body[data-theme="noir"] .cli-col .kpi{'
+      +'display:grid !important;grid-template-columns:44px 1fr;column-gap:13px;align-items:center}'
+      +'body[data-theme="noir"] .kpi>.lbl,body[data-theme="noir"] .kpi>.val,body[data-theme="noir"] .kpi>.meta{grid-column:2}'
+      /* rendu plat : on masque le barreau latéral et le reflet d\'origine */
+      +'body[data-theme="noir"] .dash-wrap .kpi::before,body[data-theme="noir"] .mod-wrap .kpi::before,body[data-theme="noir"] .cli-col .kpi::before,'
+      +'body[data-theme="noir"] .dash-wrap .kpi::after,body[data-theme="noir"] .mod-wrap .kpi::after,body[data-theme="noir"] .cli-col .kpi::after{display:none !important}'
+      /* le carré d\'icône */
+      +'body[data-theme="noir"] .kpi-ic{grid-column:1;grid-row:1 / span 3;align-self:center;width:44px;height:44px;border-radius:12px;'
+      +'display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;'
+      +'background:rgba(30,144,255,.14);color:#6cb6ff;border:1px solid rgba(30,144,255,.3)}'
+      +'body[data-theme="noir"] .kpi.green .kpi-ic{background:rgba(40,190,120,.16);color:#5bd39a;border-color:rgba(40,190,120,.32)}'
+      +'body[data-theme="noir"] .kpi.red .kpi-ic{background:rgba(225,52,44,.15);color:#ff8a82;border-color:rgba(225,52,44,.32)}'
+      +'body[data-theme="noir"] .kpi.blue .kpi-ic{background:rgba(30,144,255,.16);color:#6cb6ff;border-color:rgba(30,144,255,.32)}';
+    document.head.appendChild(st);
+
+    function glyph(k){
+      var cl=' '+(k.className||'')+' ';
+      if(/ green /.test(cl)) return '↗';
+      if(/ red /.test(cl)) return '↘';
+      if(/ blue /.test(cl)) return 'Σ';
+      var el=k.querySelector('.lbl'); var t=(el?el.textContent:'').toLowerCase();
+      if(/tva/.test(t)) return '%';
+      if(/r[ée]sultat/.test(t)) return 'Σ';
+      if(/chiffre|vente|produit|\bca\b|encaiss/.test(t)) return '↗';
+      if(/charge|achat|d[ée]pens|payer/.test(t)) return '↘';
+      if(/tr[ée]sor|banque|512|caisse|solde/.test(t)) return '▮';
+      if(/tiers|client|fournisseur|entreprise|soci[ée]t|dossier|activ/.test(t)) return '⊞';
+      if(/facture|[ée]criture|rejet|pi[èe]ce/.test(t)) return '≣';
+      return '◧';
+    }
+    function deco(){
+      try{
+        if(document.body.dataset.theme!=='noir') return;
+        var kpis=document.querySelectorAll('.dash-wrap .kpi, .mod-wrap .kpi, .cli-col .kpi');
+        Array.prototype.forEach.call(kpis, function(k){
+          if(k.querySelector('.kpi-ic')) return;
+          var ic=document.createElement('span'); ic.className='kpi-ic'; ic.textContent=glyph(k);
+          k.insertBefore(ic, k.firstChild);
+        });
+      }catch(e){}
+    }
+    if(typeof render==='function'){ var _r=render; render=function(){ var x=_r.apply(this,arguments); deco(); return x; }; }
+    if(document.readyState!=='loading') deco(); else document.addEventListener('DOMContentLoaded', deco);
   }catch(e){}
 })();
 </script>
