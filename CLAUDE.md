@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Dossiers de la base : ALR CONSEIL & BY HOLDING (renommage des dossiers + migration) — v326
+## 🟢 Dernière mise à jour — Navigation (cabinet) : 8 modules principaux + sous-modules dépliables — v327
+**Quoi :** la barre de navigation (espace cabinet) est réorganisée en **8 modules principaux** : **Comptabilité, Fournisseurs, Clients, Tiers, Immobilisations et Financement, Charges et Paie, TVA, Banque**. Les autres pages deviennent des **sous-modules**, **listés uniquement quand on clique** sur le module principal (plusieurs modules peuvent rester ouverts, état mémorisé). Les pages hors comptabilité restent en **sections séparées** : **Pilotage** en haut (Tableau de bord, Sociétés, Espace Client) et **Dossier & réglages** en bas (Société & dossier, Informations société, Coffre-fort, Paramétrage).
+
+**Sous-modules de Comptabilité** (+ renommages demandés) : **Analyse** (ex-« Consultation des comptes »), **Journal comptable**, **Éditions** (ex-« Éditions (Balance, Grand livre…) »), **Import / Export FEC**, **Suivi des règlements**, **Analytique & rentabilité**, **Plan comptable**, **Assistant IA**. Modules à page unique (Fournisseurs, Clients, Tiers, Charges et Paie, TVA) = **bouton direct** (pas de sous-liste). Banque → Banque (512) · Saisie journal Banque · Rapprochement. Immobilisations et Financement → Immobilisations & Financements · Frais km & carburant.
+
+**Comment — `yada-addon164` (override `buildNav` pour le cabinet uniquement ; la nav Client n'est pas touchée) :** structure `MODULES` (module à `page` unique → bouton direct ; module à `subs` → en-tête dépliable `.nav-grp-h` + liste `.nav-sub`), libellés renommés via `LBL`, état d'ouverture mémorisé `localStorage 'yada-modnav-open'` (toggle `modnavToggle` → `buildNav()`), surbrillance `has-active` sur le module contenant la page courante. `<style id="modnav-mod">` (chevron, sous-liste indentée à liseré bleu).
+
+**Choix retenus (questions) :** Tiers = **module principal séparé** (pas aussi sous Comptabilité) ; pages hors-compta en **sections séparées** ; **plusieurs modules ouverts** possibles. « Suivi des règlements » placé en sous-module de Comptabilité (sibling d'Analyse). Validé : `node --check` (157 scripts, 0 erreur) + accolades addon164 (52/52) + Playwright (8 modules, sous-modules listés au clic, défaut replié, multi-ouverts, renames OK, état persistant, équilibre ✅, 0 pageerror). Badge → **v327**.
+
+---
+
+## 🟢 MAJ précédente — Dossiers de la base : ALR CONSEIL & BY HOLDING (renommage des dossiers + migration) — v326
 **Quoi :** les deux dossiers de la base s'appellent désormais **ALR CONSEIL** (id interne `d-ama`) et **BY HOLDING** (id interne `d-sci42`) — ils **apparaissent ainsi dans le logiciel** (portefeuille « Sociétés » + écran de sélection des dossiers + société active). Les **ids internes sont conservés** (`d-ama`/`d-sci42`) pour ne pas casser le filet de tests ni le portail Client (`CLIENT_DOSSIER='d-ama'`).
 
 **Comment :**
