@@ -10896,7 +10896,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v341';
+    b.textContent='YADA · v342';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -20227,6 +20227,48 @@ ${lignes}
       +'aside .side-foot.open button.sf-toggle.sf-tog-new .sf-caret{transform:rotate(180deg)}';
     document.head.appendChild(st);
   }catch(e){}
+})();
+</script>
+
+<script id="yada-addon174">
+/* ============================================================
+   ACCENT « BLEU FLASHY » (électrique + halo) sur certains éléments — Mode Nuit.
+   Demande utilisateur : boutons principaux (CTA), nav active + bouton Outils,
+   valeurs KPI + barres/icônes d'accent, titres de cartes + liens + focus.
+   Le VERT / ROUGE comptable des KPI (cre/deb) est PRÉSERVÉ.
+   100% CSS additif, scopé body[data-theme="noir"], injecté en dernier → prime.
+   ============================================================ */
+(function(){
+  try{ var st=document.createElement('style'); st.id='flashy-blue-mod'; st.textContent=
+    /* ---- 1) Boutons principaux (CTA) ---- */
+    'body[data-theme="noir"] .btn-pri{background:linear-gradient(135deg,#37a4ff,#0a64d6) !important;'
+    +'color:#ffffff !important;border:1px solid #5ab0ff !important;'
+    +'box-shadow:0 0 0 1px rgba(30,144,255,.45),0 4px 20px rgba(30,144,255,.55) !important;text-shadow:0 1px 2px rgba(0,0,0,.35) !important}'
+    +'body[data-theme="noir"] .btn-pri:hover{filter:brightness(1.12) !important;'
+    +'box-shadow:0 0 0 1px rgba(90,176,255,.7),0 6px 28px rgba(30,144,255,.8) !important}'
+    /* ---- 2) Nav active + bouton Outils ---- */
+    +'body[data-theme="noir"] .nav-btn.active{background:linear-gradient(120deg,#1e90ff,#0a64d6) !important;'
+    +'border:1px solid #5ab0ff !important;color:#ffffff !important;'
+    +'box-shadow:0 0 18px rgba(30,144,255,.75),inset 0 0 12px rgba(90,176,255,.30) !important}'
+    +'body[data-theme="noir"] .nav-btn.active .ico{color:#eaf4ff !important}'
+    +'body[data-theme="noir"] #nav .nav-main.has-active{color:#5ab0ff !important}'
+    +'body[data-theme="noir"] aside .side-foot button.sf-toggle.sf-tog-new{border-color:#5ab0ff !important;'
+    +'box-shadow:0 0 0 1px rgba(30,144,255,.40),0 4px 20px rgba(30,144,255,.55) !important}'
+    +'body[data-theme="noir"] aside .side-foot button.sf-toggle.sf-tog-new:hover{box-shadow:0 0 0 1px rgba(90,176,255,.7),0 6px 28px rgba(30,144,255,.8) !important}'
+    +'body[data-theme="noir"] aside .side-foot button.sf-toggle.sf-tog-new .sf-ic{box-shadow:0 0 12px rgba(30,144,255,.8) !important}'
+    /* ---- 3) Valeurs KPI (bleu électrique) + halo des icônes — vert/rouge comptable PRÉSERVÉ ---- */
+    +'body[data-theme="noir"] .kpi .val{color:#3aa8ff !important;text-shadow:0 0 14px rgba(30,144,255,.55) !important}'
+    +'body[data-theme="noir"] .kpi .val.cre{color:#7fe3b4 !important;text-shadow:none !important}'
+    +'body[data-theme="noir"] .kpi .val.deb{color:#ff8f8f !important;text-shadow:none !important}'
+    +'body[data-theme="noir"] .kpi.blue .kpi-ic,body[data-theme="noir"] .kpi:not(.green):not(.red) .kpi-ic{'
+    +'background:rgba(30,144,255,.20) !important;color:#5ab0ff !important;border-color:#5ab0ff !important;box-shadow:0 0 16px rgba(30,144,255,.6) !important}'
+    /* ---- 4) Titres de cartes + liens + anneau de focus ---- */
+    +'body[data-theme="noir"] .card h2{color:#5ab0ff !important;text-shadow:0 0 10px rgba(30,144,255,.40) !important}'
+    +'body[data-theme="noir"] a:not(.btn):not(.nav-btn){color:#3aa8ff !important}'
+    +'body[data-theme="noir"] a:not(.btn):not(.nav-btn):hover{color:#7ec3ff !important;text-shadow:0 0 8px rgba(30,144,255,.5)}'
+    +'body[data-theme="noir"] .btn:focus-visible,body[data-theme="noir"] .nav-btn:focus-visible,body[data-theme="noir"] input:focus-visible,body[data-theme="noir"] select:focus-visible,body[data-theme="noir"] textarea:focus-visible{'
+    +'outline:2px solid #37a4ff !important;outline-offset:1px !important;box-shadow:0 0 0 4px rgba(30,144,255,.30) !important}';
+    document.head.appendChild(st); }catch(e){}
 })();
 </script>
 </body>

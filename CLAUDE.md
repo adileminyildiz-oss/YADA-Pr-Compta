@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Barre latérale : disposition IDENTIQUE au dépliage (anti-tassement flex) + défilement bleu — v341
+## 🟢 Dernière mise à jour — Accent « bleu flashy » (électrique + halo) sur certains éléments — v342
+**Quoi :** à la demande, un **bleu flashy électrique avec halo lumineux** est appliqué (Mode Nuit) sur les éléments choisis : **boutons principaux (CTA `.btn-pri`)**, **entrée de nav active + bouton « Outils »**, **valeurs KPI + icônes/barres d'accent**, **titres de cartes (h2) + liens + anneau de focus**. Le **vert / rouge comptable des KPI** (`.val.cre` / `.val.deb`) est **préservé**.
+
+**Comment — `yada-addon174` (100% CSS additif, scopé `body[data-theme="noir"]`, injecté en dernier) :** `<style id="flashy-blue-mod">` — CTA en dégradé `#37a4ff→#0a64d6` + `box-shadow` halo bleu ; `.nav-btn.active` dégradé bleu + glow `rgba(30,144,255,.75)` ; `.sf-toggle` (Outils) bord/halo renforcés + icône lumineuse ; `.kpi .val` bleu `#3aa8ff` + `text-shadow` (sauf `cre`/`deb` conservés), `.kpi-ic` bleu + glow ; `.card h2` `#5ab0ff` + glow, liens `#3aa8ff`, focus `outline #37a4ff` + halo. Aucune logique modifiée.
+
+**Limites :** habillage (Mode Nuit). Validé : `node --check` (167 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (CTA dégradé+halo, h2 `rgb(90,176,255)`, KPI bleu, `cre` vert / `deb` rouge préservés, équilibre ✅, 0 pageerror). Badge → **v342**.
+
+---
+
+## 🟢 MAJ précédente — Barre latérale : disposition IDENTIQUE au dépliage (anti-tassement flex) + défilement bleu — v341
 **Quoi :** correctif du **décalage/espacement** signalé : en dépliant un module, les autres entrées **se tassaient** (hauteur de ligne 27 → 23 px). Cause : les boutons de la nav avaient le `flex-shrink:1` par défaut → quand la nav débordait, **flexbox compressait toutes les lignes**. Désormais `flex:0 0 auto` sur chaque entrée → **aucune compression** : la disposition reste **exactement la même** qu'un module soit déplié ou non ; s'il n'y a pas assez de place, la barre **défile** (barre de défilement **bleue** dégradée).
 
 **Comment — 1 ajout dans `yada-addon173` (`<style id="sidebar-stable-mod">`, desktop) :** `#nav .nav-btn,.nav-sec,.nav-sub,.nav-sub-btn{flex:0 0 auto !important}` (anti-tassement) + scrollbar bleue (`#nav::-webkit-scrollbar-thumb{linear-gradient(#3b9bff,#0a64d6)}`, `scrollbar-color:#1e90ff`). Aucune logique modifiée.
