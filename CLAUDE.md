@@ -36,7 +36,20 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Barre latérale : plus étroite, tout en noir, boutons du bas modernisés — v331
+## 🟢 Dernière mise à jour — App-shell : barre latérale FIXE + contenu de tous les modules atteignable (défilement interne, dvh) — v332
+**Quoi :** la **barre latérale ne défile plus jamais** (fixe) et **tout le contenu de chaque module reste visible/atteignable** (le bas n'est plus coupé).
+- **Mise en page verrouillée à l'écran** : `.layout:not(.solo){height:100dvh;overflow:hidden}` + `html,body{overflow:hidden}` → la fenêtre ne défile pas, la **barre latérale (`aside`, sticky, `100dvh`) reste fixe**.
+- **Volet de contenu défilant** : `main.fullbleed .mod-wrap`/`.dash-wrap` en **`height:100dvh; overflow:auto`** (+ `padding-bottom:64px`, barre de défilement fine) → le contenu défile **à l'intérieur du volet**, le bas de page reste accessible. Fenêtres Sage (`.sg-app`/`.lx-app`/éditeur `.ec-win`) alignées sur `100dvh`.
+
+**Pourquoi `dvh` :** la hauteur dynamique (`100dvh`) suit la zone réellement visible (barres d'outils du navigateur) → plus de contenu coupé en bas.
+
+**Comment — `yada-addon167` (100% CSS, desktop ≥821px ; mobile/drawer inchangé) :** `<style id="appshell-mod">` injecté en dernier. Aucune logique modifiée.
+
+**Limites :** habillage/mise en page. Validé : `node --check` (160 scripts, 0 erreur) + Playwright (layout `overflow:hidden`, `aside` sticky `100dvh` fixe, `mod-wrap` `100dvh` défilable — 40 cartes test toutes atteignables, équilibre ✅, 0 pageerror). Badge → **v332**.
+
+---
+
+## 🟢 MAJ précédente — Barre latérale : plus étroite, tout en noir, boutons du bas modernisés — v331
 **Quoi :** la **barre latérale** (espace **cabinet** et **client**) est rendue **beaucoup plus étroite**, **entièrement noire**, et les **boutons du bas** (`.side-foot`) sont **modernisés**.
 - **Largeur** : colonne de navigation **300 px → 208 px** (desktop), entrées de menu plus compactes (police 12,5 px, sous-sections/sous-modules resserrés, libellés tronqués proprement).
 - **Tout en noir** : `aside` passe au **fond noir plein `#000`** (plus de dégradé bleu v318/v320 ni de flou), bord droit gris très sombre ; textes clairs lisibles, survol gris discret.

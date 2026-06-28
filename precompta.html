@@ -10896,7 +10896,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v331';
+    b.textContent='YADA · v332';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -19752,6 +19752,37 @@ ${lignes}
     +'font:600 11px system-ui,Segoe UI,sans-serif !important;padding:8px 10px !important;border-radius:10px !important;'
     +'background:rgba(255,255,255,.055) !important;border:1px solid rgba(255,255,255,.12) !important;color:#e8eef6 !important;box-shadow:none !important}'
     +'body[data-theme] aside #theme-toggle-side:hover{background:rgba(255,255,255,.13) !important;border-color:rgba(255,255,255,.22) !important;color:#fff !important}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon167">
+/* ============================================================
+   APP-SHELL : barre latérale FIXE + contenu de TOUS les modules atteignable.
+   - La fenêtre ne défile pas : la mise en page est verrouillée à la hauteur
+     d'écran (dvh) → la barre latérale reste FIXE (ne défile jamais).
+   - Le volet de contenu (mod-wrap / dash-wrap / fenêtres Sage) défile à
+     l'intérieur, en hauteur d'écran dynamique → le bas de chaque page reste
+     visible/atteignable (plus rien n'est coupé).
+   Desktop uniquement (≥821px) ; mobile (drawer) inchangé. 100% CSS.
+   ============================================================ */
+(function(){
+  try{ var st=document.createElement('style'); st.id='appshell-mod'; st.textContent=
+    '@media (min-width:821px){'
+    +'html,body{height:100% !important;overflow:hidden !important}'
+    /* mise en page verrouillée à l'écran → barre latérale fixe */
+    +'.layout:not(.solo){height:100vh !important;height:100dvh !important;overflow:hidden !important}'
+    +'.layout:not(.solo) > aside{position:sticky !important;top:0 !important;align-self:start !important;'
+    +'height:100vh !important;height:100dvh !important;overflow:hidden !important;z-index:20}'
+    +'main.fullbleed{height:100vh !important;height:100dvh !important;overflow:hidden !important}'
+    /* volets de contenu : défilement interne, tout le contenu atteignable */
+    +'main.fullbleed .mod-wrap,main.fullbleed .dash-wrap{height:100vh !important;height:100dvh !important;'
+    +'overflow-y:auto !important;overflow-x:auto !important;overscroll-behavior:contain;'
+    +'padding-bottom:64px !important;scrollbar-width:thin}'
+    +'main.fullbleed .sg-app,main.fullbleed .lx-app,main.fullbleed #ec-overlay .ec-win{height:100vh !important;height:100dvh !important}'
+    /* barre de défilement discrète des volets */
+    +'main.fullbleed .mod-wrap::-webkit-scrollbar,main.fullbleed .dash-wrap::-webkit-scrollbar{width:9px;height:9px}'
+    +'main.fullbleed .mod-wrap::-webkit-scrollbar-thumb,main.fullbleed .dash-wrap::-webkit-scrollbar-thumb{background:rgba(127,127,127,.45);border-radius:7px}'
+    +'}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
