@@ -10896,7 +10896,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v332';
+    b.textContent='YADA · v333';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -19783,6 +19783,56 @@ ${lignes}
     +'main.fullbleed .mod-wrap::-webkit-scrollbar,main.fullbleed .dash-wrap::-webkit-scrollbar{width:9px;height:9px}'
     +'main.fullbleed .mod-wrap::-webkit-scrollbar-thumb,main.fullbleed .dash-wrap::-webkit-scrollbar-thumb{background:rgba(127,127,127,.45);border-radius:7px}'
     +'}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon168">
+/* ============================================================
+   BARRE LATÉRALE — outils du bas regroupés derrière UN seul bouton.
+   Les 7 boutons (Déconnexion, Mode nuit, Changer de dossier, Télécharger,
+   Importer, Ne pas enregistrer, Réinitialiser) ne sont plus affichés en
+   permanence : seule une touche « ⚙ Outils » est visible ; au clic, un
+   menu flottant les révèle (positionné en absolu → la barre latérale garde
+   sa forme/hauteur, même quand on déplie un module). 100% additif.
+   ============================================================ */
+(function(){
+  var outsideBound=false;
+  function setup(){
+    var foot=document.querySelector('aside .side-foot'); if(!foot) return;
+    var menu=foot.querySelector(':scope > .sf-menu');
+    if(!menu){ menu=document.createElement('div'); menu.className='sf-menu';
+      menu.addEventListener('click', function(e){ if(e.target.closest('button')) foot.classList.remove('open'); }); }
+    var tog=foot.querySelector(':scope > .sf-toggle');
+    if(!tog){ tog=document.createElement('button'); tog.type='button'; tog.className='sf-toggle';
+      tog.innerHTML='<span>⚙ Outils</span><span class="sf-caret">▴</span>';
+      tog.onclick=function(e){ e.stopPropagation(); foot.classList.toggle('open'); }; }
+    /* balaie tout bouton/élément direct (ex. « Déconnexion » ajouté après coup) vers le menu */
+    Array.prototype.slice.call(foot.children).forEach(function(ch){ if(ch!==tog && ch!==menu) menu.appendChild(ch); });
+    if(tog.parentNode!==foot) foot.appendChild(tog);
+    if(menu.parentNode!==foot) foot.appendChild(menu);
+    if(!outsideBound){ outsideBound=true;
+      document.addEventListener('click', function(e){ if(foot.classList.contains('open') && !foot.contains(e.target)) foot.classList.remove('open'); }); }
+  }
+  if(document.body) setup(); else document.addEventListener('DOMContentLoaded', setup);
+  if(typeof render==='function'){ var _r=render; render=function(){ var x=_r.apply(this,arguments); try{ setup(); }catch(e){} return x; }; }
+
+  try{ var st=document.createElement('style'); st.id='sf-menu-mod'; st.textContent=
+    '.side-foot{position:relative !important;border-top:0 !important;padding-top:8px !important;margin-top:6px !important}'
+    /* la touche unique */
+    +'.side-foot .sf-toggle{width:100% !important;box-sizing:border-box !important;display:flex !important;align-items:center !important;justify-content:space-between !important;gap:8px !important;'
+    +'font:600 11.5px system-ui,Segoe UI,sans-serif !important;padding:9px 12px !important;border-radius:10px !important;'
+    +'background:rgba(255,255,255,.06) !important;border:1px solid rgba(255,255,255,.14) !important;color:#e8eef6 !important;cursor:pointer !important;transition:background .15s !important}'
+    +'.side-foot .sf-toggle:hover{background:rgba(255,255,255,.13) !important}'
+    +'.side-foot .sf-caret{font-size:10px;opacity:.7;transition:transform .15s}'
+    +'.side-foot.open .sf-caret{transform:rotate(180deg)}'
+    /* le menu flottant (n\'occupe pas d\'espace dans la barre → forme conservée) */
+    +'.side-foot .sf-menu{display:none}'
+    +'.side-foot.open .sf-menu{display:flex !important;flex-direction:column !important;gap:6px !important;'
+    +'position:absolute !important;left:0 !important;right:0 !important;bottom:calc(100% + 8px) !important;'
+    +'background:#0d0d0d !important;border:1px solid rgba(255,255,255,.16) !important;border-radius:12px !important;'
+    +'padding:8px !important;box-shadow:0 -12px 36px rgba(0,0,0,.6) !important;z-index:60 !important;'
+    +'max-height:58vh !important;overflow:auto !important}'
+    +'.side-foot .sf-menu input[type=file]{display:none !important}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>

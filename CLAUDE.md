@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — App-shell : barre latérale FIXE + contenu de tous les modules atteignable (défilement interne, dvh) — v332
+## 🟢 Dernière mise à jour — Barre latérale : outils du bas regroupés derrière une seule touche « ⚙ Outils » — v333
+**Quoi :** les **7 boutons du bas** (Déconnexion, Mode nuit, Changer de dossier, Télécharger la base, Importer, Ne pas enregistrer, Réinitialiser) ne sont **plus affichés en permanence** : seule **une touche « ⚙ Outils »** est visible ; au **clic**, un **menu flottant** les révèle au-dessus du bouton. Le menu est en **position absolue** → il **n'occupe aucune place** dans la barre latérale, donc **la barre garde sa forme/hauteur** même quand on **déplie un module** (le contenu ne déborde plus). Re-clic ou clic à l'extérieur referme le menu.
+
+**Comment — `yada-addon168` (100% additif) :** `setup()` (greffé sur `render`, idempotent) déplace tous les enfants de `.side-foot` dans un conteneur `.sf-menu` (flottant, masqué) et insère la touche `.sf-toggle`. Un **balayage à chaque rendu** récupère tout bouton ajouté après coup (ex. « Déconnexion » d'`addSideBtn`) vers le menu → aucun bouton parasite hors menu. `<style id="sf-menu-mod">` (touche pilule, menu `position:absolute;bottom:100%`, chevron animé). Les wrappers existants (`applyRole`, bascule jour/nuit) continuent de fonctionner (boutons toujours descendants de `.side-foot`).
+
+**Limites :** habillage/mise en page. Validé : `node --check` (161 scripts, 0 erreur) + Playwright (touche unique, 7 boutons regroupés dans le menu flottant — y compris « Déconnexion » ajouté dynamiquement —, 0 bouton parasite, ouverture/fermeture OK, équilibre ✅, 0 pageerror). Badge → **v333**.
+
+---
+
+## 🟢 MAJ précédente — App-shell : barre latérale FIXE + contenu de tous les modules atteignable (défilement interne, dvh) — v332
 **Quoi :** la **barre latérale ne défile plus jamais** (fixe) et **tout le contenu de chaque module reste visible/atteignable** (le bas n'est plus coupé).
 - **Mise en page verrouillée à l'écran** : `.layout:not(.solo){height:100dvh;overflow:hidden}` + `html,body{overflow:hidden}` → la fenêtre ne défile pas, la **barre latérale (`aside`, sticky, `100dvh`) reste fixe**.
 - **Volet de contenu défilant** : `main.fullbleed .mod-wrap`/`.dash-wrap` en **`height:100dvh; overflow:auto`** (+ `padding-bottom:64px`, barre de défilement fine) → le contenu défile **à l'intérieur du volet**, le bas de page reste accessible. Fenêtres Sage (`.sg-app`/`.lx-app`/éditeur `.ec-win`) alignées sur `100dvh`.
