@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Module Fournisseurs (cabinet) : dépôt de facture + génération d'écritures, carte Correspondances retirée, « Fournisseur » → « Fournisseurs » — v328
+## 🟢 Dernière mise à jour — Redéploiement de vérification (auto-déploiement Netlify) — v329
+**Quoi :** **aucun changement fonctionnel** — simple **bump de version v328 → v329** pour vérifier de bout en bout la chaîne de déploiement automatique vers l'hébergeur externe **Netlify** (`silly-kataifi-e6c958.netlify.app`). À chaque push sur `main`, Netlify reconstruit le site (~30 s) et le badge passe à v329, confirmant que la mise à jour en ligne est automatique (service worker « réseau d'abord » + addon103 mise à jour auto). Badge `#yada-ver` → `YADA · v329`, `version.json` → 329.
+
+**Limites :** aucune logique/écriture/UI modifiée. Validé : `node --check` + équilibre des écritures ✅. Badge → **v329**.
+
+---
+
+## 🟢 MAJ précédente — Module Fournisseurs (cabinet) : dépôt de facture + génération d'écritures, carte Correspondances retirée, « Fournisseur » → « Fournisseurs » — v328
 **Quoi :** dans le **module Fournisseurs** (espace cabinet) :
 1. **Renommage** « Fournisseur » → **« Fournisseurs »** (libellé de page/menu, `PAGES` id `achats`).
 2. **Carte « Correspondances » supprimée** du module (sens **achat**) ; elle est **conservée côté Clients** (sens vente).
