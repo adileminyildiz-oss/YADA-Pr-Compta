@@ -10915,7 +10915,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v350';
+    b.textContent='YADA · v351';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -20400,14 +20400,28 @@ ${lignes}
     else if(d.credit>0) L.push({compte:'445670000',debit:d.credit,credit:0});
     return L;
   };
-  /* Déclarer la TVA (après l'OD) — marque le mois déclaré (persistant) */
+  /* Mois disponibles = mois de l'exercice jusqu'au mois en cours (≤ aujourd'hui) */
+  window.tvaMoisDispo=function(){ var today=todayStr().slice(0,7);
+    return (typeof moisExoListe==='function'?moisExoListe():[]).filter(function(x){ return x<=today; }); };
+  /* Prochain mois à déclarer : 1er mois disponible, non Néant, non encore déclaré */
+  window.tvaProchainADeclarer=function(){
+    var mois=window.tvaMoisDispo();
+    for(var i=0;i<mois.length;i++){ var x=mois[i];
+      if(tvaEstNeant(x)) continue;
+      if(db.societe.tvaDeclaree && db.societe.tvaDeclaree[x]) continue;
+      return x; }
+    return null;
+  };
+  /* Déclarer la TVA (après l'OD) — marque le mois déclaré (persistant) puis passe au mois suivant */
   window.tvaDeclarer=function(m){
     if(typeof odTvaDejaPostee==='function' && !odTvaDejaPostee(m)){ if(typeof toast==='function')toast('Générez d\'abord l\'OD TVA'); return; }
     var d=tvaDetailMois(m);
     db.societe.tvaDeclaree=db.societe.tvaDeclaree||{};
     db.societe.tvaDeclaree[m]={ date:todayStr(), aDecaisser:d.aDecaisser||0, credit:d.credit||0 };
-    if(typeof save==='function')save(); if(typeof render==='function')render();
-    if(typeof toast==='function')toast('TVA '+pieceMois(m)+' déclarée ✓');
+    if(typeof save==='function')save();
+    var nx=window.tvaProchainADeclarer(); if(nx) window.tvaMoisSel=nx;   // passage au mois suivant
+    if(typeof render==='function')render();
+    if(typeof toast==='function')toast('TVA '+pieceMois(m)+' déclarée ✓'+(nx?(' — mois suivant : '+moisLabel(nx)):' — tous les mois disponibles sont déclarés ✓'));
   };
   /* Impression de la déclaration CA3 du mois */
   window.tvaImprimerDeclaration=function(m){
@@ -20430,6 +20444,10 @@ ${lignes}
   window.tvaEcritureCard=function(){
     var regime=(db.societe&&db.societe.tvaRegime)||'CA3'; if(regime==='franchise') return '';
     var m=window.tvaMoisSel; if(!m) return '';
+    var today=todayStr().slice(0,7);
+    /* restriction : pas de déclaration pour un mois postérieur à aujourd'hui */
+    if(m>today)
+      return '<div class="card"><h2>🧾 Écriture &amp; déclaration de TVA — '+moisLabel(m)+'</h2><div class="empty">Mois postérieur à la date du jour — déclaration non disponible. Les déclarations sont limitées jusqu\'au mois en cours ('+moisLabel(today)+').</div></div>';
     if(typeof tvaEstNeant==='function' && tvaEstNeant(m))
       return '<div class="card"><h2>🧾 Écriture &amp; déclaration de TVA — '+moisLabel(m)+'</h2><div class="empty">Mois sans TVA (Néant) — aucune écriture OD TVA ni déclaration à produire.</div></div>';
     var L=window.tvaODLignes(m);
@@ -20461,6 +20479,11 @@ ${lignes}
       +'<tr class="totrow" style="border-top:2px solid var(--ink)"><td colspan=2><b>Totaux — '+(equ?'équilibré ✓':'⚠ déséquilibré')+'</b></td><td class="r num deb">'+eur(sd)+'</td><td class="r num cre">'+eur(sc)+'</td></tr>'
       +'</tbody></table>'
       +'<div class="right" style="margin-top:12px;display:flex;align-items:center;gap:8px">'+actions+'</div>'
+      +(function(){ var dispo=window.tvaMoisDispo().filter(function(x){return !tvaEstNeant(x);});
+          var done=dispo.filter(function(x){return db.societe.tvaDeclaree && db.societe.tvaDeclaree[x];}).length;
+          return '<div class="hint">Avancement : '+done+'/'+dispo.length+' mois disponibles déclarés'
+            +((dispo.length&&done>=dispo.length)?' — ✓ tous les mois disponibles sont finalisés':'')
+            +'. Déclarations limitées jusqu\'au mois en cours ('+moisLabel(today)+').</div>'; })()
       +'</div>';
   };
   var _pt2=pageTVA;

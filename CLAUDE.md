@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Module TVA : carte « Écriture & déclaration de TVA » (mois du CA3) → Générer l'OD puis Déclarer — v350
+## 🟢 Dernière mise à jour — Module TVA : déclaration séquentielle (mois suivant après déclaration) + mois restreints à aujourd'hui — v351
+**Quoi :** la carte **« Écriture & déclaration de TVA »** devient un **parcours guidé** : une fois un mois **déclaré**, on **passe automatiquement au mois suivant** à déclarer, jusqu'à **finaliser tous les mois disponibles**. Les **mois disponibles sont restreints à la date du jour** : un mois **postérieur au mois en cours** n'est **pas déclarable** (message « déclaration non disponible »). Un **indicateur d'avancement** « N/M mois disponibles déclarés » est affiché (✓ quand tous finalisés).
+
+**Comment — `yada-addon177` (éditions) :** `tvaMoisDispo()` = mois de l'exercice ≤ mois courant ; `tvaProchainADeclarer()` = 1ᵉʳ mois disponible, non Néant, non encore déclaré ; `tvaDeclarer(m)` enregistre la déclaration puis **avance `tvaMoisSel` vers le mois suivant** (re-render) ; `tvaEcritureCard()` bloque les mois futurs (`m>aujourd'hui`) et ajoute le pied d'avancement. Néant ignorés dans le parcours (gérés par « Valider Néant »).
+
+**Limites :** affichage/workflow (la télétransmission reste sur impots.gouv.fr). Validé : `node --check` (170 scripts, 0 erreur) + Playwright (today 2026-06 → 2 mois dispo ; déclaration de 2026-04 → avance à 2026-05 ; mois futur restreint ; avancement affiché ; équilibre ✅, 0 pageerror). Badge → **v351**.
+
+---
+
+## 🟢 MAJ précédente — Module TVA : carte « Écriture & déclaration de TVA » (mois du CA3) → Générer l'OD puis Déclarer — v350
 **Quoi :** sous le **Tableau CA3** (mois & année affichés), une carte **« 🧾 Écriture & déclaration de TVA »** présente, **comme une écriture comptable**, les **comptes de TVA concernés par les montants** (collectée 445710000, déductible 445660000, à décaisser 445510000 / crédit 445670000) avec **libellé + Débit/Crédit** et le total équilibré. Cycle :
 1. **Générer l'OD TVA** (bouton) → crée l'écriture OD TVA (journal OD TVA, dernier jour du mois, pièce MM/AAAA) — lignes identiques à `posterODTVA`.
 2. Une fois l'OD générée → **Déclarer la TVA (CA3)** (bouton) : marque le mois **déclaré** (persistant, `db.societe.tvaDeclaree[mois]`).
