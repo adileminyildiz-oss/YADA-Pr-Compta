@@ -6484,8 +6484,8 @@ function cardSansFacture(){
       const dejaDemande=dem.some(d=>d.cle===k);
       return `<tr>
         <td><input type="checkbox" ${verifie?'checked':''} onchange="sfToggle('${k.replace(/'/g,'')}')"></td>
-        <td class="num">${frDate(x.date)}</td><td>${x.tiers}</td><td>${x.libelle}</td>
-        <td>${x.sens==='C'?'Encaissement':'Décaissement'}</td>
+        <td class="num">${frDate(x.date)}</td><td>${x.tiers}</td><td>${sfMotCle(x)}</td>
+        <td>${x.sens==='C'?'Entrant':'Sortant'}</td>
         <td class="r num ${x.sens==='C'?'cre':'deb'}">${eur(x.montant)}</td>
         <td class="mini">${x.email||'—'}</td>
         <td class="r">${dejaDemande?'<span class="tag t-pay">demandée ✓</span>':(verifie?`<button class="btn btn-gold btn-sm" onclick="sfDemander('${t}','${k.replace(/'/g,'')}')">Demander la facture</button>`:'<span class="mini">à vérifier</span>')}</td>
@@ -6515,6 +6515,15 @@ function cardSansFacture(){
   </div>`;
 }
 function sfAfficherToggle(){ window._sfShow=!window._sfShow; render(); }
+/* mot-clé affiché à la place du libellé : « Fournisseur » ou « Client »
+   si on repère le nom d'un tiers dans le libellé ; sinon repli sur le type de la ligne. */
+function sfMotCle(x){
+  const lib=(x.libelle||'').toUpperCase();
+  const hit=t=> t && t.nom && t.nom.length>=3 && lib.indexOf(t.nom.toUpperCase())>=0;
+  if((db.tiers||[]).some(t=>t.type==='fournisseur'&&hit(t))) return 'Fournisseur';
+  if((db.tiers||[]).some(t=>t.type==='client'&&hit(t))) return 'Client';
+  return x.type==='client'?'Client':(x.type==='fournisseur'?'Fournisseur':'—');
+}
 function sfImprimer(){
   const types=[['general','Grand livre général'],['fournisseur','Fournisseurs'],['client','Clients']];
   let html='<div class="doc-page"><h1 style="font-size:18px;margin-bottom:4px">Montants sans facture — à vérifier &amp; demander au tiers</h1>'
@@ -6525,7 +6534,7 @@ function sfImprimer(){
     if(!list.length){ html+='<div class="mini">Aucun montant sans facture ✓</div>'; return; }
     const total=r2(list.reduce((a,x)=>a+x.montant,0));
     html+='<table><thead><tr><th>Date</th><th>Tiers</th><th>Libellé</th><th>Sens</th><th class="r">Montant</th><th>E-mail</th></tr></thead><tbody>'
-      + list.map(x=>`<tr><td>${frDate(x.date)}</td><td>${x.tiers}</td><td>${x.libelle}</td><td>${x.sens==='C'?'Encaissement':'Décaissement'}</td><td class="r num">${eur(x.montant)}</td><td>${x.email||'—'}</td></tr>`).join('')
+      + list.map(x=>`<tr><td>${frDate(x.date)}</td><td>${x.tiers}</td><td>${sfMotCle(x)}</td><td>${x.sens==='C'?'Entrant':'Sortant'}</td><td class="r num">${eur(x.montant)}</td><td>${x.email||'—'}</td></tr>`).join('')
       + `<tr><td colspan="4" class="r"><b>Total ${lbl}</b></td><td class="r num"><b>${eur(total)}</b></td><td></td></tr></tbody></table>`;
   });
   html+='</div>';
@@ -6536,16 +6545,25 @@ function sfToggle(k){ db._sfVerif=db._sfVerif||{}; db._sfVerif[k]=!db._sfVerif[k
 function sfDemander(type,k){
   const x=montantsSansFacture(type).find(y=>sfKey(y)===k); if(!x)return;
   const t=db.tiers.find(z=>z.id===x.tiersId);
-  const canal = x.email ? 'E-mail ('+x.email+')' : 'Accès logiciel du tiers';
-  const msg='DEMANDE DE PIÈCE JUSTIFICATIVE\n\nTiers : '+x.tiers+'\nOpération : '+x.libelle+' du '+frDate(x.date)+'\nMontant : '+eur(x.montant)+'\n\n'+
-    'Ce mouvement bancaire n\'a aucune facture rattachée. Merci de nous transmettre la facture correspondante '+
-    (x.email?('par e-mail à votre interlocuteur, ou'):'')+' via votre accès au logiciel.\n\nCanal : '+canal+'\n\nEnvoyer la demande ?';
-  yadaConfirm(msg, function(){
-  db.demandesFactures=db.demandesFactures||[];
-  db.demandesFactures.push({ id:uid(), cle:k, tiersId:x.tiersId, tiers:x.tiers, libelle:x.libelle, date:x.date,
-    montant:x.montant, canal, dateDemande:horodatage().dateFr, statut:'attente' });
-  save(); render(); toast('Demande de facture enregistrée et adressée à '+x.tiers+' ('+canal+')');
-  });
+  /* Un e-mail est OBLIGATOIRE pour demander la facture (envoi automatique par YADA). */
+  if(!x.email){
+    yadaConfirm('Aucun e-mail n\'est renseigné pour « '+x.tiers+' ».\n\nYADA envoie les demandes de facture par e-mail : renseignez d\'abord l\'adresse e-mail du tiers dans sa fiche.\n\nOuvrir la fiche pour saisir l\'e-mail ?',
+      function(){ if(typeof tiersEditer==='function' && x.tiersId) tiersEditer(x.tiersId); }, {okLabel:'Ouvrir la fiche'});
+    return;
+  }
+  const sujet='Demande de facture — '+x.tiers+' — '+frDate(x.date);
+  const corps='Bonjour,\n\nDans le cadre de la tenue comptable, nous avons relevé le mouvement bancaire suivant, sans facture rattachée :\n\n'
+    +'Tiers : '+x.tiers+'\nOpération : '+x.libelle+'\nDate : '+frDate(x.date)+'\nSens : '+(x.sens==='C'?'Entrant':'Sortant')+'\nMontant : '+eur(x.montant)+'\n\n'
+    +'Merci de nous transmettre la facture correspondante en réponse à cet e-mail.\n\nCordialement,\n'+(db.societe&&db.societe.raison?db.societe.raison:'')+'';
+  yadaConfirm('Envoyer la demande de facture par e-mail à « '+x.tiers+' » ('+x.email+') ?', function(){
+    db.demandesFactures=db.demandesFactures||[];
+    db.demandesFactures.push({ id:uid(), cle:k, tiersId:x.tiersId, tiers:x.tiers, libelle:x.libelle, date:x.date,
+      montant:x.montant, canal:'E-mail ('+x.email+')', dateDemande:horodatage().dateFr, statut:'attente' });
+    save();
+    /* ouverture de l'e-mail pré-rempli (messagerie par défaut) */
+    try{ window.location.href='mailto:'+encodeURIComponent(x.email)+'?subject='+encodeURIComponent(sujet)+'&body='+encodeURIComponent(corps); }catch(e){}
+    render(); toast('Demande envoyée par e-mail à '+x.tiers+' ('+x.email+')');
+  }, {okLabel:'Envoyer l\'e-mail'});
 }
 function blocSansFacture(type){
   const list=montantsSansFacture(type);
@@ -10603,9 +10621,10 @@ ${lignes}
       +'<div class="field"><label>&nbsp;</label><div class="hint" style="margin:0">Doit commencer par <b>'+(t.type==='client'?'411':'401')+'</b>'+(mv?'. La renumérotation met à jour les écritures existantes du tiers.':'.')+'</div></div></div>'
       +'<div class="row g2"><div class="field"><label>Compte de contrepartie</label><select id="te-contre">'+opt(contre,t.compteContre)+'</select></div>'
       +'<div class="field"><label>Compte de TVA</label><select id="te-tva">'+opt(tva,t.compteTVA)+'</select></div></div>'
-      +'<div class="row g3"><div class="field"><label>E-mail</label><input id="te-email" value="'+(t.email||'').replace(/"/g,'&quot;')+'"></div>'
+      +'<div class="row g3"><div class="field"><label>E-mail <span style="color:#ff8a82">*</span></label><input id="te-email" type="email" placeholder="adresse@exemple.fr" value="'+(t.email||'').replace(/"/g,'&quot;')+'"'+((!t.email)?' style="border-color:#ff8a82"':'')+'></div>'
       +'<div class="field"><label>Téléphone</label><input id="te-tel" value="'+(t.tel||'').replace(/"/g,'&quot;')+'"></div>'
       +'<div class="field"><label>Adresse</label><input id="te-adr" value="'+(t.adresse||'').replace(/"/g,'&quot;')+'"></div></div>'
+      +'<div class="hint" style="margin:-4px 0 8px">📧 L\'e-mail est utilisé par YADA pour les <b>demandes de facture et e-mails automatiques</b> — pensez à le renseigner.</div>'
       +'<div class="row g2"><div class="field"><label>IBAN</label><input id="te-iban" value="'+(t.iban||'').replace(/"/g,'&quot;')+'" placeholder="FR76 …"></div>'
       +'<div class="field"><label>Moyen de paiement préféré</label><select id="te-moyen">'+moyenOpts+'</select></div></div>'
       +'<div class="row g3"><div class="field"><label>SIRET</label><input id="te-siret" value="'+(t.siret||'').replace(/"/g,'&quot;')+'" placeholder="14 chiffres"></div>'
@@ -10888,7 +10907,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v344';
+    b.textContent='YADA · v345';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
