@@ -6467,8 +6467,16 @@ function montantsSansFacture(type){
     const alloue=r2((b.alloc||[]).reduce((a,x)=>a+x.montant,0));
     const sansFacture=r2(b.montant-alloue);   // part du mouvement non rattachée à une facture
     if(sansFacture>0.005){
+      /* Sens fiable depuis la ligne 512 de l'écriture (autorité) :
+         512 au DÉBIT = argent ENTRÉ sur le compte (Entrant, vert) → 'C'
+         512 au CRÉDIT = argent SORTI du compte (Sortant, rouge) → 'D'
+         (corrige les imports FEC dont b.sens était inversé). */
+      let sensN=b.sens;
+      const e=b.ecritureId?db.ecritures.find(x=>x.id===b.ecritureId):null;
+      if(e&&Array.isArray(e.lignes)){ const l512=e.lignes.find(l=>String(c9(l.compte)).slice(0,3)==='512');
+        if(l512) sensN = (r2(l512.debit)>0 ? 'C' : 'D'); }
       out.push({ date:b.date, tiers:t.nom, tiersId:t.id, type:t.type, libelle:b.libelle,
-        sens:b.sens, montant:sansFacture, email:t.email||'', piece:b.suivi||'' });
+        sens:sensN, montant:sansFacture, email:t.email||'', piece:b.suivi||'' });
     }
   });
   return out.sort((a,b)=>a.date<b.date?-1:1);
@@ -10907,7 +10915,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v346';
+    b.textContent='YADA · v347';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
