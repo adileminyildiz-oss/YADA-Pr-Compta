@@ -10915,7 +10915,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v347';
+    b.textContent='YADA · v348';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -18187,8 +18187,10 @@ ${lignes}
         +'<div class="kpi"><div class="lbl">Total TVA</div><div class="val">'+eur(tV)+'</div></div>'
         +'<div class="kpi blue"><div class="lbl">Total TTC</div><div class="val">'+eur(tT)+'</div></div>'
       +'</div>'
-      +'<table><thead><tr><th>N° / Pièce</th><th>'+(estVente?'Client':'Fournisseur')+'</th><th>Date</th><th>Jnl</th><th class="r">HT</th><th class="r">TVA</th><th class="r">TTC</th><th>Correspondance</th></tr></thead>'
+      +'<details class="corr-details" style="margin-top:4px"><summary style="cursor:pointer;font-weight:600;padding:6px 2px;user-select:none">📋 Détail des factures — '+L.length+' '+(estVente?'de vente':'d\'achat')+' (cliquer pour afficher / masquer)</summary>'
+      +'<table style="margin-top:10px"><thead><tr><th>N° / Pièce</th><th>'+(estVente?'Client':'Fournisseur')+'</th><th>Date</th><th>Jnl</th><th class="r">HT</th><th class="r">TVA</th><th class="r">TTC</th><th>Correspondance</th></tr></thead>'
       +'<tbody>'+(rows||'<tr><td colspan=8 class=empty>Aucune écriture '+(estVente?'VTE':'ACH')+'</td></tr>')+'</tbody></table>'
+      +'</details>'
       +'</div>';
   };
 
@@ -20288,6 +20290,33 @@ ${lignes}
     +'body[data-theme="noir"] .btn:focus-visible,body[data-theme="noir"] .nav-btn:focus-visible,body[data-theme="noir"] input:focus-visible,body[data-theme="noir"] select:focus-visible,body[data-theme="noir"] textarea:focus-visible{'
     +'outline:2px solid #37a4ff !important;outline-offset:1px !important;box-shadow:0 0 0 4px rgba(30,144,255,.30) !important}';
     document.head.appendChild(st); }catch(e){}
+})();
+</script>
+
+<script id="yada-addon175">
+/* ============================================================
+   MODULE CLIENT (cabinet) — dépôt de facture client (copie du module
+   Fournisseur). Permet de déposer des factures client établies
+   ultérieurement, ou transmises par le client lui-même (PDF/photo).
+   La carte de réception/validation cabinet (depotsCabinetCard('vente'))
+   est déjà ajoutée. 100% additif, cabinet uniquement.
+   ============================================================ */
+(function(){
+  if(typeof pageFacturation!=='function') return;
+  var _pf=pageFacturation;
+  pageFacturation=function(){
+    var h=_pf.apply(this,arguments);
+    try{
+      if((window.sessionRole||'cabinet')!=='client' && typeof depotFacturesCard==='function' && h.indexOf('fdep-vente')<0){
+        var dep=depotFacturesCard('vente','Déposer une facture client',
+          'Déposez une facture client établie ultérieurement, ou transmise par le client lui-même (PDF/photo).');
+        /* insérer le dépôt juste avant la première carte de la page */
+        if(h.indexOf('<div class="card"')>=0){ h=h.replace('<div class="card"', dep+'<div class="card"'); }
+        else { h=dep+h; }
+      }
+    }catch(e){}
+    return h;
+  };
 })();
 </script>
 </body>

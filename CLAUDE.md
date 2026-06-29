@@ -36,7 +36,20 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Règle banque : sens fiable depuis la ligne 512 (Entrant=vert / Sortant=rouge), corrige l'inversion FEC — v347
+## 🟢 Dernière mise à jour — Module Client : tableau de correspondances rétractable + dépôt de facture client (copie du module Fournisseur) — v348
+**Quoi :** deux changements dans le **module Client** (cabinet).
+1. **Tableau « Correspondances — factures » rétractable** : le détail (table N°/Tiers/Date/Jnl/HT/TVA/TTC/Correspondance) est désormais dans un **`<details>`** repliable (KPIs toujours visibles), **fermé par défaut**, cliquer pour afficher/masquer.
+2. **Dépôt de facture client** (copie du module Fournisseur) : une carte **« Déposer une facture client »** (sélecteur client + zone glisser-déposer PDF/photo) est ajoutée → permet de déposer des **factures client établies ultérieurement** ou **transmises par le client lui-même**. La carte de réception/validation cabinet (`depotsCabinetCard('vente')`) était déjà présente.
+
+**Comment :**
+- `correspondancesCard` : la `<table>` est enveloppée dans `<details class="corr-details"><summary>…</summary>…</table></details>` (details/summary natifs → triangle d'ouverture, indépendant des styles `.doc-page`).
+- `yada-addon175` : greffe sur `pageFacturation` (cabinet uniquement) insérant `depotFacturesCard('vente','Déposer une facture client',…)` avant la première carte (garde anti-doublon `fdep-vente`).
+
+**Limites :** affichage/dépôt (la comptabilisation reste validée par le cabinet). Validé : `node --check` (168 scripts, 0 erreur) + Playwright (correspondances `<details class="corr-details">` présent ; page Client cabinet contient `fdep-vente` ; équilibre ✅, 0 pageerror). Badge → **v348**.
+
+---
+
+## 🟢 MAJ précédente — Règle banque : sens fiable depuis la ligne 512 (Entrant=vert / Sortant=rouge), corrige l'inversion FEC — v347
 **Quoi :** règle comptable demandée pour la **saisie bancaire** (différente des Fournisseurs/Clients). Dans la liste **« Montants sans facture »**, le **sens d'un mouvement bancaire** est désormais déterminé par la **ligne 512 de l'écriture** (autorité) et non par le champ `b.sens` (qui était **inversé pour les imports FEC**) :
 - **512 au DÉBIT** = argent **entré** sur le compte → **« Entrant » + vert** ;
 - **512 au CRÉDIT** = argent **sorti** du compte (dépensé par la société) → **« Sortant » + rouge**.
