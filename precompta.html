@@ -10915,7 +10915,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v348';
+    b.textContent='YADA · v349';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -20317,6 +20317,63 @@ ${lignes}
     }catch(e){}
     return h;
   };
+})();
+</script>
+
+<script id="yada-addon176">
+/* ============================================================
+   MODULE TVA — « Détail par compte de TVA » : retranscrit TOUTES les écritures
+   touchant un compte de TVA (445…), quel que soit le compte, pour la période
+   (mois CA3 ou exercice CA12). Source : factures clients & fournisseurs +
+   import FEC + saisies (Analyse). Ces montants alimentent le calcul et la
+   proposition de déclaration. 100% additif (greffe pageTVA).
+   ============================================================ */
+(function(){
+  if(typeof pageTVA!=='function') return;
+  function libCompte(cc){
+    if(typeof COMPTES!=='undefined' && COMPTES[cc]) return COMPTES[cc];
+    var sh=cc.replace(/0+$/,''); if(typeof COMPTES!=='undefined' && COMPTES[sh]) return COMPTES[sh];
+    var p=(db.plan||[]).find(function(x){ return c9(x.code)===cc; }); return p?p.lib:'';
+  }
+  function nature(cc){
+    if(cc.indexOf('4457')===0) return 'Collectée';
+    if(cc.indexOf('44562')===0||cc.indexOf('4456')===0) return 'Déductible';
+    if(cc.indexOf('44551')===0) return 'À décaisser';
+    if(cc.indexOf('44567')===0) return 'Crédit à reporter';
+    return 'TVA';
+  }
+  window.tvaDetailParCompte=function(){
+    var regime=(db.societe&&db.societe.tvaRegime)||'CA3';
+    var label, match;
+    if(regime==='CA12'){ var an=((db.societe&&db.societe.exoDebut)||'').slice(0,4);
+      label='exercice '+an; match=function(d){ return (d||'').slice(0,4)===an; }; }
+    else { var m=window.tvaMoisSel; label=(typeof moisLabel==='function'?moisLabel(m):m);
+      match=function(d){ return ym(d)===m; }; }
+    var acc={};
+    (db.ecritures||[]).forEach(function(e){ if(!match(e.date)) return;
+      (e.lignes||[]).forEach(function(l){ var cc=c9(l.compte); if(cc.slice(0,3)!=='445') return;
+        var o=acc[cc]||(acc[cc]={d:0,c:0,jx:{}}); o.d+=(+l.debit||0); o.c+=(+l.credit||0); o.jx[e.journal||'?']=1; }); });
+    var codes=Object.keys(acc).sort();
+    if(!codes.length) return '<div class="card"><h2>Détail par compte de TVA — '+label+'</h2>'
+      +'<div class="empty">Aucune écriture avec un compte de TVA (445…) sur '+label+'.</div></div>';
+    var rows=codes.map(function(cc){ var o=acc[cc]; var solde=r2(o.d-o.c);
+      return '<tr><td class="num">'+cc+'</td><td>'+(libCompte(cc)||'—')+'</td><td>'+nature(cc)+'</td>'
+        +'<td class="r num deb">'+(o.d?eur(r2(o.d)):'—')+'</td><td class="r num cre">'+(o.c?eur(r2(o.c)):'—')+'</td>'
+        +'<td class="r num">'+eur(solde)+'</td><td class="mini">'+Object.keys(o.jx).join(', ')+'</td></tr>';
+    }).join('');
+    var td=r2(codes.reduce(function(s,cc){return s+acc[cc].d;},0));
+    var tc=r2(codes.reduce(function(s,cc){return s+acc[cc].c;},0));
+    return '<div class="card"><h2>Détail par compte de TVA — '+label+'</h2>'
+      +'<div class="sub">Toutes les écritures touchant un compte de TVA (445…), <b>quel que soit le compte</b> — factures clients &amp; fournisseurs, import FEC et saisies (Analyse). Ces montants alimentent le calcul CA3/CA12 et la proposition de déclaration ci-dessus.</div>'
+      +'<table><thead><tr><th>Compte</th><th>Libellé</th><th>Nature</th><th class="r">Débit</th><th class="r">Crédit</th><th class="r">Solde</th><th>Journal(x)</th></tr></thead><tbody>'
+      +rows
+      +'<tr class="totrow"><td colspan=3><b>Total comptes 445…</b></td><td class="r num deb">'+eur(td)+'</td><td class="r num cre">'+eur(tc)+'</td><td class="r num">'+eur(r2(td-tc))+'</td><td></td></tr>'
+      +'</tbody></table></div>';
+  };
+  var _pt=pageTVA;
+  pageTVA=function(){ var h=_pt.apply(this,arguments);
+    try{ if(((db.societe&&db.societe.tvaRegime)||'CA3')!=='franchise') h+=window.tvaDetailParCompte(); }catch(e){}
+    return h; };
 })();
 </script>
 </body>
