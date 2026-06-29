@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — « Montants sans facture » : Entrant/Sortant + mot-clé Fournisseur/Client + e-mail tiers requis pour la demande (mail auto) — v345
+## 🟢 Dernière mise à jour — « Montants sans facture » : montants colorés (débit/Sortant rouge, crédit/Entrant vert) à l'impression aussi — v346
+**Quoi :** dans la carte **« Montants sans facture »** (Éditions), les **montants au débit (Sortant)** s'affichent en **rouge** et les **montants au crédit (Entrant)** en **vert**. C'était déjà le cas à l'écran (classes `deb`/`cre`) ; c'est désormais **aussi appliqué à la liste imprimée** (`sfImprimer`), où le style d'impression `.doc-page` forçait auparavant tout en noir.
+
+**Comment — 1 édition de `sfImprimer` :** les cellules **Sens** et **Montant** de chaque ligne imprimée reçoivent une couleur **en ligne avec `!important`** (`#c62828` pour Sortant/débit, `#1b8a4b` pour Entrant/crédit) → l'`!important` en ligne prime sur la règle d'impression `body[data-theme] .doc-page *{color:#111418 !important}`. L'affichage écran reste inchangé (`cre`/`deb`).
+
+**Limites :** affichage/impression uniquement. Validé : `node --check` (167 scripts, 0 erreur) + Playwright (écran `cre`/`deb` présents ; impression : vert `#1b8a4b !important` sur les lignes Entrant ; équilibre ✅, 0 pageerror). Badge → **v346**.
+
+---
+
+## 🟢 MAJ précédente — « Montants sans facture » : Entrant/Sortant + mot-clé Fournisseur/Client + e-mail tiers requis pour la demande (mail auto) — v345
 **Quoi :** 3 changements liés à la carte **« Montants sans facture »** (Éditions) et au module **Tiers**.
 1. **Sens** : « Encaissement / Décaissement » → **« Entrant / Sortant »** (liste affichée + impression).
 2. **Libellé → mot-clé** : la colonne libellé affiche désormais **« Fournisseur »** ou **« Client »** : si le **nom d'un tiers** (fournisseur/client) est repéré dans le libellé, on génère le mot-clé ; sinon repli sur le type du tiers de la ligne (`sfMotCle`).

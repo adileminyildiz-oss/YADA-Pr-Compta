@@ -6534,7 +6534,7 @@ function sfImprimer(){
     if(!list.length){ html+='<div class="mini">Aucun montant sans facture ✓</div>'; return; }
     const total=r2(list.reduce((a,x)=>a+x.montant,0));
     html+='<table><thead><tr><th>Date</th><th>Tiers</th><th>Libellé</th><th>Sens</th><th class="r">Montant</th><th>E-mail</th></tr></thead><tbody>'
-      + list.map(x=>`<tr><td>${frDate(x.date)}</td><td>${x.tiers}</td><td>${sfMotCle(x)}</td><td>${x.sens==='C'?'Entrant':'Sortant'}</td><td class="r num">${eur(x.montant)}</td><td>${x.email||'—'}</td></tr>`).join('')
+      + list.map(x=>`<tr><td>${frDate(x.date)}</td><td>${x.tiers}</td><td>${sfMotCle(x)}</td><td style="color:${x.sens==='C'?'#1b8a4b':'#c62828'} !important">${x.sens==='C'?'Entrant':'Sortant'}</td><td class="r num" style="color:${x.sens==='C'?'#1b8a4b':'#c62828'} !important">${eur(x.montant)}</td><td>${x.email||'—'}</td></tr>`).join('')
       + `<tr><td colspan="4" class="r"><b>Total ${lbl}</b></td><td class="r num"><b>${eur(total)}</b></td><td></td></tr></tbody></table>`;
   });
   html+='</div>';
@@ -10907,7 +10907,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v345';
+    b.textContent='YADA · v346';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
