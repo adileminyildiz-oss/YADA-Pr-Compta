@@ -36,7 +36,19 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Éditions : carte « Montants sans facture » → bouton Afficher + bouton Imprimer (au lieu d'une liste générée) — v344
+## 🟢 Dernière mise à jour — « Montants sans facture » : Entrant/Sortant + mot-clé Fournisseur/Client + e-mail tiers requis pour la demande (mail auto) — v345
+**Quoi :** 3 changements liés à la carte **« Montants sans facture »** (Éditions) et au module **Tiers**.
+1. **Sens** : « Encaissement / Décaissement » → **« Entrant / Sortant »** (liste affichée + impression).
+2. **Libellé → mot-clé** : la colonne libellé affiche désormais **« Fournisseur »** ou **« Client »** : si le **nom d'un tiers** (fournisseur/client) est repéré dans le libellé, on génère le mot-clé ; sinon repli sur le type du tiers de la ligne (`sfMotCle`).
+3. **Demande de facture par e-mail** : « Demander la facture » exige désormais un **e-mail** sur le tiers — s'il manque, YADA propose d'**ouvrir la fiche** pour le saisir ; s'il est présent, YADA ouvre un **e-mail pré-rempli** (`mailto:` sujet + corps) pour un **envoi automatique**. Dans la **fiche Tiers** (Fournisseur / Client–Société / Client–Particulier, fiche commune), le champ **E-mail est marqué requis** (astérisque rouge + bordure si vide + note « utilisé pour les e-mails automatiques »).
+
+**Comment — éditions chirurgicales :** `sfMotCle(x)` (recherche du nom de tiers dans le libellé, longueur ≥ 3) ; lignes de `cardSansFacture` + `sfImprimer` (Entrant/Sortant + `sfMotCle`) ; `sfDemander` (garde e-mail obligatoire + `mailto:` pré-rempli) ; `tiersEditer` (label « E-mail * », `type=email`, bordure rouge si vide, hint). `tiersEnregistrer` enregistrait déjà `t.email`.
+
+**Limites :** l'envoi passe par la messagerie par défaut (`mailto:`) ; détection du mot-clé par inclusion du nom (heuristique). Validé : `node --check` (167 scripts, 0 erreur) + Playwright (Entrant/Sortant présents, 0 « Encaissement/Décaissement », `sfMotCle` ok, fiche e-mail requise, équilibre ✅, 0 pageerror). Badge → **v345**.
+
+---
+
+## 🟢 MAJ précédente — Éditions : carte « Montants sans facture » → bouton Afficher + bouton Imprimer (au lieu d'une liste générée) — v344
 **Quoi :** dans le module **Éditions**, la carte **« Montants sans facture — à vérifier & demander au tiers »** ne génère plus la liste directement. Elle affiche un **bouton « 📋 Afficher la liste »** ; au clic, la liste (3 blocs : Grand livre général / Fournisseurs / Clients) s'affiche, accompagnée d'un **bouton « 🖨 Imprimer la liste »** (édition au format A4, fond blanc).
 
 **Comment — éditions chirurgicales de `cardSansFacture` + 2 fonctions :** la carte teste `window._sfShow` ; si faux → bouton « Afficher » + invite ; si vrai → bouton « Masquer » + bouton « Imprimer » + `${blocs}${histo}`. `sfAfficherToggle()` bascule `_sfShow` puis `render()`. `sfImprimer()` construit une `.doc-page` (tables Date/Tiers/Libellé/Sens/Montant/E-mail + total par bloc) dans `#print-area` puis `window.print()`. Aucune logique comptable modifiée (cases « Vérifié » / « Demander la facture » inchangées dans la liste affichée).
