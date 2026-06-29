@@ -3793,11 +3793,14 @@ function moisDisponibles(){ return [...new Set(db.ecritures.map(e=>ym(e.date)))]
 function tvaDuMois(m){
   let col=0,ded=0;
   // TVA depuis les ÉCRITURES (FEC + manuel + factures), comptes comparés en c9 (9 chiffres) :
-  //  collectée = crédits sur 44571x ; déductible = débits sur 44566x (biens/services) et 44562x (immo).
+  //  collectée = crédits sur TOUS les comptes 4457x ; déductible = débits sur TOUS les comptes 4456x
+  //  SAUF 44567 (crédit de TVA à reporter, qui n'est pas de la TVA déductible).
+  //  → prend en compte tous les comptes de TVA utilisés dans les factures de vente et d'achat
+  //    (ex. 445716/445717 collectée par taux, 445662/445667 déductible par taux, 44562 immo, autoliq…).
   db.ecritures.filter(e=>ym(e.date)===m && e.journal!=='BQ').forEach(e=>e.lignes.forEach(l=>{
     const cc=c9(l.compte);
-    if(cc.indexOf('44571')===0) col+=(+l.credit||0);
-    if(cc.indexOf('44566')===0||cc.indexOf('44562')===0) ded+=(+l.debit||0);
+    if(cc.indexOf('4457')===0) col+=(+l.credit||0);
+    else if(cc.indexOf('4456')===0 && cc.indexOf('44567')!==0) ded+=(+l.debit||0);
   }));
   col=r2(col); ded=r2(ded); const net=r2(col-ded);
   return {col, ded, net, aDecaisser:net>0?net:0, credit:net<0?-net:0};
@@ -4909,7 +4912,7 @@ function pageTVA(){
   };
   const poste=odTvaDejaPostee(m);
   return head('Module TVA — déclaration CA3 (3310-CA3)',
-    'TVA collectée et déductible calculées sur TOUTES les écritures (factures, import FEC, saisies) — comptes 44571 (collectée) et 44566/44562 (déductible). Cliquez une ligne de taux pour voir les factures justificatives.')+
+    'TVA collectée et déductible calculées sur TOUTES les écritures (factures de vente & d\'achat, import FEC, saisies) et sur TOUS les comptes de TVA — collectée 4457x, déductible 4456x (hors 44567). Cliquez une ligne de taux pour voir les factures justificatives.')+
   regimeBar+
   `<div class="card"><h2>Mois de déclaration (CA3) — exercice ${db.societe.exoDebut.slice(0,4)}</h2>
     <div class="cp-monthbar" style="border:none;padding:6px 0">${moisBar}</div>
@@ -10305,13 +10308,15 @@ ${lignes}
   }catch(e){} })();
   /* Normalisation continue : à chaque enregistrement (toute source d'écriture) */
   if(typeof save==='function'){ const _s=save; save=function(){ try{ normDS(); }catch(e){} return _s.apply(this,arguments); }; }
-  /* tvaDuMois : comparer en c9 (44571→445710000, 44566→445660000, 44562→445620000) */
+  /* tvaDuMois : prend en compte TOUS les comptes de TVA (factures vente & achat, FEC, saisies),
+     comparés en c9 — collectée = crédits sur tous les 4457x ; déductible = débits sur tous les
+     4456x SAUF 44567 (crédit de TVA à reporter, qui n'est pas déductible). */
   if(typeof tvaDuMois==='function'){
     tvaDuMois=function(m){ let col=0,ded=0;
       (db.ecritures||[]).filter(e=>ym(e.date)===m && e.journal!=='BQ').forEach(e=>e.lignes.forEach(l=>{
         const k=c9(l.compte);
-        if(k==='445710000') col+=(+l.credit||0);
-        if(k==='445660000'||k==='445620000') ded+=(+l.debit||0);
+        if(k.indexOf('4457')===0) col+=(+l.credit||0);
+        else if(k.indexOf('4456')===0 && k.indexOf('44567')!==0) ded+=(+l.debit||0);
       }));
       col=r2(col); ded=r2(ded); const net=r2(col-ded);
       return {col, ded, net, aDecaisser:net>0?net:0, credit:net<0?-net:0};
@@ -10915,7 +10920,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v351';
+    b.textContent='YADA · v352';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }

@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Module TVA : déclaration séquentielle (mois suivant après déclaration) + mois restreints à aujourd'hui — v351
+## 🟢 Dernière mise à jour — Module TVA : prise en compte de TOUS les comptes de TVA (vente & achat) — v352
+**Quoi :** le calcul de TVA (`tvaDuMois`) ne capturait que **certains comptes** (collectée 445710000 exact, déductible 445660000/445620000 exacts dans l'override `addon22`) → les comptes de TVA **par taux ou variantes** utilisés dans les factures de **vente** (ex. 445716 10 %, 445717 20 %, autoliq) et d'**achat** (ex. 445662/445667, immo 44562, autoliq) étaient **ignorés**. Désormais : **collectée = crédits sur TOUS les comptes `4457x`** ; **déductible = débits sur TOUS les comptes `4456x` SAUF `44567`** (crédit de TVA à reporter, non déductible).
+
+**Comment — 2 éditions chirurgicales (même logique aux 2 endroits) :** `tvaDuMois` (déf. d'origine **et** override `addon22` qui la masquait) → préfixes `4457` (collectée, crédit) et `4456` hors `44567` (déductible, débit), comparés en `c9`. Logique **une face** conservée (la génération OD TVA reste stable). Tout le module en hérite (CA3, CA12, OD TVA, suivi, carte « Écriture & déclaration », « Détail par compte »). Textes mis à jour.
+
+**Limites :** capture par familles `4457`/`4456` (hors `44567`) ; les comptes `4455x` (à décaisser) restent des comptes de résultat, non comptés en base. Validé : `node --check` (170 scripts, 0 erreur) + Playwright (collectée 20 %+10 % = 210, déductible services+immo = 300, `44567` exclu ; équilibre ✅, 0 pageerror). Badge → **v352**.
+
+---
+
+## 🟢 MAJ précédente — Module TVA : déclaration séquentielle (mois suivant après déclaration) + mois restreints à aujourd'hui — v351
 **Quoi :** la carte **« Écriture & déclaration de TVA »** devient un **parcours guidé** : une fois un mois **déclaré**, on **passe automatiquement au mois suivant** à déclarer, jusqu'à **finaliser tous les mois disponibles**. Les **mois disponibles sont restreints à la date du jour** : un mois **postérieur au mois en cours** n'est **pas déclarable** (message « déclaration non disponible »). Un **indicateur d'avancement** « N/M mois disponibles déclarés » est affiché (✓ quand tous finalisés).
 
 **Comment — `yada-addon177` (éditions) :** `tvaMoisDispo()` = mois de l'exercice ≤ mois courant ; `tvaProchainADeclarer()` = 1ᵉʳ mois disponible, non Néant, non encore déclaré ; `tvaDeclarer(m)` enregistre la déclaration puis **avance `tvaMoisSel` vers le mois suivant** (re-render) ; `tvaEcritureCard()` bloque les mois futurs (`m>aujourd'hui`) et ajoute le pied d'avancement. Néant ignorés dans le parcours (gérés par « Valider Néant »).
