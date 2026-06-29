@@ -36,7 +36,20 @@
 
 ---
 
-## 🟢 Dernière mise à jour — « Montants sans facture » : montants colorés (débit/Sortant rouge, crédit/Entrant vert) à l'impression aussi — v346
+## 🟢 Dernière mise à jour — Règle banque : sens fiable depuis la ligne 512 (Entrant=vert / Sortant=rouge), corrige l'inversion FEC — v347
+**Quoi :** règle comptable demandée pour la **saisie bancaire** (différente des Fournisseurs/Clients). Dans la liste **« Montants sans facture »**, le **sens d'un mouvement bancaire** est désormais déterminé par la **ligne 512 de l'écriture** (autorité) et non par le champ `b.sens` (qui était **inversé pour les imports FEC**) :
+- **512 au DÉBIT** = argent **entré** sur le compte → **« Entrant » + vert** ;
+- **512 au CRÉDIT** = argent **sorti** du compte (dépensé par la société) → **« Sortant » + rouge**.
+
+**Règle Fournisseurs/Clients (confirmée, déjà en place dans `genEcriture`)** : une **facture fournisseur** porte le **TTC au CRÉDIT** (401), une **facture client** le **TTC au DÉBIT** (411) → soldées par les écritures de banque (paiement = 401 débit ; encaissement = 411 crédit). Aucune modification nécessaire.
+
+**Comment — 1 édition de `montantsSansFacture` :** pour chaque mouvement, on retrouve l'écriture (`b.ecritureId`), on lit sa ligne `512…` et on pose `sens='C'` (Entrant) si `512.debit>0`, sinon `'D'` (Sortant). Repli sur `b.sens` si l'écriture est introuvable. La liste/impression/mail (mapping `C→Entrant/vert`, `D→Sortant/rouge`) restent inchangés. 
+
+**Limites :** affichage de la liste (le module Banque et le rapprochement ne sont pas modifiés). Validé : `node --check` (167 scripts, 0 erreur) + Playwright (encaissement client 512-débit → 'C'/Entrant/vert ; paiement fournisseur 512-crédit → 'D'/Sortant/rouge, **même quand `b.sens` est inversé** ; équilibre ✅, 0 pageerror). Badge → **v347**.
+
+---
+
+## 🟢 MAJ précédente — « Montants sans facture » : montants colorés (débit/Sortant rouge, crédit/Entrant vert) à l'impression aussi — v346
 **Quoi :** dans la carte **« Montants sans facture »** (Éditions), les **montants au débit (Sortant)** s'affichent en **rouge** et les **montants au crédit (Entrant)** en **vert**. C'était déjà le cas à l'écran (classes `deb`/`cre`) ; c'est désormais **aussi appliqué à la liste imprimée** (`sfImprimer`), où le style d'impression `.doc-page` forçait auparavant tout en noir.
 
 **Comment — 1 édition de `sfImprimer` :** les cellules **Sens** et **Montant** de chaque ligne imprimée reçoivent une couleur **en ligne avec `!important`** (`#c62828` pour Sortant/débit, `#1b8a4b` pour Entrant/crédit) → l'`!important` en ligne prime sur la règle d'impression `body[data-theme] .doc-page *{color:#111418 !important}`. L'affichage écran reste inchangé (`cre`/`deb`).
