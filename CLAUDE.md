@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Module Client : tableau de correspondances rétractable + dépôt de facture client (copie du module Fournisseur) — v348
+## 🟢 Dernière mise à jour — Module TVA : « Détail par compte de TVA » (toute écriture à compte 445…, CA3/CA12) — v349
+**Quoi :** le **module TVA** récolte et **retranscrit toutes les écritures touchant un compte de TVA (445…)**, **quel que soit le compte utilisé** — issues des **factures clients & fournisseurs**, de l'**import FEC** et des **saisies (Analyse)**. Une carte **« Détail par compte de TVA »** est ajoutée (sous le tableau CA3 / la vue CA12) listant, pour la période (mois en CA3, exercice en CA12) : Compte · Libellé · Nature (Collectée / Déductible / À décaisser / Crédit à reporter) · Débit · Crédit · Solde · Journal(x), avec total des comptes 445. Ces montants alimentent le calcul CA3/CA12 et la **proposition de déclaration** (génération de l'OD TVA CA3 / vue CA12 déjà en place).
+
+**Comment — `yada-addon176` (100% additif) :** `tvaDetailParCompte()` scanne `db.ecritures` filtrées par mois (`tvaMoisSel`) ou par année d'exercice (CA12), agrège débit/crédit par `c9(compte)` commençant par `445`, classe par nature (préfixes 4457 / 4456-44562 / 44551 / 44567) ; libellés via `COMPTES` (repli `db.plan`) ; greffe sur `pageTVA` (sauf régime franchise). Le calcul `tvaDuMois`/`tvaDetailMois` et la génération OD TVA restent inchangés.
+
+**Limites :** carte d'affichage/représentation (le calcul net collectée/déductible reste basé sur 44571 / 44566-44562, comme avant). Validé : `node --check` (169 scripts, 0 erreur) + Playwright (carte présente dans `pageTVA`, comptes 445 retranscrits sur le mois, équilibre ✅, 0 pageerror). Badge → **v349**.
+
+---
+
+## 🟢 MAJ précédente — Module Client : tableau de correspondances rétractable + dépôt de facture client (copie du module Fournisseur) — v348
 **Quoi :** deux changements dans le **module Client** (cabinet).
 1. **Tableau « Correspondances — factures » rétractable** : le détail (table N°/Tiers/Date/Jnl/HT/TVA/TTC/Correspondance) est désormais dans un **`<details>`** repliable (KPIs toujours visibles), **fermé par défaut**, cliquer pour afficher/masquer.
 2. **Dépôt de facture client** (copie du module Fournisseur) : une carte **« Déposer une facture client »** (sélecteur client + zone glisser-déposer PDF/photo) est ajoutée → permet de déposer des **factures client établies ultérieurement** ou **transmises par le client lui-même**. La carte de réception/validation cabinet (`depotsCabinetCard('vente')`) était déjà présente.
