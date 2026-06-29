@@ -232,8 +232,8 @@
 
 ---
 
-## 🟢 MAJ précédente — Redéploiement de vérification (auto-déploiement Netlify) — v329
-**Quoi :** **aucun changement fonctionnel** — simple **bump de version v328 → v329** pour vérifier de bout en bout la chaîne de déploiement automatique vers l'hébergeur externe **Netlify** (`silly-kataifi-e6c958.netlify.app`). À chaque push sur `main`, Netlify reconstruit le site (~30 s) et le badge passe à v329, confirmant que la mise à jour en ligne est automatique (service worker « réseau d'abord » + addon103 mise à jour auto). Badge `#yada-ver` → `YADA · v329`, `version.json` → 329.
+## 🟢 MAJ précédente — Redéploiement de vérification (auto-déploiement) — v329
+**Quoi :** **aucun changement fonctionnel** — simple **bump de version v328 → v329** pour vérifier de bout en bout la chaîne de déploiement automatique vers l'hébergeur du site. À chaque push sur `main`, l'hébergeur reconstruit le site et le badge passe à v329, confirmant que la mise à jour en ligne est automatique (service worker « réseau d'abord » + addon103 mise à jour auto). Badge `#yada-ver` → `YADA · v329`, `version.json` → 329.
 
 **Limites :** aucune logique/écriture/UI modifiée. Validé : `node --check` + équilibre des écritures ✅. Badge → **v329**.
 
