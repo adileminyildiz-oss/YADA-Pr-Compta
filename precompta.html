@@ -4875,7 +4875,7 @@ function tvaBoxDepot(label, note){
 function pageTVA(){
   if(!db.societe.tvaRegime) db.societe.tvaRegime='CA3';
   const regime=db.societe.tvaRegime;
-  const mois=moisExoListe();                                   // TOUS les mois de l'exercice (jan → déc)
+  const mois=(window.tvaAnneeSel && typeof tvaMoisAnnee==='function') ? tvaMoisAnnee(window.tvaAnneeSel) : moisExoListe();   // mois de l'année sélectionnée (onglet) sinon de l'exercice
   if(!tvaMoisSel||!mois.includes(tvaMoisSel)) tvaMoisSel=mois.find(x=>!tvaEstNeant(x))||mois[0];
   // sélecteur régime (commun aux deux modèles)
   const regimeBar=`<div class="card"><h2>Régime de TVA du dossier</h2>
@@ -10920,7 +10920,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v352';
+    b.textContent='YADA · v353';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -20496,6 +20496,56 @@ ${lignes}
     try{ if(((db.societe&&db.societe.tvaRegime)||'CA3')!=='franchise'){ var c=window.tvaEcritureCard();
       if(c){ var anchor='<div class="card"><h2>Suivi annuel de la TVA';
         if(h.indexOf(anchor)>=0) h=h.replace(anchor, c+anchor); else h+=c; } } }catch(e){}
+    return h; };
+})();
+</script>
+
+<script id="yada-addon178">
+/* ============================================================
+   MODULE TVA — Onglets d'ANNÉE de déclaration.
+   Permet d'accéder aux mois d'une autre année (ex. 2026) pour préparer ses
+   déclarations, même si l'exercice traité est 2025 — sans changer l'exercice.
+   Années proposées = années présentes dans les écritures de TVA (445…) ∪ années
+   de l'exercice. 100% additif (helpers + greffe pageTVA + override tvaMoisDispo).
+   ============================================================ */
+(function(){
+  if(typeof pageTVA!=='function') return;
+  window.tvaMoisAnnee=function(y){ var a=[]; for(var i=1;i<=12;i++) a.push(y+'-'+String(i<10?('0'+i):i)); return a; };
+  window.tvaAnneesDispo=function(){
+    var ys={};
+    (db.ecritures||[]).forEach(function(e){
+      var has=(e.lignes||[]).some(function(l){ var cc=c9(l.compte); return cc.indexOf('4457')===0 || (cc.indexOf('4456')===0 && cc.indexOf('44567')!==0); });
+      if(has){ var y=(e.date||'').slice(0,4); if(y) ys[y]=1; } });
+    var d=((db.societe&&db.societe.exoDebut)||'').slice(0,4), f=((db.societe&&db.societe.exoFin)||'').slice(0,4);
+    if(d) ys[d]=1; if(f) ys[f]=1;
+    return Object.keys(ys).filter(Boolean).sort();
+  };
+  window.tvaAnneeActive=function(){
+    var ys=window.tvaAnneesDispo();
+    var cur=window.tvaAnneeSel||((db.societe&&db.societe.exoDebut)||'').slice(0,4)||ys[0];
+    if(ys.indexOf(cur)<0) cur=ys[0]||cur;
+    return cur;
+  };
+  window.tvaSetAnnee=function(y){ window.tvaAnneeSel=y; window.tvaMoisSel=null; if(typeof render==='function')render(); };
+  /* override : mois disponibles (déclaration) = mois de l'année active ≤ mois courant */
+  window.tvaMoisDispo=function(){ var today=todayStr().slice(0,7);
+    var mois=(window.tvaAnneeSel && typeof tvaMoisAnnee==='function') ? tvaMoisAnnee(window.tvaAnneeSel) : (typeof moisExoListe==='function'?moisExoListe():[]);
+    return mois.filter(function(x){ return x<=today; }); };
+  window.tvaAnneeBar=function(){
+    var regime=(db.societe&&db.societe.tvaRegime)||'CA3'; if(regime==='franchise') return '';
+    var ys=window.tvaAnneesDispo(); if(ys.length<=1) return '';   // inutile si une seule année
+    var cur=window.tvaAnneeActive();
+    var exoY=((db.societe&&db.societe.exoDebut)||'').slice(0,4);
+    var btns=ys.map(function(y){ return '<button class="cp-mtab '+(y===cur?'on':'')+'" onclick="tvaSetAnnee(\''+y+'\')">'+y+(y===exoY?'<span class="v" style="color:#9fb6d0">exercice</span>':'')+'</button>'; }).join('');
+    return '<div class="card"><h2>Année de déclaration</h2>'
+      +'<div class="cp-monthbar" style="border:none;padding:6px 0">'+btns+'</div>'
+      +'<div class="hint">Sélectionnez l\'année pour préparer ses déclarations (mois ci-dessous). Les autres années restent accessibles ici, même si l\'exercice traité diffère.</div></div>';
+  };
+  var _pt3=pageTVA;
+  pageTVA=function(){ var h=_pt3.apply(this,arguments);
+    try{ var bar=window.tvaAnneeBar();
+      if(bar){ var anchor='<div class="card"><h2>Régime de TVA du dossier';
+        if(h.indexOf(anchor)>=0) h=h.replace(anchor, bar+anchor); else h=bar+h; } }catch(e){}
     return h; };
 })();
 </script>

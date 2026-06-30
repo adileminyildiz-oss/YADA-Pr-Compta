@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Module TVA : prise en compte de TOUS les comptes de TVA (vente & achat) — v352
+## 🟢 Dernière mise à jour — Module TVA : onglets d'ANNÉE de déclaration (accéder à 2026 en traitant 2025) — v353
+**Quoi :** dans le **Module TVA**, une barre d'**onglets d'année** (« Année de déclaration ») permet d'**accéder aux mois d'une autre année** (ex. 2026) pour **préparer ses déclarations**, même si l'**exercice traité** est 2025 — **sans changer l'exercice**. Les années proposées = années présentes dans les **écritures de TVA (445…)** ∪ années de l'**exercice** ; l'onglet de l'année d'exercice est repéré (« exercice »). La barre n'apparaît que s'il y a **plus d'une année**.
+
+**Comment — `yada-addon178` (100% additif) + 1 édition de `pageTVA` :** `pageTVA` calcule désormais `mois = tvaAnneeSel ? tvaMoisAnnee(tvaAnneeSel) : moisExoListe()` ; `tvaAnneesDispo()` (années des écritures 445… + exercice), `tvaAnneeActive()` (défaut = année d'exercice), `tvaSetAnnee(y)` (fixe `window.tvaAnneeSel`, reset mois, re-render), `tvaAnneeBar()` greffée **avant** la carte « Régime de TVA ». `tvaMoisDispo()` (override) suit l'année active (mois ≤ mois courant) → la déclaration séquentielle et la restriction « à aujourd'hui » s'appliquent à l'année choisie. Le calcul `tvaDuMois` (tous comptes 445x, v352) est inchangé.
+
+**Limites :** sélection d'affichage (l'exercice comptable, lui, ne change pas ; pour basculer l'exercice, utiliser les flèches ⟲⟳ de la Consultation). Validé : `node --check` (171 scripts, 0 erreur) + Playwright (exercice 2025 + écriture TVA 2026 → onglets [2025, 2026], défaut 2025, bascule 2026 : TVA collectée 60 captée ; équilibre ✅, 0 pageerror). Badge → **v353**.
+
+---
+
+## 🟢 MAJ précédente — Module TVA : prise en compte de TOUS les comptes de TVA (vente & achat) — v352
 **Quoi :** le calcul de TVA (`tvaDuMois`) ne capturait que **certains comptes** (collectée 445710000 exact, déductible 445660000/445620000 exacts dans l'override `addon22`) → les comptes de TVA **par taux ou variantes** utilisés dans les factures de **vente** (ex. 445716 10 %, 445717 20 %, autoliq) et d'**achat** (ex. 445662/445667, immo 44562, autoliq) étaient **ignorés**. Désormais : **collectée = crédits sur TOUS les comptes `4457x`** ; **déductible = débits sur TOUS les comptes `4456x` SAUF `44567`** (crédit de TVA à reporter, non déductible).
 
 **Comment — 2 éditions chirurgicales (même logique aux 2 endroits) :** `tvaDuMois` (déf. d'origine **et** override `addon22` qui la masquait) → préfixes `4457` (collectée, crédit) et `4456` hors `44567` (déductible, débit), comparés en `c9`. Logique **une face** conservée (la génération OD TVA reste stable). Tout le module en hérite (CA3, CA12, OD TVA, suivi, carte « Écriture & déclaration », « Détail par compte »). Textes mis à jour.
