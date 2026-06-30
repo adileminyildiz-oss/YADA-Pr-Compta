@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Module TVA : onglets d'ANNÉE de déclaration (accéder à 2026 en traitant 2025) — v353
+## 🟢 Dernière mise à jour — Module TIERS : totaux HT + TVA par tiers depuis TOUTES les écritures (fournisseurs & clients) — v354
+**Quoi :** dans le module **TIERS**, chaque ligne affiche désormais le **HT** et la **TVA** par tiers, calculés sur **toutes les écritures** (saisie manuelle, scan/OCR, import FEC) — plus seulement `db.factures`. **Fournisseurs** : **HT dépensé** + **TVA déductible** ; **Clients** : **HT perçu** + **TVA collectée** ; colonne **TTC** conservée ; **ligne de total** (HT / TVA / TTC) ajoutée en pied de chaque liste.
+
+**Comment — 2 éditions chirurgicales :**
+- `statsTiers(id)` : pour chaque écriture touchant le compte auxiliaire du tiers, ventile — Fournisseur (401) : HT = lignes classe 6 (débit−crédit), TVA = 4456x hors 44567 (débit−crédit) ; Client (411) : HT = lignes classe 7 (crédit−débit), TVA = 4457x (crédit−débit) ; TTC = mouvement du compte de tiers. Renvoie `ht`/`tva`/`ttc` issus des écritures (repli factures si aucune écriture). Les KPIs de la fiche tiers en héritent.
+- `sectionTiers` (override addon152) : colonnes **HT** + **TVA** + **TTC** (au lieu de TTC+TVA), libellés adaptés (perçu/collectée vs dépensé/déductible), **ligne de total**.
+
+**Limites :** la ventilation par tiers nécessite un **compte auxiliaire** (401/411 par tiers) ; un dossier en comptes collectifs sans auxiliaires n'est pas ventilable par tiers. Validé : `node --check` (171 scripts, 0 erreur) + Playwright (fournisseur HT 1000 / TVA 200 / TTC 1200, client HT 500 / TVA 100 / TTC 600 depuis écritures ; liste : colonne HT + total ; équilibre ✅, 0 pageerror). Badge → **v354**.
+
+---
+
+## 🟢 MAJ précédente — Module TVA : onglets d'ANNÉE de déclaration (accéder à 2026 en traitant 2025) — v353
 **Quoi :** dans le **Module TVA**, une barre d'**onglets d'année** (« Année de déclaration ») permet d'**accéder aux mois d'une autre année** (ex. 2026) pour **préparer ses déclarations**, même si l'**exercice traité** est 2025 — **sans changer l'exercice**. Les années proposées = années présentes dans les **écritures de TVA (445…)** ∪ années de l'**exercice** ; l'onglet de l'année d'exercice est repéré (« exercice »). La barre n'apparaît que s'il y a **plus d'une année**.
 
 **Comment — `yada-addon178` (100% additif) + 1 édition de `pageTVA` :** `pageTVA` calcule désormais `mois = tvaAnneeSel ? tvaMoisAnnee(tvaAnneeSel) : moisExoListe()` ; `tvaAnneesDispo()` (années des écritures 445… + exercice), `tvaAnneeActive()` (défaut = année d'exercice), `tvaSetAnnee(y)` (fixe `window.tvaAnneeSel`, reset mois, re-render), `tvaAnneeBar()` greffée **avant** la carte « Régime de TVA ». `tvaMoisDispo()` (override) suit l'année active (mois ≤ mois courant) → la déclaration séquentielle et la restriction « à aujourd'hui » s'appliquent à l'année choisie. Le calcul `tvaDuMois` (tous comptes 445x, v352) est inchangé.
