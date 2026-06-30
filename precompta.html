@@ -3865,20 +3865,35 @@ function statsTiers(id){
   /* Total réel depuis les ÉCRITURES sur le compte de tiers (auxiliaire) — couvre aussi
      les écritures importées du FEC qui n'ont pas de db.factures.
      Client (411) : total facturé = somme des DÉBITS ; Fournisseur (401) : total dépensé = somme des CRÉDITS. */
-  let totalEcr=0, tvaEcr=0;
+  /* Totaux complets depuis les ÉCRITURES (saisie manuelle, scan/OCR, import FEC) :
+     pour chaque écriture qui touche le compte de tiers (auxiliaire), on ventile —
+     Fournisseur (401) : HT = charges (classe 6) au débit ; TVA déductible = 4456x (hors 44567) au débit ; TTC = mouvement du tiers.
+     Client (411)      : HT = produits (classe 7) au crédit ; TVA collectée = 4457x au crédit ; TTC = mouvement du tiers. */
+  let totalEcr=0, tvaEcr=0, htEcr=0;
   if(t && t.compteAux){ const cc=c9(t.compteAux); const client=(t.type==='client');
-    (db.ecritures||[]).forEach(e=>{ let touche=false;
-      (e.lignes||[]).forEach(l=>{ if(c9(l.compte)===cc){ totalEcr += client ? (+l.debit||0) : (+l.credit||0); touche=true; } });
-      if(touche){ (e.lignes||[]).forEach(l=>{ const cp=c9(l.compte); if(cp.indexOf('4457')===0 || cp.indexOf('4456')===0){ tvaEcr += (+l.debit||0)+(+l.credit||0); } }); }
+    (db.ecritures||[]).forEach(e=>{
+      if(!(e.lignes||[]).some(l=>c9(l.compte)===cc)) return;       // écriture touchant ce tiers
+      (e.lignes||[]).forEach(l=>{ const cp=c9(l.compte); const d=(+l.debit||0), cr=(+l.credit||0);
+        if(cp===cc){ totalEcr += client ? (d-cr) : (cr-d); }
+        else if(client){
+          if(cp.charAt(0)==='7') htEcr += (cr-d);
+          else if(cp.indexOf('4457')===0) tvaEcr += (cr-d);
+        } else {
+          if(cp.charAt(0)==='6') htEcr += (d-cr);
+          else if(cp.indexOf('4456')===0 && cp.indexOf('44567')!==0) tvaEcr += (d-cr);
+        }
+      });
     });
   }
-  totalEcr=r2(totalEcr); tvaEcr=r2(tvaEcr);
-  /* l'écriture est la source de vérité (factures de l'app génèrent aussi des écritures) */
-  const ttcFinal = totalEcr>0 ? totalEcr : r2(ttc);
-  const tvaFinal = (totalEcr>0 && r2(tva)===0) ? tvaEcr : r2(tva);
+  totalEcr=r2(totalEcr); tvaEcr=r2(tvaEcr); htEcr=r2(htEcr);
+  /* l'écriture est la source de vérité (les factures de l'app génèrent aussi des écritures) */
+  const useEcr = (totalEcr>0 || htEcr>0 || tvaEcr>0);
+  const ttcFinal = useEcr ? totalEcr : r2(ttc);
+  const tvaFinal = useEcr ? tvaEcr : r2(tva);
+  const htFinal  = useEcr ? htEcr : r2(ht);
   // règlements bancaires liés
   const paye=db.banque.filter(b=>b.tiersId===id).reduce((a,b)=>a+b.montant,0);
-  return {ht:r2(ht),tva:tvaFinal,ttc:ttcFinal,parMois,parAn,factures:fs,nb:fs.length,paye:r2(paye)};
+  return {ht:htFinal,tva:tvaFinal,ttc:ttcFinal,htEcr,tvaEcr,ttcEcr:totalEcr,parMois,parAn,factures:fs,nb:fs.length,paye:r2(paye)};
 }
 /* rapprochement TVA : banque (via taux du tiers) vs factures */
 function rapprochementTVA(m){
@@ -10920,7 +10935,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v353';
+    b.textContent='YADA · v354';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -18823,15 +18838,22 @@ ${lignes}
           +'<td class="num">'+(t.compteAux||(isC?'411':'401'))+'</td>'
           +'<td class="num">'+t.compteContre+' <span class="mini">'+(COMPTES[t.compteContre]||'')+'</span></td>'
           +'<td class="r num">'+t.taux+' %</td>'
-          +'<td class="r num">'+eur(s.ttc)+'</td>'
+          +'<td class="r num">'+eur(s.ht)+'</td>'
           +'<td class="r num '+(isC?'cre':'deb')+'">'+eur(s.tva)+'</td>'
+          +'<td class="r num">'+eur(s.ttc)+'</td>'
           +'<td class="r" style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="tiersEditer(\''+t.id+'\')">✎ Modifier</button> <button class="btn btn-ghost btn-sm" title="Supprimer le tiers" onclick="tiersSupprimer(\''+t.id+'\')">🗑</button></td>'
           +'</tr>';
       }).join('');
-      return '<div class="card"><h2>'+title+'</h2><div class="sub">'+(list?list.length:0)+' fiche(s) — ✎ pour modifier (type compris), 🗑 pour supprimer, ou cliquez sur un nom pour la fiche complète</div>'
+      var tH=r2((list||[]).reduce(function(a,t){return a+statsTiers(t.id).ht;},0));
+      var tV=r2((list||[]).reduce(function(a,t){return a+statsTiers(t.id).tva;},0));
+      var tT=r2((list||[]).reduce(function(a,t){return a+statsTiers(t.id).ttc;},0));
+      return '<div class="card"><h2>'+title+'</h2><div class="sub">'+(list?list.length:0)+' fiche(s) — '+(isC?'HT perçu + TVA collectée':'HT dépensé + TVA déductible')+' (calculés sur toutes les écritures : saisie, scan, import FEC). ✎ pour modifier, 🗑 pour supprimer, ou cliquez sur un nom.</div>'
         +'<table><thead><tr><th>Dénomination</th><th>Compte tiers</th><th>Compte '+(isC?'produit':'charge')+'</th><th class="r">Taux</th>'
-        +'<th class="r">'+(isC?'CA TTC':'Dépensé TTC')+'</th><th class="r">TVA '+(isC?'collectée':'payée')+'</th><th></th></tr></thead>'
-        +'<tbody>'+(rows||'<tr><td colspan=7 class=empty>Aucune fiche</td></tr>')+'</tbody></table></div>';
+        +'<th class="r">'+(isC?'HT perçu':'HT dépensé')+'</th><th class="r">TVA '+(isC?'collectée':'déductible')+'</th><th class="r">TTC</th><th></th></tr></thead>'
+        +'<tbody>'+(rows||'<tr><td colspan=8 class=empty>Aucune fiche</td></tr>')
+        +'<tr class="totrow"><td colspan=4><b>Total '+(isC?'clients':'fournisseurs')+'</b></td>'
+        +'<td class="r num"><b>'+eur(tH)+'</b></td><td class="r num '+(isC?'cre':'deb')+'"><b>'+eur(tV)+'</b></td><td class="r num"><b>'+eur(tT)+'</b></td><td></td></tr>'
+        +'</tbody></table></div>';
     };
   }
 
