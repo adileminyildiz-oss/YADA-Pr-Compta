@@ -10987,7 +10987,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v382';
+    b.textContent='YADA · v383';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21766,7 +21766,9 @@ ${lignes}
   if(typeof render==='function' && !window.__dsHomeGuard){
     window.__dsHomeGuard=true; var _rd=render;
     render=function(){ try{ var cx=(typeof connecte!=='undefined')?connecte:false;
-      if(window._dsPrevConnecte===true && cx===false){ window.dsSel=null; window.dsListe=false; window.dsHub=false; window.dsRub=null; }
+      if(window._dsPrevConnecte===true && cx===false){
+        if(window._dsSuppressHomeReset){ window._dsSuppressHomeReset=false; }
+        else { window.dsSel=null; window.dsListe=false; window.dsHub=false; window.dsRub=null; } }
       window._dsPrevConnecte=cx; }catch(e){}
       return _rd.apply(this,arguments); };
   }
@@ -21811,6 +21813,50 @@ ${lignes}
     +'.ds-empty{opacity:.7;padding:16px;text-align:center;border:1px dashed rgba(30,144,255,.3);border-radius:12px;max-width:840px;margin:0 auto}'
     +'@media(max-width:820px){.ds-hub-grid{grid-template-columns:1fr}}';
   document.head.appendChild(st);
+})();
+</script>
+
+<script id="yada-addon190">
+/* ============================================================
+   MODULES SANS BARRE LATÉRALE — on masque la barre de navigation (aside)
+   dans TOUS les modules (espace cabinet) : la navigation se fait par le HUB
+   (rubriques). Un bouton flottant « ← Retour au dossier » ramène au HUB du
+   dossier courant pour changer de rubrique / module. 100% additif.
+   ============================================================ */
+(function(){
+  var st=document.createElement('style'); st.id='noside-mod'; st.textContent=
+    'body[data-noside="1"] .layout:not(.solo){grid-template-columns:1fr!important}'
+    +'body[data-noside="1"] aside{display:none!important}'
+    +'#ds-back-chip{position:fixed;top:14px;left:14px;z-index:1400;display:none;align-items:center;gap:8px;'
+    +'padding:9px 15px;border-radius:11px;border:1px solid rgba(30,144,255,.55);'
+    +'background:linear-gradient(135deg,#14365f,#0a1b34);color:#dbeafe;font-weight:700;font-size:13px;'
+    +'cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.45)}'
+    +'#ds-back-chip:hover{border-color:#1e90ff;box-shadow:0 0 0 3px rgba(30,144,255,.18),0 10px 26px rgba(0,0,0,.5)}'
+    +'body[data-noside="1"] #ds-back-chip{display:inline-flex}'
+    +'body[data-noside="1"] main.fullbleed .mod-wrap,body[data-noside="1"] main.fullbleed .dash-wrap{padding-top:60px}';
+  document.head.appendChild(st);
+
+  /* Retour au HUB du dossier courant (sans repasser par « Espace dossiers »). */
+  window.dsRetourModule=function(){ try{ var id=(db&&db.activeId)||window.dsSel; if(!id) return;
+    window._dsSuppressHomeReset=true; window.dsSel=id; window.dsHub=true; window.dsListe=false; window.dsRub=null;
+    try{ connecte=false; }catch(e){}
+    if(typeof render==='function') render(); }catch(e){} };
+
+  function ensureChip(){ var c=document.getElementById('ds-back-chip'); if(!c){ c=document.createElement('button');
+      c.id='ds-back-chip'; c.type='button'; c.innerHTML='‹ Retour au dossier'; c.onclick=window.dsRetourModule;
+      document.body.appendChild(c); } return c; }
+
+  function apply(){ try{
+    var conn=(typeof connecte!=='undefined')?connecte:false;
+    var client=(window.sessionRole==='client');
+    if(conn && !client){ document.body.setAttribute('data-noside','1'); ensureChip(); }
+    else { document.body.removeAttribute('data-noside'); }
+  }catch(e){} }
+
+  if(typeof render==='function' && !window.__noSideGuard){ window.__noSideGuard=true;
+    var _r=render; render=function(){ var x=_r.apply(this,arguments); try{ apply(); }catch(e){} return x; };
+  }
+  apply();
 })();
 </script>
 </body>

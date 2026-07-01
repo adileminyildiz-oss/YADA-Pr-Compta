@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — HUB : carte société allongée (pleine hauteur), plus d'infos, contenu centré — v382
+## 🟢 Dernière mise à jour — Modules SANS barre latérale (navigation par le HUB) + bouton « ← Retour au dossier » — v383
+**Quoi :** la **barre latérale de navigation (`aside`/`#nav`) est masquée dans TOUS les modules** (espace cabinet) → chaque module s'affiche en **pleine largeur**. La navigation entre modules se fait par le **HUB** (rubriques) : un **bouton flottant « ‹ Retour au dossier »** (haut-gauche) ramène au HUB du dossier courant pour changer de rubrique / module. L'espace **Client** (et mobile) n'est pas touché (garde sa navigation propre).
+
+**Comment — `yada-addon190` (100% additif) :** `<style id="noside-mod">` — `body[data-noside="1"] aside{display:none}` + `.layout:not(.solo){grid-template-columns:1fr}` + bouton `#ds-back-chip` (fixed, visible seulement en module) + `padding-top:60px` sur `.mod-wrap`/`.dash-wrap` pour dégager le bouton. Un **wrap de `render`** pose `data-noside="1"` sur `<body>` quand `connecte && sessionRole!=='client'` (sinon retire l'attribut) et crée le bouton une fois. `dsRetourModule()` revient au HUB (`dsSel` = `db.activeId`, `dsHub=true`, `connecte=false`) via le **drapeau `_dsSuppressHomeReset`** ajouté au garde v380 (pour revenir au HUB et non à « Espace dossiers »). Validé : `node --check` (183 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (module tva/compta → `aside` masqué, `#nav` masqué, layout 1 colonne, bouton « ‹ Retour au dossier » 172×35 visible en haut-gauche ; clic → HUB avec carte société + 5 rubriques ; écran d'accueil → bouton `display:none`, pas de `data-noside` ; équilibre 34 écritures ✅, 0 pageerror). Badge → **v383**.
+
+---
+
+## 🟢 MAJ précédente — HUB : carte société allongée (pleine hauteur), plus d'infos, contenu centré — v382
 **Quoi :** dans la page HUB (`yada-addon189`), la **carte principale de la société** (celle de gauche) est **allongée sur toute la hauteur de la page** (du haut vers le bas de la zone) et son **contenu est cadré au milieu** (centré verticalement). Elle affiche désormais **plusieurs informations** : SIREN · SIRET · Code APE · N° TVA · Forme juridique · Dirigeant · Activité · Adresse (un champ vide s'affiche « — » au lieu d'être masqué). La colonne des 5 rubriques à droite reste alignée en haut (inchangée).
 
 **Comment — `yada-addon189` :** `socItem` rend toujours l'item (`val||'—'`) ; `ecranHub` liste 8 champs. CSS : `.dsc-card{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:calc(100vh - 250px)}` (pleine hauteur + contenu centré), `.ds-hub-main{display:flex;align-self:stretch}`, grille `align-items:start` conservée (la colonne rubriques n'est pas étirée). Validé : `node --check` (182 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (carte **650 px** de haut jusqu'en bas de page, `justify-content:center`, 8 items affichés, colonne rubriques en haut ; équilibre 34 écritures ✅, 0 pageerror). Badge → **v382**.
