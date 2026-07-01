@@ -36,7 +36,21 @@
 
 ---
 
-## 🟢 Dernière mise à jour — « Liste Dossier » en fenêtre FLOTTANTE (déplaçable & modulable) — v372
+## 🟢 Dernière mise à jour — Parcours d'entrée repensé : page dossiers → liste → dossier → HUB (5 rubriques) — v373
+**Quoi :** refonte de la page des dossiers (après connexion, espace cabinet) :
+1. **Page dossiers** : **aucune carte** de dossier, un bouton **« Liste Dossier »** (l'ancienne liste inline v371 et le libellé « (fenêtre) » sont retirés).
+2. **Liste** : clic sur « Liste Dossier » → **liste des dossiers** (lignes cliquables) → **sélectionner** un dossier.
+3. **Dossier sélectionné** : la page n'affiche plus que **le dossier sélectionné** (une seule carte).
+4. **HUB (page fixe, non déplaçable/modifiable)** : clic sur la carte → carte **principale de la société** à gauche (dénomination, SIREN, SIRET, APE, TVA, activité, adresse, dirigeant) + à droite **5 cartes ouvrables** : **Permanent** (→ Informations société), **Déclarations** (→ TVA), **Ressources Humaines** (→ Salarié), **Pilotages** (→ Pilotage), **Comptabilité** (→ Analyse).
+5. Chaque carte du hub **entre dans le module** correspondant → **page fixe avec la barre latérale** (l'app complète).
+
+**Comment — `yada-addon189` (override `ecranSelectionDossier` tant que non connecté, 100% additif) :** états `window.dsSel/dsListe/dsHub` ; `dsOuvrirListe`/`dsSelectionner(id)`/`dsOuvrirHub`/`dsEntrer(mod)` (=`choisirDossier(id)` puis `current=mod;render()`) ; écrans `ecranAccueil`/`ecranListe`/`ecranSelUnique`/`ecranHub` ; réutilise `.login-wrap`/`.dossier-card` (thème). `TILES` mappe les 5 rubriques. `<style id="ds-flow-mod">`. Le libellé du bouton flottant v372 passe aussi à « Liste Dossier ». `choisirDossier` (entrée réelle) inchangé — appelé seulement au clic d'une carte du hub.
+
+**Limites :** `choisirDossier` charge le dataset au clic d'une rubrique (la carte société du hub lit `db.cabinet.dossiers` + `db.dossiersData[id].societe` si présent). Validé : `node --check` (182 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (accueil : 0 carte, bouton « Liste Dossier », pas d'inline/« (fenêtre) » ; liste 3 dossiers ; sélection → 1 seule carte ; hub → carte société + 5 rubriques ; `dsEntrer` → app ouverte avec barre latérale `#nav` 18 items, pour compta/salarie/pilotage/tva/infosociete ; équilibre 34 écritures ✅, 0 pageerror). Badge → **v373**.
+
+---
+
+## 🟢 MAJ précédente — « Liste Dossier » en fenêtre FLOTTANTE (déplaçable & modulable) — v372
 **Quoi :** sur la page de sélection, un bouton **« Liste Dossier (fenêtre) »** ouvre un **panneau flottant** contenant la liste des dossiers :
 - **barre de titre à glisser** pour déplacer la fenêtre (souris + tactile) ;
 - **coin bas-droit** pour **redimensionner** (resize natif `resize:both`, min 300×220) ;

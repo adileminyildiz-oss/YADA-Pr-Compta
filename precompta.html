@@ -10987,7 +10987,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v372';
+    b.textContent='YADA · v373';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21594,7 +21594,7 @@ ${lignes}
   /* bouton d'ouverture sur la page de sélection */
   if(typeof window.ecranSelectionDossier==='function'){ var _e=window.ecranSelectionDossier;
     window.ecranSelectionDossier=function(){ var h=_e.apply(this,arguments);
-      try{ var btn='<button class="btn btn-ghost" onclick="dossierFloatOpen()">Liste Dossier (fenêtre)</button>';
+      try{ var btn='<button class="btn btn-ghost" onclick="dossierFloatOpen()">Liste Dossier</button>';
         if(h.indexOf('class="login-actions"')>=0) h=h.replace(/(<div class="login-actions">)/, '$1'+btn); }catch(e){}
       return h; };
   }
@@ -21618,6 +21618,134 @@ ${lignes}
     +'.df-badge{background:linear-gradient(#1e90ff,#0a64d6);color:#fff;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;flex:0 0 auto}'
     +'.df-open{opacity:.7;font-size:12px;white-space:nowrap;flex:0 0 auto}'
     +'.df-empty{opacity:.7;padding:16px;text-align:center}';
+  document.head.appendChild(st);
+})();
+</script>
+
+<script id="yada-addon189">
+/* ============================================================
+   PARCOURS D'ENTRÉE — page des dossiers repensée.
+   Après connexion : page des dossiers SANS carte, avec un bouton « Ouvrir la
+   liste des dossiers » → liste → sélection d'un dossier → la page n'affiche
+   plus que le dossier sélectionné (une seule carte) → clic = PAGE HUB fixe
+   (non déplaçable/modifiable) : carte principale de la société à gauche +
+   à droite 5 cartes ouvrables (Permanent, Déclarations, Ressources Humaines,
+   Pilotages, Comptabilité) qui entrent dans le module correspondant.
+   100% additif (override ecranSelectionDossier tant que non connecté).
+   ============================================================ */
+(function(){
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function dossiers(){ var c=db.cabinet||(typeof cabinetDefaut==='function'?cabinetDefaut():{dossiers:[]}); return (c.dossiers||[]).slice().sort(function(a,b){return (b.favori?1:0)-(a.favori?1:0);}); }
+  function dossierEntry(id){ return ((db.cabinet&&db.cabinet.dossiers)||[]).find(function(x){return x.id===id;})||null; }
+  function societeInfo(id){ var d=dossierEntry(id)||{}; var s=(db.dossiersData&&db.dossiersData[id]&&db.dossiersData[id].societe)||{};
+    return { nom:d.nom||s.raison||'—', forme:s.formeJur||d.forme||'', siren:s.siren||d.siren||'', siret:s.siret||'',
+      ape:s.codeAPE||s.ape||'', adresse:[s.adresse,((s.cp||'')+' '+(s.ville||'')).trim()].filter(Boolean).join(', ')||d.ville||'',
+      activite:s.activite||d.activite||'', dirigeant:s.dirigeant||'', tva:s.tvaIntra||'' }; }
+
+  var TILES=[
+    ['Permanent','infosociete','Informations société, statuts, K-bis, coffre-fort'],
+    ['Déclarations','tva','TVA (CA3) et déclarations fiscales'],
+    ['Ressources Humaines','salarie','Salariés, paie, absences, congés, RDV'],
+    ['Pilotages','pilotage','Impôts (IS/IR), actif/passif, agenda'],
+    ['Comptabilité','compta','Analyse, journaux, éditions, import FEC']
+  ];
+
+  /* --- état & actions --- */
+  window.dsAccueil=function(){ window.dsListe=false; window.dsHub=false; if(typeof render==='function') render(); };
+  window.dsOuvrirListe=function(){ window.dsListe=true; window.dsHub=false; if(typeof render==='function') render(); };
+  window.dsSelectionner=function(id){ window.dsSel=id; window.dsListe=false; window.dsHub=false; if(typeof render==='function') render(); };
+  window.dsOuvrirHub=function(){ if(window.dsSel){ window.dsHub=true; if(typeof render==='function') render(); } };
+  window.dsEntrer=function(mod){ var id=window.dsSel; if(!id) return; window.dsHub=false; window.dsListe=false;
+    try{ choisirDossier(id); }catch(e){} if(mod){ try{ current=mod; if(typeof render==='function') render(); }catch(e){} } };
+
+  function loginHead(){ var c=db.cabinet||(typeof cabinetDefaut==='function'?cabinetDefaut():{});
+    return '<div class="login-head"><div class="login-brand" onclick="dsAccueil()" style="cursor:pointer">'
+      +'<svg viewBox="0 0 150 44" width="132" height="40" xmlns="http://www.w3.org/2000/svg" aria-label="YADA"><defs><linearGradient id="yd-gl9" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5ab0ff"/><stop offset="1" stop-color="#0a64d6"/></linearGradient></defs><rect x="1" y="7" width="32" height="32" rx="9" fill="url(#yd-gl9)"/><path d="M10 15 L17 24 L24 15" fill="none" stroke="#0e1a22" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><line x1="17" y1="24" x2="17" y2="33" stroke="#0e1a22" stroke-width="3.2" stroke-linecap="round"/><text x="44" y="33" font-family="Fraunces, serif" font-size="29" font-weight="900" fill="#ffffff" letter-spacing="1.5">YADA</text></svg>'
+      +'<small>Système intégré · CA3</small></div>'
+      +'<div class="login-cab"><b>'+esc(c.cabinetNom||'')+'</b><span>'+esc((c.collaborateur||'')+' · '+(c.role||''))+'</span></div></div>';
+  }
+  function actions(extra){ return '<div class="login-actions">'+(extra||'')
+    +'<button class="btn btn-ghost" onclick="ouvrirCreationDossier()">Créer un dossier</button>'
+    +'<button class="btn btn-ghost" onclick="document.getElementById(\'imp\').click()">Importer des données (JSON)</button></div>'; }
+
+  function ecranAccueil(){
+    return '<div class="login-wrap">'+loginHead()
+      +'<div class="login-title">Espace dossiers</div>'
+      +'<div class="login-sub">Aucun dossier affiché. Ouvrez la liste pour sélectionner le dossier à traiter.</div>'
+      +'<div class="ds-cta"><button class="btn btn-gold btn-lg" onclick="dsOuvrirListe()">Liste Dossier</button></div>'
+      +actions()+'</div>';
+  }
+  function dossierRow(d, onclick, label){
+    return '<button class="ds-row" onclick="'+onclick+'"><span class="ds-av">'+esc((d.nom||'?')[0])+'</span>'
+      +'<span class="ds-main"><span class="ds-nom">'+esc(d.nom||'')+'</span><span class="ds-meta">'+esc([d.forme,d.activite,d.ville].filter(Boolean).join(' · ')||'—')+' · '+(d.siren?('SIREN '+esc(d.siren)):'SIREN —')+'</span></span>'
+      +'<span class="ds-open">'+esc(label||'Sélectionner →')+'</span></button>';
+  }
+  function ecranListe(){
+    var rows=dossiers().map(function(d){ return dossierRow(d,"dsSelectionner('"+d.id+"')"); }).join('')||'<div class="ds-empty">Aucun dossier — créez-en un ou importez des données.</div>';
+    return '<div class="login-wrap">'+loginHead()
+      +'<div class="login-title">Liste des dossiers</div>'
+      +'<div class="login-sub">Cliquez sur un dossier pour le sélectionner.</div>'
+      +'<div class="ds-list">'+rows+'</div>'
+      +actions('<button class="btn btn-ghost" onclick="dsAccueil()">← Retour</button>')+'</div>';
+  }
+  function ecranSelUnique(id){ var d=dossierEntry(id); if(!d) return ecranAccueil();
+    var actif=(id===db.activeId);
+    var carte='<button class="dossier-card" onclick="dsOuvrirHub()">'
+      +'<div class="dc-top"><span class="dc-av">'+esc((d.nom||'?')[0])+'</span>'
+      +'<span class="dc-star '+(d.favori?'on':'')+'">'+(d.favori?'★':'☆')+'</span></div>'
+      +'<div class="dc-nom">'+esc(d.nom||'')+'</div>'
+      +'<div class="dc-meta">'+esc([d.forme,d.activite,d.ville].filter(Boolean).join(' · ')||'—')+'</div>'
+      +'<div class="dc-siren">'+(d.siren?('SIREN '+esc(d.siren)):'SIREN —')+'</div>'
+      +'<div class="dc-foot"><span class="dc-badge '+(actif?'on':'')+'">'+(actif?'Actif':'Sélectionné')+'</span><span class="dc-open">Ouvrir le dossier →</span></div>'
+      +'</button>';
+    return '<div class="login-wrap">'+loginHead()
+      +'<div class="login-title">Dossier sélectionné</div>'
+      +'<div class="login-sub">Cliquez sur le dossier pour l\'ouvrir.</div>'
+      +'<div class="dossier-grid ds-grid-solo">'+carte+'</div>'
+      +actions('<button class="btn btn-ghost" onclick="dsOuvrirListe()">Changer de dossier</button>')+'</div>';
+  }
+  function socRow(lbl,val){ if(!val) return ''; return '<div class="ds-soc-row"><span>'+esc(lbl)+'</span><b>'+esc(val)+'</b></div>'; }
+  function ecranHub(id){ var i=societeInfo(id);
+    var soc='<div class="card ds-soc"><h2>'+esc(i.nom)+'</h2>'+(i.forme?('<div class="ds-soc-badge">'+esc(i.forme)+'</div>'):'')
+      +socRow('SIREN', i.siren)+socRow('SIRET', i.siret)+socRow('Code APE', i.ape)+socRow('N° TVA', i.tva)
+      +socRow('Activité', i.activite)+socRow('Adresse', i.adresse)+socRow('Dirigeant', i.dirigeant)+'</div>';
+    var tiles=TILES.map(function(t){ return '<button class="ds-tile" onclick="dsEntrer(\''+t[1]+'\')"><span class="ds-tile-t">'+esc(t[0])+'</span><span class="ds-tile-d">'+esc(t[2])+'</span><span class="ds-tile-o">Ouvrir →</span></button>'; }).join('');
+    return '<div class="login-wrap ds-hub-wrap">'+loginHead()
+      +'<div class="login-title">'+esc(i.nom)+'</div>'
+      +'<div class="login-sub">Dossier — choisissez une rubrique.</div>'
+      +'<div class="ds-hub-grid"><div class="ds-hub-main">'+soc+'</div><div class="ds-hub-side">'+tiles+'</div></div>'
+      +'<div class="login-actions"><button class="btn btn-ghost" onclick="dsOuvrirListe()">Changer de dossier</button></div>'
+      +'</div>';
+  }
+  function dsScreen(){
+    if(window.dsHub && window.dsSel) return ecranHub(window.dsSel);
+    if(window.dsListe) return ecranListe();
+    if(window.dsSel && dossierEntry(window.dsSel)) return ecranSelUnique(window.dsSel);
+    return ecranAccueil();
+  }
+  if(typeof window.ecranSelectionDossier==='function'){ var _e=window.ecranSelectionDossier;
+    window.ecranSelectionDossier=function(){ try{ return dsScreen(); }catch(e){ return _e.apply(this,arguments); } };
+  }
+
+  var st=document.createElement('style'); st.id='ds-flow-mod'; st.textContent=
+    '.ds-cta{margin:20px 0;text-align:center}'
+    +'.btn-lg{font-size:16px;padding:14px 28px;border-radius:12px}'
+    +'.ds-list{max-width:840px;margin:8px auto 16px;display:flex;flex-direction:column;gap:8px}'
+    +'.ds-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 16px;border:1px solid rgba(30,144,255,.30);border-radius:12px;background:rgba(30,144,255,.06);cursor:pointer;color:inherit}'
+    +'.ds-row:hover{background:rgba(30,144,255,.16);border-color:#1e90ff}'
+    +'.ds-av{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#1e90ff,#0a64d6);color:#fff;font-weight:700;flex:0 0 auto}'
+    +'.ds-main{display:flex;flex-direction:column;flex:1;min-width:0}.ds-nom{font-weight:700}.ds-meta{font-size:12px;opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+    +'.ds-open{opacity:.75;font-size:13px;white-space:nowrap}'
+    +'.ds-grid-solo{grid-template-columns:minmax(260px,360px)!important;justify-content:center;display:grid}'
+    +'.ds-hub-grid{max-width:1000px;margin:6px auto 0;display:grid;grid-template-columns:1.05fr .95fr;gap:18px;align-items:start}'
+    +'.ds-hub-side{display:flex;flex-direction:column;gap:10px}'
+    +'.ds-tile{display:flex;flex-direction:column;gap:2px;text-align:left;padding:14px 16px;border:1px solid rgba(30,144,255,.32);border-radius:13px;background:rgba(30,144,255,.07);cursor:pointer;color:inherit;transition:background .12s,border-color .12s}'
+    +'.ds-tile:hover{background:rgba(30,144,255,.18);border-color:#1e90ff}'
+    +'.ds-tile-t{font-weight:700;font-size:15px}.ds-tile-d{font-size:12px;opacity:.72}.ds-tile-o{font-size:12px;opacity:.8;margin-top:4px}'
+    +'.ds-soc h2{margin-top:0}.ds-soc-badge{display:inline-block;background:linear-gradient(#1e90ff,#0a64d6);color:#fff;font-size:12px;font-weight:600;padding:3px 12px;border-radius:20px;margin-bottom:8px}'
+    +'.ds-soc-row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid rgba(30,144,255,.14);font-size:13px}.ds-soc-row>span{opacity:.7}.ds-soc-row b{text-align:right}'
+    +'.ds-empty{opacity:.7;padding:16px;text-align:center;border:1px dashed rgba(30,144,255,.3);border-radius:12px;max-width:840px;margin:0 auto}'
+    +'@media(max-width:820px){.ds-hub-grid{grid-template-columns:1fr}}';
   document.head.appendChild(st);
 })();
 </script>
