@@ -36,7 +36,19 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Tous les modules exploitent le FEC : Immobilisations & Charges/Paie dérivés des écritures — v369
+## 🟢 Dernière mise à jour — FEC → fiches d'immobilisation automatiques (avec plan d'amortissement) — v370
+**Quoi :** à l'**import FEC** (et au chargement), chaque **acquisition d'immobilisation** détectée dans les écritures (ligne **classe 2 amortissable au DÉBIT**) crée automatiquement une **fiche `db.immos` complète** → le module Immobilisations calcule alors le **plan d'amortissement** (`immoPlan`) et les dotations.
+- **Durée par défaut selon le compte** : logiciels 205 → 3 ans, constructions 213 → 25 ans, matériel/outillage 215 → 7 ans, véhicules 2182 → 5 ans, matériel info 2183 → 3 ans, mobilier 2184 → 10 ans, agencements 2181 → 10 ans, autres corporelles 5 ans, incorporelles 5 ans.
+- **Comptes dérivés** : `compteAmort` via `compteAmortDe` (28x), `compteDot` (681110000 incorporel / 681120000 corporel) ; `montantHT` = débit de la ligne, `miseEnService` = date de l'écriture, `fournisseur` = libellé de la ligne 404.
+- **Exclusions** : à-nouveaux, cessions/sorties, OD de dotation, et **immobilisations NON amortissables** (terrains 211, fonds 206/207, financières 26/27).
+
+**Comment — `yada-addon186` (100% additif) :** `creerImmosDepuisEcritures()` parcourt `db.ecritures`, crée une fiche par ligne classe 2 amortissable au débit ; **idempotent** (skip si `im.ecritureId===e.id` déjà lié, ou doublon même compte + même montant qu'une fiche existante — y compris manuelle) ; `dureeParCompte()` ; hooks : wrapper `integrerFEC` (dépôt), `chargerDossier`, et une fois au démarrage.
+
+**Limites :** durées **par défaut** (modifiables dans la fiche) ; type linéaire ; valeur résiduelle 0 ; les immobilisations non amortissables ne créent pas de fiche (pas de plan). Validé : `node --check` (179 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (import véhicule 2182 20 000 € → fiche `IMMO-002`, amort `281820000`, durée 60, plan calculé — 1ʳᵉ dotation prorata **2 222,22 €** ; matériel info 2183 → durée 36 ; terrain 211 → **non créé** ; idempotent ; démos inchangées ; équilibre 34 écritures ✅, 0 pageerror). Badge → **v370**.
+
+---
+
+## 🟢 MAJ précédente — Tous les modules exploitent le FEC : Immobilisations & Charges/Paie dérivés des écritures — v369
 **Quoi :** garantir que **lorsqu'un FEC est déposé, toutes ses écritures servent de base de données à traiter dans tous les modules**. La plupart des modules lisaient déjà `db.ecritures` (Analyse, Journal, Éditions, TVA, Tiers, Analytique, Banque, Suivi des règlements, Pilotage, Tableau de bord). Les **deux derniers modules qui n'avaient que leur propre registre** — **Immobilisations** et **Charges & Paie** — reçoivent désormais une **carte dérivée (lecture seule) calculée sur toutes les écritures** (FEC + saisie) :
 - **Immobilisations & Financements** → « Immobilisations, amortissements & dotations — écritures (FEC inclus) » : KPI (immobilisations brutes 20-27, amortissements 28x, VNC, dotations 6811) + tables par compte.
 - **Charges & Paie** → « Charges & paie — écritures (FEC inclus) » : KPI (rémunérations 641, cotisations 645, net à payer 421, organismes 431+437) + détail par famille (641/644/645/647/648/421/427/431/437/442).
