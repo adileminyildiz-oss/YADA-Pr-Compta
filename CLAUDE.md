@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Modules : bouton « Retour » + repères rangés en bas à gauche (plus de chevauchement du titre) — v385
+## 🟢 Dernière mise à jour — Application VIDE : suppression des dossiers de démonstration (+ purge unique de l'appareil) — v386
+**Quoi :** l'application **ne contient plus aucun dossier de démonstration** (ALR CONSEIL/d-ama, MBC/d-mbc, BY HOLDING/d-sci42). Au démarrage, le **portefeuille est vide** (`db.cabinet.dossiers=[]`, `activeId=null`) — l'utilisateur **crée ou importe** ses propres dossiers depuis « Espace dossiers ». Une **purge unique** efface aussi les dossiers **déjà enregistrés sur l'appareil** (localStorage + IndexedDB) pour que la suppression prenne effet immédiatement.
+
+**Comment :** `cabinetDefaut().dossiers=[]` (`total:0`) ; `seed()` initialise les champs de travail à `datasetVide()` (aucun `construireAMA/MBC/SCI42`), `activeId=null` ; `ensureMBC()` (addon163) neutralisé (`return false`) ; **`yada-addon191`** (purge unique, drapeau `localStorage 'yada-empty-386'`) : si des données existent (`yada-db`/`yada-db-ts`), efface localStorage + `indexedDB.deleteDatabase('yada-store')` puis recharge une fois (installation neuve : aucun effet). **Test CI réécrit** (`tests/equilibre-ecritures.mjs`) : construit un dossier de travail éphémère `d-test` + 2 tiers, exerce `posterFacture` vente/achat (le seed n'a plus de démo). Validé : `node --check` (184 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (démarrage vide : 0 dossier, `activeId=null`, `db.societe` présent, liste « Aucun dossier », 0 pageerror) + filet d'équilibre (d-test : vente 1200=1200, achat 600=600 ✅). Badge → **v386**.
+
+---
+
+## 🟢 MAJ précédente — Modules : bouton « Retour » + repères rangés en bas à gauche (plus de chevauchement du titre) — v385
 **Quoi :** dans les modules (sans barre latérale), le bouton **« ‹ Retour au dossier »** chevauchait le titre (haut-gauche) et les repères **YADA · vNNN** / **Enregistré ✓** flottaient sur le contenu. Ces éléments sont désormais **rangés en un petit bandeau vertical en bas à gauche** — toujours accessibles, sans recouvrir le titre ni le contenu du module. Ordre (de bas en haut) : Enregistré ✓ · (Synchro) · YADA · vNNN · ‹ Retour au dossier.
 
 **Comment — `yada-addon190` (CSS) :** `#ds-back-chip` repositionné `left:12px;bottom:118px` (au-dessus des repères, z-index 10000) au lieu de `top:14px` ; alignement des repères en `noside` : `#yada-save-ind{bottom:12px}`, `#yada-cloud-ind{bottom:48px}`, `#yada-ver{bottom:84px}` (tous `left:12px`) ; retrait de l'ancien `padding-top:60px` sur `.mod-wrap`/`.dash-wrap` (le bouton ne monopolise plus le haut). Validé : `node --check` (183 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (module FEC : Retour en bas-gauche 12/747, version 12/793, save 12/864 ; titre en haut (top 18) **non chevauché** ; équilibre 34 écritures ✅, 0 pageerror). Badge → **v385**.

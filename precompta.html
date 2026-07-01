@@ -3999,12 +3999,10 @@ function journauxDefaut(){ return [
 function cabinetDefaut(){ return {
   collaborateur:'Adil-emin Yildiz', cabinetNom:'ALR CONSEIL', role:'Collaborateur',
   ecrituresRejetees:0,
-  dossiers:[
-    {id:'d-ama', nom:'ALR CONSEIL', forme:'SAS', siren:'933729345', activite:'Conseil', ville:'THIAIS', actif:true, favori:false, factFourn:10, factClient:20, docsManquants:8, portail:'Qonto'},
-    {id:'d-mbc', nom:'MBC', forme:'SAS', siren:'', activite:'', ville:'', actif:true, favori:false, factFourn:0, factClient:0, docsManquants:0, portail:'Qonto'},
-    {id:'d-sci42', nom:'BY HOLDING', forme:'SAS', siren:'', activite:'Holding', ville:'', actif:true, favori:false, factFourn:0, factClient:0, docsManquants:0, portail:'Qonto', importeFEC:true},
-  ],
-  total:3
+  /* Portefeuille VIDE par défaut : aucun dossier de démonstration. L'utilisateur
+     crée ou importe ses propres dossiers depuis « Espace dossiers ». */
+  dossiers:[],
+  total:0
 }; }
 /* champs propres à CHAQUE dossier (jamais partagés entre sociétés) */
 const CHAMPS_DOSSIER=['tiers','factures','ecritures','reglements','docs','banque','odiv','releves','paie','demandesFactures','societe','parametres','plan','journaux','fecLog','seq','immos','emprunts','creditbails','locations','vehicules'];
@@ -4028,17 +4026,13 @@ function withDataset(ds, fn){ const sauve={}; CHAMPS_DOSSIER.forEach(k=>sauve[k]
   try{ fn(); } finally { CHAMPS_DOSSIER.forEach(k=>{ ds[k]=db[k]; db[k]=sauve[k]; }); } }
 
 function seed(){
-  // socle commun (cabinet + magasin de dossiers)
+  // Application VIDE : aucun dossier de démonstration. Portefeuille vide, aucun
+  // dossier actif. Les champs de travail sont initialisés à vide (pas de crash),
+  // l'utilisateur crée/importe ses propres dossiers depuis « Espace dossiers ».
   db={ cabinet:cabinetDefaut(), dossiersData:{}, activeId:null };
-  CHAMPS_DOSSIER.forEach(k=>db[k]=undefined);
-  // --- DOSSIER 1 : AMA (négoce) ---
-  db.dossiersData['d-ama']=construireAMA();
-  // --- DOSSIER 2 : MBC (dossier vierge prêt à l'emploi / import FEC) ---
-  db.dossiersData['d-mbc']=construireMBC();
-  // --- DOSSIER 3 : SCI DU 42 (immobilier, données distinctes) ---
-  db.dossiersData['d-sci42']=construireSCI42();
-  // dossier actif par défaut : AMA
-  db.activeId='d-ama'; const d=db.dossiersData['d-ama']; CHAMPS_DOSSIER.forEach(k=>db[k]=d[k]); syncComptesDuDossier();
+  const vide=datasetVide();
+  CHAMPS_DOSSIER.forEach(k=>db[k]=vide[k]);
+  syncComptesDuDossier();
 }
 function construireMBC(){
   const ds=datasetVide(Object.assign(societeDefaut(),{ raison:'MBC', dossierNom:'MBC', dossierCode:'MBC', formeJur:'SAS', siren:'', activite:'', ville:'' }));
@@ -10987,7 +10981,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v385';
+    b.textContent='YADA · v386';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -19642,7 +19636,9 @@ ${lignes}
     }catch(e){ return false; }
   }
   function ensureMBC(){
-    try{
+    /* Application VIDE : ne plus recréer le dossier de démonstration MBC. */
+    return false;
+    try{ /* eslint-disable-line no-unreachable */
       if(!db||!db.cabinet||!Array.isArray(db.cabinet.dossiers)) return false;
       var exists=db.cabinet.dossiers.some(function(d){ return d&&(d.id==='d-mbc' || String(d.nom||'').toUpperCase()==='MBC'); });
       if(exists) return false;
@@ -21863,6 +21859,26 @@ ${lignes}
   }
   apply();
 })();
+</script>
+
+<script id="yada-addon191">
+/* ============================================================
+   PURGE UNIQUE — supprime TOUS les dossiers déjà enregistrés sur cet appareil
+   (contenu + dossiers), une seule fois, pour que l'application démarre VIDE.
+   Ne s'exécute qu'une fois par appareil (drapeau localStorage). N'a aucun effet
+   sur une installation neuve (aucune donnée enregistrée) → pas de rechargement.
+   ============================================================ */
+(function(){ try{
+  var K='yada-empty-386';
+  if(localStorage.getItem(K)) return;
+  var had=!!(localStorage.getItem('yada-db')||localStorage.getItem('yada-db-ts'));
+  localStorage.setItem(K,'1');
+  if(!had) return; /* installation neuve : le seed vide suffit, pas de reload */
+  try{ localStorage.removeItem('yada-db'); localStorage.removeItem('yada-db-ts'); }catch(e){}
+  var done=false; function go(){ if(done) return; done=true; try{ location.reload(); }catch(e){} }
+  try{ var r=indexedDB.deleteDatabase('yada-store'); r.onsuccess=go; r.onerror=go; r.onblocked=go; }catch(e){}
+  setTimeout(go, 600);
+}catch(e){} })();
 </script>
 </body>
 </html>

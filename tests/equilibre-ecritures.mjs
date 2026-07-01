@@ -18,6 +18,10 @@ const TOL = 0.005; // tolérance d'arrondi (centime)
 const browser = await chromium.launch({ executablePath: process.env.YADA_CHROME || undefined });
 const page = await browser.newPage();
 
+// Neutralise la purge unique (addon191) pour ce test : on valide directement le
+// seed vide + la génération, sans déclencher le rechargement de nettoyage.
+await page.addInitScript(() => { try { localStorage.setItem('yada-empty-386', '1'); } catch (e) {} });
+
 const pageErrors = [];
 // Ignore les échecs de chargement de ressources externes (polices, CDN OCR, QR…)
 // — sans rapport avec la logique ; on ne retient que les vraies erreurs JS.
@@ -37,8 +41,19 @@ await page.waitForFunction(
 const report = await page.evaluate(({ TOL }) => {
   const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
 
-  // Réinitialise sur les démos pour un contrôle déterministe (d-ama + d-sci42).
+  // L'application démarre VIDE (aucun dossier de démonstration) → on construit un
+  // dossier de travail éphémère + 2 tiers pour exercer la génération d'écritures.
   seed();
+  const soc = (typeof societeDefaut === 'function') ? societeDefaut() : {};
+  db.cabinet.dossiers = [{ id: 'd-test', nom: 'TEST', forme: 'SAS' }];
+  db.cabinet.total = 1;
+  db.dossiersData = { 'd-test': datasetVide(soc) };
+  db.activeId = 'd-test';
+  chargerDossier('d-test');
+  db.tiers.push(
+    { id: 't-cli', type: 'client',      nom: 'CLIENT TEST', compteAux: '411CLI000', compteContre: '706000000', compteTVA: '445710000', taux: 20 },
+    { id: 't-fou', type: 'fournisseur', nom: 'FOURN TEST',  compteAux: '401FOU000', compteContre: '606000000', compteTVA: '445660000', taux: 20 }
+  );
 
   const out = { dossiers: {}, totalEcritures: 0, imbalances: [], generated: [] };
 
@@ -59,9 +74,7 @@ const report = await page.evaluate(({ TOL }) => {
     out.totalEcritures += n;
   }
 
-  for (const [id, ds] of Object.entries(db.dossiersData || {})) checkDataset(id, ds);
-
-  // --- Exerce la génération en direct sur le dossier actif (d-ama) ---
+  // --- Exerce la génération en direct sur le dossier de travail ---
   // Vente 1000 HT @20% puis Achat 500 HT @20% ; vérifie équilibre + TTC=HT+TVA.
   try {
     const tclient = (db.tiers || []).find(t => t.type === 'client');
@@ -83,12 +96,15 @@ const report = await page.evaluate(({ TOL }) => {
       const balanced = Math.abs(d - c) <= TOL;
       out.generated.push({ type: cas.type, ht: f.ht, tva: f.tva, ttc: f.ttc,
         debit: d, credit: c, balanced, ttcOk, created: db.ecritures.length - before === 1 });
-      if (!balanced) out.imbalances.push({ dossier: 'd-ama (généré)', journal: ecr.journal,
+      if (!balanced) out.imbalances.push({ dossier: 'd-test (généré)', journal: ecr.journal,
         libelle: ecr.libelle, debit: d, credit: c, ecart: round2(d - c) });
     }
   } catch (err) {
     out.generationError = String(err);
   }
+
+  // Contrôle final : toutes les écritures de tous les datasets sont équilibrées.
+  for (const [id, ds] of Object.entries(db.dossiersData || {})) checkDataset(id, ds);
 
   return out;
 }, { TOL });
