@@ -36,7 +36,20 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Règle DÉFINITIVE : un seul compte par client/fournisseur, sur TOUS les comptes, à chaque dépôt FEC — v360
+## 🟢 Dernière mise à jour — Facture enregistrée → compte du tiers TOUJOURS sur l'écriture (module Analyse) — v361
+**Quoi :** confirmation + fiabilisation des deux règles demandées.
+1. **Dépôt FEC** : les comptes de tiers (fournisseurs/clients) sont **repérés et créés automatiquement**, puis **affectés aux écritures des journaux** visibles dans le module **Analyse** (déjà en place via `integrerFEC` + wrapper `attribuerComptesTiersFEC`, v356→v360).
+2. **Facture enregistrée** : dès qu'une facture fournisseur ou client est enregistrée, **le compte du tiers (401XXXX / 411XXXX) apparaît automatiquement sur l'écriture** (module Analyse) — même si le tiers **n'avait pas encore de compte auxiliaire** : il est alors **généré** (`genAux`) à la volée. Plus aucun compte **collectif** résiduel sur une facture.
+
+**Comment — 2 éditions chirurgicales :**
+- `posterFacture` : si le tiers n'a pas de compte auxiliaire valide (401/411), il est **généré** (`genAux(type, nom)`) ; la ligne collective 401/411 de l'écriture prend `c9(tiers.compteAux)` ; `ecr.tiersId` est posé.
+- `posterFactureMontants` (comptabilisation d'un dépôt) : même garantie (génération du compteAux si absent + `ecr.tiersId`).
+
+**Limites :** un tiers sans nom exploitable reçoit un compte `genAux` par défaut (lettres du nom). Validé : `node --check` (172 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (facture fournisseur nouveau **sans** compteAux → écriture sur `401MENU00` ; facture client → `411CABI00` ; `ecr.tiersId` posé ; équilibrées ; comptes présents dans la liste des tiers de l'Analyse ; filet d'équilibre 34 écritures ✅, 0 pageerror). Badge → **v361**.
+
+---
+
+## 🟢 MAJ précédente — Règle DÉFINITIVE : un seul compte par client/fournisseur, sur TOUS les comptes, à chaque dépôt FEC — v360
 **Quoi :** généralisation de la v359. La règle « un seul compte par dénomination, toutes les factures regroupées » devient **définitive et universelle** : (1) elle s'applique à **TOUS les comptes fournisseurs et clients** (plus seulement les fiches auto-créées à l'import) ; (2) elle est **ré-appliquée automatiquement à CHAQUE dépôt / import FEC** (en plus du chargement de dossier et du démarrage). Seule exception conservée : des **SIRET renseignés et différents** (entités juridiques distinctes) ne sont jamais fusionnés.
 
 **Comment — 2 éditions dans `yada-addon179` :**

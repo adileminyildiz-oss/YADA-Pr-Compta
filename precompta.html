@@ -3631,11 +3631,16 @@ function posterFacture({type, tiersId, date, base, baseEst, taux, compteContre, 
     taux:+taux, ht:m.ht, tva:m.tva, ttc:m.ttc, compteContre, compteTVA,
     source:source||(type==='achat'?'manuelle':'vente'), modeReglement:modeReglement||'', recuLe:date };
   const ecr=genEcriture(f); f.ecritureId=ecr.id;
-  /* utiliser le COMPTE DE TIERS COMPLET (auxiliaire, ex. 401GASO00 / 411DUPO00) au lieu
-     du collectif 401/411, comme pour les factures déposées */
+  /* COMPTE DE TIERS COMPLET (auxiliaire, ex. 401GASO00 / 411DUPO00) au lieu du collectif 401/411 :
+     dès qu'une facture est enregistrée, le compte du fournisseur/client apparaît sur l'écriture
+     (module Analyse). Le compte auxiliaire est GÉNÉRÉ s'il manque → jamais de collectif résiduel. */
   const tAux=db.tiers.find(x=>x.id===tiersId);
-  if(tAux && tAux.compteAux){ const coll=c9(type==='achat'?'401':'411');
-    ecr.lignes.forEach(l=>{ if(c9(l.compte)===coll){ l.compte=tAux.compteAux; } }); }
+  if(tAux){
+    if(!/^(401|411)/.test(c9(tAux.compteAux||''))){ try{ tAux.compteAux=genAux(tAux.type||(type==='achat'?'fournisseur':'client'), tAux.nom||''); }catch(_e){} }
+    const coll=c9(type==='achat'?'401':'411');
+    ecr.lignes.forEach(l=>{ if(c9(l.compte)===coll){ l.compte=c9(tAux.compteAux); } });
+  }
+  ecr.tiersId=tiersId||null;
   /* Libellé HOMOGÈNE (identique sur toutes les lignes + e.libelle) : nom du tiers
      + n° de facture + moyen de paiement. Affiché pareil dans la saisie et le journal. */
   { const _nom=tAux?tAux.nom:''; const _moy=modeReglement||(db.societe&&db.societe.moyenPaiement)||'';
@@ -10978,7 +10983,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v360';
+    b.textContent='YADA · v361';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -11790,8 +11795,12 @@ ${lignes}
       taux:+o.taux||0, ht:ht, tva:tva, ttc:ttc, compteContre:o.compteContre, compteTVA:o.compteTVA,
       source:o.source||'depot', modeReglement:'', recuLe:o.date, remise:r2(o.remise||0) };
     var ecr=genEcriture(f); f.ecritureId=ecr.id;
-    if(t && t.compteAux){ var coll=c9(o.type==='achat'?'401':'411');
-      ecr.lignes.forEach(function(l){ if(c9(l.compte)===coll){ l.compte=t.compteAux; l.lib=(o.type==='achat'?'Fournisseur ':'Client ')+t.nom; } }); }
+    if(t){
+      if(!/^(401|411)/.test(c9(t.compteAux||''))){ try{ t.compteAux=genAux(t.type||(o.type==='achat'?'fournisseur':'client'), t.nom||''); }catch(_e){} }
+      var coll=c9(o.type==='achat'?'401':'411');
+      ecr.lignes.forEach(function(l){ if(c9(l.compte)===coll){ l.compte=c9(t.compteAux); l.lib=(o.type==='achat'?'Fournisseur ':'Client ')+t.nom; } });
+    }
+    ecr.tiersId=o.tiersId||null;
     var reg={ id:uid(), factureId:f.id, type:o.type, sens:o.type==='achat'?'a_payer':'a_encaisser',
       statut:'attente', echeance:o.date, regle:0, restant:ttc, notes:[], echelonne:false };
     db.factures.push(f); db.ecritures.push(ecr); db.reglements.push(reg); save();
