@@ -10981,7 +10981,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v386';
+    b.textContent='YADA · v387';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21691,7 +21691,7 @@ ${lignes}
     return '<div class="login-wrap">'+loginHead()
       +'<div class="login-title">Liste des dossiers</div>'
       +'<div class="login-sub">Cliquez sur un dossier pour le sélectionner.</div>'
-      +'<div class="ds-list">'+rows+'</div>'
+      +'<div id="ds-liste-scroll" class="ds-list ds-list-right">'+rows+'</div>'
       +actions('<button class="btn btn-ghost" onclick="dsAccueil()">← Retour</button>')+'</div>';
   }
   function ecranSelUnique(id){ var d=dossierEntry(id); if(!d) return ecranAccueil();
@@ -21879,6 +21879,60 @@ ${lignes}
   try{ var r=indexedDB.deleteDatabase('yada-store'); r.onsuccess=go; r.onerror=go; r.onblocked=go; }catch(e){}
   setTimeout(go, 600);
 }catch(e){} })();
+</script>
+
+<script id="yada-addon192">
+/* ============================================================
+   LISTE DES DOSSIERS — placée à DROITE + effet « roue / cylindre » au défilement :
+   les lignes montent en tournant dans le flou (haut) et descendent dans le flou
+   (bas), comme un sélecteur circulaire. 100% additif (écran « Liste des dossiers »).
+   ============================================================ */
+(function(){
+  var st=document.createElement('style'); st.id='ds-wheel-mod'; st.textContent=
+    /* Conteneur défilant, rangé à droite, avec fondu (flou) en haut et en bas. */
+    '.ds-list-right{max-width:none!important;width:min(520px,44vw);margin:8px 6vw 16px auto!important;'
+    +'max-height:62vh;overflow-y:auto;overflow-x:hidden;perspective:1000px;padding:96px 10px;'
+    +'scrollbar-width:none;'
+    +'-webkit-mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.12) 10%,#000 32%,#000 68%,rgba(0,0,0,.12) 90%,transparent 100%);'
+    +'mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.12) 10%,#000 32%,#000 68%,rgba(0,0,0,.12) 90%,transparent 100%)}'
+    +'.ds-list-right::-webkit-scrollbar{width:0;height:0;display:none}'
+    +'.ds-list-right .ds-row{transform-origin:center center;transform-style:preserve-3d;'
+    +'will-change:transform,opacity,filter;transition:box-shadow .15s}'
+    +'@media(max-width:820px){.ds-list-right{width:88vw;margin:8px auto 16px!important;max-height:66vh}}';
+  document.head.appendChild(st);
+
+  function paint(box){
+    if(!box) return;
+    var rows=box.querySelectorAll('.ds-row'); if(!rows.length) return;
+    var mid=box.scrollTop + box.clientHeight/2;
+    var half=Math.max(1, box.clientHeight/2);
+    for(var i=0;i<rows.length;i++){ var r=rows[i];
+      var rc=r.offsetTop + r.offsetHeight/2;
+      var rel=(rc-mid)/half;                      // ~ -1 (haut) .. +1 (bas)
+      var cl=Math.max(-1.7,Math.min(1.7,rel));
+      var rot=cl*-46;                              // rotation « en cercle » (roue)
+      var tz=-Math.abs(cl)*70;                     // s'éloigne (cylindre)
+      var op=1-Math.min(1,Math.abs(cl))*0.82;      // fond dans le flou
+      var bl=Math.min(6.5,Math.abs(cl)*4.4);
+      r.style.transform='translateZ('+tz.toFixed(1)+'px) rotateX('+rot.toFixed(1)+'deg)';
+      r.style.opacity=op.toFixed(3);
+      r.style.filter='blur('+bl.toFixed(2)+'px)';
+    }
+  }
+  function wire(){
+    var box=document.getElementById('ds-liste-scroll'); if(!box) return;
+    if(!box.__wheelWired){ box.__wheelWired=true;
+      var ticking=false;
+      box.addEventListener('scroll',function(){ if(ticking) return; ticking=true;
+        requestAnimationFrame(function(){ paint(box); ticking=false; }); },{passive:true});
+    }
+    requestAnimationFrame(function(){ paint(box); });
+  }
+  if(typeof render==='function' && !window.__dsWheelGuard){ window.__dsWheelGuard=true;
+    var _r=render; render=function(){ var x=_r.apply(this,arguments); try{ wire(); }catch(e){} return x; };
+  }
+  try{ wire(); }catch(e){}
+})();
 </script>
 </body>
 </html>
