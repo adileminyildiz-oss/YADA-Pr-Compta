@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Parcours d'entrée repensé : page dossiers → liste → dossier → HUB (5 rubriques) — v373
+## 🟢 Dernière mise à jour — Bouton « Liste Dossier » à gauche, taille standard (avant « Créer un dossier ») — v374
+**Quoi :** sur la page d'accueil des dossiers, le gros bouton centré « Liste Dossier » (btn-lg) est remplacé par un **bouton de taille standard** (`btn btn-gold`, **même taille que « Créer un dossier »**) placé **en premier** dans la barre d'actions, **à gauche, avant « Créer un dossier »** → ordre : **Liste Dossier · Créer un dossier · Importer**.
+
+**Comment — 1 édition d'`yada-addon189` (`ecranAccueil`) :** suppression du bloc `.ds-cta`/`.btn-lg` ; le bouton « Liste Dossier » est passé en 1ᵉʳ argument de `actions(extra)` (rendu avant Créer/Importer). Validé : `node --check` (182 scripts, 0 erreur) + Playwright (ordre `[Liste Dossier, Créer un dossier, Importer]`, plus de `.btn-lg`, 0 pageerror). Badge → **v374**.
+
+---
+
+## 🟢 MAJ précédente — Parcours d'entrée repensé : page dossiers → liste → dossier → HUB (5 rubriques) — v373
 **Quoi :** refonte de la page des dossiers (après connexion, espace cabinet) :
 1. **Page dossiers** : **aucune carte** de dossier, un bouton **« Liste Dossier »** (l'ancienne liste inline v371 et le libellé « (fenêtre) » sont retirés).
 2. **Liste** : clic sur « Liste Dossier » → **liste des dossiers** (lignes cliquables) → **sélectionner** un dossier.

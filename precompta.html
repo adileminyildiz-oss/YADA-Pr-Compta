@@ -10987,7 +10987,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v373';
+    b.textContent='YADA · v374';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21671,9 +21671,8 @@ ${lignes}
   function ecranAccueil(){
     return '<div class="login-wrap">'+loginHead()
       +'<div class="login-title">Espace dossiers</div>'
-      +'<div class="login-sub">Aucun dossier affiché. Ouvrez la liste pour sélectionner le dossier à traiter.</div>'
-      +'<div class="ds-cta"><button class="btn btn-gold btn-lg" onclick="dsOuvrirListe()">Liste Dossier</button></div>'
-      +actions()+'</div>';
+      +'<div class="login-sub">Ouvrez la liste pour sélectionner le dossier à traiter.</div>'
+      +actions('<button class="btn btn-gold" onclick="dsOuvrirListe()">Liste Dossier</button>')+'</div>';
   }
   function dossierRow(d, onclick, label){
     return '<button class="ds-row" onclick="'+onclick+'"><span class="ds-av">'+esc((d.nom||'?')[0])+'</span>'
