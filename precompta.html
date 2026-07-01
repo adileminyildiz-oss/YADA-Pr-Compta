@@ -10987,7 +10987,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v370';
+    b.textContent='YADA · v371';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21470,6 +21470,79 @@ ${lignes}
   /* à chaque changement de dossier + une fois au démarrage */
   if(typeof chargerDossier==='function'){ var _cd=chargerDossier; chargerDossier=function(){ var r=_cd.apply(this,arguments); try{ window.creerImmosDepuisEcritures(); }catch(e){} return r; }; }
   (function(){ var done=false; if(typeof render==='function'){ var _r=render; render=function(){ if(!done){ done=true; try{ window.creerImmosDepuisEcritures(); }catch(e){} } return _r.apply(this,arguments); }; } })();
+})();
+</script>
+
+<script id="yada-addon187">
+/* ============================================================
+   Page de sélection des dossiers — « Liste Dossier » (après Réinitialiser).
+   Liste des dossiers OUVERTS (façon onglets) : le dossier ACTIF (dernier ouvert)
+   reste affiché avec un badge « Actif » et n'est pas fermable ; les autres ont
+   un bouton « ✕ Fermer » (retiré de la liste, le dossier reste dans le
+   portefeuille au-dessus). Cliquer sur une ligne = entrer dans le dossier.
+   100% additif.
+   ============================================================ */
+(function(){
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function cab(){ db.cabinet=db.cabinet||(typeof cabinetDefaut==='function'?cabinetDefaut():{dossiers:[],ouverts:[]}); return db.cabinet; }
+  function ouverts(){
+    var c=cab(); var ids=(c.dossiers||[]).map(function(d){return d.id;});
+    if(!Array.isArray(c.ouverts)) c.ouverts=ids.slice();               // 1re fois : tous les dossiers ouverts
+    c.ouverts=c.ouverts.filter(function(id){ return ids.indexOf(id)>=0; }); // purge des ids disparus
+    if(db.activeId && c.ouverts.indexOf(db.activeId)<0) c.ouverts.unshift(db.activeId); // l'actif est toujours là
+    return c.ouverts;
+  }
+  window.fermerDossierOuvert=function(id){
+    if(id===db.activeId){ if(typeof toast==='function') toast('Le dossier actif ne peut pas être fermé.'); return; }
+    var o=ouverts(); var i=o.indexOf(id); if(i>=0) o.splice(i,1);
+    if(typeof save==='function') save(); if(typeof render==='function') render();
+  };
+  /* ouvrir un dossier → il rejoint la liste des dossiers ouverts */
+  if(typeof window.choisirDossier==='function'){ var _cd=window.choisirDossier;
+    window.choisirDossier=function(id){ try{ var o=ouverts(); if(o.indexOf(id)<0) o.push(id); }catch(e){} return _cd.apply(this,arguments); }; }
+
+  function listeBlock(){
+    var c=cab(); var byId={}; (c.dossiers||[]).forEach(function(d){ byId[d.id]=d; });
+    var o=ouverts();
+    var act=o.filter(function(i){ return i===db.activeId; });
+    var rest=o.filter(function(i){ return i!==db.activeId; });
+    var ordered=act.concat(rest);
+    var rows=ordered.map(function(id){ var d=byId[id]; if(!d) return ''; var actif=(id===db.activeId);
+      return '<div class="dl-row'+(actif?' actif':'')+'" onclick="choisirDossier(\''+id+'\')" title="Entrer dans le dossier '+esc(d.nom||'')+'">'
+        +'<span class="dl-av">'+esc((d.nom||'?')[0])+'</span>'
+        +'<span class="dl-main"><span class="dl-nom">'+esc(d.nom||'')+'</span><span class="dl-meta">'+esc([d.forme,d.activite,d.ville].filter(Boolean).join(' · ')||'—')+'</span></span>'
+        +(actif?'<span class="dl-badge">Actif</span>':'<button class="dl-close" title="Fermer ce dossier (il reste dans le portefeuille)" onclick="event.stopPropagation();fermerDossierOuvert(\''+id+'\')">✕ Fermer</button>')
+        +'<span class="dl-enter">Entrer →</span></div>';
+    }).join('')||'<div class="dl-empty">Aucun dossier ouvert. Cliquez sur une carte ci-dessus pour en ouvrir un.</div>';
+    return '<div class="dossier-liste"><div class="dl-h">Liste Dossier</div>'
+      +'<div class="dl-sub">Dossiers ouverts — le dossier actif reste affiché ; fermez les autres si besoin.</div>'
+      +'<div class="dl-items">'+rows+'</div></div>';
+  }
+  if(typeof window.ecranSelectionDossier==='function'){ var _e=window.ecranSelectionDossier;
+    window.ecranSelectionDossier=function(){ var h=_e.apply(this,arguments);
+      try{ if(h.indexOf('class="login-actions"')>=0) h=h.replace(/(<div class="login-actions">[\s\S]*?<\/div>)/, '$1'+listeBlock());
+           else h=h+listeBlock(); }catch(e){}
+      return h; };
+  }
+
+  var st=document.createElement('style'); st.id='dossier-liste-mod'; st.textContent=
+    '.dossier-liste{max-width:960px;margin:18px auto 0;text-align:left}'
+    +'.dl-h{font-weight:700;font-size:16px;margin:0 0 2px;letter-spacing:.3px}'
+    +'.dl-sub{font-size:12.5px;opacity:.72;margin:0 0 10px}'
+    +'.dl-items{display:flex;flex-direction:column;gap:7px}'
+    +'.dl-row{display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid rgba(30,144,255,.30);border-radius:11px;background:rgba(30,144,255,.06);cursor:pointer;transition:background .12s,border-color .12s}'
+    +'.dl-row:hover{background:rgba(30,144,255,.15);border-color:#1e90ff}'
+    +'.dl-row.actif{border-color:#1e90ff;background:rgba(30,144,255,.20);box-shadow:inset 0 0 0 1px rgba(30,144,255,.45)}'
+    +'.dl-av{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#1e90ff,#0a64d6);color:#fff;font-weight:700;flex:0 0 auto}'
+    +'.dl-main{display:flex;flex-direction:column;flex:1;min-width:0}'
+    +'.dl-nom{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+    +'.dl-meta{font-size:12px;opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+    +'.dl-badge{background:linear-gradient(#1e90ff,#0a64d6);color:#fff;font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;white-space:nowrap;flex:0 0 auto}'
+    +'.dl-close{background:rgba(198,40,40,.16);color:#ff8f8f;border:1px solid rgba(198,40,40,.42);border-radius:8px;padding:6px 11px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex:0 0 auto}'
+    +'.dl-close:hover{background:rgba(198,40,40,.30);color:#ffbcbc}'
+    +'.dl-enter{opacity:.7;font-size:13px;white-space:nowrap;flex:0 0 auto}'
+    +'.dl-empty{opacity:.7;font-size:13px;padding:12px;border:1px dashed rgba(30,144,255,.3);border-radius:10px}';
+  document.head.appendChild(st);
 })();
 </script>
 </body>

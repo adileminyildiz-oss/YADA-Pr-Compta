@@ -36,7 +36,19 @@
 
 ---
 
-## 🟢 Dernière mise à jour — FEC → fiches d'immobilisation automatiques (avec plan d'amortissement) — v370
+## 🟢 Dernière mise à jour — Page de sélection : « Liste Dossier » (dossiers ouverts, actif protégé, fermeture des autres) — v371
+**Quoi :** sur la **page de sélection des dossiers**, une section **« Liste Dossier »** apparaît **juste après le bouton Réinitialiser** (sous les cartes du portefeuille). Elle liste les **dossiers ouverts** (façon onglets) :
+- **cliquer sur une ligne = entrer dans le dossier** (il devient actif) ;
+- le **dossier ACTIF** (dernier ouvert, `db.activeId`) reste affiché avec un **badge « Actif »** et **n'est pas fermable** ;
+- les **autres** dossiers ont un bouton **« ✕ Fermer »** → retirés de la liste (le dossier reste dans le portefeuille au-dessus, ré-ouvrable via sa carte).
+
+**Comment — `yada-addon187` (100% additif) :** `db.cabinet.ouverts` (ids des dossiers ouverts, initialisé à tous ; purge des ids disparus ; l'actif y est toujours) ; wrap `choisirDossier` (ajoute l'id aux ouverts) ; `fermerDossierOuvert(id)` (retire des ouverts, refuse l'actif) ; wrap `ecranSelectionDossier` insère `listeBlock()` après `.login-actions` (via `replace`). `<style id="dossier-liste-mod">` (lignes cliquables, badge Actif bleu, bouton Fermer rouge).
+
+**Limites :** « fermer » retire le dossier de la liste des ouverts (session persistée) sans supprimer le dossier ni ses données. Validé : `node --check` (180 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (Liste Dossier après Réinitialiser ; actif « ALR CONSEIL » badge + **sans** bouton fermer ; MBC/BY HOLDING fermables ; fermer d-mbc → retiré des ouverts ; fermer l'actif → refusé ; équilibre 34 écritures ✅, 0 pageerror). Badge → **v371**.
+
+---
+
+## 🟢 MAJ précédente — FEC → fiches d'immobilisation automatiques (avec plan d'amortissement) — v370
 **Quoi :** à l'**import FEC** (et au chargement), chaque **acquisition d'immobilisation** détectée dans les écritures (ligne **classe 2 amortissable au DÉBIT**) crée automatiquement une **fiche `db.immos` complète** → le module Immobilisations calcule alors le **plan d'amortissement** (`immoPlan`) et les dotations.
 - **Durée par défaut selon le compte** : logiciels 205 → 3 ans, constructions 213 → 25 ans, matériel/outillage 215 → 7 ans, véhicules 2182 → 5 ans, matériel info 2183 → 3 ans, mobilier 2184 → 10 ans, agencements 2181 → 10 ans, autres corporelles 5 ans, incorporelles 5 ans.
 - **Comptes dérivés** : `compteAmort` via `compteAmortDe` (28x), `compteDot` (681110000 incorporel / 681120000 corporel) ; `montantHT` = débit de la ligne, `miseEnService` = date de l'écriture, `fournisseur` = libellé de la ligne 404.
