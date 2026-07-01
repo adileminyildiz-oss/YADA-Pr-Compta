@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Application VIDE : suppression des dossiers de démonstration (+ purge unique de l'appareil) — v386
+## 🟢 Dernière mise à jour — Liste des dossiers : rangée à droite + effet « roue / cylindre » (flou circulaire au défilement) — v387
+**Quoi :** l'écran **« Liste des dossiers »** (après clic sur « Liste Dossier ») affiche la liste **rangée à droite** de l'écran, avec un **effet de roue/cylindre** au défilement : les lignes **montent en tournant dans le flou** (haut) et **descendent dans le flou** (bas), comme un sélecteur circulaire (rotation `rotateX` + éloignement `translateZ` + opacité décroissante + `blur` progressif, fondus haut/bas via `mask-image`).
+
+**Comment — `yada-addon192` (100% additif) + 1 édition d'`ecranListe` :** le conteneur devient `<div id="ds-liste-scroll" class="ds-list ds-list-right">` ; CSS `.ds-list-right` (placé à droite `margin:… auto`, `width:min(520px,44vw)`, `max-height:62vh`, `overflow-y:auto`, `perspective:1000px`, `mask-image` fondu haut/bas, scrollbar masquée) ; `paint(box)` calcule pour chaque `.ds-row` `rotateX`/`translateZ`/opacité/`blur` selon sa distance au centre ; `wire()` (écouteur `scroll` throttlé rAF + repaint après chaque `render`). Validé : `node --check` (185 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (liste à droite : box 680→1200 sur 1400 ; effet : haut op .55/blur 2.4, bas op .18/blur 6.5 ; après défilement le flou se déplace — haut op .18/blur 6.5 ; 0 pageerror) + filet d'équilibre ✅. Badge → **v387**.
+
+---
+
+## 🟢 MAJ précédente — Application VIDE : suppression des dossiers de démonstration (+ purge unique de l'appareil) — v386
 **Quoi :** l'application **ne contient plus aucun dossier de démonstration** (ALR CONSEIL/d-ama, MBC/d-mbc, BY HOLDING/d-sci42). Au démarrage, le **portefeuille est vide** (`db.cabinet.dossiers=[]`, `activeId=null`) — l'utilisateur **crée ou importe** ses propres dossiers depuis « Espace dossiers ». Une **purge unique** efface aussi les dossiers **déjà enregistrés sur l'appareil** (localStorage + IndexedDB) pour que la suppression prenne effet immédiatement.
 
 **Comment :** `cabinetDefaut().dossiers=[]` (`total:0`) ; `seed()` initialise les champs de travail à `datasetVide()` (aucun `construireAMA/MBC/SCI42`), `activeId=null` ; `ensureMBC()` (addon163) neutralisé (`return false`) ; **`yada-addon191`** (purge unique, drapeau `localStorage 'yada-empty-386'`) : si des données existent (`yada-db`/`yada-db-ts`), efface localStorage + `indexedDB.deleteDatabase('yada-store')` puis recharge une fois (installation neuve : aucun effet). **Test CI réécrit** (`tests/equilibre-ecritures.mjs`) : construit un dossier de travail éphémère `d-test` + 2 tiers, exerce `posterFacture` vente/achat (le seed n'a plus de démo). Validé : `node --check` (184 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (démarrage vide : 0 dossier, `activeId=null`, `db.societe` présent, liste « Aucun dossier », 0 pageerror) + filet d'équilibre (d-test : vente 1200=1200, achat 600=600 ✅). Badge → **v386**.
