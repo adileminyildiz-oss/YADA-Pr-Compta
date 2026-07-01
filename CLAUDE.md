@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Modules SANS barre latérale (navigation par le HUB) + bouton « ← Retour au dossier » — v383
+## 🟢 Dernière mise à jour — HUB : carte société réajustée (fin de l'espace vide en haut), colonnes équilibrées — v384
+**Quoi :** correction du **grand vide en haut de la carte société** du HUB (introduit en v382 par `min-height:100vh` + contenu centré). La carte **ne flotte plus au milieu** : l'en-tête (avatar + nom) revient **tout en haut**, la grille d'informations s'affiche dessous, et la carte s'ajuste à la **même hauteur que la colonne des 5 rubriques** (colonnes équilibrées). Présentation du parcours d'entrée (ouverture YADA → Espace dossiers → Liste → Dossier sélectionné → HUB) rendue cohérente.
+
+**Comment — `yada-addon189` (CSS) :** `.ds-hub-grid{align-items:stretch}` (colonnes de hauteur égale) ; `.dsc-card{flex:1;display:flex;flex-direction:column}` (sans `justify-content:center` ni `min-height:calc(100vh - 250px)`) ; `.dsc-grid{flex:1;align-content:start}` (l'en-tête reste en haut, la grille remplit la carte). Validé : `node --check` (183 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (carte et rubriques même haut (258 px), en-tête à 16 px du haut de la carte = plus d'espace vide, hauteurs 506/520 px ; équilibre 34 écritures ✅, 0 pageerror). Badge → **v384**.
+
+---
+
+## 🟢 MAJ précédente — Modules SANS barre latérale (navigation par le HUB) + bouton « ← Retour au dossier » — v383
 **Quoi :** la **barre latérale de navigation (`aside`/`#nav`) est masquée dans TOUS les modules** (espace cabinet) → chaque module s'affiche en **pleine largeur**. La navigation entre modules se fait par le **HUB** (rubriques) : un **bouton flottant « ‹ Retour au dossier »** (haut-gauche) ramène au HUB du dossier courant pour changer de rubrique / module. L'espace **Client** (et mobile) n'est pas touché (garde sa navigation propre).
 
 **Comment — `yada-addon190` (100% additif) :** `<style id="noside-mod">` — `body[data-noside="1"] aside{display:none}` + `.layout:not(.solo){grid-template-columns:1fr}` + bouton `#ds-back-chip` (fixed, visible seulement en module) + `padding-top:60px` sur `.mod-wrap`/`.dash-wrap` pour dégager le bouton. Un **wrap de `render`** pose `data-noside="1"` sur `<body>` quand `connecte && sessionRole!=='client'` (sinon retire l'attribut) et crée le bouton une fois. `dsRetourModule()` revient au HUB (`dsSel` = `db.activeId`, `dsHub=true`, `connecte=false`) via le **drapeau `_dsSuppressHomeReset`** ajouté au garde v380 (pour revenir au HUB et non à « Espace dossiers »). Validé : `node --check` (183 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (module tva/compta → `aside` masqué, `#nav` masqué, layout 1 colonne, bouton « ‹ Retour au dossier » 172×35 visible en haut-gauche ; clic → HUB avec carte société + 5 rubriques ; écran d'accueil → bouton `display:none`, pas de `data-noside` ; équilibre 34 écritures ✅, 0 pageerror). Badge → **v383**.
