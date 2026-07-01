@@ -36,7 +36,19 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Facture enregistrée → compte du tiers TOUJOURS sur l'écriture (module Analyse) — v361
+## 🟢 Dernière mise à jour — Chaque module relié à SON journal (carte « Journal comptable lié ») — v362
+**Quoi :** chaque module reçoit une carte **« 📓 Journal comptable lié »** (bas de page, espace cabinet) qui ouvre l'**éditeur du journal correspondant** (voir & éditer directement les écritures) :
+- **TVA → OD de TVA (ODTVA)** · **Charges & Paie → OD de Paie (ODP) + OD de Charges (ODC)** ·
+- **Fournisseurs → Achats (ACH)** · **Clients → Ventes (VTE)** · **Banque → Banque (BQ)** ·
+- **Immobilisations & Frais km → OD** + **liste des écritures d'immobilisation / dotation** avec un bouton **✎ Éditer** par écriture (ouvre l'éditeur positionné dessus, tous journaux : acquisition ACH, dotation OD).
+
+**Comment — `yada-addon180` (100% additif) :** greffe sur `pageTVA`/`pageChargesPaie`/`pageAchats`/`pageFacturation`/`pageBanque`/`pageImmos`/`pageFraisKm` (cabinet uniquement) → ajoute `jcard(id)` ; `jlOuvrir(code)` = `ouvrirJournalEditable(code,'')` (journal complet) ; `jlEditerEcr(id)` = `ouvrirJournalEditable(e.journal, ym(e.date), e.id)` (écriture précise) ; `immoEcritures()` repère les écritures immo/dotation (libellé IMMO/DOTATION/AMORTISS/ACQUISITION/CESSION ou lignes 6811/28x). `<style id="jl-mod">`.
+
+**Limites :** carte réservée au cabinet (outil d'édition) ; la liste immo/dotation est plafonnée à 60 écritures récentes. Validé : `node --check` (173 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (tva→ODTVA, chargespaie→ODP+ODC, achats→ACH, facturation→VTE, banque→BQ, immos/fraiskm→OD + bloc immo ; `jlOuvrir('ODTVA')` → éditeur affiché, `ecJournalFiltre` positionné ; côté client : pas de carte ; équilibre 34 écritures ✅, 0 pageerror). Badge → **v362**.
+
+---
+
+## 🟢 MAJ précédente — Facture enregistrée → compte du tiers TOUJOURS sur l'écriture (module Analyse) — v361
 **Quoi :** confirmation + fiabilisation des deux règles demandées.
 1. **Dépôt FEC** : les comptes de tiers (fournisseurs/clients) sont **repérés et créés automatiquement**, puis **affectés aux écritures des journaux** visibles dans le module **Analyse** (déjà en place via `integrerFEC` + wrapper `attribuerComptesTiersFEC`, v356→v360).
 2. **Facture enregistrée** : dès qu'une facture fournisseur ou client est enregistrée, **le compte du tiers (401XXXX / 411XXXX) apparaît automatiquement sur l'écriture** (module Analyse) — même si le tiers **n'avait pas encore de compte auxiliaire** : il est alors **généré** (`genAux`) à la volée. Plus aucun compte **collectif** résiduel sur une facture.

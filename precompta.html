@@ -10983,7 +10983,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v361';
+    b.textContent='YADA · v362';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -20715,6 +20715,87 @@ ${lignes}
   if(typeof chargerDossier==='function'){ var _cd=chargerDossier; chargerDossier=function(){ var r=_cd.apply(this,arguments); try{ window.attribuerComptesTiersFEC(); }catch(e){} return r; }; }
   /* une fois au démarrage (dossier actif) */
   (function(){ var done=false; if(typeof render==='function'){ var _r=render; render=function(){ if(!done){ done=true; try{ window.attribuerComptesTiersFEC(); }catch(e){} } return _r.apply(this,arguments); }; } })();
+})();
+</script>
+
+<script id="yada-addon180">
+/* ============================================================
+   CHAQUE MODULE RELIÉ À SON JOURNAL — carte « Journal comptable lié »
+   greffée en bas de chaque module, ouvrant l'ÉDITEUR du journal
+   correspondant (voir & éditer les écritures) :
+     TVA → OD de TVA (ODTVA) · Charges & Paie → OD de Paie (ODP) + OD de Charges (ODC)
+     Fournisseurs → Achats (ACH) · Clients → Ventes (VTE) · Banque (BQ)
+     Immobilisations & Frais km → OD (+ édition des écritures d'immobilisation / dotation)
+   100% additif (greffe des pages + ouvrirJournalEditable existant). Espace cabinet uniquement.
+   ============================================================ */
+(function(){
+  var LNK={
+    tva:        [{c:'ODTVA'}],
+    chargespaie:[{c:'ODP'},{c:'ODC'}],
+    achats:     [{c:'ACH'}],
+    facturation:[{c:'VTE'}],
+    banque:     [{c:'BQ'}],
+    immos:      [{c:'OD', immo:true}],
+    fraiskm:    [{c:'OD', immo:true}]
+  };
+  var JNOM={ACH:'Journal des Achats (HA)',VTE:'Journal des Ventes (VT)',BQ:'Journal de Banque (BQ)',
+            ODP:'Journal OD de Paie',ODC:'Journal OD de Charges',ODTVA:'Journal OD de TVA',
+            OD:'Journal des Opérations Diverses (OD)'};
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function nb(code){ return (db.ecritures||[]).filter(function(e){ return e.journal===code; }).length; }
+  function immoEcritures(){
+    return (db.ecritures||[]).filter(function(e){
+      var L=(e.libelle||'').toUpperCase();
+      if(/IMMO|DOTATION|AMORTISS|ACQUISITION|CESSION/.test(L)) return true;
+      return (e.lignes||[]).some(function(l){ var c=c9(l.compte); return /^6811/.test(c)||/^28/.test(c); });
+    }).slice().sort(function(a,b){ return (a.date<b.date)?1:-1; }).slice(0,60);
+  }
+  window.jlOuvrir=function(code){ if(typeof ouvrirJournalEditable==='function') ouvrirJournalEditable(code,''); };
+  window.jlEditerEcr=function(id){ var e=(db.ecritures||[]).find(function(x){return x.id===id;}); if(!e) return;
+    if(typeof ouvrirJournalEditable==='function') ouvrirJournalEditable(e.journal, ym(e.date), e.id); };
+  function jcard(id){
+    var cfg=LNK[id]; if(!cfg) return '';
+    var blocs=cfg.map(function(j){
+      return '<div class="jl-row"><div class="jl-info"><b>'+esc(JNOM[j.c]||j.c)+'</b>'
+        +'<span class="jl-sub">'+nb(j.c)+' écriture(s)</span></div>'
+        +'<button class="btn btn-pri btn-sm" onclick="jlOuvrir(\''+j.c+'\')">📓 Ouvrir &amp; éditer le journal</button></div>';
+    }).join('');
+    var immo='';
+    if(cfg.some(function(j){return j.immo;})){
+      var list=immoEcritures();
+      immo='<div class="jl-immo"><div class="jl-immo-h">Écritures d\'immobilisation &amp; de dotation — éditer</div>'
+        +(list.length? list.map(function(e){
+            return '<div class="jl-immo-row"><span class="jl-immo-lib">'+esc(e.libelle||'')+'</span>'
+              +'<span class="jl-immo-meta">'+(typeof frDate==='function'?frDate(e.date):e.date)+' · '+esc(e.journal)+'</span>'
+              +'<button class="btn btn-ghost btn-sm" onclick="jlEditerEcr(\''+e.id+'\')">✎ Éditer</button></div>';
+          }).join('') : '<div class="jl-immo-empty">Aucune écriture d\'immobilisation / dotation pour le moment.</div>')
+        +'</div>';
+    }
+    return '<div class="card jl-card"><h2>📓 Journal comptable lié</h2>'
+      +'<div class="sub">Ce module est relié à son journal comptable. Ouvrez-le pour consulter et éditer directement ses écritures.</div>'
+      +blocs+immo+'</div>';
+  }
+  function greffe(fnName, id){
+    if(typeof window[fnName]!=='function') return;
+    var _p=window[fnName];
+    window[fnName]=function(){ var h=_p.apply(this,arguments);
+      if((window.sessionRole||'cabinet')==='client') return h;
+      try{ return h + jcard(id); }catch(e){ return h; }
+    };
+  }
+  greffe('pageTVA','tva'); greffe('pageChargesPaie','chargespaie'); greffe('pageAchats','achats');
+  greffe('pageFacturation','facturation'); greffe('pageBanque','banque');
+  greffe('pageImmos','immos'); greffe('pageFraisKm','fraiskm');
+  var st=document.createElement('style'); st.id='jl-mod'; st.textContent=
+    '.jl-card .jl-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 0;border-top:1px solid rgba(30,144,255,.16)}'
+    +'.jl-card .jl-row:first-of-type{border-top:0}'
+    +'.jl-info{display:flex;flex-direction:column}.jl-sub{font-size:12px;opacity:.7}'
+    +'.jl-immo{margin-top:12px;border-top:1px solid rgba(30,144,255,.16);padding-top:10px}'
+    +'.jl-immo-h{font-weight:600;margin-bottom:6px}.jl-immo-empty{opacity:.7;font-size:13px}'
+    +'.jl-immo-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px dashed rgba(30,144,255,.12)}'
+    +'.jl-immo-lib{flex:1;min-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
+    +'.jl-immo-meta{font-size:12px;opacity:.7;white-space:nowrap}';
+  document.head.appendChild(st);
 })();
 </script>
 </body>
