@@ -10987,7 +10987,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v384';
+    b.textContent='YADA · v385';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21827,13 +21827,18 @@ ${lignes}
   var st=document.createElement('style'); st.id='noside-mod'; st.textContent=
     'body[data-noside="1"] .layout:not(.solo){grid-template-columns:1fr!important}'
     +'body[data-noside="1"] aside{display:none!important}'
-    +'#ds-back-chip{position:fixed;top:14px;left:14px;z-index:1400;display:none;align-items:center;gap:8px;'
+    /* Bouton « Retour au dossier » : rangé en bas à gauche, au-dessus des repères (version/enregistrement),
+       pour former un petit bandeau vertical à gauche sans recouvrir le titre du module. */
+    +'#ds-back-chip{position:fixed;left:12px;bottom:118px;z-index:10000;display:none;align-items:center;gap:8px;'
     +'padding:9px 15px;border-radius:11px;border:1px solid rgba(30,144,255,.55);'
     +'background:linear-gradient(135deg,#14365f,#0a1b34);color:#dbeafe;font-weight:700;font-size:13px;'
     +'cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.45)}'
     +'#ds-back-chip:hover{border-color:#1e90ff;box-shadow:0 0 0 3px rgba(30,144,255,.18),0 10px 26px rgba(0,0,0,.5)}'
     +'body[data-noside="1"] #ds-back-chip{display:inline-flex}'
-    +'body[data-noside="1"] main.fullbleed .mod-wrap,body[data-noside="1"] main.fullbleed .dash-wrap{padding-top:60px}';
+    /* Repères alignés à gauche, empilés proprement (enregistrement / cloud / version). */
+    +'body[data-noside="1"] #yada-save-ind{left:12px!important;bottom:12px!important}'
+    +'body[data-noside="1"] #yada-cloud-ind{left:12px!important;bottom:48px!important}'
+    +'body[data-noside="1"] #yada-ver{left:12px!important;bottom:84px!important}';
   document.head.appendChild(st);
 
   /* Retour au HUB du dossier courant (sans repasser par « Espace dossiers »). */

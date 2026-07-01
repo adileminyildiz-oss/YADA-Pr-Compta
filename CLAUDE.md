@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — HUB : carte société réajustée (fin de l'espace vide en haut), colonnes équilibrées — v384
+## 🟢 Dernière mise à jour — Modules : bouton « Retour » + repères rangés en bas à gauche (plus de chevauchement du titre) — v385
+**Quoi :** dans les modules (sans barre latérale), le bouton **« ‹ Retour au dossier »** chevauchait le titre (haut-gauche) et les repères **YADA · vNNN** / **Enregistré ✓** flottaient sur le contenu. Ces éléments sont désormais **rangés en un petit bandeau vertical en bas à gauche** — toujours accessibles, sans recouvrir le titre ni le contenu du module. Ordre (de bas en haut) : Enregistré ✓ · (Synchro) · YADA · vNNN · ‹ Retour au dossier.
+
+**Comment — `yada-addon190` (CSS) :** `#ds-back-chip` repositionné `left:12px;bottom:118px` (au-dessus des repères, z-index 10000) au lieu de `top:14px` ; alignement des repères en `noside` : `#yada-save-ind{bottom:12px}`, `#yada-cloud-ind{bottom:48px}`, `#yada-ver{bottom:84px}` (tous `left:12px`) ; retrait de l'ancien `padding-top:60px` sur `.mod-wrap`/`.dash-wrap` (le bouton ne monopolise plus le haut). Validé : `node --check` (183 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (module FEC : Retour en bas-gauche 12/747, version 12/793, save 12/864 ; titre en haut (top 18) **non chevauché** ; équilibre 34 écritures ✅, 0 pageerror). Badge → **v385**.
+
+---
+
+## 🟢 MAJ précédente — HUB : carte société réajustée (fin de l'espace vide en haut), colonnes équilibrées — v384
 **Quoi :** correction du **grand vide en haut de la carte société** du HUB (introduit en v382 par `min-height:100vh` + contenu centré). La carte **ne flotte plus au milieu** : l'en-tête (avatar + nom) revient **tout en haut**, la grille d'informations s'affiche dessous, et la carte s'ajuste à la **même hauteur que la colonne des 5 rubriques** (colonnes équilibrées). Présentation du parcours d'entrée (ouverture YADA → Espace dossiers → Liste → Dossier sélectionné → HUB) rendue cohérente.
 
 **Comment — `yada-addon189` (CSS) :** `.ds-hub-grid{align-items:stretch}` (colonnes de hauteur égale) ; `.dsc-card{flex:1;display:flex;flex-direction:column}` (sans `justify-content:center` ni `min-height:calc(100vh - 250px)`) ; `.dsc-grid{flex:1;align-content:start}` (l'en-tête reste en haut, la grille remplit la carte). Validé : `node --check` (183 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (carte et rubriques même haut (258 px), en-tête à 16 px du haut de la carte = plus d'espace vide, hauteurs 506/520 px ; équilibre 34 écritures ✅, 0 pageerror). Badge → **v384**.
