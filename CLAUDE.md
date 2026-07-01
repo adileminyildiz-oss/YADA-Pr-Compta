@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Bouton « Liste Dossier » à gauche, taille standard (avant « Créer un dossier ») — v374
+## 🟢 Dernière mise à jour — Écran « Dossier sélectionné » : carte alignée à GAUCHE — v375
+**Quoi :** sur l'écran **« Dossier sélectionné »**, la carte du dossier (centrée jusqu'ici) est **décalée à gauche**, alignée avec le titre et les boutons.
+
+**Comment — 1 édition CSS d'`yada-addon189` (`.ds-grid-solo`) :** `justify-content:center` → **`justify-content:start!important;justify-items:start!important`**. Validé : `node --check` (182 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (carte `left=116px` = titre 116 = actions 116, viewport 1400 ; 0 pageerror). Badge → **v375**.
+
+---
+
+## 🟢 MAJ précédente — Bouton « Liste Dossier » à gauche, taille standard (avant « Créer un dossier ») — v374
 **Quoi :** sur la page d'accueil des dossiers, le gros bouton centré « Liste Dossier » (btn-lg) est remplacé par un **bouton de taille standard** (`btn btn-gold`, **même taille que « Créer un dossier »**) placé **en premier** dans la barre d'actions, **à gauche, avant « Créer un dossier »** → ordre : **Liste Dossier · Créer un dossier · Importer**.
 
 **Comment — 1 édition d'`yada-addon189` (`ecranAccueil`) :** suppression du bloc `.ds-cta`/`.btn-lg` ; le bouton « Liste Dossier » est passé en 1ᵉʳ argument de `actions(extra)` (rendu avant Créer/Importer). Validé : `node --check` (182 scripts, 0 erreur) + Playwright (ordre `[Liste Dossier, Créer un dossier, Importer]`, plus de `.btn-lg`, 0 pageerror). Badge → **v374**.
