@@ -6909,12 +6909,17 @@ function integrerFEC(data, exoD, exoF){
       if(l.compte){ const short=l.compte.replace(/0+$/,'')||l.compte; if(!COMPTES[l.compte]&&!COMPTES[short]) COMPTES[l.compte]=l.clib||l.compte;
         if(!db.plan.some(pp=>c9(pp.code)===c9(l.compte))) db.plan.push({code:l.compte, lib:l.clib||l.compte, tva:''}); }
       // reconstruire / relier le tiers pour les comptes 401 / 411
+      let compteFinal=l.compte;
       if(String(l.compte).startsWith('401')||String(l.compte).startsWith('411')){
         const t=trouverOuCreerTiers(l.compte, l.compaux, l.compauxlib, grp[0].lib);
-        if(t) tiersEcr=t;
+        if(t){ tiersEcr=t;
+          /* ATTRIBUTION AUTOMATIQUE : la ligne de tiers prend le compte AUXILIAIRE du tiers
+             (401XXXX / 411XXXX) au lieu du compte collectif → ventilation par tiers correcte. */
+          if(t.compteAux) compteFinal=c9(t.compteAux);
+        }
       }
       nLignes++;
-      return { compte:l.compte, lib:l.clib||COMPTES[l.compte]||l.compte, debit:r2(l.debit), credit:r2(l.credit), lettre:l.lettre||'' };
+      return { compte:compteFinal, lib:l.clib||COMPTES[l.compte]||l.compte, debit:r2(l.debit), credit:r2(l.credit), lettre:l.lettre||'' };
     });
     const ecr={ id:uid(), date, journal:jrn, libelle:(grp[0].piece||grp[0].num||'IMPORT')+' · '+(grp[0].lib||'Import FEC'),
       lignes, importeFEC:true, tiersId:tiersEcr?tiersEcr.id:null };
@@ -10942,7 +10947,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v355';
+    b.textContent='YADA · v356';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -20576,6 +20581,36 @@ ${lignes}
       if(bar){ var anchor='<div class="card"><h2>Régime de TVA du dossier';
         if(h.indexOf(anchor)>=0) h=h.replace(anchor, bar+anchor); else h=bar+h; } }catch(e){}
     return h; };
+})();
+</script>
+
+<script id="yada-addon179">
+/* ============================================================
+   FEC — attribution automatique du compte de tiers sur les écritures.
+   À l'import, la ligne 401/411 prend déjà le compte AUXILIAIRE du tiers
+   (édition de integrerFEC). Ici, migration des écritures DÉJÀ importées :
+   une ligne au compte COLLECTIF pur (401000000 / 411000000) d'une écriture
+   rattachée à un tiers (e.tiersId) est remplacée par le compte auxiliaire
+   du tiers → ventilation par tiers (grand-livre, totaux HT/TVA) correcte.
+   Idempotent. 100% additif.
+   ============================================================ */
+(function(){
+  function attrib(ecritures){
+    var changed=0;
+    (ecritures||[]).forEach(function(e){
+      if(!e || !e.tiersId) return;
+      var t=(db.tiers||[]).find(function(x){ return x.id===e.tiersId; });
+      if(!t || !t.compteAux) return;
+      var aux=c9(t.compteAux); var coll=((t.type==='client')?'411':'401')+'000000';
+      (e.lignes||[]).forEach(function(l){ if(c9(l.compte)===coll && aux!==coll){ l.compte=aux; changed++; } });
+    });
+    return changed;
+  }
+  window.attribuerComptesTiersFEC=function(){ try{ var n=attrib(db.ecritures); if(n>0 && typeof save==='function') save(); return n; }catch(e){ return 0; } };
+  /* à chaque changement de dossier */
+  if(typeof chargerDossier==='function'){ var _cd=chargerDossier; chargerDossier=function(){ var r=_cd.apply(this,arguments); try{ window.attribuerComptesTiersFEC(); }catch(e){} return r; }; }
+  /* une fois au démarrage (dossier actif) */
+  (function(){ var done=false; if(typeof render==='function'){ var _r=render; render=function(){ if(!done){ done=true; try{ window.attribuerComptesTiersFEC(); }catch(e){} } return _r.apply(this,arguments); }; } })();
 })();
 </script>
 </body>

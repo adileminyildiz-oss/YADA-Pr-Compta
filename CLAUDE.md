@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Module TIERS : montants FEC/collectif pris en compte (attribution par `tiersId`) — v355
+## 🟢 Dernière mise à jour — FEC : attribution automatique du compte de tiers (auxiliaire) sur les écritures — v356
+**Quoi :** à l'**import FEC**, la ligne de tiers (401/411) prend désormais **automatiquement le compte AUXILIAIRE du tiers** (ex. `401GASO00`) au lieu du compte collectif `401000000`/`411000000`. Une **migration** relabelle aussi les écritures **déjà importées** : toute ligne au compte collectif pur d'une écriture rattachée à un tiers (`e.tiersId`) est remplacée par l'auxiliaire du tiers → **ventilation par tiers correcte** (grand-livre, totaux HT/TVA/TTC du module TIERS).
+
+**Comment — 2 éditions :**
+- `integrerFEC` : la ligne 401/411 utilise `c9(tiers.compteAux)` (via `trouverOuCreerTiers`) au lieu de `l.compte` collectif.
+- `yada-addon179` : `attribuerComptesTiersFEC()` remplace, dans `db.ecritures`, une ligne `401000000`/`411000000` par `c9(tiers.compteAux)` quand `e.tiersId` pointe un tiers ayant un compte auxiliaire ; idempotent ; lancé au démarrage et à chaque `chargerDossier`.
+
+**Limites :** un tiers sans compte auxiliaire n'est pas relabellé ; les écritures multi-tiers au collectif (rare) sont toutes rattachées au `e.tiersId` de l'écriture. Validé : `node --check` (172 scripts, 0 erreur) + Playwright (import FEC : ligne 401 → `401GASO00` ; migration : `401000000` → `401FEC000`, idempotent ; équilibre ✅, 0 pageerror). Badge → **v356**.
+
+---
+
+## 🟢 MAJ précédente — Module TIERS : montants FEC/collectif pris en compte (attribution par `tiersId`) — v355
 **Quoi :** correctif de la v354. Les totaux HT/TVA/TTC par tiers n'étaient calculés que sur les écritures utilisant le **compte auxiliaire** du tiers (401XXXX/411XXXX). Or les écritures **importées du FEC** (et certaines saisies) utilisent le **compte collectif** `401000000`/`411000000`, le tiers étant identifié par **`e.tiersId`** → ces montants n'étaient **pas attribués** (lignes à 0). Désormais une écriture est rattachée au tiers si **une ligne porte son compte auxiliaire OU si `e.tiersId === tiers.id`** ; le TTC est lu sur la ligne auxiliaire si présente, sinon sur la ligne collective 401/411.
 
 **Comment — 1 édition de `statsTiers` :** garde élargie (`if(t)` au lieu de `if(t && t.compteAux)`), `auxLine` (ligne au compte aux) **ou** `byId` (`e.tiersId===id`) ; `tLine` = aux sinon collectif `401/411` pour le TTC ; HT = classe 6 (fourn.) / 7 (client), TVA = 4456x hors 44567 / 4457x, sur les autres lignes. Logique HT/TVA inchangée.
