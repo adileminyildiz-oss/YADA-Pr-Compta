@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Nav : Pilotage & Salarié harmonisés aux autres sous-modules de Comptabilité (icônes) — v368
+## 🟢 Dernière mise à jour — Tous les modules exploitent le FEC : Immobilisations & Charges/Paie dérivés des écritures — v369
+**Quoi :** garantir que **lorsqu'un FEC est déposé, toutes ses écritures servent de base de données à traiter dans tous les modules**. La plupart des modules lisaient déjà `db.ecritures` (Analyse, Journal, Éditions, TVA, Tiers, Analytique, Banque, Suivi des règlements, Pilotage, Tableau de bord). Les **deux derniers modules qui n'avaient que leur propre registre** — **Immobilisations** et **Charges & Paie** — reçoivent désormais une **carte dérivée (lecture seule) calculée sur toutes les écritures** (FEC + saisie) :
+- **Immobilisations & Financements** → « Immobilisations, amortissements & dotations — écritures (FEC inclus) » : KPI (immobilisations brutes 20-27, amortissements 28x, VNC, dotations 6811) + tables par compte.
+- **Charges & Paie** → « Charges & paie — écritures (FEC inclus) » : KPI (rémunérations 641, cotisations 645, net à payer 421, organismes 431+437) + détail par famille (641/644/645/647/648/421/427/431/437/442).
+
+**Comment — `yada-addon185` (100% additif, cabinet uniquement) :** greffe sur `pageImmos`/`pageChargesPaie` ; `soldes(pred)` agrège débit/crédit par compte `c9` filtré par préfixe sur `db.ecritures` ; `immoCard()`/`paieCard()` (réutilisent `.pil-t`/`.pil-kpis`). Aucune écriture modifiée (affichage/calcul).
+
+**Limites :** cartes en lecture seule (le registre d'immobilisations `db.immos` et les bulletins restent la saisie détaillée) ; côté client, pas de carte. Validé : `node --check` (178 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (Immo : carte dérivée + dotations 6811 ; Paie : 641/645 + masse salariale ; client sans carte ; équilibre 34 écritures ✅, 0 pageerror). Badge → **v369**.
+
+---
+
+## 🟢 MAJ précédente — Nav : Pilotage & Salarié harmonisés aux autres sous-modules de Comptabilité (icônes) — v368
 **Quoi :** les sous-modules **Pilotage** et **Salarié** sont désormais **présentés comme les autres sous-modules** de Comptabilité : leurs icônes emoji (🎯/🧑, retirées par le balayage anti-emoji v366 → icône vide) sont remplacées par des **glyphes géométriques** de la même famille que les autres subs (▦ ≣ ⇅ ⇄ ◭) → **Pilotage `◉`**, **Salarié `▥`**. `sec` passé à « Comptabilité » (cohérence palette de commandes).
 
 **Comment — 1 édition de `PAGES` :** `{id:'pilotage',ico:'◉',sec:'Comptabilité',…}` et `{id:'salarie',ico:'▥',sec:'Comptabilité',…}` (glyphes **non** pictographiques, vérifiés côté navigateur → non supprimés par le balayage v366).

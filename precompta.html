@@ -10987,7 +10987,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v368';
+    b.textContent='YADA · v369';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21330,6 +21330,78 @@ ${lignes}
     /* champs : cohérence visuelle */
     +'.pil-form input,.pil-form select,.sal-form input,.sal-form select,.pil-grid5 input,.pil-grid5 select,.pil-grid6 input{border:1px solid rgba(30,144,255,.22)}';
   document.head.appendChild(st);
+})();
+</script>
+
+<script id="yada-addon185">
+/* ============================================================
+   EXPLOITATION DU FEC PAR TOUS LES MODULES — les deux modules qui avaient
+   leur propre registre (Immobilisations, Charges & Paie) exploitent désormais
+   AUSSI les écritures du dossier (FEC + saisie) comme base de données à traiter :
+   cartes dérivées (lecture seule) calculées sur db.ecritures. Les autres modules
+   (Analyse, Journal, Éditions, TVA, Tiers, Analytique, Banque, Règlements,
+   Pilotage, Tableau de bord) lisent déjà les écritures. 100% additif.
+   ============================================================ */
+(function(){
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function money(v){ return (typeof eur==='function')?eur(v):((+v||0).toFixed(2)+' €'); }
+  function libDe(c,fallback){ return (typeof COMPTES!=='undefined'&&(COMPTES[c]||COMPTES[c.replace(/0+$/,'')]))||fallback||c; }
+  function soldes(pred){ var acc={}; (db.ecritures||[]).forEach(function(e){ (e.lignes||[]).forEach(function(l){ var c=c9(l.compte); if(!pred(c))return; var a=acc[c]||(acc[c]={lib:l.lib||libDe(c),d:0,cr:0}); a.d+=(+l.debit||0); a.cr+=(+l.credit||0); }); }); return acc; }
+  function rowsFrom(acc, sens){ return Object.keys(acc).sort().map(function(c){ var a=acc[c]; var v=r2(sens==='c'?(a.cr-a.d):(a.d-a.cr)); return {c:c,lib:a.lib,v:v}; }).filter(function(x){ return Math.abs(x.v)>0.005; }); }
+
+  /* ---- Immobilisations & dotations depuis les écritures ---- */
+  function immoCard(){
+    var immo=rowsFrom(soldes(function(c){ return /^2[0-7]/.test(c) && !/^28/.test(c) && !/^29/.test(c); }),'d');
+    var amort=rowsFrom(soldes(function(c){ return /^28/.test(c); }),'c');
+    var deprec=rowsFrom(soldes(function(c){ return /^29/.test(c); }),'c');
+    var dot=rowsFrom(soldes(function(c){ return /^6811/.test(c); }),'d');
+    var tB=r2(immo.reduce(function(a,x){return a+x.v;},0));
+    var tA=r2(amort.reduce(function(a,x){return a+x.v;},0));
+    var tDot=r2(dot.reduce(function(a,x){return a+x.v;},0));
+    var vnc=r2(tB-tA);
+    if(!immo.length && !amort.length && !dot.length && !deprec.length)
+      return '<div class="card"><h2>Immobilisations dans les écritures (FEC inclus)</h2><div class="sub">Aucune écriture d\'immobilisation / dotation dans le dossier pour le moment.</div></div>';
+    function tbl(title, rows){ if(!rows.length) return ''; return '<h3 style="margin:10px 0 4px;font-size:14px">'+esc(title)+'</h3><table class="pil-t"><thead><tr><th>Compte</th><th>Libellé</th><th class="r">Montant</th></tr></thead><tbody>'+rows.map(function(x){return '<tr><td class="cpt">'+x.c+'</td><td>'+esc(x.lib)+'</td><td class="r">'+money(x.v)+'</td></tr>';}).join('')+'</tbody></table>'; }
+    return '<div class="card"><h2>Immobilisations, amortissements &amp; dotations — écritures (FEC inclus)</h2>'
+      +'<div class="sub">Données dérivées de <b>toutes les écritures</b> du dossier (import FEC + saisie) — le module traite ainsi le FEC déposé.</div>'
+      +'<div class="pil-kpis"><div class="pil-k"><span>Immobilisations brutes</span><b>'+money(tB)+'</b></div>'
+      +'<div class="pil-k"><span>Amortissements cumulés</span><b>'+money(tA)+'</b></div>'
+      +'<div class="pil-k"><span>Valeur nette comptable</span><b>'+money(vnc)+'</b></div>'
+      +'<div class="pil-k"><span>Dotations de l\'exercice (6811)</span><b>'+money(tDot)+'</b></div></div>'
+      +tbl('Immobilisations (classes 20 à 27)',immo)+tbl('Amortissements (28x)',amort)+tbl('Dépréciations (29x)',deprec)+tbl('Dotations aux amortissements (6811)',dot)
+      +'</div>';
+  }
+
+  /* ---- Charges & paie depuis les écritures ---- */
+  function paieCard(){
+    var FAM=[['641','Rémunérations du personnel','d'],['644','Rémunération du travail de l\'exploitant','d'],['645','Charges de sécurité sociale &amp; prévoyance','d'],['647','Autres charges sociales','d'],['648','Autres charges de personnel','d'],['421','Personnel — rémunérations dues (net à payer)','c'],['427','Personnel — oppositions','c'],['431','Sécurité sociale (URSSAF)','c'],['437','Autres organismes sociaux','c'],['442','État — prélèvement à la source / impôts','c']];
+    var rows=FAM.map(function(f){ var acc=soldes(function(c){ return c.indexOf(f[0])===0; }); var v=0; Object.keys(acc).forEach(function(c){ var a=acc[c]; v+= f[2]==='c'?(a.cr-a.d):(a.d-a.cr); }); return {code:f[0],lib:f[1],v:r2(v),sens:f[2]}; }).filter(function(x){ return Math.abs(x.v)>0.005; });
+    if(!rows.length) return '<div class="card"><h2>Charges &amp; paie dans les écritures (FEC inclus)</h2><div class="sub">Aucune écriture de charges de personnel / paie dans le dossier pour le moment.</div></div>';
+    var brut=(rows.find(function(x){return x.code==='641';})||{v:0}).v;
+    var cot=(rows.find(function(x){return x.code==='645';})||{v:0}).v;
+    var net=(rows.find(function(x){return x.code==='421';})||{v:0}).v;
+    var org=r2((rows.find(function(x){return x.code==='431';})||{v:0}).v+(rows.find(function(x){return x.code==='437';})||{v:0}).v);
+    return '<div class="card"><h2>Charges &amp; paie — écritures (FEC inclus)</h2>'
+      +'<div class="sub">Masse salariale et cotisations dérivées de <b>toutes les écritures</b> (import FEC + journal de paie + saisie).</div>'
+      +'<div class="pil-kpis"><div class="pil-k"><span>Rémunérations brutes (641)</span><b>'+money(brut)+'</b></div>'
+      +'<div class="pil-k"><span>Cotisations (645)</span><b>'+money(cot)+'</b></div>'
+      +'<div class="pil-k"><span>Net à payer (421)</span><b>'+money(net)+'</b></div>'
+      +'<div class="pil-k"><span>Organismes à payer (431+437)</span><b>'+money(org)+'</b></div></div>'
+      +'<table class="pil-t"><thead><tr><th>Compte</th><th>Nature</th><th class="r">Montant</th></tr></thead><tbody>'
+      +rows.map(function(x){return '<tr><td class="cpt">'+x.code+'</td><td>'+x.lib+'</td><td class="r">'+money(x.v)+'</td></tr>';}).join('')
+      +'</tbody></table></div>';
+  }
+
+  function greffe(fnName, cardFn){
+    if(typeof window[fnName]!=='function') return;
+    var _p=window[fnName];
+    window[fnName]=function(){ var h=_p.apply(this,arguments);
+      if((window.sessionRole||'cabinet')==='client') return h;
+      try{ return h + cardFn(); }catch(e){ return h; }
+    };
+  }
+  greffe('pageImmos', immoCard);
+  greffe('pageChargesPaie', paieCard);
 })();
 </script>
 </body>
