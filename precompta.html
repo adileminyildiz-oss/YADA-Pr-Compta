@@ -3643,9 +3643,13 @@ function posterBanque({mois, jour, compte, libelle, sens, montant, suivi, tiersI
   const date=mois+'-'+String(j).padStart(2,'0');
   const m=r2(montant);
   const t=tiersId?db.tiers.find(x=>x.id===tiersId):null;
-  const l1={ compte, lib:(t?t.nom:(COMPTES[compte]||compte)), debit:sens==='D'?m:0, credit:sens==='C'?m:0 };
+  /* compte de tiers : si un tiers est fourni et que le compte passé est le COLLECTIF (401000000/411000000),
+     on utilise son compte AUXILIAIRE → chaque écriture de banque porte le compte du fournisseur/client */
+  let cpt1=compte;
+  if(t && /^(401|411)/.test(c9(t.compteAux||'')) && (c9(compte)==='401000000'||c9(compte)==='411000000')) cpt1=c9(t.compteAux);
+  const l1={ compte:cpt1, lib:(t?t.nom:(COMPTES[compte]||compte)), debit:sens==='D'?m:0, credit:sens==='C'?m:0 };
   const l2={ compte:'512', lib:'Banque', debit:sens==='C'?m:0, credit:sens==='D'?m:0 };
-  const ecr={ id:uid(), date, journal:'BQ', libelle:(suivi?suivi+' · ':'')+libelle, lignes:[l1,l2], banque:true };
+  const ecr={ id:uid(), date, journal:'BQ', libelle:(suivi?suivi+' · ':'')+libelle, lignes:[l1,l2], banque:true, tiersId:tiersId||null };
   db.ecritures.push(ecr);
   const rec={ id:uid(), date, jour:j, compte, libelle, sens, montant:m, suivi, tiersId:tiersId||null, ecritureId:ecr.id, alloc:[] };
   db.banque.push(rec); save(); return rec;
@@ -3895,7 +3899,9 @@ function statsTiers(id){
   totalEcr=r2(totalEcr); tvaEcr=r2(tvaEcr); htEcr=r2(htEcr);
   /* l'écriture est la source de vérité (les factures de l'app génèrent aussi des écritures) */
   const useEcr = (totalEcr>0 || htEcr>0 || tvaEcr>0);
-  const ttcFinal = useEcr ? totalEcr : r2(ttc);
+  /* TTC = HT + TVA (côté facture) → le total « dépensé / perçu » reste stable même quand
+     les règlements bancaires portent aussi le compte auxiliaire (sinon la ligne de tiers se solderait). */
+  const ttcFinal = useEcr ? (r2(htEcr+tvaEcr)||totalEcr) : r2(ttc);
   const tvaFinal = useEcr ? tvaEcr : r2(tva);
   const htFinal  = useEcr ? htEcr : r2(ht);
   // règlements bancaires liés
@@ -10956,7 +10962,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v357';
+    b.textContent='YADA · v358';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -20595,37 +20601,59 @@ ${lignes}
 
 <script id="yada-addon179">
 /* ============================================================
-   FEC — attribution automatique du compte de tiers sur les écritures.
-   À l'import, la ligne 401/411 prend déjà le compte AUXILIAIRE du tiers
-   (édition de integrerFEC). Ici, migration des écritures DÉJÀ importées :
-   une ligne au compte COLLECTIF pur (401000000 / 411000000) d'une écriture
-   rattachée à un tiers (e.tiersId) est remplacée par le compte auxiliaire
-   du tiers → ventilation par tiers (grand-livre, totaux HT/TVA) correcte.
-   Idempotent. 100% additif.
+   Attribution du COMPTE DE TIERS (auxiliaire) sur les écritures.
+   Objectif : CHAQUE écriture touchant un fournisseur/client porte le compte
+   AUXILIAIRE du tiers (401XXXX / 411XXXX), jamais le compte collectif
+   401000000 / 411000000 — y compris les écritures de BANQUE (règlements)
+   et les imports FEC anciens. Résolution du tiers, dans l'ordre :
+   e.tiersId → nom porté par la ligne (l.lib, ex. « EDF Pro ») → (repli, en
+   journaux BQ/ACH/VTE) libellé de l'écriture. Le tiers est CRÉÉ s'il n'existe
+   pas (compte auxiliaire via genAux). Les libellés génériques (« Fournisseurs »,
+   à-nouveaux, TVA, paie…) sont ignorés. Idempotent. 100% additif.
    ============================================================ */
 (function(){
+  function norm(s){ return String(s||'').toUpperCase().normalize('NFD').replace(/[^A-Z0-9]/g,''); }
+  var GENERIQUES=/^(FOURNISSEUR|FOURNISSEURS|CLIENT|CLIENTS|FOURNISSEURSDIVERS|CLIENTSDIVERS|DIVERS|TIERS|COLLECTIF|BANQUE|CAISSE|ANOUVEAU|ANOUVEAUX|REPORTANOUVEAU|REPORT|OUVERTURE|CLOTURE|RESULTAT|TVA|OD|PAIE|SALAIRE|IMPORT)$/;
+  function nettoie(s){
+    s=String(s||'').trim();
+    var i=s.indexOf('·'); if(i>=0) s=s.slice(i+1).trim();   // enlève le préfixe pièce « BQ-0001 · »
+    s=s.replace(/^(?:vir(?:ement)?\s+re[cç]us?|vir(?:ement)?|ch[eè]ques?|chq|carte(?:\s+bancaire)?|cb|pr[eé]l[eè]vements?|prlv|paiement|encaissement|r[eè]glement)\b[\s:.\-]*/i,'').trim();
+    s=s.replace(/\s*\((?:sans facture|acompte|solde)[^)]*\)\s*/ig,' ').trim();
+    return s;
+  }
+  function exploitable(nom){ var n=norm(nom); return n.length>=2 && !GENERIQUES.test(n); }
   function attrib(ecritures){
     var changed=0;
+    var byId={}, nomIdx={};
+    (db.tiers||[]).forEach(function(t){ byId[t.id]=t; if(t.type==='fournisseur'||t.type==='client') nomIdx[t.type+'|'+norm(t.nom)]=t; });
+    function auxDe(t){ if(!/^(401|411)/.test(c9(t.compteAux||''))){ try{ t.compteAux=genAux(t.type,t.nom); }catch(_e){} } return c9(t.compteAux||''); }
+    function resoudre(type, nomCand){
+      var nom=nettoie(nomCand); if(!exploitable(nom)) return null;
+      var key=type+'|'+norm(nom);
+      if(nomIdx[key]) return nomIdx[key];
+      var t={ id:uid(), type:type, categorie:'societe', nom:nom,
+        compteContre:type==='client'?'706000':'606400', compteTVA:type==='client'?'44571':'44566', taux:20,
+        compteAux:genAux(type,nom), email:'', tel:'', siret:'', adresse:'', importeFEC:true, origine:'ecriture' };
+      db.tiers.push(t); byId[t.id]=t; nomIdx[key]=t; return t;
+    }
     (ecritures||[]).forEach(function(e){
-      if(!e || !e.tiersId) return;
-      var t=(db.tiers||[]).find(function(x){ return x.id===e.tiersId; });
-      if(!t) return;
-      var pref=(t.type==='client')?'411':'401';
-      /* garantit un compte auxiliaire VALIDE (répare les compteAux mal formés hérités,
-         ex. « GASO » / vide) sans dépendre de l'ordre de migrerAuxTiers */
-      if(!/^(401|411)/.test(c9(t.compteAux||''))){ try{ t.compteAux=genAux(t.type, t.nom||pref); }catch(_e){} }
-      var aux=c9(t.compteAux||'');
-      if(aux.slice(0,3)!==pref) return;                 // ne relabelle que vers un aux valide
-      var coll=pref+'000000';
-      /* déjà correctement ventilée ? on ne touche pas */
-      if((e.lignes||[]).some(function(l){ return c9(l.compte)===aux; })) return;
-      (e.lignes||[]).forEach(function(l){
+      if(!e || !e.lignes) return;
+      e.lignes.forEach(function(l){
         var cc=c9(l.compte);
-        if(cc===aux) return;
-        var estCollectif = (cc===coll);
-        var estAutreAux  = (cc.slice(0,3)===pref);        // collectif ou aux d'un autre libellé
-        var estOrphelin  = !/^[0-9]/.test(cc);            // compte mal formé (ex. « GASO00000 », « DUPONT000 »)
-        if(estCollectif || estAutreAux || estOrphelin){ l.compte=aux; changed++; }
+        var estColl=(cc==='401000000'||cc==='411000000');
+        var estOrph=!/^[0-9]/.test(cc);                 // compte mal formé (ex. « GASO00000 »)
+        if(!estColl && !estOrph) return;
+        var pref = (cc==='401000000') ? '401' : (cc==='411000000') ? '411'
+                 : (e.tiersId && byId[e.tiersId]) ? (byId[e.tiersId].type==='client'?'411':'401') : '';
+        if(!pref) return;                                // orphelin sans info de type → on ne touche pas
+        var type = (pref==='411') ? 'client' : 'fournisseur';
+        var t = (e.tiersId && byId[e.tiersId] && byId[e.tiersId].type===type) ? byId[e.tiersId] : null;
+        if(!t) t = resoudre(type, l.lib);                        // nom porté par la ligne (ex. « EDF Pro »)
+        if(!t && ['BQ','ACH','VTE'].indexOf(e.journal)>=0) t = resoudre(type, e.libelle); // repli
+        if(!t) return;
+        var aux=auxDe(t);
+        if(aux.slice(0,3)!==pref || cc===aux) return;
+        l.compte=aux; if(!e.tiersId) e.tiersId=t.id; changed++;
       });
     });
     return changed;

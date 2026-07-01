@@ -36,7 +36,19 @@
 
 ---
 
-## 🟢 Dernière mise à jour — FEC : compte de tiers auxiliaire VALIDE aussi pour les CLIENTS (CompAuxNum court/absent) — v357
+## 🟢 Dernière mise à jour — Compte de tiers auxiliaire attribué sur TOUTES les écritures (banque incluse), pas seulement le FEC — v358
+**Quoi :** suite de la v356/v357. L'attribution ne visait que les écritures **rattachées à un tiers (`e.tiersId`)** → les **écritures de banque** (règlements) et diverses écritures au **compte collectif** `401000000`/`411000000` **sans `tiersId`** restaient au collectif. Désormais **chaque écriture touchant un fournisseur/client porte le compte AUXILIAIRE du tiers** : la migration résout le tiers depuis le **nom porté par la ligne** (`l.lib`, ex. « EDF Pro ») puis, en repli (journaux BQ/ACH/VTE), depuis le **libellé de l'écriture** — en **créant le tiers** s'il n'existe pas (compte via `genAux`) et en ignorant les libellés génériques (« Fournisseurs », à-nouveaux, TVA, paie…). Les lignes de **charges/produits** (627, 616, 431…) ne sont pas touchées.
+
+**Comment — 3 éditions :**
+- `posterBanque` : si un `tiersId` est fourni et que le compte passé est le collectif, la ligne prend `c9(tiers.compteAux)` ; l'écriture reçoit `tiersId` → les **nouveaux** règlements sont attribués.
+- `yada-addon179` (`attribuerComptesTiersFEC`) généralisé : parcourt **toute ligne** au collectif `401000000`/`411000000` ou **orpheline** (mal formée) ; résout le tiers (`e.tiersId` → `l.lib` → libellé BQ/ACH/VTE), garantit un compte auxiliaire valide, relabelle la ligne et pose `e.tiersId`. Idempotent, garde anti-libellés génériques.
+- `statsTiers` : **TTC = HT + TVA** (côté facture) → le total « dépensé / perçu » reste stable même quand les règlements bancaires portent aussi le compte auxiliaire (sinon la ligne de tiers se solderait à 0).
+
+**Limites :** un tiers sans nom exploitable (libellé générique) n'est pas résolu ; les lignes déjà sur un aux valide sont laissées telles quelles. Validé : `node --check` (172 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (démos : toutes les lignes de banque tiers → aux `401EDFP00`/`411SARL00`/`401SYND00`…, charges 627/616/431 intactes, 0 collectif/orphelin restant, idempotent, équilibre ✅ ; statsTiers TTC=HT+TVA cohérent, EDF 600/120/720 malgré règlement ; régression v357 : import court + migration collectif/orphelin OK ; 0 pageerror). Badge → **v358**.
+
+---
+
+## 🟢 MAJ précédente — FEC : compte de tiers auxiliaire VALIDE aussi pour les CLIENTS (CompAuxNum court/absent) — v357
 **Quoi :** correctif de la v356. L'attribution du compte auxiliaire échouait dès que le **CompAuxNum du FEC** était un **code court** (ex. `PIC`, `DUPONT`) ou **absent** — le cas fréquent, notamment pour les **clients** : le compte auxiliaire était stocké **tel quel** → `c9('PIC')='PIC000000'`, un **compte mal formé** ne commençant pas par 401/411 → la ventilation par tiers restait **à 0** (module TIERS), et la migration v356 (qui ne relabellait que le collectif pur) ne corrigeait rien. Désormais le CompAuxNum est **toujours normalisé en compte auxiliaire valide** : déjà `401…`/`411…` → conservé ; code court → **préfixé du collectif** (`PIC` → `411PIC000`) ; absent → **généré depuis le nom** (`genAux`). Vaut pour **fournisseurs ET clients**.
 
 **Comment — 2 éditions chirurgicales :**
