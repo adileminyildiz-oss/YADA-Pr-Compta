@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Écran « Dossier sélectionné » : carte alignée à GAUCHE — v375
+## 🟢 Dernière mise à jour — Écran « Dossier sélectionné » : carte à la taille standard (compacte) — v376
+**Quoi :** la carte du dossier sélectionné reprend les **dimensions d'une carte de dossier standard** (compacte) au lieu de s'élargir : largeur de colonne fixée à **280 px** (`grid-template-columns:280px`), rendu compact ~261 px, toujours aligné à gauche.
+
+**Comment — 1 édition CSS d'`yada-addon189` (`.ds-grid-solo`) :** `minmax(260px,360px)` → **`280px`** (+ `justify-content/items:start` conservés). Validé : `node --check` (182 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (carte largeur **261 px**, `left=116px` ; 0 pageerror). Badge → **v376**.
+
+---
+
+## 🟢 MAJ précédente — Écran « Dossier sélectionné » : carte alignée à GAUCHE — v375
 **Quoi :** sur l'écran **« Dossier sélectionné »**, la carte du dossier (centrée jusqu'ici) est **décalée à gauche**, alignée avec le titre et les boutons.
 
 **Comment — 1 édition CSS d'`yada-addon189` (`.ds-grid-solo`) :** `justify-content:center` → **`justify-content:start!important;justify-items:start!important`**. Validé : `node --check` (182 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (carte `left=116px` = titre 116 = actions 116, viewport 1400 ; 0 pageerror). Badge → **v375**.
