@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Nav : Pilotage & Salarié déplacés en sous-modules de Comptabilité — v367
+## 🟢 Dernière mise à jour — Nav : Pilotage & Salarié harmonisés aux autres sous-modules de Comptabilité (icônes) — v368
+**Quoi :** les sous-modules **Pilotage** et **Salarié** sont désormais **présentés comme les autres sous-modules** de Comptabilité : leurs icônes emoji (🎯/🧑, retirées par le balayage anti-emoji v366 → icône vide) sont remplacées par des **glyphes géométriques** de la même famille que les autres subs (▦ ≣ ⇅ ⇄ ◭) → **Pilotage `◉`**, **Salarié `▥`**. `sec` passé à « Comptabilité » (cohérence palette de commandes).
+
+**Comment — 1 édition de `PAGES` :** `{id:'pilotage',ico:'◉',sec:'Comptabilité',…}` et `{id:'salarie',ico:'▥',sec:'Comptabilité',…}` (glyphes **non** pictographiques, vérifiés côté navigateur → non supprimés par le balayage v366).
+
+**Limites :** navigation/affichage uniquement. Validé : `node --check` (177 scripts, 0 erreur) + Playwright (glyphes `◉`/`▥` **non** Extended_Pictographic ; sous-modules Comptabilité : Pilotage `◉` et Salarié `▥` affichés `display:block` comme les autres ; équilibre 34 écritures ✅, 0 pageerror). Badge → **v368**.
+
+---
+
+## 🟢 MAJ précédente — Nav : Pilotage & Salarié déplacés en sous-modules de Comptabilité — v367
 **Quoi :** les modules **Pilotage** et **Salarié** deviennent des **sous-modules du module Comptabilité** (barre latérale cabinet), au lieu d'être dans la section « Pilotage » du haut. Ils apparaissent désormais en dépliant **Comptabilité** (après Analyse, Journal, Éditions, FEC, Suivi des règlements, Analytique, Plan comptable, Assistant IA).
 
 **Comment — 1 édition d'`yada-addon164` :** `PILOTAGE=['dash','societe','client']` (retrait de `pilotage`/`salarie`) ; `m-compta.subs` complété par `'pilotage','salarie'`. Le dispatch `render()` et les entrées `PAGES` restent inchangés (les pages fonctionnent à l'identique).
