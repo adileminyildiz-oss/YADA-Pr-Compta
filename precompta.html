@@ -10987,7 +10987,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v369';
+    b.textContent='YADA · v370';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21402,6 +21402,74 @@ ${lignes}
   }
   greffe('pageImmos', immoCard);
   greffe('pageChargesPaie', paieCard);
+})();
+</script>
+
+<script id="yada-addon186">
+/* ============================================================
+   FEC → FICHES D'IMMOBILISATION AUTOMATIQUES (avec plan d'amortissement).
+   À l'import FEC (et au chargement), chaque acquisition d'immobilisation
+   détectée dans les écritures (ligne classe 2 amortissable au DÉBIT) crée une
+   fiche `db.immos` complète, avec durée par défaut selon le compte → le module
+   Immobilisations calcule alors le plan (immoPlan) et les dotations.
+   Idempotent : ne recrée pas une fiche déjà liée (ecritureId) ni un doublon
+   (même compte + même montant qu'une fiche existante, y compris manuelle).
+   Exclut à-nouveaux, cessions et immobilisations NON amortissables (terrains,
+   fonds de commerce, immobilisations financières). 100% additif.
+   ============================================================ */
+(function(){
+  function libDe(c,fb){ return (typeof COMPTES!=='undefined'&&(COMPTES[c]||COMPTES[c.replace(/0+$/,'')]))||fb||c; }
+  function dureeParCompte(c){ c=c9(c);
+    if(/^211/.test(c)) return 0;                 // terrains — non amortis
+    if(/^206/.test(c)||/^207/.test(c)) return 0; // fonds commercial / droit au bail — non amortis
+    if(/^26/.test(c)||/^27/.test(c)) return 0;   // immobilisations financières — non amorties
+    if(/^205/.test(c)) return 36;                // logiciels / concessions — 3 ans
+    if(/^213/.test(c)) return 300;               // constructions — 25 ans
+    if(/^215/.test(c)) return 84;                // installations / matériel & outillage — 7 ans
+    if(/^2182/.test(c)) return 60;               // matériel de transport — 5 ans
+    if(/^2183/.test(c)) return 36;               // matériel de bureau & informatique — 3 ans
+    if(/^2184/.test(c)) return 120;              // mobilier — 10 ans
+    if(/^2181/.test(c)) return 120;              // agencements — 10 ans
+    if(/^218/.test(c)) return 60;                // autres immobilisations corporelles — 5 ans
+    if(/^21/.test(c))  return 60;                // corporelles génériques — 5 ans
+    if(/^20/.test(c))  return 60;                // incorporelles amortissables — 5 ans
+    return 60;
+  }
+  function dotDe(cpt){ return (c9(cpt).slice(0,2)==='20')?'681110000':'681120000'; }
+  function amortDe(cpt){ return (typeof compteAmortDe==='function')?compteAmortDe(cpt):c9('28'+c9(cpt).slice(1)); }
+  function tiersLib(e){ var L=(e.lignes||[]).find(function(l){ var c=c9(l.compte); return /^40[14]/.test(c); }); return L?(L.lib||''):''; }
+
+  window.creerImmosDepuisEcritures=function(){
+    try{
+      db.immos=db.immos||[]; var made=0;
+      (db.ecritures||[]).forEach(function(e){
+        var L=(e.libelle||'').toUpperCase();
+        if(/NOUVEAU|REPORT|CESSION|SORTIE|DOTATION|AMORTISS/.test(L)) return;   // ni à-nouveaux, ni cessions, ni OD de dotation
+        (e.lignes||[]).forEach(function(l){
+          var c=c9(l.compte); var deb=+l.debit||0;
+          if(!/^2[0-7]/.test(c) || /^28/.test(c) || /^29/.test(c)) return;      // immobilisation brute seulement
+          if(deb<=0.005) return;
+          var duree=dureeParCompte(c); if(!duree) return;                       // non amortissable → pas de plan
+          if((db.immos||[]).some(function(im){ return im.ecritureId===e.id && c9(im.compte)===c; })) return;   // déjà liée
+          if((db.immos||[]).some(function(im){ return c9(im.compte)===c && Math.abs((+im.montantHT||0)-deb)<0.01; })) return; // doublon (fiche manuelle incluse)
+          var im={ id:uid(), numero:'IMMO-'+String(db.immos.length+1).padStart(3,'0'),
+            nature:(l.lib||libDe(c)), compte:c, compteAmort:amortDe(c), compteDot:dotDe(c),
+            montantHT:r2(deb), valResiduelle:0, tauxTVA:20,
+            fournisseur:tiersLib(e), dateFacture:e.date, miseEnService:e.date,
+            dureeMois:duree, type:'lineaire', sortie:null, origine:'fec', ecritureId:e.id };
+          db.immos.push(im); made++;
+        });
+      });
+      if(made && typeof save==='function') save();
+      return made;
+    }catch(err){ return 0; }
+  };
+
+  /* à chaque import FEC (dépôt) */
+  if(typeof integrerFEC==='function'){ var _if=integrerFEC; integrerFEC=function(){ var r=_if.apply(this,arguments); try{ window.creerImmosDepuisEcritures(); }catch(e){} return r; }; }
+  /* à chaque changement de dossier + une fois au démarrage */
+  if(typeof chargerDossier==='function'){ var _cd=chargerDossier; chargerDossier=function(){ var r=_cd.apply(this,arguments); try{ window.creerImmosDepuisEcritures(); }catch(e){} return r; }; }
+  (function(){ var done=false; if(typeof render==='function'){ var _r=render; render=function(){ if(!done){ done=true; try{ window.creerImmosDepuisEcritures(); }catch(e){} } return _r.apply(this,arguments); }; } })();
 })();
 </script>
 </body>
