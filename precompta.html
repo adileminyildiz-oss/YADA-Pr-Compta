@@ -10987,7 +10987,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v371';
+    b.textContent='YADA · v372';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21542,6 +21542,82 @@ ${lignes}
     +'.dl-close:hover{background:rgba(198,40,40,.30);color:#ffbcbc}'
     +'.dl-enter{opacity:.7;font-size:13px;white-space:nowrap;flex:0 0 auto}'
     +'.dl-empty{opacity:.7;font-size:13px;padding:12px;border:1px dashed rgba(30,144,255,.3);border-radius:10px}';
+  document.head.appendChild(st);
+})();
+</script>
+
+<script id="yada-addon188">
+/* ============================================================
+   « Liste Dossier » en FENÊTRE FLOTTANTE — déplaçable & modulable.
+   Un bouton « Liste Dossier (fenêtre) » (page de sélection) ouvre un panneau
+   flottant : barre de titre à glisser pour déplacer, coin bas-droit pour
+   redimensionner (resize natif), ✕ pour fermer. Liste des dossiers cliquable
+   (entrer dans le dossier) + badge « Actif ». 100% additif.
+   ============================================================ */
+(function(){
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function dossiers(){ var c=db.cabinet||(typeof cabinetDefaut==='function'?cabinetDefaut():{dossiers:[]}); return (c.dossiers||[]).slice().sort(function(a,b){return (b.favori?1:0)-(a.favori?1:0);}); }
+  function rowsHTML(){
+    return dossiers().map(function(d){ var actif=(d.id===db.activeId);
+      return '<div class="df-row'+(actif?' actif':'')+'" onclick="dossierFloatChoisir(\''+d.id+'\')" title="Entrer dans '+esc(d.nom||'')+'">'
+        +'<span class="df-av">'+esc((d.nom||'?')[0])+'</span>'
+        +'<span class="df-main"><span class="df-nom">'+esc(d.nom||'')+'</span>'
+        +'<span class="df-meta">'+esc([d.forme,d.activite,d.ville].filter(Boolean).join(' · ')||'—')+'</span>'
+        +'<span class="df-siren">'+(d.siren?('SIREN '+esc(d.siren)):'SIREN —')+'</span></span>'
+        +(actif?'<span class="df-badge">Actif</span>':'')+'<span class="df-open">Ouvrir →</span></div>';
+    }).join('')||'<div class="df-empty">Aucun dossier.</div>';
+  }
+  window.dossierFloatRender=function(){ var b=document.getElementById('df-body'); if(b) b.innerHTML=rowsHTML(); };
+  window.dossierFloatChoisir=function(id){ try{ if(typeof choisirDossier==='function') choisirDossier(id); }catch(e){} };
+  window.dossierFloatClose=function(){ var ov=document.getElementById('dossier-float'); if(ov) ov.style.display='none'; };
+  function dragSetup(ov){
+    var bar=ov.querySelector('#df-bar'); var sx=0,sy=0,ox=0,oy=0,drag=false;
+    function start(cx,cy){ drag=true; sx=cx; sy=cy; var r=ov.getBoundingClientRect(); ox=r.left; oy=r.top; }
+    function move(cx,cy){ if(!drag)return; var nx=Math.max(0,Math.min((window.innerWidth||900)-80, ox+(cx-sx))); var ny=Math.max(0,Math.min((window.innerHeight||700)-40, oy+(cy-sy))); ov.style.left=nx+'px'; ov.style.top=ny+'px'; }
+    bar.addEventListener('mousedown',function(e){ if(e.target&&e.target.className==='df-x')return; start(e.clientX,e.clientY); e.preventDefault(); });
+    document.addEventListener('mousemove',function(e){ move(e.clientX,e.clientY); });
+    document.addEventListener('mouseup',function(){ drag=false; });
+    bar.addEventListener('touchstart',function(e){ var t=e.touches[0]; if(!t)return; start(t.clientX,t.clientY); },{passive:true});
+    document.addEventListener('touchmove',function(e){ var t=e.touches[0]; if(t) move(t.clientX,t.clientY); },{passive:true});
+    document.addEventListener('touchend',function(){ drag=false; });
+  }
+  window.dossierFloatOpen=function(){
+    var ov=document.getElementById('dossier-float');
+    if(!ov){ ov=document.createElement('div'); ov.id='dossier-float';
+      ov.innerHTML='<div class="df-bar" id="df-bar"><span class="df-title">Liste Dossier</span><span class="df-x" onclick="dossierFloatClose()" title="Fermer">✕</span></div><div class="df-body" id="df-body"></div>';
+      document.body.appendChild(ov);
+      ov.style.left=Math.max(16,((window.innerWidth||900)-460)/2)+'px'; ov.style.top='84px';
+      dragSetup(ov);
+    }
+    ov.style.display='flex'; window.dossierFloatRender();
+  };
+  /* bouton d'ouverture sur la page de sélection */
+  if(typeof window.ecranSelectionDossier==='function'){ var _e=window.ecranSelectionDossier;
+    window.ecranSelectionDossier=function(){ var h=_e.apply(this,arguments);
+      try{ var btn='<button class="btn btn-ghost" onclick="dossierFloatOpen()">Liste Dossier (fenêtre)</button>';
+        if(h.indexOf('class="login-actions"')>=0) h=h.replace(/(<div class="login-actions">)/, '$1'+btn); }catch(e){}
+      return h; };
+  }
+  /* rafraîchir la fenêtre ouverte après chaque rendu (changement de dossier/données) */
+  if(typeof render==='function'){ var _r=render; render=function(){ var x=_r.apply(this,arguments); try{ var ov=document.getElementById('dossier-float'); if(ov && ov.style.display!=='none') window.dossierFloatRender(); }catch(e){} return x; }; }
+
+  var st=document.createElement('style'); st.id='dossier-float-mod'; st.textContent=
+    '#dossier-float{position:fixed;z-index:100050;display:none;flex-direction:column;width:460px;height:440px;min-width:300px;min-height:220px;max-width:96vw;max-height:88vh;resize:both;overflow:hidden;background:#0c1a2a;border:1px solid #1e90ff;border-radius:14px;box-shadow:0 26px 64px rgba(0,0,0,.62);color:#eaf2ff}'
+    +'#df-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:linear-gradient(#16304a,#0f2236);border-bottom:1px solid rgba(30,144,255,.4);cursor:move;border-radius:14px 14px 0 0;user-select:none;flex:0 0 auto}'
+    +'.df-title{font-weight:700;letter-spacing:.3px}'
+    +'.df-x{cursor:pointer;opacity:.85;font-size:15px;padding:0 6px;border-radius:6px}'
+    +'.df-x:hover{opacity:1;color:#ff8f8f;background:rgba(198,40,40,.2)}'
+    +'.df-body{flex:1;overflow:auto;padding:10px;display:flex;flex-direction:column;gap:7px}'
+    +'.df-row{display:flex;align-items:center;gap:11px;padding:9px 12px;border:1px solid rgba(30,144,255,.28);border-radius:10px;background:rgba(30,144,255,.06);cursor:pointer}'
+    +'.df-row:hover{background:rgba(30,144,255,.16);border-color:#1e90ff}'
+    +'.df-row.actif{border-color:#1e90ff;background:rgba(30,144,255,.20);box-shadow:inset 0 0 0 1px rgba(30,144,255,.45)}'
+    +'.df-av{width:31px;height:31px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#1e90ff,#0a64d6);color:#fff;font-weight:700;flex:0 0 auto}'
+    +'.df-main{display:flex;flex-direction:column;flex:1;min-width:0}'
+    +'.df-nom{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+    +'.df-meta,.df-siren{font-size:11.5px;opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+    +'.df-badge{background:linear-gradient(#1e90ff,#0a64d6);color:#fff;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;flex:0 0 auto}'
+    +'.df-open{opacity:.7;font-size:12px;white-space:nowrap;flex:0 0 auto}'
+    +'.df-empty{opacity:.7;padding:16px;text-align:center}';
   document.head.appendChild(st);
 })();
 </script>

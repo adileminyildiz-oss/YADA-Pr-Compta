@@ -36,7 +36,20 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Page de sélection : « Liste Dossier » (dossiers ouverts, actif protégé, fermeture des autres) — v371
+## 🟢 Dernière mise à jour — « Liste Dossier » en fenêtre FLOTTANTE (déplaçable & modulable) — v372
+**Quoi :** sur la page de sélection, un bouton **« Liste Dossier (fenêtre) »** ouvre un **panneau flottant** contenant la liste des dossiers :
+- **barre de titre à glisser** pour déplacer la fenêtre (souris + tactile) ;
+- **coin bas-droit** pour **redimensionner** (resize natif `resize:both`, min 300×220) ;
+- **✕** pour fermer ;
+- chaque ligne est **cliquable = entrer dans le dossier** ; le dossier **actif** porte un badge « Actif ». La fenêtre se rafraîchit après chaque rendu (changement de dossier/données).
+
+**Comment — `yada-addon188` (100% additif) :** `dossierFloatOpen()` crée/affiche `#dossier-float` (position `fixed`, `resize:both`) une seule fois (persiste hors `#main`) ; `dragSetup()` (glisser la `#df-bar`) ; `dossierFloatRender()` (lignes `.df-row` depuis `db.cabinet.dossiers`, tri favoris, badge actif) ; `dossierFloatChoisir(id)`→`choisirDossier` ; bouton injecté dans `.login-actions` (wrap `ecranSelectionDossier`) ; refresh via wrap `render`. `<style id="dossier-float-mod">`.
+
+**Limites :** la fenêtre reste sur `body` (peut flotter au-dessus de l'app après ouverture d'un dossier) ; réouverture via le bouton de la page de sélection. Validé : `node --check` (181 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (bouton présent ; ouverture visible `resize:both` ; 3 dossiers + badge actif « ALR CONSEIL » ; **déplacement** 370→570 ; **redimensionnement** 620×560 ; fermeture ; équilibre 34 écritures ✅, 0 pageerror). Badge → **v372**.
+
+---
+
+## 🟢 MAJ précédente — Page de sélection : « Liste Dossier » (dossiers ouverts, actif protégé, fermeture des autres) — v371
 **Quoi :** sur la **page de sélection des dossiers**, une section **« Liste Dossier »** apparaît **juste après le bouton Réinitialiser** (sous les cartes du portefeuille). Elle liste les **dossiers ouverts** (façon onglets) :
 - **cliquer sur une ligne = entrer dans le dossier** (il devient actif) ;
 - le **dossier ACTIF** (dernier ouvert, `db.activeId`) reste affiché avec un **badge « Actif »** et **n'est pas fermable** ;
