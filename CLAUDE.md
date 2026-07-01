@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Module TIERS : totaux HT + TVA par tiers depuis TOUTES les écritures (fournisseurs & clients) — v354
+## 🟢 Dernière mise à jour — Module TIERS : montants FEC/collectif pris en compte (attribution par `tiersId`) — v355
+**Quoi :** correctif de la v354. Les totaux HT/TVA/TTC par tiers n'étaient calculés que sur les écritures utilisant le **compte auxiliaire** du tiers (401XXXX/411XXXX). Or les écritures **importées du FEC** (et certaines saisies) utilisent le **compte collectif** `401000000`/`411000000`, le tiers étant identifié par **`e.tiersId`** → ces montants n'étaient **pas attribués** (lignes à 0). Désormais une écriture est rattachée au tiers si **une ligne porte son compte auxiliaire OU si `e.tiersId === tiers.id`** ; le TTC est lu sur la ligne auxiliaire si présente, sinon sur la ligne collective 401/411.
+
+**Comment — 1 édition de `statsTiers` :** garde élargie (`if(t)` au lieu de `if(t && t.compteAux)`), `auxLine` (ligne au compte aux) **ou** `byId` (`e.tiersId===id`) ; `tLine` = aux sinon collectif `401/411` pour le TTC ; HT = classe 6 (fourn.) / 7 (client), TVA = 4456x hors 44567 / 4457x, sur les autres lignes. Logique HT/TVA inchangée.
+
+**Limites :** un tiers sans compte auxiliaire **et** sans `e.tiersId` sur ses écritures reste non ventilable. Validé : `node --check` (171 scripts, 0 erreur) + Playwright (2 écritures FEC sur 401000000 collectif rattachées par `tiersId` → HT 1500 / TVA 300 / TTC 1800 ; équilibre ✅, 0 pageerror). Badge → **v355**.
+
+---
+
+## 🟢 MAJ précédente — Module TIERS : totaux HT + TVA par tiers depuis TOUTES les écritures (fournisseurs & clients) — v354
 **Quoi :** dans le module **TIERS**, chaque ligne affiche désormais le **HT** et la **TVA** par tiers, calculés sur **toutes les écritures** (saisie manuelle, scan/OCR, import FEC) — plus seulement `db.factures`. **Fournisseurs** : **HT dépensé** + **TVA déductible** ; **Clients** : **HT perçu** + **TVA collectée** ; colonne **TTC** conservée ; **ligne de total** (HT / TVA / TTC) ajoutée en pied de chaque liste.
 
 **Comment — 2 éditions chirurgicales :**

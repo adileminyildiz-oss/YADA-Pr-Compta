@@ -3870,12 +3870,19 @@ function statsTiers(id){
      Fournisseur (401) : HT = charges (classe 6) au débit ; TVA déductible = 4456x (hors 44567) au débit ; TTC = mouvement du tiers.
      Client (411)      : HT = produits (classe 7) au crédit ; TVA collectée = 4457x au crédit ; TTC = mouvement du tiers. */
   let totalEcr=0, tvaEcr=0, htEcr=0;
-  if(t && t.compteAux){ const cc=c9(t.compteAux); const client=(t.type==='client');
+  if(t){
+    const cc = t.compteAux ? c9(t.compteAux) : '';
+    const client=(t.type==='client'); const coll = client ? '411' : '401';
     (db.ecritures||[]).forEach(e=>{
-      if(!(e.lignes||[]).some(l=>c9(l.compte)===cc)) return;       // écriture touchant ce tiers
-      (e.lignes||[]).forEach(l=>{ const cp=c9(l.compte); const d=(+l.debit||0), cr=(+l.credit||0);
-        if(cp===cc){ totalEcr += client ? (d-cr) : (cr-d); }
-        else if(client){
+      const lignes=e.lignes||[];
+      const auxLine = cc ? lignes.find(l=>c9(l.compte)===cc) : null;
+      const byId = (e.tiersId && e.tiersId===id);          // écriture FEC/collectif rattachée au tiers
+      if(!auxLine && !byId) return;
+      /* ligne de tiers (TTC) : compte auxiliaire si présent, sinon collectif 401/411 */
+      const tLine = auxLine || (byId ? lignes.find(l=>c9(l.compte).indexOf(coll)===0) : null);
+      if(tLine){ const d=(+tLine.debit||0), cr=(+tLine.credit||0); totalEcr += client ? (d-cr) : (cr-d); }
+      lignes.forEach(l=>{ if(l===tLine) return; const cp=c9(l.compte); const d=(+l.debit||0), cr=(+l.credit||0);
+        if(client){
           if(cp.charAt(0)==='7') htEcr += (cr-d);
           else if(cp.indexOf('4457')===0) tvaEcr += (cr-d);
         } else {
@@ -10935,7 +10942,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v354';
+    b.textContent='YADA · v355';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
