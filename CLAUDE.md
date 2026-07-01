@@ -36,7 +36,21 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Nouveau module PILOTAGE (Impôts IS/IR · Actif/Passif · Agenda & RH) — v364
+## 🟢 Dernière mise à jour — Nouveau module SALARIÉ (fiches, documents, paie/charges, absences, RDV colorés, Équipe imprimable) — v365
+**Quoi :** ajout d'un **module « Salarié »** (section Pilotage, cabinet) à **5 onglets** :
+1. **👥 Salariés** — liste + **fiche complète** : Nom, Prénom, date de naissance, adresse (n° rue, adresse, CP, ville), e-mail, téléphone, **salaire brut & net**, poste, **n° sécurité sociale**, **Cadre / Non cadre**, date d'embauche, type de contrat, **n° CNI/passeport**. Par salarié : **connexion YADA** (identifiant e-mail généré + envoi par `mailto:`), **documents** joignables & téléchargeables (**DPAE**, **contrat**, **carte d'identité**, **carte vitale**, **domiciliation**, **fiches de paie** multiples), **charges patronales détaillées**, **congés déposés** (dates).
+2. **🚫 Absences** — déclaration par salarié, **justifiées / non justifiées**, justificatif joignable & téléchargeable.
+3. **💰 Salaire & charges** — fixer le brut/net par salarié, **charges patronales** (11 cotisations, ~38 %) + **coût employeur**.
+4. **📅 Rendez-vous** — une **couleur attribuée par salarié** (nom+prénom) ; RDV colorés + légende.
+5. **📋 Équipe** (sous-module) — **liste imprimable** : en-tête société (Dénomination, SIRET, adresse complète, Code APE, date) + **titre « LISTE SALARIÉS »** + table (Date d'embauche · Nom Prénom · N° CNI/Passeport · Type de contrat) + **tampon/signature** (nom du président + image de signature).
+
+**Comment :** `PAGES` (+ dispatch `salarie:pageSalarie` sûr) ; `yada-addon164` `PILOTAGE` inclut `salarie` ; **`yada-addon183`** (100% additif) : `pageSalarie()` + onglets, CRUD (`salSave`/`salDel`/`salAbs*`/`salConge*`/`salRdv*`), documents & justificatifs (`fileToData`→dataURL, `dl()` ancre), `chargesPat(brut)`, couleurs `PALETTE`, `genLogin()`, impression (`salEquipeImprimer` → `#print-area`). Données `db.parametres.rh` (persistées par `save()`, IndexedDB v325). `<style id="sal-mod">`.
+
+**Limites :** charges patronales & net = estimations indicatives ; l'accès YADA crée l'identifiant et l'e-mail d'invitation (l'authentification réelle reste la gate simple existante). Validé : `node --check` (176 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (5 onglets rendus ; fiche complète + docs + login YADA + charges + congés ; absence non justifiée ; salaire éditable + coût employeur ; RDV colorés + légende ; Équipe : « LISTE SALARIÉS » + SIRET + président + type de contrat + tampon ; équilibre 34 écritures ✅, 0 pageerror). Badge → **v365**.
+
+---
+
+## 🟢 MAJ précédente — Nouveau module PILOTAGE (Impôts IS/IR · Actif/Passif · Agenda & RH) — v364
 **Quoi :** ajout d'un **module « Pilotage »** (section Pilotage de la barre latérale, espace cabinet) à **3 onglets** :
 1. **📊 Impôts (IS / IR)** — **Impôt sur les sociétés** : base = résultat fiscal (résultat comptable proposé, modifiable), **taux réduit PME 15 % ≤ 42 500 €** puis **25 %** ; **Impôt sur le revenu** : **barème progressif 2024 par parts** (quotient familial), taux moyen affiché.
 2. **🏦 Actif / Passif** — consultation de **tous les comptes de bilan** à la clôture (actif = soldes débiteurs classes 1-5, passif = soldes créditeurs + résultat), totaux + contrôle d'équilibre.

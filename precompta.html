@@ -4130,6 +4130,7 @@ const PAGES=[
   {id:'dash',ico:'◧',sec:'Pilotage',lbl:'Tableau de bord'},
   {id:'societe',ico:'',sec:'Pilotage',lbl:'Sociétés (portefeuille)'},
   {id:'pilotage',ico:'🎯',sec:'Pilotage',lbl:'Pilotage'},
+  {id:'salarie',ico:'🧑',sec:'Pilotage',lbl:'Salarié'},
   {id:'client',ico:'',sec:'Espace Client',lbl:'Espace Client'},
   {id:'tiers',ico:'⊞',sec:'Référentiel',lbl:'TIERS'},
   {id:'facturation',ico:'⤳',sec:'Ventes',lbl:'Client'},
@@ -4180,6 +4181,7 @@ function render(){
   analytique:pageAnalytique, banque:pageBanque, saisiebq:pageSaisieBq, rappro:pageRappro, reglements:pageReglements,
   immos:pageImmos, fraiskm:pageFraisKm,
   pilotage:(typeof pagePilotage==='function'?pagePilotage:function(){return'<div class="mod-wrap"><div class="card"><h2>Pilotage</h2></div></div>';}),
+  salarie:(typeof pageSalarie==='function'?pageSalarie:function(){return'<div class="mod-wrap"><div class="card"><h2>Salarié</h2></div></div>';}),
   dossier:pageDossier, parametrage:pageParametrage, plancomptable:pagePlanComptable, infosociete:pageInfoSociete, coffre:pageCoffre
 })[current]();
   // compta/compteaux et dash/societe fournissent déjà leur propre conteneur plein cadre ; les autres sont enveloppés
@@ -10985,7 +10987,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v364';
+    b.textContent='YADA · v365';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -19696,7 +19698,7 @@ ${lignes}
   function lbl(id){ return LBL[id] || (pget(id)?pget(id).lbl:id); }
   function ico(id){ return (pget(id)&&pget(id).ico)||'•'; }
 
-  var PILOTAGE=['dash','societe','pilotage','client'];
+  var PILOTAGE=['dash','societe','pilotage','salarie','client'];
   var MODULES=[
     {key:'m-compta', nom:'Comptabilité', ico:'▦', subs:['compta','journal','editions','fec','reglements','analytique','plancomptable','ia']},
     {key:'m-fourn', nom:'Fournisseurs', ico:'⎙', page:'achats'},
@@ -21032,6 +21034,240 @@ ${lignes}
     +'.pil-up{cursor:pointer;color:#5ab0ff;font-size:13px;text-decoration:underline}'
     +'.pil-note{opacity:.65;font-size:12px}'
     +'@media(max-width:820px){.pil-grid6,.pil-grid5{grid-template-columns:1fr}}';
+  document.head.appendChild(st);
+})();
+</script>
+
+<script id="yada-addon183">
+/* ============================================================
+   MODULE SALARIÉ — fiches complètes, documents, salaires & charges
+   patronales, absences, rendez-vous colorés par salarié, accès YADA,
+   et sous-module ÉQUIPE (liste imprimable avec en-tête société + tampon).
+   100% additif. Données dans db.parametres.rh (persistées par save()).
+   ============================================================ */
+(function(){
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function money(v){ return (typeof eur==='function')?eur(v):((+v||0).toFixed(2)+' €'); }
+  function jd(d){ return (d&&typeof frDate==='function')?frDate(d):(d||''); }
+  function RH(){ db.parametres=db.parametres||{}; var r=db.parametres.rh=db.parametres.rh||{}; r.salaries=r.salaries||[]; r.rdv=r.rdv||[]; return r; }
+  function slug(x){ return String(x||'').toLowerCase().normalize('NFD').replace(/[^a-z0-9]/g,''); }
+  function genLogin(s){ var b=(slug(s.prenom)+'.'+slug(s.nom)).replace(/^\.+|\.+$/g,'')||'salarie'; var dom=(db.societe&&db.societe.email&&String(db.societe.email).split('@')[1])||'yada.app'; return b+'@'+dom; }
+  var PALETTE=['#1e90ff','#e0567a','#2fae66','#f0a020','#9a6cff','#20b8c8','#e0682a','#4c7fe0','#c84fb0','#6ab04c'];
+  function couleur(s,i){ return s.couleur||PALETTE[i%PALETTE.length]; }
+  var CHG=[['Assurance maladie',0.07],['Assurance vieillesse plafonnée',0.0855],['Assurance vieillesse déplafonnée',0.019],['Allocations familiales',0.0345],['Assurance chômage',0.0405],['Retraite complémentaire (Agirc-Arrco)',0.0601],['Contribution équilibre général',0.0129],['Accident du travail',0.02],['FNAL',0.005],['Contribution solidarité autonomie',0.003],['Formation professionnelle',0.01]];
+  function chargesPat(brut){ brut=+brut||0; var det=CHG.map(function(l){ return {lib:l[0],taux:l[1],montant:r2(brut*l[1])}; });
+    var total=r2(det.reduce(function(a,x){return a+x.montant;},0)); return {det:det,total:total,cout:r2(brut+total)}; }
+  function byId(id){ return RH().salaries.find(function(x){return x.id===id;}); }
+  function fileToData(input,cb){ var f=input&&input.files&&input.files[0]; if(!f)return; var r=new FileReader(); r.onload=function(){ cb({name:f.name,type:f.type||'',data:r.result}); }; r.readAsDataURL(f); }
+  function dl(doc){ if(!doc||!doc.data)return; try{ var a=document.createElement('a'); a.href=doc.data; a.download=doc.name||'fichier'; document.body.appendChild(a); a.click(); a.remove(); }catch(e){} }
+
+  /* ---------- page + onglets ---------- */
+  window.salSetTab=function(t){ window.salTab=t; window.salSel=null; if(typeof render==='function')render(); };
+  window.pageSalarie=function(){
+    var tab=window.salTab||'liste';
+    var TABS=[['liste','👥 Salariés'],['absences','🚫 Absences'],['salaire','💰 Salaire & charges'],['rdv','📅 Rendez-vous'],['equipe','📋 Équipe']];
+    var bar='<div class="pil-tabs">'+TABS.map(function(t){ return '<button class="pil-tab'+(t[0]===tab?' on':'')+'" onclick="salSetTab(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
+    var body = tab==='absences'?salAbsences():tab==='salaire'?salSalaire():tab==='rdv'?salRdv():tab==='equipe'?salEquipe():salListe();
+    var h=(typeof head==='function')?head('Salarié','Fiches salariés, documents, salaires & charges patronales, absences, rendez-vous et liste d\'équipe.'):'<div class="page-head"><h1>Salarié</h1></div>';
+    return h+bar+body;
+  };
+
+  /* ---------- onglet Salariés ---------- */
+  function salListe(){
+    var r=RH();
+    var rows=r.salaries.map(function(s,i){ return '<tr><td><span class="sal-dot" style="background:'+couleur(s,i)+'"></span> <b>'+esc((s.nom||'')+' '+(s.prenom||''))+'</b></td><td>'+esc(s.poste||'')+'</td><td>'+esc(s.statut||'')+'</td><td class="r">'+money(s.brut)+'</td><td class="r">'+money(s.net)+'</td><td class="r"><button class="btn btn-ghost btn-sm" onclick="salEdit(\''+s.id+'\')">✎ Fiche</button> <button class="btn btn-ghost btn-sm" onclick="salDel(\''+s.id+'\')">🗑</button></td></tr>'; }).join('')||'<tr><td colspan="6" class="empty">Aucun salarié enregistré.</td></tr>';
+    return '<div class="card"><h2>👥 Liste des salariés</h2><div class="sub">Cliquez sur « Fiche » pour toutes les informations, documents et l\'accès YADA.</div>'
+      +'<div style="margin:6px 0 10px"><button class="btn btn-pri btn-sm" onclick="salEdit(\'new\')">➕ Nouveau salarié</button></div>'
+      +'<table class="pil-t"><thead><tr><th>Nom Prénom</th><th>Poste</th><th>Statut</th><th class="r">Brut</th><th class="r">Net</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+      +(window.salSel?salFiche(window.salSel):'');
+  }
+  window.salEdit=function(id){ window.salSel=id; if(typeof render==='function')render(); setTimeout(function(){ var el=document.getElementById('sal-fiche'); if(el) el.scrollIntoView({block:'start',behavior:'smooth'}); },40); };
+  window.salDel=function(id){ yadaConfirm('Supprimer ce salarié et sa fiche ?',function(){ var r=RH(); r.salaries=r.salaries.filter(function(x){return x.id!==id;}); if(window.salSel===id)window.salSel=null; if(typeof save==='function')save(); if(typeof render==='function')render(); }); };
+  function ipt(id,label,val,type){ return '<label>'+esc(label)+'<input id="'+id+'" type="'+(type||'text')+'" value="'+(val==null?'':esc(val))+'"></label>'; }
+  function salFiche(id){
+    var isNew=id==='new'; var s=isNew?{}:byId(id); if(!s) return '';
+    var statut=s.statut||'Non cadre';
+    var CT=['CDI','CDD','Intérim','Apprentissage','Stage','Temps partiel'];
+    var form='<div class="card" id="sal-fiche"><h2>'+(isNew?'➕ Nouveau salarié':('✎ Fiche — '+esc((s.nom||'')+' '+(s.prenom||''))))+'</h2>'
+      +'<div class="sal-form">'
+      +ipt('sf-nom','Nom',s.nom)+ipt('sf-prenom','Prénom',s.prenom)+ipt('sf-naissance','Date de naissance',s.naissance,'date')
+      +ipt('sf-rueNum','N° de rue',s.rueNum)+ipt('sf-adresse','Adresse',s.adresse)+ipt('sf-cp','Code postal',s.cp)+ipt('sf-ville','Ville',s.ville)
+      +ipt('sf-email','E-mail',s.email,'email')+ipt('sf-tel','Téléphone',s.tel)
+      +ipt('sf-poste','Poste occupé',s.poste)+ipt('sf-secu','N° sécurité sociale',s.secu)
+      +'<label>Statut<select id="sf-statut"><option'+(statut==='Non cadre'?' selected':'')+'>Non cadre</option><option'+(statut==='Cadre'?' selected':'')+'>Cadre</option></select></label>'
+      +ipt('sf-embauche','Date d\'embauche',s.dateEmbauche,'date')
+      +'<label>Type de contrat<select id="sf-contrat">'+CT.map(function(x){return '<option'+((s.contratType||'CDI')===x?' selected':'')+'>'+x+'</option>';}).join('')+'</select></label>'
+      +ipt('sf-idnum','N° carte d\'identité / passeport',s.idNum)
+      +ipt('sf-brut','Salaire brut (€)',s.brut,'number')+ipt('sf-net','Salaire net (€)',s.net,'number')
+      +'</div>'
+      +'<div style="margin-top:10px"><button class="btn btn-pri btn-sm" onclick="salSave(\''+id+'\')">💾 Enregistrer</button> <button class="btn btn-ghost btn-sm" onclick="salSel=null;render()">Fermer</button></div>';
+    if(!isNew){ form += salYada(s)+salDocs(s)+salChargesMini(s)+salCongesMini(s); }
+    return form+'</div>';
+  }
+  window.salSave=function(id){
+    var g=function(k){var el=document.getElementById(k);return el?String(el.value).trim():'';};
+    var nom=g('sf-nom'); if(!nom){ if(typeof toast==='function')toast('Le nom est requis'); return; }
+    var r=RH(); var isNew=id==='new'; var s=isNew?{id:uid(),docs:{fichesPaie:[]},conges:[],absences:[]}:byId(id); if(!s)return;
+    s.nom=nom; s.prenom=g('sf-prenom'); s.naissance=g('sf-naissance');
+    s.rueNum=g('sf-rueNum'); s.adresse=g('sf-adresse'); s.cp=g('sf-cp'); s.ville=g('sf-ville');
+    s.email=g('sf-email'); s.tel=g('sf-tel'); s.poste=g('sf-poste'); s.secu=g('sf-secu');
+    var st=document.getElementById('sf-statut'); s.statut=st?st.value:'Non cadre';
+    s.dateEmbauche=g('sf-embauche'); var ct=document.getElementById('sf-contrat'); s.contratType=ct?ct.value:'CDI'; s.idNum=g('sf-idnum');
+    s.brut=+g('sf-brut')||0; s.net=+g('sf-net')|| (s.brut?r2(s.brut*0.78):0);
+    s.docs=s.docs||{fichesPaie:[]}; s.docs.fichesPaie=s.docs.fichesPaie||[]; s.conges=s.conges||[]; s.absences=s.absences||[];
+    if(!s.couleur) s.couleur=PALETTE[r.salaries.length%PALETTE.length];
+    if(!s.yadaLogin) s.yadaLogin=genLogin(s);
+    if(isNew) r.salaries.push(s);
+    if(typeof save==='function')save(); if(typeof toast==='function')toast('Salarié enregistré — accès YADA : '+s.yadaLogin); window.salSel=s.id; if(typeof render==='function')render();
+  };
+  function salYada(s){ return '<div class="sal-sub"><h3>🔑 Connexion YADA</h3><div class="sub">Un identifiant est créé pour ce salarié afin de lui donner un accès YADA (traiter les dossiers).</div>'
+    +'<div class="sal-login">Identifiant : <b>'+esc(s.yadaLogin||'')+'</b> <button class="btn btn-ghost btn-sm" onclick="salEnvoyerAcces(\''+s.id+'\')">✉ Envoyer l\'accès par e-mail</button></div></div>'; }
+  window.salEnvoyerAcces=function(id){ var s=byId(id); if(!s)return; if(!s.email){ if(typeof toast==='function')toast('Renseignez d\'abord l\'e-mail du salarié'); return; }
+    var suj=encodeURIComponent('Votre accès YADA'); var corps=encodeURIComponent('Bonjour '+(s.prenom||'')+' '+(s.nom||'')+',\n\nVotre connexion YADA a été créée.\nIdentifiant : '+(s.yadaLogin||'')+'\n\nVous pourrez traiter vos dossiers depuis l\'Espace Client YADA.\n\nCordialement.');
+    try{ window.location.href='mailto:'+encodeURIComponent(s.email)+'?subject='+suj+'&body='+corps; }catch(e){} };
+  function docRow(s,key,label){ var d=s.docs&&s.docs[key];
+    var right=d?('<button class="btn btn-ghost btn-sm" onclick="salDocDl(\''+s.id+'\',\''+key+'\')">⤓ '+esc(d.name||'fichier')+'</button> <button class="btn btn-ghost btn-sm" title="Retirer" onclick="salDocDel(\''+s.id+'\',\''+key+'\')">✕</button>')
+      :('<label class="pil-up">📎 Joindre<input type="file" style="display:none" onchange="salDocUp(\''+s.id+'\',\''+key+'\',this)"></label>');
+    return '<div class="sal-doc-row"><span>'+esc(label)+'</span><span>'+right+'</span></div>'; }
+  function salDocs(s){
+    var docs=[['dpae','Déclaration d\'embauche (DPAE)'],['contrat','Contrat de travail'],['cni','Carte d\'identité'],['vitale','Carte vitale'],['domiciliation','Domiciliation (RIB / justif. domicile)']];
+    var fp=(s.docs&&s.docs.fichesPaie)||[];
+    var fpRows=fp.map(function(x,i){ return '<div class="sal-doc-row"><span>🧾 '+esc(x.name||('Fiche '+(i+1)))+'</span><span><button class="btn btn-ghost btn-sm" onclick="salFicheDl(\''+s.id+'\','+i+')">⤓</button> <button class="btn btn-ghost btn-sm" onclick="salFicheDel(\''+s.id+'\','+i+')">✕</button></span></div>'; }).join('')||'<div class="sub">Aucune fiche de paie déposée.</div>';
+    return '<div class="sal-sub"><h3>📁 Documents du salarié</h3>'+docs.map(function(d){return docRow(s,d[0],d[1]);}).join('')
+      +'<h3 style="margin-top:12px">🧾 Fiches de paie (téléchargeables)</h3>'+fpRows
+      +'<label class="pil-up" style="display:inline-block;margin-top:6px">📎 Ajouter une fiche de paie<input type="file" style="display:none" onchange="salFicheUp(\''+s.id+'\',this)"></label></div>';
+  }
+  window.salDocUp=function(id,key,input){ var s=byId(id); if(!s)return; s.docs=s.docs||{fichesPaie:[]}; fileToData(input,function(d){ s.docs[key]=d; if(typeof save==='function')save(); if(typeof toast==='function')toast('Document joint : '+d.name); if(typeof render==='function')render(); }); };
+  window.salDocDl=function(id,key){ var s=byId(id); if(s&&s.docs) dl(s.docs[key]); };
+  window.salDocDel=function(id,key){ var s=byId(id); if(s&&s.docs){ s.docs[key]=null; if(typeof save==='function')save(); if(typeof render==='function')render(); } };
+  window.salFicheUp=function(id,input){ var s=byId(id); if(!s)return; s.docs=s.docs||{fichesPaie:[]}; s.docs.fichesPaie=s.docs.fichesPaie||[]; fileToData(input,function(d){ s.docs.fichesPaie.push(d); if(typeof save==='function')save(); if(typeof toast==='function')toast('Fiche de paie ajoutée'); if(typeof render==='function')render(); }); };
+  window.salFicheDl=function(id,i){ var s=byId(id); if(s&&s.docs&&s.docs.fichesPaie) dl(s.docs.fichesPaie[i]); };
+  window.salFicheDel=function(id,i){ var s=byId(id); if(s&&s.docs&&s.docs.fichesPaie){ s.docs.fichesPaie.splice(i,1); if(typeof save==='function')save(); if(typeof render==='function')render(); } };
+  function salChargesMini(s){ var C=chargesPat(s.brut);
+    var rows=C.det.map(function(x){ return '<tr><td>'+esc(x.lib)+'</td><td class="r">'+(x.taux*100).toFixed(2)+' %</td><td class="r">'+money(x.montant)+'</td></tr>'; }).join('');
+    return '<div class="sal-sub"><h3>💰 Charges patronales à payer</h3><div class="sub">Estimation sur le salaire brut ('+money(s.brut)+').</div>'
+      +'<table class="pil-t"><thead><tr><th>Cotisation</th><th class="r">Taux</th><th class="r">Montant</th></tr></thead><tbody>'+rows
+      +'<tr class="pil-tot"><td><b>Total charges patronales</b></td><td></td><td class="r"><b>'+money(C.total)+'</b></td></tr>'
+      +'<tr><td>Coût total employeur</td><td></td><td class="r">'+money(C.cout)+'</td></tr></tbody></table></div>'; }
+  function salCongesMini(s){ var cs=(s.conges||[]).slice().sort(function(a,b){return (a.debut<b.debut)?1:-1;});
+    var rows=cs.map(function(c){ return '<tr><td>'+esc(c.type||'Congés payés')+'</td><td>'+jd(c.debut)+'</td><td>'+jd(c.fin)+'</td><td class="r"><button class="btn btn-ghost btn-sm" onclick="salCongeDel(\''+s.id+'\',\''+c.id+'\')">🗑</button></td></tr>'; }).join('')||'<tr><td colspan="4" class="empty">Aucun congé déposé.</td></tr>';
+    return '<div class="sal-sub"><h3>🏖 Congés déposés</h3>'
+      +'<div class="pil-grid5"><select id="cgn-type"><option>Congés payés</option><option>RTT</option><option>Sans solde</option><option>Maladie</option><option>Maternité/paternité</option></select><input id="cgn-debut" type="date"><input id="cgn-fin" type="date"><button class="btn btn-pri btn-sm" onclick="salCongeAdd(\''+s.id+'\')">+ Déposer</button></div>'
+      +'<table class="pil-t" style="margin-top:8px"><thead><tr><th>Type</th><th>Début</th><th>Fin</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'; }
+  window.salCongeAdd=function(id){ var s=byId(id); if(!s)return; var g=function(k){var el=document.getElementById(k);return el?el.value:'';};
+    var deb=g('cgn-debut'); if(!deb){ if(typeof toast==='function')toast('Date de début requise'); return; }
+    s.conges=s.conges||[]; s.conges.push({id:uid(),type:g('cgn-type'),debut:deb,fin:g('cgn-fin')||deb}); if(typeof save==='function')save(); if(typeof render==='function')render(); };
+  window.salCongeDel=function(id,cid){ var s=byId(id); if(!s)return; s.conges=(s.conges||[]).filter(function(x){return x.id!==cid;}); if(typeof save==='function')save(); if(typeof render==='function')render(); };
+
+  /* ---------- onglet Absences ---------- */
+  function salOptions(){ return RH().salaries.map(function(s){ return '<option value="'+s.id+'">'+esc((s.nom||'')+' '+(s.prenom||''))+'</option>'; }).join(''); }
+  function salNom(id){ var s=byId(id); return s?((s.nom||'')+' '+(s.prenom||'')):'—'; }
+  function salAbsences(){
+    var r=RH(); var all=[];
+    r.salaries.forEach(function(s){ (s.absences||[]).forEach(function(a){ all.push({s:s,a:a}); }); });
+    all.sort(function(x,y){ return (x.a.debut<y.a.debut)?1:-1; });
+    var rows=all.map(function(o){ var s=o.s,a=o.a;
+      var jf=a.justif?('<button class="btn btn-ghost btn-sm" onclick="salAbsJustDl(\''+s.id+'\',\''+a.id+'\')">⤓ '+esc(a.justif.name||'justificatif')+'</button> <button class="btn btn-ghost btn-sm" onclick="salAbsJustDel(\''+s.id+'\',\''+a.id+'\')">✕</button>')
+        :('<label class="pil-up">📎 Joindre<input type="file" style="display:none" onchange="salAbsJustUp(\''+s.id+'\',\''+a.id+'\',this)"></label>');
+      return '<tr class="'+(a.justifie?'':'pil-nonjust')+'"><td>'+esc(salNom(s.id))+'</td><td>'+jd(a.debut)+'</td><td>'+jd(a.fin)+'</td><td>'+esc(a.motif||'')+'</td><td>'+(a.justifie?'<span class="pil-badge ok">Justifiée</span>':'<span class="pil-badge ko">Non justifiée</span>')+'</td><td>'+jf+'</td><td class="r"><button class="btn btn-ghost btn-sm" onclick="salAbsDel(\''+s.id+'\',\''+a.id+'\')">🗑</button></td></tr>';
+    }).join('')||'<tr><td colspan="7" class="empty">Aucune absence déclarée.</td></tr>';
+    return '<div class="card"><h2>🚫 Déclarer une absence</h2><div class="sub">Absences justifiées / non justifiées ; justificatif joignable & téléchargeable.</div>'
+      +'<div class="pil-grid5"><select id="ab-sal">'+salOptions()+'</select><input id="ab-debut" type="date"><input id="ab-fin" type="date"><input id="ab-motif" placeholder="Motif"><label class="pil-chk"><input type="checkbox" id="ab-just"> Justifiée</label><button class="btn btn-pri btn-sm" onclick="salAbsAdd()">+ Déclarer</button></div>'
+      +'<table class="pil-t" style="margin-top:10px"><thead><tr><th>Salarié</th><th>Début</th><th>Fin</th><th>Motif</th><th>Statut</th><th>Justificatif</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+  window.salAbsAdd=function(){ var g=function(k){var el=document.getElementById(k);return el?el.value:'';};
+    var sid=g('ab-sal'); if(!sid){ if(typeof toast==='function')toast('Ajoutez d\'abord un salarié'); return; } var deb=g('ab-debut'); if(!deb){ if(typeof toast==='function')toast('Date de début requise'); return; }
+    var s=byId(sid); s.absences=s.absences||[]; var chk=document.getElementById('ab-just');
+    s.absences.push({id:uid(),debut:deb,fin:g('ab-fin')||deb,motif:g('ab-motif'),justifie:!!(chk&&chk.checked)}); if(typeof save==='function')save(); if(typeof toast==='function')toast('Absence déclarée'); if(typeof render==='function')render(); };
+  window.salAbsDel=function(sid,aid){ var s=byId(sid); if(!s)return; s.absences=(s.absences||[]).filter(function(x){return x.id!==aid;}); if(typeof save==='function')save(); if(typeof render==='function')render(); };
+  window.salAbsJustUp=function(sid,aid,input){ var s=byId(sid); if(!s)return; var a=(s.absences||[]).find(function(x){return x.id===aid;}); if(!a)return; fileToData(input,function(d){ a.justif=d; a.justifie=true; if(typeof save==='function')save(); if(typeof toast==='function')toast('Justificatif joint'); if(typeof render==='function')render(); }); };
+  window.salAbsJustDl=function(sid,aid){ var s=byId(sid); if(!s)return; var a=(s.absences||[]).find(function(x){return x.id===aid;}); if(a) dl(a.justif); };
+  window.salAbsJustDel=function(sid,aid){ var s=byId(sid); if(!s)return; var a=(s.absences||[]).find(function(x){return x.id===aid;}); if(a){ a.justif=null; if(typeof save==='function')save(); if(typeof render==='function')render(); } };
+
+  /* ---------- onglet Salaire & charges ---------- */
+  function salSalaire(){
+    var r=RH();
+    var rows=r.salaries.map(function(s,i){ var C=chargesPat(s.brut);
+      return '<tr><td><span class="sal-dot" style="background:'+couleur(s,i)+'"></span> '+esc(salNom(s.id))+'</td>'
+        +'<td class="r"><input type="number" class="sal-inp" value="'+(s.brut||0)+'" onchange="salSetSalaire(\''+s.id+'\',\'brut\',this.value)"></td>'
+        +'<td class="r"><input type="number" class="sal-inp" value="'+(s.net||0)+'" onchange="salSetSalaire(\''+s.id+'\',\'net\',this.value)"></td>'
+        +'<td class="r">'+money(C.total)+'</td><td class="r">'+money(C.cout)+'</td></tr>';
+    }).join('')||'<tr><td colspan="5" class="empty">Aucun salarié.</td></tr>';
+    return '<div class="card"><h2>💰 Fixer le salaire &amp; charges patronales</h2><div class="sub">Saisissez le brut / net ; les charges patronales et le coût employeur sont calculés (estimation indicative).</div>'
+      +'<table class="pil-t"><thead><tr><th>Salarié</th><th class="r">Brut (€)</th><th class="r">Net (€)</th><th class="r">Charges patronales</th><th class="r">Coût employeur</th></tr></thead><tbody>'+rows+'</tbody></table>'
+      +'<div class="sub" style="margin-top:8px">Détail des cotisations disponible dans la fiche de chaque salarié.</div></div>';
+  }
+  window.salSetSalaire=function(id,k,v){ var s=byId(id); if(!s)return; s[k]=+v||0; if(k==='brut'&&!s.net){ s.net=r2(s.brut*0.78); } if(typeof save==='function')save(); if(typeof render==='function')render(); };
+
+  /* ---------- onglet Rendez-vous ---------- */
+  function salRdv(){
+    var r=RH();
+    var legend=r.salaries.map(function(s,i){ return '<span class="sal-leg"><span class="sal-dot" style="background:'+couleur(s,i)+'"></span>'+esc(salNom(s.id))+'</span>'; }).join('')||'<span class="sub">Aucun salarié</span>';
+    var list=r.rdv.slice().sort(function(a,b){ return ((a.date+ (a.heure||''))<(b.date+(b.heure||'')))?-1:1; });
+    var rows=list.map(function(v){ var s=byId(v.salId); var col=s?couleur(s,r.salaries.indexOf(s)):'#888';
+      return '<tr style="border-left:5px solid '+col+'"><td>'+jd(v.date)+(v.heure?(' '+esc(v.heure)):'')+'</td><td><span class="sal-dot" style="background:'+col+'"></span> '+esc(s?salNom(s.id):'—')+'</td><td>'+esc(v.motif||'')+'</td><td class="r"><button class="btn btn-ghost btn-sm" onclick="salRdvDel(\''+v.id+'\')">🗑</button></td></tr>';
+    }).join('')||'<tr><td colspan="4" class="empty">Aucun rendez-vous.</td></tr>';
+    return '<div class="card"><h2>📅 Rendez-vous</h2><div class="sub">Chaque salarié reconnaît ses rendez-vous grâce à sa couleur (nom &amp; prénom).</div>'
+      +'<div class="sal-legend">'+legend+'</div>'
+      +'<div class="pil-grid5"><select id="rdv-sal">'+salOptions()+'</select><input id="rdv-date" type="date"><input id="rdv-heure" type="time"><input id="rdv-motif" placeholder="Motif du rendez-vous"><button class="btn btn-pri btn-sm" onclick="salRdvAdd()">+ Placer le rendez-vous</button></div>'
+      +'<table class="pil-t" style="margin-top:10px"><thead><tr><th>Date / heure</th><th>Salarié</th><th>Motif</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+  window.salRdvAdd=function(){ var g=function(k){var el=document.getElementById(k);return el?el.value:'';};
+    var sid=g('rdv-sal'); if(!sid){ if(typeof toast==='function')toast('Ajoutez d\'abord un salarié'); return; } var d=g('rdv-date'); if(!d){ if(typeof toast==='function')toast('Date requise'); return; }
+    RH().rdv.push({id:uid(),salId:sid,date:d,heure:g('rdv-heure'),motif:g('rdv-motif')}); if(typeof save==='function')save(); if(typeof toast==='function')toast('Rendez-vous placé'); if(typeof render==='function')render(); };
+  window.salRdvDel=function(id){ var r=RH(); r.rdv=r.rdv.filter(function(x){return x.id!==id;}); if(typeof save==='function')save(); if(typeof render==='function')render(); };
+
+  /* ---------- sous-module ÉQUIPE (liste imprimable) ---------- */
+  function salEquipeDoc(){
+    var r=RH(); var S=db.societe||{};
+    var adr=[S.adresse,((S.cp||'')+' '+(S.ville||'')).trim()].filter(Boolean).join(' · ');
+    var rows=r.salaries.map(function(s){ return '<tr><td>'+jd(s.dateEmbauche)+'</td><td>'+esc((s.nom||'')+' '+(s.prenom||''))+'</td><td>'+esc(s.idNum||'')+'</td><td>'+esc(s.contratType||'')+'</td></tr>'; }).join('')||'<tr><td colspan="4" style="text-align:center;padding:12px">Aucun salarié</td></tr>';
+    var sig=r.signature?'<img src="'+r.signature+'" alt="signature" style="max-height:70px;max-width:200px">':'';
+    return '<div class="doc-page sal-doc-page"><div class="sal-doc-soc">'
+      +'<div class="sal-doc-den">'+esc(S.raison||S.dossierNom||'')+'</div>'
+      +'<div>SIRET : '+esc(S.siret||'')+'</div><div>'+esc(adr)+'</div><div>Code APE : '+esc(S.codeAPE||S.ape||'')+'</div>'
+      +'<div>Date : '+jd(typeof todayStr==='function'?todayStr():'')+'</div></div>'
+      +'<div class="sal-doc-title">LISTE SALARIÉS</div>'
+      +'<table class="sal-doc-t"><thead><tr><th>Date d\'embauche</th><th>Nom Prénom</th><th>N° carte d\'identité / passeport</th><th>Type de contrat</th></tr></thead><tbody>'+rows+'</tbody></table>'
+      +'<div class="sal-doc-stamp"><div class="sal-doc-pres">Le Président : <b>'+esc(r.presidentNom||S.dirigeant||'')+'</b></div><div class="sal-doc-sig">'+sig+'</div><div class="sal-doc-tampon">Cachet &amp; signature</div></div>'
+      +'</div>';
+  }
+  function salEquipe(){
+    var r=RH(); var S=db.societe||{};
+    return '<div class="card"><h2>📋 Équipe — liste des salariés (document)</h2><div class="sub">Génère la liste officielle avec l\'en-tête de la société, un tampon et la signature du président.</div>'
+      +'<div class="pil-grid5"><label>Nom &amp; prénom du président<input id="eq-pres" value="'+esc(r.presidentNom||S.dirigeant||'')+'" onchange="salEquipeSet(\'presidentNom\',this.value)"></label>'
+      +'<label class="pil-up" style="align-self:end">🖊 Signature (image)<input type="file" accept="image/*" style="display:none" onchange="salSigUp(this)"></label>'
+      +(r.signature?'<button class="btn btn-ghost btn-sm" style="align-self:end" onclick="salSigDel()">Retirer la signature</button>':'')
+      +'<button class="btn btn-pri btn-sm" style="align-self:end" onclick="salEquipeImprimer()">🖨 Imprimer / PDF</button></div>'
+      +'<div class="sal-doc-wrap">'+salEquipeDoc()+'</div></div>';
+  }
+  window.salEquipeSet=function(k,v){ RH()[k]=v; if(typeof save==='function')save(); if(typeof render==='function')render(); };
+  window.salSigUp=function(input){ fileToData(input,function(d){ RH().signature=d.data; if(typeof save==='function')save(); if(typeof toast==='function')toast('Signature ajoutée'); if(typeof render==='function')render(); }); };
+  window.salSigDel=function(){ RH().signature=null; if(typeof save==='function')save(); if(typeof render==='function')render(); };
+  window.salEquipeImprimer=function(){ var pa=document.getElementById('print-area'); if(!pa){ pa=document.createElement('div'); pa.id='print-area'; document.body.appendChild(pa); } pa.innerHTML='<div class="doc">'+salEquipeDoc()+'</div>'; try{ window.print(); }catch(e){} };
+
+  /* ---------- style ---------- */
+  var st=document.createElement('style'); st.id='sal-mod'; st.textContent=
+    '.sal-form{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}'
+    +'.sal-form label{display:flex;flex-direction:column;gap:4px;font-size:13px}'
+    +'.sal-form input,.sal-form select{padding:8px 10px;border-radius:8px;box-sizing:border-box}'
+    +'.sal-sub{margin-top:14px;border-top:1px solid rgba(30,144,255,.18);padding-top:10px}'
+    +'.sal-sub h3{margin:0 0 6px;font-size:14px}'
+    +'.sal-login{margin-top:6px}'
+    +'.sal-doc-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px dashed rgba(30,144,255,.14)}'
+    +'.sal-dot{display:inline-block;width:11px;height:11px;border-radius:50%;vertical-align:middle;margin-right:2px}'
+    +'.sal-inp{width:110px;padding:6px 8px;border-radius:7px;text-align:right}'
+    +'.sal-legend{display:flex;flex-wrap:wrap;gap:12px;margin:6px 0 12px}.sal-leg{font-size:12.5px;display:inline-flex;align-items:center;gap:5px}'
+    +'.sal-doc-wrap{margin-top:12px;overflow:auto}'
+    +'.sal-doc-page{background:#fff;color:#111418;max-width:800px;margin:0 auto;padding:26px 30px;border:1px solid #ccc;border-radius:4px}'
+    +'.sal-doc-page *{color:#111418}'
+    +'.sal-doc-soc{font-size:13px;line-height:1.5}.sal-doc-den{font-size:17px;font-weight:700}'
+    +'.sal-doc-title{text-align:center;font-size:19px;font-weight:700;letter-spacing:1px;margin:18px 0;text-decoration:underline}'
+    +'.sal-doc-t{width:100%;border-collapse:collapse;font-size:13px}.sal-doc-t th,.sal-doc-t td{border:1px solid #333;padding:7px 9px;text-align:left}'
+    +'.sal-doc-t th{background:#eef2f7}'
+    +'.sal-doc-stamp{margin-top:40px;display:flex;flex-direction:column;align-items:flex-end;gap:6px;text-align:right}'
+    +'.sal-doc-tampon{border:1px dashed #888;border-radius:8px;padding:16px 30px;color:#888;font-size:12px}'
+    +'@media(max-width:820px){.sal-form{grid-template-columns:1fr}}';
   document.head.appendChild(st);
 })();
 </script>
