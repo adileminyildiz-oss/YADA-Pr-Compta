@@ -3494,6 +3494,20 @@ function nextNum(pref){ db.seq[pref]=(db.seq[pref]||0)+1; return pref+'-'+String
 function numeroUnique(n){ return !db.factures.some(f=>f.numero===n) && !db.docs.some(d=>d.numero===n); }
 function nextNumUnique(pref){ let n; do{ n=nextNum(pref); } while(!numeroUnique(n)); return n; }
 function tiersLettres(nom){ return (nom||'').toUpperCase().normalize('NFD').replace(/[^A-Z]/g,'').slice(0,4); }
+/* Dénomination « de base » d'un tiers : retire les références de facture / numéros de pièce
+   (mot-clé + numéro, codes collés type F2024001, dates, n° isolés en fin) afin qu'un même
+   client (ex. « HABITAT CONCEPT ») regroupe TOUTES ses factures sur UN seul compte, au lieu
+   d'un compte par numéro de facture. Les nombres internes (« Garage des 3 Vallées ») sont conservés. */
+function nomBaseTiers(s){
+  var x=String(s||'').trim(); if(!x) return x; var o=x;
+  x=x.replace(/\b(?:factures?|fact|fac|avoirs?|invoices?|inv|pi[eè]ces?|pce|r[eé]f[eé]rences?|ref|bons?(?:\s+de\s+livraison)?|bl|commandes?|cde|devis|num[eé]ros?|num|no|n[°ºo])\b\s*[:°#nº.\-]*\s*\d[\w\/.\-]*/ig,' ');
+  x=x.replace(/#\s*\d[\w\/.\-]*/g,' ');
+  x=x.replace(/\b\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}\b/g,' ');
+  var prev; do{ prev=x; x=x.replace(/[\s\-–—_:;,.\/]*\b[A-Z]{0,3}\d{2,}[A-Z0-9\/.\-]*\s*$/i,'').trim(); } while(x!==prev && x);
+  x=x.replace(/[\s\-–—_:;,.\/]+\d+\s*$/,'').trim();
+  x=x.replace(/\s{2,}/g,' ').replace(/[\s\-–—:;,.\/]+$/,'').replace(/^[\s\-–—:;,.\/]+/,'').trim();
+  return x || o;
+}
 function genAux(type, nom){ const pref=type==='client'?'411':'401'; const head=pref+(tiersLettres(nom)||'XXXX');
   const existe=code=>(db.tiers||[]).some(t=>c9(t.compteAux||'')===code);
   let cand=c9(head); if(!existe(cand)) return cand;
@@ -6888,28 +6902,30 @@ function integrerFEC(data, exoD, exoF){
     const estClient=String(compte).startsWith('411');
     const estFourn=String(compte).startsWith('401');
     if(!estClient && !estFourn) return null;
-    const cleAux=compaux||(''); const nom=(compauxlib||libEcr||(estClient?'Client':'Fournisseur')).trim();
-    const pref=estClient?'411':'401';
-    /* Normalise le CompAuxNum du FEC en un compte auxiliaire VALIDE (401XXXX / 411XXXX) :
-       déjà un compte 401/411 → conservé ; code court (« GASO », « DUPONT ») → préfixé du collectif ;
-       absent → généré depuis le nom. Évite les comptes mal formés (ex. « GASO00000 ») qui
-       cassaient la ventilation par tiers — fournisseurs ET clients. */
-    const auxDepuisFEC = cleAux
-      ? ( c9(cleAux).slice(0,3)===pref ? c9(cleAux) : c9(pref+String(cleAux).toUpperCase().replace(/[^A-Z0-9]/g,'')) )
-      : '';
-    const auxFinal = auxDepuisFEC || genAux(estClient?'client':'fournisseur', nom);
+    const cleAux=compaux||('');
+    const pref=estClient?'411':'401'; const typeT=estClient?'client':'fournisseur';
+    /* Dénomination = identité du tiers, nettoyée du numéro de facture → un même client
+       (« HABITAT CONCEPT ») regroupe TOUTES ses factures sur un SEUL compte. */
+    const nom=nomBaseTiers((compauxlib||libEcr||(estClient?'Client':'Fournisseur')).trim());
+    /* Compte auxiliaire : le CompAuxNum n'est utilisé QUE s'il est déjà un vrai compte 401/411 ;
+       sinon (code court, NUMÉRO DE FACTURE, vide) il est généré depuis la DÉNOMINATION → un seul
+       compte par client (jamais un compte par numéro de facture). */
+    const auxReel = (cleAux && c9(cleAux).slice(0,3)===pref) ? c9(cleAux) : '';
+    const auxFinal = auxReel || genAux(typeT, nom);
     const norm=s=>(s||'').toUpperCase().normalize('NFD').replace(/[^A-Z0-9]/g,'');
-    // 1) par compte auxiliaire
-    if(cleAux && tiersParAux[cleAux]) return tiersParAux[cleAux];
-    // 2) par nom déjà existant (normalisé : évite les doublons « HABITAT CONCEPT » avec variantes)
+    // 1) par compte auxiliaire réel (401/411) fourni par le FEC
+    if(auxReel && tiersParAux[auxReel]) return tiersParAux[auxReel];
+    // 2) par DÉNOMINATION (regroupe toutes les factures d'un même client) — exacte puis ressemblante
     const nn=norm(nom);
-    let t=db.tiers.find(x=> x.type===(estClient?'client':'fournisseur') && norm(x.nom)===nn);
-    if(t){ if(!/^(401|411)/.test(c9(t.compteAux||''))) t.compteAux=auxFinal; if(cleAux) tiersParAux[cleAux]=t; return t; }
+    let t=db.tiers.find(x=> x.type===typeT && norm(x.nom)===nn);
+    if(!t && typeof window!=='undefined' && typeof window.tiersSimilaireNoms==='function')
+      t=db.tiers.find(x=> x.type===typeT && window.tiersSimilaireNoms(x.nom, nom));
+    if(t){ if(!/^(401|411)/.test(c9(t.compteAux||''))) t.compteAux=auxFinal; tiersParAux[c9(t.compteAux)]=t; return t; }
     // 3) création
     t={ id:uid(), type:estClient?'client':'fournisseur', categorie:'societe', nom,
         compteContre:estClient?'706000':'606400', compteTVA:estClient?'44571':'44566', taux:20,
         compteAux:auxFinal, email:'', tel:'', siret:'', adresse:'', importeFEC:true };
-    db.tiers.push(t); if(cleAux) tiersParAux[cleAux]=t; nTiers++;
+    db.tiers.push(t); tiersParAux[c9(auxFinal)]=t; nTiers++;
     return t;
   }
   Object.values(groupes).forEach(grp=>{
@@ -10962,7 +10978,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v358';
+    b.textContent='YADA · v359';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -20628,9 +20644,15 @@ ${lignes}
     (db.tiers||[]).forEach(function(t){ byId[t.id]=t; if(t.type==='fournisseur'||t.type==='client') nomIdx[t.type+'|'+norm(t.nom)]=t; });
     function auxDe(t){ if(!/^(401|411)/.test(c9(t.compteAux||''))){ try{ t.compteAux=genAux(t.type,t.nom); }catch(_e){} } return c9(t.compteAux||''); }
     function resoudre(type, nomCand){
-      var nom=nettoie(nomCand); if(!exploitable(nom)) return null;
+      var nom=(typeof nomBaseTiers==='function') ? nomBaseTiers(nettoie(nomCand)) : nettoie(nomCand);
+      if(!exploitable(nom)) return null;
       var key=type+'|'+norm(nom);
       if(nomIdx[key]) return nomIdx[key];
+      /* même client sous une variante (ex. « HABITAT CONCEPT » vs « HABITAT CONCEPT FA12 ») → réutilise */
+      if(typeof window.tiersSimilaireNoms==='function'){
+        var sim=(db.tiers||[]).find(function(x){ return x.type===type && window.tiersSimilaireNoms(x.nom, nom); });
+        if(sim){ nomIdx[key]=sim; return sim; }
+      }
       var t={ id:uid(), type:type, categorie:'societe', nom:nom,
         compteContre:type==='client'?'706000':'606400', compteTVA:type==='client'?'44571':'44566', taux:20,
         compteAux:genAux(type,nom), email:'', tel:'', siret:'', adresse:'', importeFEC:true, origine:'ecriture' };
@@ -20658,7 +20680,25 @@ ${lignes}
     });
     return changed;
   }
-  window.attribuerComptesTiersFEC=function(){ try{ var n=attrib(db.ecritures); if(n>0 && typeof save==='function') save(); return n; }catch(e){ return 0; } };
+  /* FUSION des comptes en double d'un MÊME client/fournisseur (même dénomination de base) :
+     un seul compte par tiers, toutes ses factures regroupées. Ne fusionne que des fiches
+     AUTO-créées (import FEC / écriture), jamais des SIRET divergents ni des paires « laissées ». */
+  function memeBase(nom){ return norm((typeof nomBaseTiers==='function')?nomBaseTiers(nom||''):(nom||'')); }
+  function fusionnerMemeNom(){
+    if(typeof _fusionGroupeTiers!=='function') return 0;
+    var g={};
+    (db.tiers||[]).forEach(function(t){ if(t.type!=='fournisseur'&&t.type!=='client') return;
+      var b=memeBase(t.nom); if(b.length<3) return; (g[t.type+'|'+b]=(g[t.type+'|'+b]||[])).push(t); });
+    var n=0;
+    Object.keys(g).forEach(function(k){ var grp=g[k]; if(grp.length<2) return;
+      if(!grp.some(function(t){ return t.importeFEC || t.origine==='ecriture'; })) return; // que des fiches auto
+      var si={}; grp.forEach(function(t){ var s=(t.siret||'').replace(/\D/g,''); if(s) si[s]=1; });
+      if(Object.keys(si).length>1) return;                                                 // SIRET divergents → laissés
+      try{ if(_fusionGroupeTiers(grp)) n++; }catch(_e){}
+    });
+    return n;
+  }
+  window.attribuerComptesTiersFEC=function(){ try{ var n=attrib(db.ecritures); var m=fusionnerMemeNom(); if((n>0||m>0) && typeof save==='function') save(); return n+m; }catch(e){ return 0; } };
   /* à chaque changement de dossier */
   if(typeof chargerDossier==='function'){ var _cd=chargerDossier; chargerDossier=function(){ var r=_cd.apply(this,arguments); try{ window.attribuerComptesTiersFEC(); }catch(e){} return r; }; }
   /* une fois au démarrage (dossier actif) */

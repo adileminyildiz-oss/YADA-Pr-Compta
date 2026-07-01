@@ -36,7 +36,19 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Compte de tiers auxiliaire attribué sur TOUTES les écritures (banque incluse), pas seulement le FEC — v358
+## 🟢 Dernière mise à jour — FEC : UN SEUL compte par client/fournisseur (le numéro qui varie = le n° de facture, pas le tiers) — v359
+**Quoi :** correctif du cas **« HABITAT CONCEPT »**. À l'import FEC, un client ayant **plusieurs factures** était éclaté en **plusieurs comptes** (un par facture) parce que le champ qui varie ligne à ligne est le **numéro de facture** (`CompAuxNum`) et non l'identité du tiers. Désormais **l'identité du tiers = sa DÉNOMINATION** (nettoyée du n° de facture) et **le compte est dérivé du NOM** (`genAux`) — le `CompAuxNum` n'est utilisé comme compte **que s'il est déjà un vrai compte 401/411**. Résultat : **un seul compte client/fournisseur regroupant TOUTES ses factures**.
+
+**Comment — 3 volets :**
+- `nomBaseTiers(nom)` (nouveau, global) : retire les références de facture (mot-clé + n°, codes collés `F2024001`, dates, n° isolés en fin) tout en gardant les nombres internes (« Garage des 3 Vallées ») → « HABITAT CONCEPT 123 » / « HABITAT CONCEPT FACT 2024-001 » → **« HABITAT CONCEPT »**.
+- `trouverOuCreerTiers` (import FEC) : identité par **dénomination** (exacte puis **ressemblante** via `tiersSimilaireNoms`) ; compte = `c9(CompAuxNum)` **seulement s'il commence par 401/411**, sinon `genAux(nom)` → jamais un compte par n° de facture.
+- `yada-addon179` : `resoudre()` nettoie aussi les noms ; **fusion de rattrapage** `fusionnerMemeNom()` regroupe les fiches AUTO (import FEC / écriture) de **même dénomination de base** en **un seul compte** (via `_fusionGroupeTiers`, écritures re-pointées), en épargnant les fiches à **SIRET divergents**.
+
+**Limites :** un vrai nom se terminant par un nombre (« Station 24 ») est ramené à sa base pour le regroupement ; les entités à SIRET différents ne sont jamais fusionnées d'office. Validé : `node --check` (172 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (import 4 factures HABITAT `CompAuxNum` F001…F004 → **1 client** `411HABI00`, écritures toutes sur ce compte ; nettoyage des noms OK ; fusion de rattrapage 4 fragments → 1 ; démos : tiers distincts préservés — « Bureau Vallée », « SAS Commerce 42 » intacts —, équilibre ✅, 0 pageerror). Badge → **v359**.
+
+---
+
+## 🟢 MAJ précédente — Compte de tiers auxiliaire attribué sur TOUTES les écritures (banque incluse), pas seulement le FEC — v358
 **Quoi :** suite de la v356/v357. L'attribution ne visait que les écritures **rattachées à un tiers (`e.tiersId`)** → les **écritures de banque** (règlements) et diverses écritures au **compte collectif** `401000000`/`411000000` **sans `tiersId`** restaient au collectif. Désormais **chaque écriture touchant un fournisseur/client porte le compte AUXILIAIRE du tiers** : la migration résout le tiers depuis le **nom porté par la ligne** (`l.lib`, ex. « EDF Pro ») puis, en repli (journaux BQ/ACH/VTE), depuis le **libellé de l'écriture** — en **créant le tiers** s'il n'existe pas (compte via `genAux`) et en ignorant les libellés génériques (« Fournisseurs », à-nouveaux, TVA, paie…). Les lignes de **charges/produits** (627, 616, 431…) ne sont pas touchées.
 
 **Comment — 3 éditions :**
