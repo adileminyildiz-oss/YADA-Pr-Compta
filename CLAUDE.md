@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Mise en page : suppression des EMOJIS + polish qualité — v366
+## 🟢 Dernière mise à jour — Nav : Pilotage & Salarié déplacés en sous-modules de Comptabilité — v367
+**Quoi :** les modules **Pilotage** et **Salarié** deviennent des **sous-modules du module Comptabilité** (barre latérale cabinet), au lieu d'être dans la section « Pilotage » du haut. Ils apparaissent désormais en dépliant **Comptabilité** (après Analyse, Journal, Éditions, FEC, Suivi des règlements, Analytique, Plan comptable, Assistant IA).
+
+**Comment — 1 édition d'`yada-addon164` :** `PILOTAGE=['dash','societe','client']` (retrait de `pilotage`/`salarie`) ; `m-compta.subs` complété par `'pilotage','salarie'`. Le dispatch `render()` et les entrées `PAGES` restent inchangés (les pages fonctionnent à l'identique).
+
+**Limites :** réorganisation de navigation uniquement. Validé : `node --check` (177 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (sous-modules de Comptabilité = [… , Pilotage, Salarié], plus dans la section Pilotage du haut ; navigation vers `pilotage`/`salarie` OK ; 0 pageerror). Badge → **v367**.
+
+---
+
+## 🟢 MAJ précédente — Mise en page : suppression des EMOJIS + polish qualité — v366
 **Quoi :** amélioration de la qualité de la mise en page et **suppression des emojis** dans toute l'interface (titres de cartes, onglets, boutons, navigation, tableaux…). Les **glyphes fonctionnels** sont conservés (‹ › ✕ ✎ ✓ ▾ ▸ ─ ▢ flèches, %, Σ, ▮ des KPI) pour ne pas casser les contrôles (fenêtres Sage, chevrons de nav, éditeur).
 
 **Comment — `yada-addon184` (100% additif) :**
