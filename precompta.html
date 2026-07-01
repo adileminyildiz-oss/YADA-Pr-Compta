@@ -10987,7 +10987,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v376';
+    b.textContent='YADA · v377';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21643,20 +21643,31 @@ ${lignes}
       activite:s.activite||d.activite||'', dirigeant:s.dirigeant||'', tva:s.tvaIntra||'' }; }
 
   var TILES=[
-    ['Permanent','infosociete','Informations société, statuts, K-bis, coffre-fort'],
-    ['Déclarations','tva','TVA (CA3) et déclarations fiscales'],
-    ['Ressources Humaines','salarie','Salariés, paie, absences, congés, RDV'],
-    ['Pilotages','pilotage','Impôts (IS/IR), actif/passif, agenda'],
-    ['Comptabilité','compta','Analyse, journaux, éditions, import FEC']
+    ['Permanent','permanent','Paramétrages principaux (société, réglages, plan comptable, coffre)'],
+    ['Déclarations','declarations','Modules de déclarations (TVA / CA3, fiscales)'],
+    ['Ressources Humaines','rh','Salariés, paie, absences, congés, RDV'],
+    ['Pilotages','pilotages','Pilotage analytique & comptable (impôts, analytique, tableau de bord)'],
+    ['Comptabilité','comptabilite','Tous les modules de comptabilité']
   ];
+  /* Chaque rubrique regroupe UNIQUEMENT ses modules (page sans barre latérale). */
+  var RUBRIQUES={
+    permanent:{ titre:'Permanent', desc:'Paramétrages principaux du dossier.', mods:['infosociete','parametrage','plancomptable','coffre','dossier'] },
+    declarations:{ titre:'Déclarations', desc:'Tous les modules de déclarations.', mods:['tva'] },
+    rh:{ titre:'Ressources Humaines', desc:'Modules Ressources Humaines uniquement.', mods:['salarie','chargespaie'] },
+    pilotages:{ titre:'Pilotages', desc:'Pilotage analytique & comptable uniquement.', mods:['dash','pilotage','analytique','societe'] },
+    comptabilite:{ titre:'Comptabilité', desc:'Tous les modules de comptabilité.', mods:['compta','journal','editions','fec','reglements','tiers','achats','facturation','banque','saisiebq','rappro','immos','ia'] }
+  };
+  function modLabel(id){ try{ var p=(typeof PAGES!=='undefined'?PAGES:[]).find(function(x){return x.id===id;}); return p?p.lbl:id; }catch(e){ return id; } }
 
   /* --- état & actions --- */
   window.dsAccueil=function(){ window.dsListe=false; window.dsHub=false; if(typeof render==='function') render(); };
   window.dsOuvrirListe=function(){ window.dsListe=true; window.dsHub=false; if(typeof render==='function') render(); };
   window.dsSelectionner=function(id){ window.dsSel=id; window.dsListe=false; window.dsHub=false; if(typeof render==='function') render(); };
   window.dsOuvrirHub=function(){ if(window.dsSel){ window.dsHub=true; if(typeof render==='function') render(); } };
-  window.dsEntrer=function(mod){ var id=window.dsSel; if(!id) return; window.dsHub=false; window.dsListe=false;
+  window.dsEntrer=function(mod){ var id=window.dsSel; if(!id) return; window.dsHub=false; window.dsListe=false; window.dsRub=null;
     try{ choisirDossier(id); }catch(e){} if(mod){ try{ current=mod; if(typeof render==='function') render(); }catch(e){} } };
+  window.dsOuvrirRubrique=function(key){ if(window.dsSel && RUBRIQUES[key]){ window.dsRub=key; window.dsHub=true; if(typeof render==='function') render(); } };
+  window.dsRetourHub=function(){ window.dsRub=null; if(typeof render==='function') render(); };
 
   function loginHead(){ var c=db.cabinet||(typeof cabinetDefaut==='function'?cabinetDefaut():{});
     return '<div class="login-head"><div class="login-brand" onclick="dsAccueil()" style="cursor:pointer">'
@@ -21708,7 +21719,7 @@ ${lignes}
     var soc='<div class="card ds-soc"><h2>'+esc(i.nom)+'</h2>'+(i.forme?('<div class="ds-soc-badge">'+esc(i.forme)+'</div>'):'')
       +socRow('SIREN', i.siren)+socRow('SIRET', i.siret)+socRow('Code APE', i.ape)+socRow('N° TVA', i.tva)
       +socRow('Activité', i.activite)+socRow('Adresse', i.adresse)+socRow('Dirigeant', i.dirigeant)+'</div>';
-    var tiles=TILES.map(function(t){ return '<button class="ds-tile" onclick="dsEntrer(\''+t[1]+'\')"><span class="ds-tile-t">'+esc(t[0])+'</span><span class="ds-tile-d">'+esc(t[2])+'</span><span class="ds-tile-o">Ouvrir →</span></button>'; }).join('');
+    var tiles=TILES.map(function(t){ return '<button class="ds-tile" onclick="dsOuvrirRubrique(\''+t[1]+'\')"><span class="ds-tile-t">'+esc(t[0])+'</span><span class="ds-tile-d">'+esc(t[2])+'</span><span class="ds-tile-o">Ouvrir →</span></button>'; }).join('');
     return '<div class="login-wrap ds-hub-wrap">'+loginHead()
       +'<div class="login-title">'+esc(i.nom)+'</div>'
       +'<div class="login-sub">Dossier — choisissez une rubrique.</div>'
@@ -21716,7 +21727,20 @@ ${lignes}
       +'<div class="login-actions"><button class="btn btn-ghost" onclick="dsOuvrirListe()">Changer de dossier</button></div>'
       +'</div>';
   }
+  function ecranRubrique(key){ var R=RUBRIQUES[key]; if(!R) return ecranHub(window.dsSel);
+    var i=societeInfo(window.dsSel);
+    var tiles=(R.mods||[]).map(function(m){ return '<button class="ds-tile ds-rub-tile" onclick="dsEntrer(\''+m+'\')"><span class="ds-tile-t">'+esc(modLabel(m))+'</span><span class="ds-tile-o">Ouvrir →</span></button>'; }).join('')
+      ||'<div class="ds-empty">Aucun module.</div>';
+    return '<div class="login-wrap">'+loginHead()
+      +'<div class="login-title">'+esc(R.titre)+'</div>'
+      +'<div class="login-sub">'+esc(i.nom)+' — '+esc(R.desc)+'</div>'
+      +'<div class="ds-rub-grid">'+tiles+'</div>'
+      +'<div class="login-actions"><button class="btn btn-ghost" onclick="dsRetourHub()">← Retour au dossier</button>'
+      +'<button class="btn btn-ghost" onclick="dsOuvrirListe()">Changer de dossier</button></div>'
+      +'</div>';
+  }
   function dsScreen(){
+    if(window.dsRub && window.dsSel && RUBRIQUES[window.dsRub]) return ecranRubrique(window.dsRub);
     if(window.dsHub && window.dsSel) return ecranHub(window.dsSel);
     if(window.dsListe) return ecranListe();
     if(window.dsSel && dossierEntry(window.dsSel)) return ecranSelUnique(window.dsSel);
@@ -21735,7 +21759,11 @@ ${lignes}
     +'.ds-av{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#1e90ff,#0a64d6);color:#fff;font-weight:700;flex:0 0 auto}'
     +'.ds-main{display:flex;flex-direction:column;flex:1;min-width:0}.ds-nom{font-weight:700}.ds-meta{font-size:12px;opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
     +'.ds-open{opacity:.75;font-size:13px;white-space:nowrap}'
-    +'.ds-grid-solo{grid-template-columns:280px!important;justify-content:start!important;justify-items:start!important;display:grid}'
+    +'.ds-grid-solo{grid-template-columns:440px!important;justify-content:start!important;display:grid}'
+    +'body[data-theme] .ds-grid-solo .dossier-card{min-height:320px;display:flex;flex-direction:column;padding:28px!important;border:2px solid rgba(30,144,255,.6)!important;box-shadow:0 0 0 4px rgba(30,144,255,.12),0 20px 46px rgba(0,0,0,.5)!important}'
+    +'.ds-grid-solo .dossier-card .dc-foot{margin-top:auto}'
+    +'.ds-rub-grid{max-width:920px;margin:6px auto 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}'
+    +'.ds-rub-tile{min-height:74px;justify-content:center}'
     +'.ds-hub-grid{max-width:1000px;margin:6px auto 0;display:grid;grid-template-columns:1.05fr .95fr;gap:18px;align-items:start}'
     +'.ds-hub-side{display:flex;flex-direction:column;gap:10px}'
     +'.ds-tile{display:flex;flex-direction:column;gap:2px;text-align:left;padding:14px 16px;border:1px solid rgba(30,144,255,.32);border-radius:13px;background:rgba(30,144,255,.07);cursor:pointer;color:inherit;transition:background .12s,border-color .12s}'

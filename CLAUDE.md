@@ -36,7 +36,22 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Écran « Dossier sélectionné » : carte à la taille standard (compacte) — v376
+## 🟢 Dernière mise à jour — HUB : rubriques sans barre latérale + carte « Dossier sélectionné » cadrée/agrandie — v377
+**Quoi :** deux changements dans le parcours d'entrée (`yada-addon189`).
+1. **Rubriques sans barre latérale + regroupement par nature** : les 5 cartes du HUB (Permanent, Déclarations, Ressources Humaines, Pilotages, Comptabilité) n'entrent plus directement dans un module unique (avec barre latérale) — chaque carte ouvre désormais une **page de rubrique SANS barre latérale** listant **uniquement les modules de sa nature** :
+   - **Permanent** → paramétrages principaux : Informations société · Paramétrage · Plan comptable · Coffre-fort · Société & création du dossier.
+   - **Déclarations** → tous les modules de déclarations : Module TVA (CA3).
+   - **Ressources Humaines** → uniquement RH : Salarié · Charges et Paie.
+   - **Pilotages** → pilotage analytique & comptable : Tableau de bord · Pilotage · Analytique & rentabilité · Sociétés (portefeuille).
+   - **Comptabilité** → tous les modules de comptabilité : Consultation · Journal · Éditions · FEC · Suivi des règlements · TIERS · Fournisseurs · Client · Banque · Saisie journal Banque · Rapprochement · Immobilisations · Assistant IA.
+   Un clic sur un module de la rubrique **entre réellement dans le module** (`dsEntrer` → `choisirDossier` + `current=mod`, app complète avec barre latérale).
+2. **Carte « Dossier sélectionné » cadrée + allongée + élargie** : colonne `280px` → **`440px`** (plus large), carte en **flex colonne `min-height:320px`** (plus haute, pied ancré en bas via `.dc-foot{margin-top:auto}`), **cadre bleu** (`border:2px` + anneau `box-shadow 0 0 0 4px`).
+
+**Comment — `yada-addon189` :** `RUBRIQUES` (map clé→{titre,desc,mods}) + `modLabel(id)` (via `PAGES`) ; état `window.dsRub` ; `dsOuvrirRubrique(key)` / `dsRetourHub()` ; `ecranRubrique(key)` (page login-wrap sans barre latérale, tuiles `dsEntrer(mod)`) ; les tuiles du HUB appellent `dsOuvrirRubrique(...)` au lieu de `dsEntrer(...)`. CSS `.ds-grid-solo` (440px), `body[data-theme] .ds-grid-solo .dossier-card` (cadre/hauteur), `.ds-rub-grid`. Validé : `node --check` (182 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (HUB → `dsOuvrirRubrique`, rubriques sans `#nav` visible, listes de modules correctes par nature, entrée réelle d'un module → barre latérale présente ; carte 440×320 avec bord 2px + anneau ; équilibre 34 écritures ✅, 0 pageerror). Badge → **v377**.
+
+---
+
+## 🟢 MAJ précédente — Écran « Dossier sélectionné » : carte à la taille standard (compacte) — v376
 **Quoi :** la carte du dossier sélectionné reprend les **dimensions d'une carte de dossier standard** (compacte) au lieu de s'élargir : largeur de colonne fixée à **280 px** (`grid-template-columns:280px`), rendu compact ~261 px, toujours aligné à gauche.
 
 **Comment — 1 édition CSS d'`yada-addon189` (`.ds-grid-solo`) :** `minmax(260px,360px)` → **`280px`** (+ `justify-content/items:start` conservés). Validé : `node --check` (182 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (carte largeur **261 px**, `left=116px` ; 0 pageerror). Badge → **v376**.
