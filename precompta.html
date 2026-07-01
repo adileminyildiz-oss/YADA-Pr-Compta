@@ -6883,17 +6883,26 @@ function integrerFEC(data, exoD, exoF){
     const estFourn=String(compte).startsWith('401');
     if(!estClient && !estFourn) return null;
     const cleAux=compaux||(''); const nom=(compauxlib||libEcr||(estClient?'Client':'Fournisseur')).trim();
+    const pref=estClient?'411':'401';
+    /* Normalise le CompAuxNum du FEC en un compte auxiliaire VALIDE (401XXXX / 411XXXX) :
+       déjà un compte 401/411 → conservé ; code court (« GASO », « DUPONT ») → préfixé du collectif ;
+       absent → généré depuis le nom. Évite les comptes mal formés (ex. « GASO00000 ») qui
+       cassaient la ventilation par tiers — fournisseurs ET clients. */
+    const auxDepuisFEC = cleAux
+      ? ( c9(cleAux).slice(0,3)===pref ? c9(cleAux) : c9(pref+String(cleAux).toUpperCase().replace(/[^A-Z0-9]/g,'')) )
+      : '';
+    const auxFinal = auxDepuisFEC || genAux(estClient?'client':'fournisseur', nom);
     const norm=s=>(s||'').toUpperCase().normalize('NFD').replace(/[^A-Z0-9]/g,'');
     // 1) par compte auxiliaire
     if(cleAux && tiersParAux[cleAux]) return tiersParAux[cleAux];
     // 2) par nom déjà existant (normalisé : évite les doublons « HABITAT CONCEPT » avec variantes)
     const nn=norm(nom);
     let t=db.tiers.find(x=> x.type===(estClient?'client':'fournisseur') && norm(x.nom)===nn);
-    if(t){ if(cleAux && !t.compteAux){ t.compteAux=cleAux; tiersParAux[cleAux]=t; } return t; }
+    if(t){ if(!/^(401|411)/.test(c9(t.compteAux||''))) t.compteAux=auxFinal; if(cleAux) tiersParAux[cleAux]=t; return t; }
     // 3) création
     t={ id:uid(), type:estClient?'client':'fournisseur', categorie:'societe', nom,
         compteContre:estClient?'706000':'606400', compteTVA:estClient?'44571':'44566', taux:20,
-        compteAux:cleAux||genAux(estClient?'client':'fournisseur', nom), email:'', tel:'', siret:'', adresse:'', importeFEC:true };
+        compteAux:auxFinal, email:'', tel:'', siret:'', adresse:'', importeFEC:true };
     db.tiers.push(t); if(cleAux) tiersParAux[cleAux]=t; nTiers++;
     return t;
   }
@@ -10947,7 +10956,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v356';
+    b.textContent='YADA · v357';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -20600,9 +20609,24 @@ ${lignes}
     (ecritures||[]).forEach(function(e){
       if(!e || !e.tiersId) return;
       var t=(db.tiers||[]).find(function(x){ return x.id===e.tiersId; });
-      if(!t || !t.compteAux) return;
-      var aux=c9(t.compteAux); var coll=((t.type==='client')?'411':'401')+'000000';
-      (e.lignes||[]).forEach(function(l){ if(c9(l.compte)===coll && aux!==coll){ l.compte=aux; changed++; } });
+      if(!t) return;
+      var pref=(t.type==='client')?'411':'401';
+      /* garantit un compte auxiliaire VALIDE (répare les compteAux mal formés hérités,
+         ex. « GASO » / vide) sans dépendre de l'ordre de migrerAuxTiers */
+      if(!/^(401|411)/.test(c9(t.compteAux||''))){ try{ t.compteAux=genAux(t.type, t.nom||pref); }catch(_e){} }
+      var aux=c9(t.compteAux||'');
+      if(aux.slice(0,3)!==pref) return;                 // ne relabelle que vers un aux valide
+      var coll=pref+'000000';
+      /* déjà correctement ventilée ? on ne touche pas */
+      if((e.lignes||[]).some(function(l){ return c9(l.compte)===aux; })) return;
+      (e.lignes||[]).forEach(function(l){
+        var cc=c9(l.compte);
+        if(cc===aux) return;
+        var estCollectif = (cc===coll);
+        var estAutreAux  = (cc.slice(0,3)===pref);        // collectif ou aux d'un autre libellé
+        var estOrphelin  = !/^[0-9]/.test(cc);            // compte mal formé (ex. « GASO00000 », « DUPONT000 »)
+        if(estCollectif || estAutreAux || estOrphelin){ l.compte=aux; changed++; }
+      });
     });
     return changed;
   }

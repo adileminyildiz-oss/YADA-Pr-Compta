@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — FEC : attribution automatique du compte de tiers (auxiliaire) sur les écritures — v356
+## 🟢 Dernière mise à jour — FEC : compte de tiers auxiliaire VALIDE aussi pour les CLIENTS (CompAuxNum court/absent) — v357
+**Quoi :** correctif de la v356. L'attribution du compte auxiliaire échouait dès que le **CompAuxNum du FEC** était un **code court** (ex. `PIC`, `DUPONT`) ou **absent** — le cas fréquent, notamment pour les **clients** : le compte auxiliaire était stocké **tel quel** → `c9('PIC')='PIC000000'`, un **compte mal formé** ne commençant pas par 401/411 → la ventilation par tiers restait **à 0** (module TIERS), et la migration v356 (qui ne relabellait que le collectif pur) ne corrigeait rien. Désormais le CompAuxNum est **toujours normalisé en compte auxiliaire valide** : déjà `401…`/`411…` → conservé ; code court → **préfixé du collectif** (`PIC` → `411PIC000`) ; absent → **généré depuis le nom** (`genAux`). Vaut pour **fournisseurs ET clients**.
+
+**Comment — 2 éditions chirurgicales :**
+- `trouverOuCreerTiers` (dans `integrerFEC`) : calcul d'un `auxFinal` **valide** (préfixe collectif ajouté si nécessaire, sinon `genAux`) affecté à la création **et** aux tiers existants sans aux valide → la ligne 401/411 de l'écriture prend ce compte valide.
+- `yada-addon179` (`attribuerComptesTiersFEC`) élargi : régénère un `compteAux` mal formé/vide (`genAux`, indépendant de `migrerAuxTiers`) puis relabelle la **ligne de tiers** vers l'aux valide — qu'elle soit au **collectif** (`401000000`/`411000000`), sur un **autre aux 401/411**, ou **orpheline mal formée** (`PIC000000`, préfixe non numérique) — sans toucher une écriture déjà correctement ventilée ; idempotent.
+
+**Limites :** multi-tiers au collectif (rare) tous rattachés au `e.tiersId` de l'écriture. Validé : `node --check` (172 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (import court : client `PIC`→`411PIC000`, sans compaux→`411MAIR00`, fourn. `GAS`→`401GAS000`, 0 ligne mal formée ; statsTiers client HT 1000/TVA 200/TTC 1200 ; migration : collectif + orphelin `PIC000000`→`411RESI00`, compteAux vide régénéré, idempotent, client HT 1500/TVA 300/TTC 1800 ; équilibre ✅, 0 pageerror). Badge → **v357**.
+
+---
+
+## 🟢 MAJ précédente — FEC : attribution automatique du compte de tiers (auxiliaire) sur les écritures — v356
 **Quoi :** à l'**import FEC**, la ligne de tiers (401/411) prend désormais **automatiquement le compte AUXILIAIRE du tiers** (ex. `401GASO00`) au lieu du compte collectif `401000000`/`411000000`. Une **migration** relabelle aussi les écritures **déjà importées** : toute ligne au compte collectif pur d'une écriture rattachée à un tiers (`e.tiersId`) est remplacée par l'auxiliaire du tiers → **ventilation par tiers correcte** (grand-livre, totaux HT/TVA/TTC du module TIERS).
 
 **Comment — 2 éditions :**
