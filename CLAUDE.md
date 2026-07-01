@@ -36,7 +36,22 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Chaque module relié à SON journal (carte « Journal comptable lié ») — v362
+## 🟢 Dernière mise à jour — Module Analyse = CENTRE DE CONTRÔLE (source) + Éditions reliées — v363
+**Quoi :** le module **Analyse** (Consultation des comptes) devient le **Centre de Contrôle**, la **source unique** de toute la comptabilité, et les **Éditions** y sont explicitement **reliées** (elles se calculent à partir de ses écritures).
+- **Nav** : « Analyse » → **« Analyse — Centre de Contrôle »**.
+- **Barre de titre de l'Analyse** : mention « — Analyse · Centre de Contrôle » + bouton **« 🖨 Éditions »** (ouvre le module Éditions).
+- **Page Éditions** : carte-source en tête **« 🎛 Analyse — Centre de Contrôle (source) »** rappelant que toutes les éditions (Balance, Grand livre, Journaux, Bilan, Compte de résultat, balance âgée…) sont dérivées des écritures du Centre de Contrôle + bouton **« Ouvrir le Centre de Contrôle (Analyse) »**.
+
+**Comment :**
+- Édition chirurgicale de `pageCompta` (barre `.sg-title`) : bouton `.sg-edlink` → `current='editions';render()` + libellé « Centre de Contrôle ».
+- `yada-addon164` : `LBL.compta` = « Analyse — Centre de Contrôle ».
+- `yada-addon181` (additif) : `ccCard()` greffée en tête de `pageEditions` ; `ccOuvrirAnalyse()` / `ccOuvrirEditions()` (navigation croisée) ; `<style id="cc-src-mod">`.
+
+**Limites :** navigation/affichage (les éditions lisaient déjà `db.ecritures` — même source ; le lien est désormais explicite et cliquable). Validé : `node --check` (174 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (Éditions : carte-source + bouton vers Analyse ; Analyse : titre « Centre de Contrôle » + bouton « 🖨 Éditions » ; nav « Analyse — Centre de Contrôle » ; équilibre 34 écritures ✅, 0 pageerror). Badge → **v363**.
+
+---
+
+## 🟢 MAJ précédente — Chaque module relié à SON journal (carte « Journal comptable lié ») — v362
 **Quoi :** chaque module reçoit une carte **« 📓 Journal comptable lié »** (bas de page, espace cabinet) qui ouvre l'**éditeur du journal correspondant** (voir & éditer directement les écritures) :
 - **TVA → OD de TVA (ODTVA)** · **Charges & Paie → OD de Paie (ODP) + OD de Charges (ODC)** ·
 - **Fournisseurs → Achats (ACH)** · **Clients → Ventes (VTE)** · **Banque → Banque (BQ)** ·

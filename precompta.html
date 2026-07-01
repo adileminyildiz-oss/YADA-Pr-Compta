@@ -6263,7 +6263,7 @@ function pageCompta(){
   const resTxt=(res>=0?'Bénéfice':'Perte')+' : '+sageNum(res)+' E';
   const finPer=sgPer?(function(){ const [y,m]=sgPer.split('-').map(Number); const dj=new Date(y, m, 0).getDate(); return String(dj).padStart(2,'0')+'/'+String(m).padStart(2,'0')+'/'+y; })():'31/12/'+year;
   return `<div class="sg-app ${window.sgReduit?'sg-reduit':''}">
-    <div class="sg-title"><span class="sg-exonav"><button class="sg-exoarr" title="Exercice précédent (année N-1)" onclick="event.stopPropagation();exPrecedent()">‹</button><span class="sg-exolbl">Exercice ${year}</span><button class="sg-exoarr" title="Exercice suivant (année N+1)" onclick="event.stopPropagation();exSuivant()">›</button></span>${(db.societe&&db.societe.dossierNom)||'PRÉCOMPTA'} 01/${year.slice(2)}-12/${year.slice(2)} (E) — Comptabilité
+    <div class="sg-title"><span class="sg-exonav"><button class="sg-exoarr" title="Exercice précédent (année N-1)" onclick="event.stopPropagation();exPrecedent()">‹</button><span class="sg-exolbl">Exercice ${year}</span><button class="sg-exoarr" title="Exercice suivant (année N+1)" onclick="event.stopPropagation();exSuivant()">›</button><button class="sg-exoarr sg-edlink" title="Ouvrir les Éditions (Balance, Grand livre, Bilan, Compte de résultat…) — reliées au Centre de Contrôle" onclick="event.stopPropagation();current='editions';render()">🖨 Éditions</button></span>${(db.societe&&db.societe.dossierNom)||'PRÉCOMPTA'} 01/${year.slice(2)}-12/${year.slice(2)} (E) — Analyse · Centre de Contrôle
       <span class="sg-win"><span class="sg-wbtn" title="Réduire la fenêtre" onclick="event.stopPropagation();sgReduireFenetre()">─</span><span class="sg-wbtn" title="${window.sgReduit?'Agrandir (plein écran)':'Réduire la fenêtre'}" onclick="event.stopPropagation();sgToggleReduit()">${window.sgReduit?'▣':'▢'}</span><span class="sg-wbtn" title="Fermer" onclick="event.stopPropagation();fileFermer()">✕</span></span></div>
     <div class="sg-menu"><span class="mi" onclick="event.stopPropagation();toggleFichier()">Fichier
         <div class="sg-dd" id="sg-fichier">
@@ -10983,7 +10983,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v362';
+    b.textContent='YADA · v363';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -19686,7 +19686,7 @@ ${lignes}
   window.modnavToggle=function(key){ var s=openSet(); if(s.has(key)) s.delete(key); else s.add(key); saveOpen(s); try{ buildNav(); }catch(e){} };
 
   /* renommages / libellés par id de page */
-  var LBL={ compta:'Analyse', editions:'Éditions', journal:'Journal comptable', fec:'Import / Export FEC',
+  var LBL={ compta:'Analyse — Centre de Contrôle', editions:'Éditions', journal:'Journal comptable', fec:'Import / Export FEC',
     reglements:'Suivi des règlements', analytique:'Analytique & rentabilité', plancomptable:'Plan comptable',
     ia:'Assistant IA', immos:'Immobilisations & Financements', fraiskm:'Frais km & carburant',
     banque:'Banque (512)', saisiebq:'Saisie journal Banque', rappro:'Rapprochement (lettrage)' };
@@ -20795,6 +20795,34 @@ ${lignes}
     +'.jl-immo-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px dashed rgba(30,144,255,.12)}'
     +'.jl-immo-lib{flex:1;min-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
     +'.jl-immo-meta{font-size:12px;opacity:.7;white-space:nowrap}';
+  document.head.appendChild(st);
+})();
+</script>
+
+<script id="yada-addon181">
+/* ============================================================
+   Module ANALYSE = CENTRE DE CONTRÔLE (source unique des écritures).
+   Les ÉDITIONS (Balance, Grand livre, Journaux, Bilan, Compte de résultat,
+   balance âgée…) y sont RELIÉES : elles se calculent à partir des écritures
+   du Centre de Contrôle. Carte-source en tête des Éditions + navigation
+   croisée (bouton « 🖨 Éditions » dans la barre de titre de l'Analyse).
+   100% additif.
+   ============================================================ */
+(function(){
+  window.ccOuvrirAnalyse=function(){ try{ current='compta'; }catch(_){ } if(typeof render==='function') render(); };
+  window.ccOuvrirEditions=function(){ try{ current='editions'; }catch(_){ } if(typeof render==='function') render(); };
+  function ccCard(){
+    return '<div class="card cc-src"><h2>🎛 Analyse — Centre de Contrôle (source)</h2>'
+      +'<div class="sub">Toutes les éditions ci-dessous (Balance, Grand livre, Journaux, Bilan, Compte de résultat, balance âgée…) sont calculées <b>à partir des écritures du Centre de Contrôle</b> — le module <b>Analyse</b>, source unique de la comptabilité. Toute correction se fait dans le Centre de Contrôle ; les éditions se recalculent automatiquement.</div>'
+      +'<div style="margin-top:10px"><button class="btn btn-pri" onclick="ccOuvrirAnalyse()">🎛 Ouvrir le Centre de Contrôle (Analyse)</button></div></div>';
+  }
+  if(typeof window.pageEditions==='function'){
+    var _pe=window.pageEditions;
+    window.pageEditions=function(){ try{ return ccCard()+_pe.apply(this,arguments); }catch(e){ return _pe.apply(this,arguments); } };
+  }
+  var st=document.createElement('style'); st.id='cc-src-mod'; st.textContent=
+    '.sg-edlink{font-size:12px !important;padding:2px 9px !important;font-weight:600 !important;margin-left:8px;letter-spacing:normal}'
+    +'.cc-src{border:1px solid rgba(30,144,255,.45)}';
   document.head.appendChild(st);
 })();
 </script>
