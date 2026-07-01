@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — HUB : carte principale de la société redessinée (plus esthétique) — v378
+## 🟢 Dernière mise à jour — Écran « Dossier sélectionné » : carte remise à la taille d'origine (compacte) + cadre conservé — v379
+**Quoi :** la carte « Dossier sélectionné » reprend sa **taille d'origine (compacte)** : colonne `440px` → **`280px`** (rendu ~263 px), plus de `min-height:320px` ni de padding agrandi (hauteur naturelle ~224 px). Le **cadre bleu** (bordure 2px + anneau `box-shadow`) est **conservé**.
+
+**Comment — 1 édition CSS d'`yada-addon189` :** `.ds-grid-solo{grid-template-columns:280px…justify-items:start}` (retour v376) ; `body[data-theme] .ds-grid-solo .dossier-card` ne garde que le cadre (`border:2px` + anneau), sans `min-height`/`flex`/`padding` agrandi ; ligne `.dc-foot{margin-top:auto}` retirée. Validé : `node --check` (182 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (carte **263×224 px**, bord 2px ; équilibre 34 écritures ✅, 0 pageerror). Badge → **v379**.
+
+---
+
+## 🟢 MAJ précédente — HUB : carte principale de la société redessinée (plus esthétique) — v378
 **Quoi :** dans la page HUB (`yada-addon189`), la **carte principale de la société** (à gauche : nom, SAS, adresse…) est **remplacée par une carte plus esthétique** : **en-tête à dégradé bleu** avec **avatar arrondi** (initiale de la société), **nom en gros**, **badge de forme juridique** + **SIREN** en sous-titre, puis une **grille d'informations** (SIRET, Code APE, N° TVA, Dirigeant en 2 colonnes ; Activité & Adresse en pleine largeur) — chaque info dans un **pavé translucide bleu** avec libellé en petites capitales. S'adapte aux champs renseignés (les vides sont masqués ; message si société à compléter).
 
 **Comment — `yada-addon189` :** `socItem(lbl,val,full)` (pavé label/valeur, option pleine largeur) ; `ecranHub` construit `.dsc-card` (`.dsc-head` avatar+nom+tags, `.dsc-grid` items). CSS `<style id="ds-flow-mod">` : `.dsc-card/.dsc-head/.dsc-av/.dsc-nom/.dsc-badge/.dsc-siren/.dsc-grid/.dsc-item(.full)/.dsc-l/.dsc-v` (responsive 1 colonne < 520px). L'ancien rendu `.ds-soc-row` (lignes label/valeur) n'est plus utilisé. Validé : `node --check` (182 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (carte `.dsc-card` : avatar « M », nom « MBC », badge « SAS », en-tête dégradé, 0 ancienne `.ds-soc-row` ; équilibre 34 écritures ✅, 0 pageerror). Badge → **v378**.
