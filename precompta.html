@@ -10978,7 +10978,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v359';
+    b.textContent='YADA · v360';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -20680,9 +20680,11 @@ ${lignes}
     });
     return changed;
   }
-  /* FUSION des comptes en double d'un MÊME client/fournisseur (même dénomination de base) :
-     un seul compte par tiers, toutes ses factures regroupées. Ne fusionne que des fiches
-     AUTO-créées (import FEC / écriture), jamais des SIRET divergents ni des paires « laissées ». */
+  /* RÈGLE DÉFINITIVE — un seul compte par client/fournisseur (même dénomination de base) :
+     TOUS les comptes fournisseurs et clients de même dénomination sont regroupés en UN seul
+     compte, toutes leurs factures rassemblées. Seule exception : des SIRET renseignés et
+     DIFFÉRENTS (entités juridiques distinctes) ne sont jamais fusionnés. Appliquée à chaque
+     import FEC, à chaque changement de dossier et au démarrage. */
   function memeBase(nom){ return norm((typeof nomBaseTiers==='function')?nomBaseTiers(nom||''):(nom||'')); }
   function fusionnerMemeNom(){
     if(typeof _fusionGroupeTiers!=='function') return 0;
@@ -20691,7 +20693,6 @@ ${lignes}
       var b=memeBase(t.nom); if(b.length<3) return; (g[t.type+'|'+b]=(g[t.type+'|'+b]||[])).push(t); });
     var n=0;
     Object.keys(g).forEach(function(k){ var grp=g[k]; if(grp.length<2) return;
-      if(!grp.some(function(t){ return t.importeFEC || t.origine==='ecriture'; })) return; // que des fiches auto
       var si={}; grp.forEach(function(t){ var s=(t.siret||'').replace(/\D/g,''); if(s) si[s]=1; });
       if(Object.keys(si).length>1) return;                                                 // SIRET divergents → laissés
       try{ if(_fusionGroupeTiers(grp)) n++; }catch(_e){}
@@ -20699,6 +20700,8 @@ ${lignes}
     return n;
   }
   window.attribuerComptesTiersFEC=function(){ try{ var n=attrib(db.ecritures); var m=fusionnerMemeNom(); if((n>0||m>0) && typeof save==='function') save(); return n+m; }catch(e){ return 0; } };
+  /* règle appliquée à CHAQUE import FEC (dépôt) → définitive */
+  if(typeof integrerFEC==='function'){ var _if=integrerFEC; integrerFEC=function(){ var r=_if.apply(this,arguments); try{ window.attribuerComptesTiersFEC(); }catch(e){} return r; }; }
   /* à chaque changement de dossier */
   if(typeof chargerDossier==='function'){ var _cd=chargerDossier; chargerDossier=function(){ var r=_cd.apply(this,arguments); try{ window.attribuerComptesTiersFEC(); }catch(e){} return r; }; }
   /* une fois au démarrage (dossier actif) */
