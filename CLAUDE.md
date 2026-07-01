@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — FEC : UN SEUL compte par client/fournisseur (le numéro qui varie = le n° de facture, pas le tiers) — v359
+## 🟢 Dernière mise à jour — Règle DÉFINITIVE : un seul compte par client/fournisseur, sur TOUS les comptes, à chaque dépôt FEC — v360
+**Quoi :** généralisation de la v359. La règle « un seul compte par dénomination, toutes les factures regroupées » devient **définitive et universelle** : (1) elle s'applique à **TOUS les comptes fournisseurs et clients** (plus seulement les fiches auto-créées à l'import) ; (2) elle est **ré-appliquée automatiquement à CHAQUE dépôt / import FEC** (en plus du chargement de dossier et du démarrage). Seule exception conservée : des **SIRET renseignés et différents** (entités juridiques distinctes) ne sont jamais fusionnés.
+
+**Comment — 2 éditions dans `yada-addon179` :**
+- `fusionnerMemeNom()` : retrait de la restriction « fiches auto seulement » → **tous** les tiers fournisseurs/clients de même dénomination de base (`nomBaseTiers`) sont regroupés en un seul compte (`_fusionGroupeTiers`, écritures re-pointées) ; garde SIRET divergents.
+- **Wrapper `integrerFEC`** : après chaque intégration FEC, `attribuerComptesTiersFEC()` (attribution des comptes de tiers + fusion des doublons de dénomination) est exécuté automatiquement → règle appliquée à chaque dépôt.
+
+**Limites :** deux entités réellement homonymes sans SIRET distinct sont considérées comme un seul tiers (choix assumé de la règle) ; un nom finissant par un nombre est ramené à sa base. Validé : `node --check` (172 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (import HABITAT sans appel manuel → 1 compte via wrapper ; 2 fiches MANUELLES « PLOMBERIE MARTIN » → fusionnées en 1, écritures sur `401PLOM00` ; 2 « DUPLICATA SA » à SIRET différents → **non** fusionnées ; démos : 9/7 tiers distincts préservés ; équilibre ✅, 0 pageerror). Badge → **v360**.
+
+---
+
+## 🟢 MAJ précédente — FEC : UN SEUL compte par client/fournisseur (le numéro qui varie = le n° de facture, pas le tiers) — v359
 **Quoi :** correctif du cas **« HABITAT CONCEPT »**. À l'import FEC, un client ayant **plusieurs factures** était éclaté en **plusieurs comptes** (un par facture) parce que le champ qui varie ligne à ligne est le **numéro de facture** (`CompAuxNum`) et non l'identité du tiers. Désormais **l'identité du tiers = sa DÉNOMINATION** (nettoyée du n° de facture) et **le compte est dérivé du NOM** (`genAux`) — le `CompAuxNum` n'est utilisé comme compte **que s'il est déjà un vrai compte 401/411**. Résultat : **un seul compte client/fournisseur regroupant TOUTES ses factures**.
 
 **Comment — 3 volets :**
