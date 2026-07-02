@@ -10982,7 +10982,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v398';
+    b.textContent='YADA · v399';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21770,7 +21770,9 @@ ${lignes}
     return ecranAccueil();
   }
   if(typeof window.ecranSelectionDossier==='function'){ var _e=window.ecranSelectionDossier;
-    window.ecranSelectionDossier=function(){ try{ return dsScreen(); }catch(e){ return _e.apply(this,arguments); } };
+    /* On ne retombe JAMAIS sur l'ancienne page « Sélectionnez un dossier » (recherche + grille
+       de cartes) : en cas d'erreur, on affiche l'accueil « Espace dossiers » (boutons seuls). */
+    window.ecranSelectionDossier=function(){ try{ return dsScreen(); }catch(e){ try{ return ecranAccueil(); }catch(e2){ return _e.apply(this,arguments); } } };
   }
 
   /* Toujours atterrir sur « Espace dossiers » à la connexion : à chaque passage
