@@ -10982,7 +10982,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v396';
+    b.textContent='YADA · v397';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21958,13 +21958,14 @@ ${lignes}
     +'.ds-info-empty{opacity:.6;font-size:14px;padding:26px 22px;border:1px dashed rgba(30,144,255,.3);border-radius:14px;max-width:520px;min-height:360px;display:flex;align-items:center}'
     /* Liste défilante à droite ; lignes plus grandes ; fondu haut/bas. */
     +'.ds-list-right{max-width:none!important;width:100%;margin:0!important;min-height:0;'
-    +'overflow-y:auto;overflow-x:hidden;perspective:1200px;padding:22px 6px;'
-    +'scrollbar-width:none;'
-    +'-webkit-mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.25) 7%,#000 22%,#000 78%,rgba(0,0,0,.25) 93%,transparent 100%);'
-    +'mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.25) 7%,#000 22%,#000 78%,rgba(0,0,0,.25) 93%,transparent 100%)}'
-    +'.ds-list-right::-webkit-scrollbar{width:0;height:0;display:none}'
-    +'.ds-list-right .ds-row{transform-origin:center center;transform-style:preserve-3d;'
-    +'will-change:transform,opacity,filter;transition:box-shadow .15s;padding:16px 20px;gap:14px}'
+    +'overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:22px 14px 22px 6px;'
+    +'scrollbar-width:thin;scrollbar-color:rgba(30,144,255,.7) transparent;'
+    +'-webkit-mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.4) 6%,#000 16%,#000 84%,rgba(0,0,0,.4) 94%,transparent 100%);'
+    +'mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.4) 6%,#000 16%,#000 84%,rgba(0,0,0,.4) 94%,transparent 100%)}'
+    +'.ds-list-right::-webkit-scrollbar{width:9px}'
+    +'.ds-list-right::-webkit-scrollbar-thumb{background:linear-gradient(#3b9bff,#0a64d6);border-radius:8px;border:2px solid transparent;background-clip:padding-box}'
+    +'.ds-list-right::-webkit-scrollbar-track{background:transparent}'
+    +'.ds-list-right .ds-row{will-change:opacity,filter;transition:box-shadow .15s;padding:16px 20px;gap:14px}'
     +'.ds-list-right .ds-av{width:44px;height:44px;font-size:19px;border-radius:11px}'
     +'.ds-list-right .ds-nom{font-size:16px}.ds-list-right .ds-meta{font-size:13px}.ds-list-right .ds-open{font-size:14px}'
     +'@media(max-width:820px){.ds-liste-layout{grid-template-columns:1fr}.ds-info-col{display:none}'
@@ -21980,11 +21981,10 @@ ${lignes}
       var rc=r.offsetTop + r.offsetHeight/2;
       var rel=(rc-mid)/half;                      // ~ -1 (haut) .. +1 (bas)
       var cl=Math.max(-1.5,Math.min(1.5,rel));
-      var rot=cl*-40;                              // rotation « en cercle » (roue)
-      var tz=-Math.abs(cl)*58;                     // s'éloigne (cylindre)
-      var op=1-Math.min(1,Math.abs(cl))*0.72;      // fond dans le flou
-      var bl=Math.min(5.5,Math.abs(cl)*3.6);
-      r.style.transform='translateZ('+tz.toFixed(1)+'px) rotateX('+rot.toFixed(1)+'deg)';
+      /* Effet « flou » 2D uniquement (opacité + blur) : PAS de transform 3D — celles-ci
+         cassent le survol et le défilement (les lignes sortent du plan de la souris). */
+      var op=1-Math.min(1,Math.abs(cl))*0.7;       // fond dans le flou (haut/bas)
+      var bl=Math.min(4.5,Math.abs(cl)*3);
       r.style.opacity=op.toFixed(3);
       r.style.filter='blur('+bl.toFixed(2)+'px)';
     }
