@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Création de dossier : K-bis ET Statuts facultatifs — v390
+## 🟢 Dernière mise à jour — HUB : bloc (carte société + rubriques) décalé à droite, place pour le bouton — v391
+**Quoi :** sur la page du dossier (HUB), le bloc **carte société + 5 rubriques** est **décalé vers la droite** de l'écran (aligné à droite), rapprochant la carte des rubriques. La zone de **gauche** (titre du dossier + bouton **« Changer de dossier »**) est ainsi dégagée et le bouton reste bien visible à gauche.
+
+**Comment — 1 édition CSS d'`yada-addon189` :** `.ds-hub-grid{max-width:1000px;margin:10px auto 0;grid-template-columns:1.05fr .95fr;gap:18px}` → `max-width:1160px;margin:10px 0 0 auto` (aligné à droite) `;grid-template-columns:.95fr 1.05fr;gap:16px` ; ajout `.ds-hub-wrap .login-actions{margin-top:20px;justify-content:flex-start}`. Validé : `node --check` (185 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (viewport 1900 : grille alignée à droite — écart droit 114 px vs gauche 562 px ; bouton « Changer de dossier » visible à gauche `left:146` ; 0 pageerror) + filet d'équilibre ✅. Badge → **v391**.
+
+---
+
+## 🟢 MAJ précédente — Création de dossier : K-bis ET Statuts facultatifs — v390
 **Quoi :** on peut désormais **créer un dossier sans joindre le K-bis ni les Statuts** (les deux deviennent facultatifs ; en v194 seuls les Statuts l'étaient). La création n'est plus bloquée par l'absence de pièces légales — on peut les ajouter plus tard.
 
 **Comment — `creerDossierComplet()` :** suppression du blocage `if(!cdDocs.kbis) return toast('Veuillez joindre le K-bis')` ; `kbisRecu/kbisNom/kbisPdf` renseignés seulement si un fichier est joint (`!!cdDocs.kbis`, comme les Statuts) ; libellés du formulaire (« Extrait K-bis (facultatif) », sous-titre « K-bis et Statuts facultatifs ») et toast adaptés (liste des pièces réellement jointes, ou « à joindre plus tard »). Validé : `node --check` (185 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (création avec `cdDocs={}` → dossier créé, `kbisRecu=false`, `statutsRecu=false`, entrée dans le dossier `connecte=true`/`dash` ; 0 pageerror) + filet d'équilibre ✅. Badge → **v390**.
