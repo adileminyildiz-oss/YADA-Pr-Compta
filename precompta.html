@@ -10972,7 +10972,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v402';
+    b.textContent='YADA · v403';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -22068,6 +22068,113 @@ ${lignes}
     try{ if(e.pointerType==='' && e.clientX===0 && e.clientY===0) return; /* clic programmatique */
       burst(e.clientX, e.clientY); }catch(_e){}
   }, {capture:true, passive:true});
+})();
+</script>
+<script id="yada-addon194">
+/* Spatial UI + Liquid Glass + transition d'ouverture SUR L'IMAGE (plus sur la souris).
+   Demande : « une transaction sur image et non sur la souris » + « du Spatial UI et du
+   liquid glass ». 100% additif (CSS injectée en dernier + wrap de render pour la
+   transition de page). Respecte prefers-reduced-motion. Neutralise l'onde-souris v402. */
+(function(){
+  if(window.__yadaSpatial) return; window.__yadaSpatial=true;
+  var reduce=false; try{ reduce=!!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){}
+  if(!document.getElementById('spatial-glass-mod')){
+    var st=document.createElement('style'); st.id='spatial-glass-mod';
+    /* Préfixe `html ` sur chaque sélecteur → spécificité supérieure aux surcharges de
+       thème existantes (addon169 `.mod-wrap .card`, surcharges `aside`…) → notre verre
+       gagne quel que soit l'ordre d'injection. */
+    st.textContent=`
+    /* L'effet suit désormais l'ÉCRAN, pas la souris → onde-souris (v402) masquée. */
+    .yada-ripple,.yada-ripple-dot{display:none!important}
+    /* Transition d'ouverture (matérialisation spatiale) — sur le contenu, à chaque page. */
+    @keyframes yadaSpatialIn{0%{opacity:0;transform:translateY(14px) scale(.982);filter:blur(9px)}55%{filter:blur(2px)}100%{opacity:1;transform:none;filter:none}}
+    .yada-spatial-in{animation:yadaSpatialIn .5s cubic-bezier(.16,.84,.32,1)}
+    /* Balayage lumineux (light-sweep) haut de gamme à chaque ouverture de page — sur
+       l'écran (pas la souris), pointer-events:none → n'intercepte aucun clic. */
+    @keyframes yadaSheen{0%{opacity:0;transform:translateX(-45%) skewX(-8deg)}28%{opacity:1}100%{opacity:0;transform:translateX(48%) skewX(-8deg)}}
+    .yada-sheen{position:fixed;inset:-10% -20%;pointer-events:none;z-index:70;mix-blend-mode:screen;
+      background:linear-gradient(112deg,transparent 42%,rgba(120,182,255,.05) 47%,rgba(150,200,255,.14) 50%,rgba(120,182,255,.05) 53%,transparent 58%);
+      animation:yadaSheen .72s cubic-bezier(.22,.61,.36,1) forwards;will-change:transform,opacity}
+    /* ===== LIQUID GLASS + SPATIAL UI (thème noir, injecté en dernier → prioritaire) ===== */
+    html body[data-theme="noir"] .card,html body[data-theme="noir"] .mod-wrap .card,html body[data-theme="noir"] .dash-wrap .card,html body[data-theme="noir"] .cli-col>.card{
+      background:linear-gradient(157deg,rgba(40,60,94,.52),rgba(13,22,40,.46))!important;
+      -webkit-backdrop-filter:blur(20px) saturate(1.5)!important;backdrop-filter:blur(20px) saturate(1.5)!important;
+      border:1px solid rgba(130,185,255,.20)!important;border-radius:16px!important;
+      box-shadow:0 16px 42px rgba(0,0,0,.46),0 1px 0 rgba(255,255,255,.06) inset,0 0 0 1px rgba(255,255,255,.03) inset!important}
+    html body[data-theme="noir"] .card h2{text-shadow:0 1px 12px rgba(30,144,255,.35)}
+    html body[data-theme="noir"] .kpi{
+      background:linear-gradient(160deg,rgba(42,64,98,.5),rgba(14,23,40,.42))!important;
+      -webkit-backdrop-filter:blur(16px) saturate(1.4)!important;backdrop-filter:blur(16px) saturate(1.4)!important;
+      border:1px solid rgba(130,185,255,.18)!important;border-radius:14px!important;
+      box-shadow:0 10px 26px rgba(0,0,0,.36),0 1px 0 rgba(255,255,255,.07) inset!important}
+    html body[data-theme="noir"] aside{
+      background:linear-gradient(180deg,rgba(21,34,56,.62),rgba(8,14,28,.66))!important;
+      -webkit-backdrop-filter:blur(24px) saturate(1.4)!important;backdrop-filter:blur(24px) saturate(1.4)!important;
+      border-right:1px solid rgba(130,185,255,.16)!important}
+    html body[data-theme="noir"] #modal-c{
+      background:linear-gradient(157deg,rgba(36,54,84,.72),rgba(12,20,36,.68))!important;
+      -webkit-backdrop-filter:blur(26px) saturate(1.5)!important;backdrop-filter:blur(26px) saturate(1.5)!important;
+      border:1px solid rgba(130,185,255,.22)!important;border-radius:18px!important;
+      box-shadow:0 34px 76px rgba(0,0,0,.62)!important}
+    /* --- Parcours d'entrée : verre + profondeur --- */
+    html body[data-theme="noir"] .dsc-card{
+      background:linear-gradient(157deg,rgba(42,64,100,.5),rgba(12,20,38,.44))!important;
+      -webkit-backdrop-filter:blur(22px) saturate(1.5)!important;backdrop-filter:blur(22px) saturate(1.5)!important;
+      border:1px solid rgba(130,185,255,.24)!important;
+      box-shadow:0 26px 62px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.05) inset!important}
+    html body[data-theme="noir"] .dsc-head{background:linear-gradient(135deg,rgba(62,132,240,.34),rgba(10,100,214,.12))!important}
+    html body[data-theme="noir"] .dsc-item{background:rgba(120,180,255,.08)!important;border:1px solid rgba(130,185,255,.16)!important;
+      -webkit-backdrop-filter:blur(8px)!important;backdrop-filter:blur(8px)!important}
+    html body[data-theme="noir"] .ds-tile{
+      background:linear-gradient(160deg,rgba(42,64,100,.46),rgba(14,24,44,.4))!important;
+      -webkit-backdrop-filter:blur(16px) saturate(1.4)!important;backdrop-filter:blur(16px) saturate(1.4)!important;
+      border:1px solid rgba(130,185,255,.22)!important;box-shadow:0 12px 30px rgba(0,0,0,.4)!important;
+      transition:background .14s,border-color .14s,box-shadow .14s!important}
+    html body[data-theme="noir"] .ds-tile:hover{
+      background:linear-gradient(160deg,rgba(58,112,204,.5),rgba(20,40,74,.44))!important;
+      border-color:#5ab0ff!important;box-shadow:0 18px 42px rgba(10,60,160,.42),0 0 0 1px rgba(90,176,255,.5) inset!important}
+    html body[data-theme="noir"] #ds-info-panel,html body[data-theme="noir"] .ds-list-right{
+      background:linear-gradient(160deg,rgba(31,48,76,.42),rgba(12,20,36,.4))!important;
+      -webkit-backdrop-filter:blur(18px) saturate(1.4)!important;backdrop-filter:blur(18px) saturate(1.4)!important;
+      border:1px solid rgba(130,185,255,.16)!important;border-radius:16px!important}
+    html body[data-theme="noir"] .ds-row{background:rgba(120,180,255,.05)!important;border:1px solid rgba(130,185,255,.12)!important;
+      transition:background .14s,border-color .14s!important}
+    html body[data-theme="noir"] .ds-row:hover{background:rgba(90,176,255,.14)!important;border-color:rgba(90,176,255,.4)!important}
+    `;
+    document.head.appendChild(st);
+  }
+  function spawnSheen(){ try{ var s=document.createElement('div'); s.className='yada-sheen';
+    document.body.appendChild(s);
+    var k=function(){ try{ if(s&&s.parentNode) s.parentNode.removeChild(s); }catch(e){} };
+    s.addEventListener('animationend',k); setTimeout(k,950); }catch(e){} }
+  /* Transition d'ouverture : à CHAQUE changement d'ÉCRAN (pas à chaque re-rendu), on
+     matérialise le contenu (fade + profondeur + flou) + balayage lumineux, puis retour
+     à l'état de base (animation-fill-mode par défaut = none → aucun transform/filter
+     résiduel qui casserait le clic ou les overlays fixes).
+     La clé inclut l'état du PARCOURS DE PRÉSENTATION (dsListe/dsHub/dsSel/dsActiveRub)
+     → l'effet se déclenche sur TOUTES les pages de présentation (Espace dossiers →
+     Liste → HUB) jusqu'à l'ouverture des modules (connecte + current=module). */
+  if(!reduce && typeof render==='function' && !window.__spatialRenderGuard){
+    window.__spatialRenderGuard=true; var _r=render;
+    render=function(){ var x=_r.apply(this,arguments);
+      try{ var pg=(typeof current!=='undefined')?current:null;
+        var connx=(typeof connecte!=='undefined')?connecte:null;
+        var key=[pg,connx,(window.dsListe?1:0),(window.dsHub?1:0),(window.dsSel||''),(window.dsActiveRub||'')].join('|');
+        if(key!==window.__spatialPrevKey){ window.__spatialPrevKey=key; window.__spatialArm=true;
+          if(window.__spatialClr){ clearTimeout(window.__spatialClr); }
+          /* Fenêtre courte : une navigation déclenche souvent 2 rendus synchrones
+             (ex. choisirDossier puis dsEntrer). On (ré)applique la classe à CHAQUE rendu
+             pendant la fenêtre → seul le conteneur final la garde ; on désarme après. */
+          window.__spatialClr=setTimeout(function(){ window.__spatialArm=false; },90);
+          spawnSheen();
+        }
+        if(window.__spatialArm){
+          var el=document.querySelector('.mod-wrap,.dash-wrap,.login-wrap');
+          if(el){ el.classList.remove('yada-spatial-in'); void el.offsetWidth; el.classList.add('yada-spatial-in'); }
+        }
+      }catch(e){}
+      return x; };
+  }
 })();
 </script>
 </body>
