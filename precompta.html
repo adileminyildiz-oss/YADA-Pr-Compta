@@ -10972,7 +10972,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v406';
+    b.textContent='YADA · v407';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -22188,13 +22188,16 @@ ${lignes}
 (function(){
   if(window.__yadaBrand195) return; window.__yadaBrand195=true;
   var n=0;
+  /* Couleurs posées en style INLINE !important → immunisées contre les anciennes règles
+     de thème « .brand svg rect{fill…!important} » / « .brand svg path/line{stroke…!important} »
+     (écrites pour l'ancien logo) qui, sinon, aplatissent le dégradé et noircissent le Y. */
   function icon(px){ var id='yig'+(++n);
     return '<svg class="yada-ic" width="'+px+'" height="'+px+'" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="YADA" style="flex:0 0 auto;display:block">'
       +'<defs><linearGradient id="'+id+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2f6fe8"/><stop offset="1" stop-color="#1cc39b"/></linearGradient></defs>'
-      +'<rect x="3" y="3" width="94" height="94" rx="24" fill="url(#'+id+')"/>'
-      +'<path d="M33 31 L50 53 L67 31" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>'
-      +'<line x1="50" y1="53" x2="50" y2="73" stroke="#fff" stroke-width="12" stroke-linecap="round"/>'
-      +'<circle cx="70" cy="28" r="7.5" fill="#24d17a"/></svg>';
+      +'<rect x="3" y="3" width="94" height="94" rx="24" fill="url(#'+id+')" style="fill:url(#'+id+')!important"/>'
+      +'<path d="M33 31 L50 53 L67 31" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" style="fill:none!important;stroke:#fff!important"/>'
+      +'<line x1="50" y1="53" x2="50" y2="73" stroke="#fff" stroke-width="12" stroke-linecap="round" style="stroke:#fff!important"/>'
+      +'<circle cx="70" cy="28" r="7.5" fill="#24d17a" style="fill:#24d17a!important"/></svg>';
   }
   window.yadaIconSVG=icon;
   /* mode : 'dark' (fond sombre → texte blanc) | 'light' (fond clair → texte marine). */
