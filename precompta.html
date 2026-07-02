@@ -10972,7 +10972,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v407';
+    b.textContent='YADA · v408';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -22267,6 +22267,41 @@ ${lignes}
       if(typeof window.ecAjouterEcriture==='function') window.ecAjouterEcriture();
     }catch(_e){}
   }, true);  /* capture → s'exécute avant addon114 (qui ignore de toute façon l'état vide) */
+})();
+</script>
+<script id="yada-addon197">
+/* RÈGLES DE COMPTABILITÉ DE MBC APPLIQUÉES À TOUTES LES SOCIÉTÉS (actuelles & futures).
+   MBC = dossier avec le plan comptable BTP (chargerPlanBTP : plan BTP + PCG complet
+   + TVA auto + comptes de tiers auxiliaires). On applique cette MÊME base comptable à
+   CHAQUE dossier du portefeuille et à tout nouveau dossier.
+   100% ADDITIF & idempotent : chargerPlanBTP n'ajoute que les comptes ABSENTS (aucun
+   compte/écriture supprimé) ; migrerAuxTiers préserve les numéros saisis à la main ;
+   les journaux standard (OD/ODP/ODC/ODTVA) sont déjà garantis pour tous les dossiers
+   (addon247). Le plan comptable de saisie reste global (COMPTES ∪ db.plan). */
+(function(){
+  if(window.__reglesMBC) return; window.__reglesMBC=true;
+  function baseMBC(){ try{ if(typeof chargerPlanBTP==='function') chargerPlanBTP(); }catch(e){} }
+  function appliquerPartout(persist){
+    try{
+      if(typeof db==='undefined' || !db) return;
+      baseMBC();                                   /* dossier actif */
+      if(db.dossiersData && typeof withDataset==='function'){
+        Object.keys(db.dossiersData).forEach(function(k){ var ds=db.dossiersData[k]; if(!ds) return;
+          try{ withDataset(ds, baseMBC); }catch(e){} });
+      }
+      if(persist && typeof save==='function') save();
+    }catch(e){}
+  }
+  window.appliquerReglesMBC=appliquerPartout;
+  /* Démarrage : toutes les sociétés existantes reçoivent la base comptable MBC. */
+  try{ appliquerPartout(true); }catch(e){}
+  /* Filet pour la restauration asynchrone depuis IndexedDB (gros dossiers, addon-idb) :
+     un second passage après restauration éventuelle. */
+  try{ setTimeout(function(){ appliquerPartout(true); }, 2000); }catch(e){}
+  /* Futures sociétés (et ouverture de dossier) : garantir la base MBC sur le dossier chargé.
+     La création de dossier (creerDossierComplet / choisirDossier) charge déjà le plan BTP. */
+  if(typeof window.chargerDossier==='function'){ var _cd=window.chargerDossier;
+    window.chargerDossier=function(){ var r=_cd.apply(this,arguments); try{ baseMBC(); }catch(e){} return r; }; }
 })();
 </script>
 </body>

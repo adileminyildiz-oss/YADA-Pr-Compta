@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Correctif LOGO : icône correcte partout (dégradé + Y blanc) dans la barre latérale des modules — v407
+## 🟢 Dernière mise à jour — Règles de comptabilité de MBC appliquées à TOUTES les sociétés (actuelles & futures) — v408
+**Quoi :** la **base comptable de MBC** (plan comptable **BTP + PCG complet**, TVA automatique, comptes de tiers auxiliaires) est désormais appliquée à **chaque dossier du portefeuille** et à **tout nouveau dossier**. Ainsi toutes les sociétés partagent les mêmes règles comptables que MBC. **100% additif & idempotent** : `chargerPlanBTP` n'ajoute que les comptes **absents** (aucun compte/écriture supprimé), `migrerAuxTiers` **préserve** les numéros de compte saisis à la main, et les journaux standard (OD/ODP/ODC/ODTVA) étaient déjà garantis pour tous (addon247). Le plan de saisie reste global (`COMPTES ∪ db.plan`).
+
+**Comment — `yada-addon197` (100% additif) :** `appliquerReglesMBC()` applique `baseMBC()` (= `chargerPlanBTP()`) au **dossier actif** puis, via `withDataset(ds, baseMBC)`, à **tous les datasets** de `db.dossiersData`. Lancé **au démarrage** (toutes les sociétés existantes) + **second passage à 2 s** (filet pour la restauration asynchrone IndexedDB des gros dossiers) ; **wrap de `chargerDossier`** garantit la base MBC à chaque ouverture (les nouveaux dossiers chargent déjà le plan BTP via `creerDossierComplet`/`choisirDossier`).
+
+**Validé :** `node --check` (190 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (2 dossiers dont un à plan VIDE → après boot, chaque `db.dossiersData[*].plan` contient le plan BTP/PCG (>900 comptes), comptes clés présents 606/706/445710000, écritures existantes intactes ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v408**.
+
+---
+
+## 🟢 MAJ précédente — Correctif LOGO : icône correcte partout (dégradé + Y blanc) dans la barre latérale des modules — v407
 **Quoi :** correction du **bug d'affichage du nouveau logo** dans la **barre latérale** (tous les modules du dossier) : l'icône apparaissait **aplatie en bleu uni** avec un **Y foncé** au lieu du **dégradé bleu→turquoise + Y blanc**. Cause : d'anciennes règles de thème écrites pour l'**ancien** logo — `.brand svg rect{fill:#1e90ff !important}` et `.brand svg path/line{stroke:#04121f !important}` — **surchargeaient** les couleurs du nouvel SVG (le point vert, un `<circle>`, n'était pas touché).
 
 **Comment — 1 édition de `yada-addon195` (`icon()`) :** les couleurs sont désormais posées en **style INLINE `!important`** sur chaque élément (`rect{fill:url(#id)!important}`, `path`/`line{stroke:#fff!important;fill:none!important}`, `circle{fill:#24d17a!important}`). Le **style inline `!important` l'emporte sur les `!important` de feuille de style** → l'icône (dégradé + Y blanc + point vert) s'affiche correctement **partout** (barre latérale, parcours d'entrée, connexion, mobile), quel que soit le thème.
