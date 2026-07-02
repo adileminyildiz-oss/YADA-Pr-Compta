@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Éditeur d'écritures VIDE : Entrée / Flèche bas crée la 1ʳᵉ écriture — v406
+## 🟢 Dernière mise à jour — Correctif LOGO : icône correcte partout (dégradé + Y blanc) dans la barre latérale des modules — v407
+**Quoi :** correction du **bug d'affichage du nouveau logo** dans la **barre latérale** (tous les modules du dossier) : l'icône apparaissait **aplatie en bleu uni** avec un **Y foncé** au lieu du **dégradé bleu→turquoise + Y blanc**. Cause : d'anciennes règles de thème écrites pour l'**ancien** logo — `.brand svg rect{fill:#1e90ff !important}` et `.brand svg path/line{stroke:#04121f !important}` — **surchargeaient** les couleurs du nouvel SVG (le point vert, un `<circle>`, n'était pas touché).
+
+**Comment — 1 édition de `yada-addon195` (`icon()`) :** les couleurs sont désormais posées en **style INLINE `!important`** sur chaque élément (`rect{fill:url(#id)!important}`, `path`/`line{stroke:#fff!important;fill:none!important}`, `circle{fill:#24d17a!important}`). Le **style inline `!important` l'emporte sur les `!important` de feuille de style** → l'icône (dégradé + Y blanc + point vert) s'affiche correctement **partout** (barre latérale, parcours d'entrée, connexion, mobile), quel que soit le thème.
+
+**Validé :** `node --check` (189 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (barre latérale d'un module : `.yada-ic rect` = `fill:url(#…)` — dégradé conservé, `path`/`line` stroke `rgb(255,255,255)` — Y blanc, `circle` vert ; plus de bleu uni / Y foncé ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v407**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur d'écritures VIDE : Entrée / Flèche bas crée la 1ʳᵉ écriture — v406
 **Quoi :** dans l'**éditeur d'écritures façon Sage** (`#ec-win`), quand **aucune écriture n'apparaît** (journal/compte vide, « Aucune écriture… »), appuyer sur **Entrée** ou **Flèche bas** **crée la première écriture** à saisir (curseur placé sur la date). Ces touches **gardent leurs rôles habituels** (champ suivant / descendre / nouvelle écriture) **dès qu'il y a des écritures** — elles ne créent la 1ʳᵉ ligne **qu'à l'état vide** (« au début »).
 
 **Comment — `yada-addon196` (100% additif) :** écouteur `keydown` **capture** sur `document` → si l'overlay `#ec-overlay.show` est ouvert, la liste de comptes (`#ec-sugg`) n'est pas ouverte, et `ecEcritures()` est **vide**, alors `Entrée`/`ArrowDown` → `ecAjouterEcriture()` (+ `preventDefault`). Ne se déclenche **qu'à l'état vide** (aucun conflit avec addon114/140/146, qui exigent le focus sur un champ `.ec-i` inexistant quand c'est vide). `ecEcritures()` **ignore le filtre de recherche** → « vide » = réellement aucune écriture (pas un simple filtrage).
