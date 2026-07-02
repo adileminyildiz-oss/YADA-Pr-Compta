@@ -54,3 +54,70 @@ les écritures FEC), v266 (correspondances factures FEC), v288 (tous les modules
 v369 (immobilisations & paie dérivées des écritures). **Toute évolution future doit préserver ce comportement.**
 
 ---
+
+## RC-002 — Structure naturelle des écritures : 3 lignes (HA/VT), 2 lignes (Banque)
+
+**Énoncé.**
+Chaque écriture présente une **structure de lignes standard selon son journal**.
+
+### a) Journaux d'Achats (HA / ACH) et de Ventes (VT / VTE) → **3 lignes**
+
+Dans l'ordre naturel :
+
+1. **1ʳᵉ ligne — compte de TIERS** (fournisseur `401…` pour un achat, client `411…` pour une vente) → porte le **TTC** ;
+2. **2ᵉ ligne — compte de TVA** (déductible `4456…` pour un achat, collectée `4457…` pour une vente) → porte la **TVA** ;
+3. **3ᵉ ligne — compte de CHARGE (classe 6, achat) ou de PRODUIT (classe 7, vente)** → porte le **HT**.
+
+L'écriture est **équilibrée** : TTC (tiers) = TVA + HT (contrepartie).
+
+**Exemple — Achat (journal HA), fournisseur, TTC 120 € / TVA 20 % :**
+
+| Ligne | Compte | Libellé | Débit | Crédit |
+|------|--------|---------|------:|------:|
+| 1 | `401XXXXXX` (tiers) | Fournisseur | | 120,00 |
+| 2 | `445660000` (TVA déductible) | TVA | 20,00 | |
+| 3 | `606…`/`607…` (charge) | Achat HT | 100,00 | |
+
+**Exemple — Vente (journal VT), client, TTC 240 € / TVA 20 % :**
+
+| Ligne | Compte | Libellé | Débit | Crédit |
+|------|--------|---------|------:|------:|
+| 1 | `411XXXXXX` (tiers) | Client | 240,00 | |
+| 2 | `445710000` (TVA collectée) | TVA | | 40,00 |
+| 3 | `706…`/`707…` (produit) | Vente HT | | 200,00 |
+
+### b) Journal de BANQUE (BQ) → **2 lignes**
+
+1. **1ʳᵉ ligne — compte de TIERS *ou* compte de CHARGES**, selon le lettrage :
+   - **compte de TIERS** (`401…` / `411…`) **si la facture est parvenue et qu'un lettrage est possible**
+     (le mouvement bancaire solde une facture existante) ;
+   - **compte de CHARGES** (classe 6) **si aucune facture ne peut lettrer l'écriture**.
+   - Le choix se **détermine au moment du lettrage** : tant qu'une facture rapprochable existe, on est sur le
+     compte de tiers ; à défaut, on impute directement au compte de charges.
+2. **2ᵉ ligne — compte BANQUE** : `512000000`.
+
+L'écriture de banque est **équilibrée** sur ces 2 lignes (le sens 512 débit/crédit détermine Entrant/Sortant, cf. RC à venir).
+
+### c) Comptes de banque multiples
+
+S'il existe **plusieurs comptes bancaires**, on **crée un compte 512 dédié par banque**, en **incrémentant** :
+
+- 1ʳᵉ banque → **`512000000`** ;
+- 2ᵉ banque → **`512000100`** (assermenté / assigné à la deuxième banque) ;
+- banques suivantes → **même logique d'incrémentation** (`512000200`, `512000300`, …).
+
+Chaque mouvement bancaire est imputé sur **le compte 512 de la banque concernée** (jamais un 512 « générique » qui mélangerait les banques).
+
+**Portée & lignes rouges.**
+- La génération d'écritures HA/VT doit produire **ces 3 lignes** dans **cet ordre** (tiers / TVA / charge-produit).
+- La génération/saisie d'écritures de banque doit produire **exactement 2 lignes** (contrepartie tiers-ou-charge + 512),
+  jamais une 3ᵉ ligne parasite.
+- Le compte de banque est **512 par établissement** (incrément `…000`, `…100`, `…200`…) ; ne jamais fusionner
+  plusieurs banques sous un même 512.
+- Le passage **tiers ↔ charges** en 1ʳᵉ ligne de banque est piloté par la **possibilité de lettrage** avec une facture existante.
+
+**Note.** Les écritures multi-lignes légitimes (ex. facture ventilée sur plusieurs comptes de charges/produits, ou
+plusieurs taux de TVA) restent possibles : la règle décrit la **structure naturelle par défaut** ; elle interdit les
+lignes **parasites** et fixe l'**ordre** et le **rôle** de chaque ligne.
+
+---
