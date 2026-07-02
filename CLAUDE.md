@@ -36,7 +36,15 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Liste des dossiers : liste alignée sur le cadre d'infos (même haut + même hauteur), boutons visibles — v396
+## 🟢 Dernière mise à jour — Liste des dossiers : défilement RÉTABLI (retrait des transforms 3D qui bloquaient molette & survol) — v397
+**Quoi :** la liste des dossiers **ne défilait pas** (molette/trackpad) et le **survol ne marchait plus sur certaines lignes** : les **transforms 3D** de l'effet roue (`perspective` + `rotateX` + `translateZ`) sortaient les lignes du plan de la souris → clics/molette/survol la manquaient (surtout Safari). L'effet « flou » est conservé mais **en 2D uniquement** (opacité + `blur` + masque de fondu haut/bas) → **le défilement natif et le survol fonctionnent**. Ajout d'une **barre de défilement fine bleue** visible.
+
+**Comment — `yada-addon192` :** `paint()` ne pose plus de `transform` 3D (retrait `translateZ`/`rotateX`), garde `opacity`+`blur` ; `.ds-list-right` sans `perspective`, `overscroll-behavior:contain`, `scrollbar-width:thin` + `::-webkit-scrollbar` bleu 9px ; `.ds-row` sans `transform-style:preserve-3d`. Validé : `node --check` (185 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (avec session ouverte : survol ligne → panneau « DOSSIER 4 » ; **molette réelle → scrollTop 220→440** ; auparavant bloqué à 0 ; 0 pageerror) + filet d'équilibre ✅. Badge → **v397**.
+*(Note : les tests précédents étaient faussés par l'overlay `#sec-lock` qui recouvrait la liste ; test refait avec appareil de confiance `yada-remember`.)*
+
+---
+
+## 🟢 MAJ précédente — Liste des dossiers : liste alignée sur le cadre d'infos (même haut + même hauteur), boutons visibles — v396
 **Quoi :** sur l'écran « Liste des dossiers », la **liste défilante (droite) a exactement le même haut et la même hauteur que le cadre d'informations (gauche)** ; les **boutons du bas restent visibles**. Avant, la liste (60vh + padding 16vh) débordait plus bas et flottait ; désormais sa hauteur est **synchronisée** sur celle du cadre d'infos (bornée à 60vh pour garder les boutons visibles).
 
 **Comment — `yada-addon192` :** `.ds-liste-layout{align-items:start}` (tops alignés) ; `.ds-list-right` sans `max-height` fixe, `padding:16vh→22px` ; `sync()` mesure la hauteur du `#ds-info-panel` et pose `box.style.height/maxHeight = clamp(300, hauteur, 60vh)` puis repeint la roue ; appelé dans `wire()`, après `renderInfo()` (survol → le cadre change) et sur `resize`. Le panneau vide reçoit `min-height:360px` (proche de la carte pleine) pour éviter les sauts. Validé : `node --check` (185 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (H=900 & 1229 : cadre et liste — top 254, hauteur 423/423, écart 0 ; boutons visibles bas 763 ; survol → carte + sync ; 0 pageerror) + filet d'équilibre ✅. Badge → **v396**.
