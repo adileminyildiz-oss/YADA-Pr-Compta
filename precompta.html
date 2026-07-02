@@ -10982,7 +10982,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v391';
+    b.textContent='YADA · v392';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21901,30 +21901,31 @@ ${lignes}
 (function(){
   var st=document.createElement('style'); st.id='ds-wheel-mod'; st.textContent=
     /* Conteneur défilant, rangé à droite, avec fondu (flou) en haut et en bas. */
-    '.ds-list-right{max-width:none!important;width:min(520px,44vw);margin:8px 6vw 16px auto!important;'
-    +'max-height:62vh;overflow-y:auto;overflow-x:hidden;perspective:1000px;padding:31vh 10px;'
+    /* Liste compacte, remontée et rangée à droite ; lignes plus larges. */
+    '.ds-list-right{max-width:none!important;width:min(680px,52vw);margin:2px 6vw 12px auto!important;'
+    +'max-height:48vh;overflow-y:auto;overflow-x:hidden;perspective:1100px;padding:13vh 12px;'
     +'scrollbar-width:none;'
-    +'-webkit-mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.12) 10%,#000 32%,#000 68%,rgba(0,0,0,.12) 90%,transparent 100%);'
-    +'mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.12) 10%,#000 32%,#000 68%,rgba(0,0,0,.12) 90%,transparent 100%)}'
+    +'-webkit-mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.25) 7%,#000 22%,#000 78%,rgba(0,0,0,.25) 93%,transparent 100%);'
+    +'mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.25) 7%,#000 22%,#000 78%,rgba(0,0,0,.25) 93%,transparent 100%)}'
     +'.ds-list-right::-webkit-scrollbar{width:0;height:0;display:none}'
     +'.ds-list-right .ds-row{transform-origin:center center;transform-style:preserve-3d;'
     +'will-change:transform,opacity,filter;transition:box-shadow .15s}'
-    +'@media(max-width:820px){.ds-list-right{width:88vw;margin:8px auto 16px!important;max-height:66vh}}';
+    +'@media(max-width:820px){.ds-list-right{width:92vw;margin:4px auto 12px!important;max-height:56vh;padding:16vh 10px}}';
   document.head.appendChild(st);
 
   function paint(box){
     if(!box) return;
     var rows=box.querySelectorAll('.ds-row'); if(!rows.length) return;
     var mid=box.scrollTop + box.clientHeight/2;
-    var half=Math.max(1, box.clientHeight/2);
+    var half=Math.max(1, box.clientHeight*0.58);   // zone nette plus large (plus de lignes lisibles)
     for(var i=0;i<rows.length;i++){ var r=rows[i];
       var rc=r.offsetTop + r.offsetHeight/2;
       var rel=(rc-mid)/half;                      // ~ -1 (haut) .. +1 (bas)
-      var cl=Math.max(-1.7,Math.min(1.7,rel));
-      var rot=cl*-46;                              // rotation « en cercle » (roue)
-      var tz=-Math.abs(cl)*70;                     // s'éloigne (cylindre)
-      var op=1-Math.min(1,Math.abs(cl))*0.82;      // fond dans le flou
-      var bl=Math.min(6.5,Math.abs(cl)*4.4);
+      var cl=Math.max(-1.5,Math.min(1.5,rel));
+      var rot=cl*-40;                              // rotation « en cercle » (roue)
+      var tz=-Math.abs(cl)*58;                     // s'éloigne (cylindre)
+      var op=1-Math.min(1,Math.abs(cl))*0.72;      // fond dans le flou
+      var bl=Math.min(5.5,Math.abs(cl)*3.6);
       r.style.transform='translateZ('+tz.toFixed(1)+'px) rotateX('+rot.toFixed(1)+'deg)';
       r.style.opacity=op.toFixed(3);
       r.style.filter='blur('+bl.toFixed(2)+'px)';

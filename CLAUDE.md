@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — HUB : bloc (carte société + rubriques) décalé à droite, place pour le bouton — v391
+## 🟢 Dernière mise à jour — Liste des dossiers : compacte, remontée, lignes plus larges, boutons visibles — v392
+**Quoi :** l'écran « Liste des dossiers » ne laisse plus un grand vide au-dessus de la liste : la liste est **remontée** (juste sous le sous-titre), **compacte** (moins haute), les **lignes de dossier sont plus larges**, et les **boutons du bas** (← Retour · Créer un dossier · Importer) restent **bien visibles** (plus coupés). L'effet roue/flou est conservé (zone nette élargie, effet plus doux).
+
+**Comment — 1 édition CSS + paint d'`yada-addon192` :** `.ds-list-right` : `width:min(520px,44vw)→min(680px,52vw)` (lignes plus larges), `margin:8px…→2px…auto` (remontée), `max-height:62vh→48vh` (compacte → boutons visibles), `padding:31vh→13vh` (moins de vide, liste plus haute), masque de fondu resserré ; `paint()` : `half=clientHeight/2→*0.58` (zone nette plus large) + intensités réduites (rot 46→40, tz 70→58, op .82→.72, blur 6.5→5.5). Mobile : `width:92vw;max-height:56vh;padding:16vh`. Validé : `node --check` (185 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (H=950 & 1229 : liste top 250 px — remontée ; lignes 656 px — plus larges ; boutons « ← Retour / Créer / Importer » **visibles** dans le viewport ; 0 pageerror) + filet d'équilibre ✅. Badge → **v392**.
+
+---
+
+## 🟢 MAJ précédente — HUB : bloc (carte société + rubriques) décalé à droite, place pour le bouton — v391
 **Quoi :** sur la page du dossier (HUB), le bloc **carte société + 5 rubriques** est **décalé vers la droite** de l'écran (aligné à droite), rapprochant la carte des rubriques. La zone de **gauche** (titre du dossier + bouton **« Changer de dossier »**) est ainsi dégagée et le bouton reste bien visible à gauche.
 
 **Comment — 1 édition CSS d'`yada-addon189` :** `.ds-hub-grid{max-width:1000px;margin:10px auto 0;grid-template-columns:1.05fr .95fr;gap:18px}` → `max-width:1160px;margin:10px 0 0 auto` (aligné à droite) `;grid-template-columns:.95fr 1.05fr;gap:16px` ; ajout `.ds-hub-wrap .login-actions{margin-top:20px;justify-content:flex-start}`. Validé : `node --check` (185 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (viewport 1900 : grille alignée à droite — écart droit 114 px vs gauche 562 px ; bouton « Changer de dossier » visible à gauche `left:146` ; 0 pageerror) + filet d'équilibre ✅. Badge → **v391**.
