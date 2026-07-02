@@ -1,56 +1,120 @@
-# ROADMAP — YADA / Précompta · finalisation par module
+# ROADMAP — YADA / Précompta · **une session par module**
 
-> Feuille de route de finalisation du format actuel (jusqu'à `yada-addon20`).
-> **Principe directeur : ne jamais rompre le fil comptable.** Tout se fait par addons `yada-addonN` additifs, validés à chaque étape (`node --check` + Σ débit = Σ crédit sur les 2 démos AMA et SCI 42).
+> Document de **coordination des sessions**. YADA est **un seul fichier** (`precompta.html`) :
+> plusieurs sessions travaillent dessus, **une par module**. Ce fichier dit, pour chaque
+> module, **où on en est** et **ce qui reste à finaliser**. Chaque session le lit au
+> lancement, met à jour la section de SON module, et ne touche pas aux autres.
+>
+> Source de vérité détaillée des changements : **`CLAUDE.md`** (journal de version, en tête).
 
-## Règles d'or
+---
+
+## 🔒 Règles de coordination (multi-sessions, fichier unique)
+
+1. **Une branche par session/module** — ex. `claude/module-tva`, `claude/module-banque`.
+   Ne pas partager une même branche entre deux modules en parallèle.
+2. **100% additif** — chaque session ajoute son bloc `yada-addonN` en fin de `<body>`
+   (et ses `<style id="...">` avant `</head>`). On ne réécrit jamais globalement.
+   Les modules se touchent alors très peu → conflits minimes.
+3. **Fusion séquentielle vers `main`** — rebaser sur `main` à jour **avant** chaque merge.
+   Les zones partagées (badge de version, `version.json`, en-tête `CLAUDE.md`) se
+   résolvent au fil de l'eau, une session à la fois.
+4. **Numéro d'addon & version** — prendre le prochain `yada-addonN` libre au moment du
+   merge (pas de la création de branche) pour éviter les collisions de numéro.
+5. **Validation obligatoire à chaque merge** — `node --check` (0 erreur) + accolades CSS
+   équilibrées + Playwright + **filet d'équilibre** (`node tests/equilibre-ecritures.mjs`).
+6. **Périmètre strict** — une session = un module. Ne pas modifier le code d'un autre
+   module sans le signaler ici.
+
+## ⚖️ Règles d'or comptables (valables pour TOUTES les sessions)
+
 1. Écritures **uniquement** via `posterFacture` / `genEcriture` / `posterBanque` / `posterOD`.
 2. **Σ débit = Σ crédit** sur chaque pièce.
 3. Comptes normalisés **`c9`** (9 chiffres).
 4. Numérotation **unique et chronologique** (`nextNumUnique`).
 5. Pièce envoyée/verrouillée = non modifiable → correction par **avoir** ou **OD**.
-6. **Continuité d'exercice** : à‑nouveaux (classes 1→5) + résultat (120/129) reportés à la clôture.
-7. Validation systématique à chaque addon.
+6. **Continuité d'exercice** : à‑nouveaux (1→5) + résultat (120/129) reportés à la clôture.
+7. **Base comptable MBC** (plan BTP + PCG, TVA auto, comptes de tiers) appliquée à
+   **tous** les dossiers (addon197) — ne pas la contourner.
 
-## Fondations transverses (priorité maximale)
-- ✅ **T1 — Clôture & à‑nouveaux & résultat** : OD de résultat (solde 6/7 → 120/129) + report des soldes 1→5 à l'ouverture N+1. *(addon21)*
-- ✅ **T2 — Cohérence des comptes (TVA)** : normalisation `c9` partout ; l'OD TVA solde réellement `44571`/`44566`. *(addon22)*
-- ✅ **T4 — États de synthèse** : Bilan + Compte de résultat. *(addon23)*
-- ✅ **T3 — Lettrage unifié** : moteur commun `lz*` + lettrage interactif dans l'éditeur (colonne L), compatible compte auxiliaire. *(addon24)*
+---
 
-**→ Fondations terminées. Prochaine phase : modules à risque comptable.**
+## 📦 Sessions par module
 
-## Plan par module (synthèse)
-| Module | À finaliser (clé) | Garde‑fou comptable |
-|---|---|---|
-| `dash` | Agrégats basés sur les écritures ; trésorerie = solde 512 ; GED réelle | Lecture seule |
-| `societe` | Compteurs dynamiques par dossier | Navigation |
-| `client` | GED réelle, mode client séparé, messagerie | Aucune écriture directe |
-| `tiers` | Édition/suppression fiche ; collectif vs auxiliaire | Pas de modif rétroactive ; type figé si mouvementé |
-| `facturation` | Avoirs, chronologie n°, e‑reporting, Factur‑X dans PDF/A‑3 | VTE équilibrée ; verrou après envoi |
-| `achats` | OCR réel, autoliquidation UE, justificatif rattaché | ACH équilibrée |
-| `compta` | Éditeur filtre+lettrage ; intégrer les A‑nouveaux | Équilibre imposé (471/bon compte) |
-| `chargespaie` | Taux paramétrables, paiement+lettrage, bulletin/DSN | OD équilibrées, idempotence |
-| `journal` | Édition depuis le journal, pagination | Lecture ; signaler déséquilibres |
-| `ia` | IA en ligne réelle, mémorisation par tiers | Comptabilisation via posterFacture |
-| `tva` | **T2** : OD TVA solde réellement ; chaînage crédit ; CA12 acomptes | TVA déclarée = solde 4457x/4456x |
-| `editions` | **T4** Bilan + CR ; balance âgée ; A‑nouveaux | États depuis écritures |
-| `fec` | FEC inverse (N→N‑1), conformité renforcée | Rejet déséquilibre/hors‑exercice |
-| `analytique` | Axes analytiques, marge par affaire | Lecture |
-| `banque` | Multi‑512, import relevé, ventilation TVA charge | BQ équilibrée |
-| `saisiebq` | Fusion avec banque ; TVA/multi‑512 | 2 lignes équilibrées |
-| `rappro` | Rapprochement auto, import relevé | Pointage ne modifie aucune écriture |
-| `reglements` | **Relier à la banque** : pas de « réglé » sans mouvement 512 | Contrepartie trésorerie obligatoire |
-| `immos` | Cession → écriture (675/775), dégressif fiable, A‑nouveaux | OD dotations équilibrée |
-| `dossier` | Ouvrir K‑bis/Statuts, reprise A‑nouveaux | Dataset isolé |
-| `infosociete` | Bouton K‑bis/Statuts, validations | Aucune écriture |
-| `coffre` | Chiffrement local | Hors compta |
-| `parametrage` | Mapping TVA appliqué à la saisie ; `c9` | Compte mouvementé non supprimable |
+> Légende : ✅ fait · 🔧 à finaliser · 🌐 hors‑ligne impossible (réseau/API requis).
 
-## Ordre d'exécution — AVANCEMENT
-1. OK **Fondations** : T1 (addon21) -> T2 (22) -> T4 (23) -> T3 (24).
-2. OK **Risque compta** : `tva` (T2), `reglements`<->`banque` (25), `immos` cession (26), `fec` inverse (34). *(rappro : pointage total + justification deja presents)*
-3. OK **Fiabilisation/UX** : `compta` editeur filtre+lettrage (24/27), `tiers` edition (28), `editions` balance agee (29), `dash` tresorerie reelle (30).
-4. OK/EN COURS **Fonctionnalites** : GED (31), mode client (32), messagerie (33) livres ; **OCR reel + IA en ligne** (reseau/cle API) et **e-reporting** restent hors perimetre hors-ligne.
+### Session 1 — **Comptabilité** (cœur)
+Sous‑modules : `compta` (Analyse / Consultation), `journal`, `editions`, `fec`,
+`reglements`, `analytique`, `plancomptable`, `ia`, `pilotage`, `salarie`.
+- ✅ Éditeur d'écritures façon Sage (saisie directe, clavier, lettrage, éditeur vide → Entrée crée la 1ʳᵉ écriture).
+- ✅ Consultation = centre de contrôle (source unique) ; Éditions reliées.
+- ✅ Balance / Grand‑livre / Bilan / Compte de résultat / journaux depuis les écritures.
+- ✅ FEC : import dans le dossier courant, comptes de tiers auxiliaires, immos auto.
+- 🔧 Analytique : axes analytiques réels, marge par affaire.
+- 🔧 Assistant IA : mémorisation par tiers · 🌐 IA en ligne réelle.
+- Garde‑fou : équilibre imposé, `c9`, lettrage `lz*`.
 
-**Etat : feuille de route traitee. Reste non faisable hors-ligne : OCR/IA en ligne reelle, e-reporting (a brancher quand une API sera disponible).**
+### Session 2 — **Fournisseurs** (`achats`)
+- ✅ Dépôt de facture + lecture auto (PDF couche‑texte), comptabilisation cabinet (401 auxiliaire, montants exacts), doublons.
+- ✅ Correspondances factures ↔ écritures (FEC inclus), journal ACH lié.
+- 🔧 Autoliquidation UE affinée ; justificatif systématiquement rattaché.
+- 🌐 OCR image/scan (Tesseract via CDN, repli hors‑ligne déjà en place).
+- Garde‑fou : ACH équilibrée.
+
+### Session 3 — **Clients** (`facturation`)
+- ✅ Création facture → liste → génération d'écriture (VTE équilibrée), aperçu A4 en direct, récurrences, conditions de paiement, indemnité 40 €.
+- ✅ Facturation électronique (PPF/PDP simulé) + Factur‑X (XML CII).
+- 🔧 Avoirs, chronologie stricte des n°.
+- 🌐 e‑reporting réel, Factur‑X embarqué en PDF/A‑3.
+- Garde‑fou : VTE équilibrée ; verrou après envoi.
+
+### Session 4 — **Tiers**
+- ✅ Fiches (fournisseur / client société / particulier), édition/suppression, changement de type, moyen de paiement, n° de compte modifiable, HT+TVA par tiers, dédoublonnage/fusion.
+- 🔧 Consolidation collectif ↔ auxiliaire, contrôles de cohérence SIRET/TVA.
+- Garde‑fou : pas de modif rétroactive non maîtrisée.
+
+### Session 5 — **Immobilisations et Financement** (`immos`, `fraiskm`)
+- ✅ Fiches immo (nature → compte → dotation), plan d'amortissement, génération acquisition + dotation, cession (675/775), FEC → fiches auto.
+- 🔧 Amortissement dégressif fiable, reprise sur dépréciation, emprunts/crédit‑bail/locations complets, reprise A‑nouveaux.
+- Garde‑fou : OD dotations/cession équilibrées.
+
+### Session 6 — **Charges et Paie** (`chargespaie`)
+- ✅ Bulletins de paie éditables (modèle FR), OD de paie + OD de charges par mois, dépôt/OCR bulletins, journal de paie.
+- 🔧 Taux paramétrables par convention, paiement + lettrage des organismes.
+- 🌐 DSN réelle.
+- Garde‑fou : OD équilibrées, idempotence par mois.
+
+### Session 7 — **TVA**
+- ✅ CA3 sur tous comptes 445x, onglets d'année, déclaration séquentielle, OD TVA, détail par compte, suivi annuel.
+- 🔧 CA12 (réel simplifié) : acomptes/chaînage crédit renforcés.
+- 🌐 Télétransmission (impots.gouv.fr).
+- Garde‑fou : TVA déclarée = solde 4457x / 4456x.
+
+### Session 8 — **Banque** (`banque`, `saisiebq`, `rappro`)
+- ✅ Relevé par année/mois, saisie journal banque (éditeur + lecture relevé PDF), contrepartie 512 auto, rapprochement/lettrage, sens fiable depuis la ligne 512.
+- 🔧 Multi‑512 avancé, import relevé (CSV/OFX) fiabilisé, ventilation TVA sur frais.
+- Garde‑fou : BQ équilibrée ; pointage ne modifie aucune écriture.
+
+### Session 9 — **Pilotage & espaces** (`dash`, `societe`, `client`)
+- ✅ Tableau de bord (trésorerie = solde 512, CA/charges/résultat depuis écritures), portefeuille Sociétés, Espace Client (dépôts, factures, messagerie, mobile).
+- 🔧 KPI/graphes analytiques par affaire, compteurs dynamiques par dossier.
+- Garde‑fou : lecture seule (aucune écriture directe côté client).
+
+### Session 10 — **Dossier & réglages** (`dossier`, `infosociete`, `coffre`, `parametrage`)
+- ✅ Création dossier (K‑bis/Statuts facultatifs), infos société, coffre‑fort, paramétrage + plan comptable (séparés), transfert manuel, synchro cloud (Pantry) + IndexedDB.
+- 🔧 Reprise A‑nouveaux à la création, validations de fiche renforcées.
+- Garde‑fou : dataset isolé par dossier ; compte mouvementé non supprimable.
+
+---
+
+## 🧭 Démarrer une session de module
+
+1. Ouvrir la session en annonçant : **« Cette session = module \<X\> »**.
+2. Créer/checkout la branche `claude/module-<x>` depuis `main` à jour.
+3. Lire la section du module ci‑dessus + le journal `CLAUDE.md`.
+4. Travailler **additif** (`yada-addonN`), valider (`node --check` + équilibre + Playwright).
+5. Mettre à jour la section du module ici (✅ / 🔧).
+6. Rebaser sur `main`, ouvrir la PR, faire passer la CI, merger.
+
+**Hors‑ligne impossible (à brancher quand une API sera dispo)** : OCR image/scan en ligne,
+IA en ligne réelle, e‑reporting / télétransmission TVA, DSN.
