@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Liste des dossiers : compacte, remontée, lignes plus larges, boutons visibles — v392
+## 🟢 Dernière mise à jour — HUB : cartes réduites (société + rubriques) → bouton « Changer de dossier » visible — v393
+**Quoi :** sur la page du dossier (HUB), la carte société et les 5 rubriques remplissaient tout l'écran et le bouton **« Changer de dossier »** était coupé en bas. Les **cartes sont réduites** (paddings/tailles de police plus compacts, avatar plus petit) → la grille passe de ~640 px à ~437 px de haut et le bouton redevient **bien visible**.
+
+**Comment — surcharges compactes ajoutées à `ds-flow-mod` (`yada-addon189`) :** `.ds-tile{padding:10px 15px}` + libellés réduits ; `.dsc-head{padding:13px 18px}`, `.dsc-av{44×44}`, `.dsc-nom{18px}`, `.dsc-grid{padding:11px 15px 12px;gap:8px}`, `.dsc-item{padding:8px 11px}`, `.dsc-l{9.5px}/.dsc-v{12.5px}` ; `.ds-hub-side{gap:8px}` ; `.ds-hub-wrap .login-actions{margin-top:14px}`. Validé : `node --check` (185 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (H=1000 & 1150 : grille 437 px, bouton « Changer de dossier » bas 747 px → **visible** ; 0 pageerror) + filet d'équilibre ✅. Badge → **v393**.
+
+---
+
+## 🟢 MAJ précédente — Liste des dossiers : compacte, remontée, lignes plus larges, boutons visibles — v392
 **Quoi :** l'écran « Liste des dossiers » ne laisse plus un grand vide au-dessus de la liste : la liste est **remontée** (juste sous le sous-titre), **compacte** (moins haute), les **lignes de dossier sont plus larges**, et les **boutons du bas** (← Retour · Créer un dossier · Importer) restent **bien visibles** (plus coupés). L'effet roue/flou est conservé (zone nette élargie, effet plus doux).
 
 **Comment — 1 édition CSS + paint d'`yada-addon192` :** `.ds-list-right` : `width:min(520px,44vw)→min(680px,52vw)` (lignes plus larges), `margin:8px…→2px…auto` (remontée), `max-height:62vh→48vh` (compacte → boutons visibles), `padding:31vh→13vh` (moins de vide, liste plus haute), masque de fondu resserré ; `paint()` : `half=clientHeight/2→*0.58` (zone nette plus large) + intensités réduites (rot 46→40, tz 70→58, op .82→.72, blur 6.5→5.5). Mobile : `width:92vw;max-height:56vh;padding:16vh`. Validé : `node --check` (185 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (H=950 & 1229 : liste top 250 px — remontée ; lignes 656 px — plus larges ; boutons « ← Retour / Créer / Importer » **visibles** dans le viewport ; 0 pageerror) + filet d'équilibre ✅. Badge → **v392**.
