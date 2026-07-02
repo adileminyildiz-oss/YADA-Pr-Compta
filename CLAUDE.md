@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Liste des dossiers : lignes NETTES (flou par ligne retiré), flou seulement sur les bords + défilement trackpad — v398
+## 🟢 Dernière mise à jour — L'ancienne page « Sélectionnez un dossier » (recherche + grille) ne peut plus réapparaître — v399
+**Quoi :** l'override d'`ecranSelectionDossier` (`yada-addon189`) retombait sur l'**ancienne page « Sélectionnez un dossier »** (barre de recherche + grille de cartes + Réinitialiser démo) en cas d'erreur de `dsScreen()`. Désormais, en cas d'erreur, il affiche l'**accueil « Espace dossiers »** (boutons seuls : Liste Dossier / Créer / Importer) — l'ancienne page ne s'affiche **jamais**. (La carte « Dossier sélectionné » utilise déjà le même composant `.dossier-card` que les cartes de l'ancienne page → même taille.)
+
+**Comment — 1 édition d'`yada-addon189` :** `catch(e){ return _e.apply(...) }` → `catch(e){ try{ return ecranAccueil(); }catch(e2){ return _e.apply(...) } }`. Note : dans tous les états testés (`accueil/liste/selUnique/hub`) `dsScreen()` ne lève pas d'erreur ; l'apparition de l'ancienne page côté utilisateur venait d'un **cache** d'une version antérieure — le bump v399 force la mise à jour. Validé : `node --check` (185 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (état par défaut → « Espace dossiers » boutons, **sans** barre de recherche ni grille de cartes ; 0 pageerror) + filet d'équilibre ✅. Badge → **v399**.
+
+---
+
+## 🟢 MAJ précédente — Liste des dossiers : lignes NETTES (flou par ligne retiré), flou seulement sur les bords + défilement trackpad — v398
 **Quoi :** la liste paraissait **floue** (chaque ligne recevait un `blur`/opacité selon sa position). Ce **flou par ligne est retiré** : les lignes sont **nettes**. Le **flou est conservé uniquement sur les bords haut/bas** (fondu du masque CSS `mask-image`). Le **défilement au trackpad/molette** fonctionne.
 
 **Comment — `yada-addon192` :** `paint()` ne calcule plus d'opacité/`blur` par ligne — il se contente d'effacer tout `opacity`/`filter` résiduel (lignes nettes) ; le fondu de bord vient du `mask-image` (inchangé) ; défilement natif (`overflow-y:auto` + `overscroll-behavior:contain` + `-webkit-overflow-scrolling:touch`, sans transform 3D depuis v397). Validé : `node --check` (185 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (session ouverte : 6 lignes `opacity:1`/`filter:none` — nettes ; masque de bord présent ; molette réelle → scrollTop 240 ; survol OK ; 0 pageerror) + filet d'équilibre ✅. Badge → **v398**.
