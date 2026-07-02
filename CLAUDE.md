@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Sélectionner un dossier → HUB directement (page « Dossier sélectionné » supprimée) + ancienne page de cartes définitivement retirée + cache vidé — v400
+## 🟢 Dernière mise à jour — HUB : même disposition que la page « Liste des dossiers » (carte société à gauche + rubriques à droite) — v401
+**Quoi :** la page du dossier (HUB) reprend **exactement la disposition de la page « Liste des dossiers »** : la **carte société est alignée à GAUCHE** (au niveau du titre, largeur ≤ 560 px comme le cadre d'infos de la liste) et les **rubriques sont à DROITE** (colonne 440–600 px, comme la liste des dossiers). Avant, le bloc HUB était **centré / décalé au milieu** (`max-width:1160px;margin:…auto`, colonnes `.95fr 1.05fr`) → il ne s'alignait pas sur la page de présentation des dossiers.
+
+**Comment — 2 éditions CSS (`ecranHub`, `<style id="ds-flow-mod">`) :**
+- `.ds-hub-grid` : `max-width:1160px;margin:10px 0 0 auto;grid-template-columns:.95fr 1.05fr;gap:16px;align-items:stretch` → **`grid-template-columns:1fr minmax(440px,600px);gap:28px;align-items:start;margin-top:6px`** (identique à `.ds-liste-layout`).
+- `.ds-hub-main` : `display:flex` → **`display:flex;max-width:560px`** (carte société capée comme `#ds-info-panel` de la liste).
+
+**Validé :** `node --check` (185 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (HUB : `.ds-hub-grid` = grille 2 colonnes `1fr minmax(440,600)`, carte société alignée à gauche `x≈145` = titre, rubriques à droite ; même disposition que « Liste des dossiers » ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v401**.
+
+---
+
+## 🟢 MAJ précédente — Sélectionner un dossier → HUB directement (page « Dossier sélectionné » supprimée) + ancienne page de cartes définitivement retirée + cache vidé — v400
 **Quoi :** deux demandes. (1) **Plus aucune page intermédiaire après avoir sélectionné un dossier** : cliquer un dossier dans la « Liste des dossiers » **atterrit directement dans le HUB** (carte société + choix des rubriques/modules) — l'écran **« Dossier sélectionné »** (une seule carte) est **supprimé**. (2) **L'ancienne page « Sélectionnez un dossier »** (barre de recherche + grille de cartes `.dossier-card` + « Réinitialiser (démo) ») est **définitivement supprimée** du code de base (elle réapparaissait via un **cache** périmé) — la fonction de base ne rend **plus jamais** de barre de recherche ni de grille de cartes ; le **cache du service worker est vidé** (bump `yada-v29 → yada-v30`) pour que la suppression prenne effet immédiatement en ligne.
 
 **Comment — 4 éditions :**

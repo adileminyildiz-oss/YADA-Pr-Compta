@@ -10972,7 +10972,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v400';
+    b.textContent='YADA · v401';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21795,9 +21795,11 @@ ${lignes}
     +'body[data-theme] .ds-grid-solo .dossier-card{border:2px solid rgba(30,144,255,.6)!important;box-shadow:0 0 0 4px rgba(30,144,255,.12),0 14px 34px rgba(0,0,0,.45)!important}'
     +'.ds-rub-grid{max-width:920px;margin:6px auto 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}'
     +'.ds-rub-tile{min-height:74px;justify-content:center}'
-    +'.ds-hub-grid{max-width:1160px;margin:10px 0 0 auto;display:grid;grid-template-columns:.95fr 1.05fr;gap:16px;align-items:stretch}'
+    /* Même disposition que la page « Liste des dossiers » (.ds-liste-layout) : carte
+       société à GAUCHE (alignée au titre, capée à 560px) + rubriques à DROITE. */
+    +'.ds-hub-grid{display:grid;grid-template-columns:1fr minmax(440px,600px);gap:28px;align-items:start;margin-top:6px}'
     +'.ds-hub-wrap .login-actions{margin-top:20px;justify-content:flex-start}'
-    +'.ds-hub-main{display:flex}'
+    +'.ds-hub-main{display:flex;max-width:560px}'
     +'.ds-hub-side{display:flex;flex-direction:column;gap:10px}'
     +'.ds-tile{display:flex;flex-direction:column;gap:2px;text-align:left;padding:14px 16px;border:1px solid rgba(30,144,255,.32);border-radius:13px;background:rgba(30,144,255,.07);cursor:pointer;color:inherit;transition:background .12s,border-color .12s}'
     +'.ds-tile:hover{background:rgba(30,144,255,.18);border-color:#1e90ff}'
