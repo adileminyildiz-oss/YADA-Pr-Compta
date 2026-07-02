@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Liste des dossiers : défilement libre (chaque dossier atteint le centre net) — v388
+## 🟢 Dernière mise à jour — Liste des dossiers VIDE : bouton « Créer un dossier » à sa place (fin du grand cadre vide) — v389
+**Quoi :** en cliquant « Liste des dossiers » **sans aucun dossier**, l'écran n'affiche plus le grand conteneur « roue » vide (padding `31vh` → énorme espace vide qui décalait le bouton). L'écran vide reprend **exactement la disposition de la première page** : titre + sous-titre + barre d'actions (← Retour · **Créer un dossier** · Importer) — le bouton « Créer un dossier » reste **à sa place** (même position que sur l'accueil). Dès qu'au moins un dossier existe, la liste « roue/cylindre » à droite réapparaît.
+
+**Comment — 1 édition d'`ecranListe` (`yada-addon189`) :** si `dossiers().length===0` → rendu sans `#ds-liste-scroll` (pas de cadre roue), juste `loginHead + titre + sous-titre + actions('← Retour')`. Sinon, rendu inchangé (liste roue). Validé : `node --check` (185 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (liste vide : **aucun** `#ds-liste-scroll`, bouton « Créer un dossier » à **top:278 = identique à l'accueil**, écart 0 px ; liste peuplée : roue présente, 5 lignes ; 0 pageerror) + filet d'équilibre ✅. Badge → **v389**.
+
+---
+
+## 🟢 MAJ précédente — Liste des dossiers : défilement libre (chaque dossier atteint le centre net) — v388
 **Quoi :** dans la liste « roue/cylindre » (v387), les **premier et dernier dossiers restaient bloqués dans le flou** (padding fixe 96px insuffisant) → impossible de les amener au centre net. Le **rembourrage haut/bas passe à ~½ hauteur du conteneur** (`padding:31vh`) : la liste **monte et descend sans limite**, chaque dossier peut être défilé jusqu'au **centre net** (haut comme bas).
 
 **Comment — 1 édition CSS d'`yada-addon192` :** `.ds-list-right{padding:96px 10px}` → `padding:31vh 10px` (moitié de `max-height:62vh`). Validé : `node --check` (185 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (12 dossiers : 1ᵉʳ centré opacité **1**, dernier centré opacité **1** — auparavant le dernier restait à .18 ; 0 pageerror) + filet d'équilibre ✅. Badge → **v388**.

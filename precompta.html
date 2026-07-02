@@ -10981,7 +10981,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v388';
+    b.textContent='YADA · v389';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21687,7 +21687,16 @@ ${lignes}
       +'<span class="ds-open">'+esc(label||'Sélectionner →')+'</span></button>';
   }
   function ecranListe(){
-    var rows=dossiers().map(function(d){ return dossierRow(d,"dsSelectionner('"+d.id+"')"); }).join('')||'<div class="ds-empty">Aucun dossier — créez-en un ou importez des données.</div>';
+    var ds=dossiers();
+    /* Aucun dossier : pas de grand cadre « roue » vide → on garde exactement la
+       disposition de la première page (bouton « Créer un dossier » à sa place). */
+    if(!ds.length){
+      return '<div class="login-wrap">'+loginHead()
+        +'<div class="login-title">Liste des dossiers</div>'
+        +'<div class="login-sub">Aucun dossier pour le moment — créez-en un ou importez des données.</div>'
+        +actions('<button class="btn btn-ghost" onclick="dsAccueil()">← Retour</button>')+'</div>';
+    }
+    var rows=ds.map(function(d){ return dossierRow(d,"dsSelectionner('"+d.id+"')"); }).join('');
     return '<div class="login-wrap">'+loginHead()
       +'<div class="login-title">Liste des dossiers</div>'
       +'<div class="login-sub">Cliquez sur un dossier pour le sélectionner.</div>'
