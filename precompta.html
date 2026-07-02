@@ -10982,7 +10982,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v393';
+    b.textContent='YADA · v394';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21683,7 +21683,7 @@ ${lignes}
       +actions('<button class="btn btn-gold" onclick="dsOuvrirListe()">Liste Dossier</button>')+'</div>';
   }
   function dossierRow(d, onclick, label){
-    return '<button class="ds-row" onclick="'+onclick+'"><span class="ds-av">'+esc((d.nom||'?')[0])+'</span>'
+    return '<button class="ds-row" data-id="'+esc(d.id)+'" onclick="'+onclick+'"><span class="ds-av">'+esc((d.nom||'?')[0])+'</span>'
       +'<span class="ds-main"><span class="ds-nom">'+esc(d.nom||'')+'</span><span class="ds-meta">'+esc([d.forme,d.activite,d.ville].filter(Boolean).join(' · ')||'—')+' · '+(d.siren?('SIREN '+esc(d.siren)):'SIREN —')+'</span></span>'
       +'<span class="ds-open">'+esc(label||'Sélectionner →')+'</span></button>';
   }
@@ -21700,8 +21700,11 @@ ${lignes}
     var rows=ds.map(function(d){ return dossierRow(d,"dsSelectionner('"+d.id+"')"); }).join('');
     return '<div class="login-wrap">'+loginHead()
       +'<div class="login-title">Liste des dossiers</div>'
-      +'<div class="login-sub">Cliquez sur un dossier pour le sélectionner.</div>'
+      +'<div class="login-sub">Survolez un dossier pour voir ses informations, cliquez pour le sélectionner.</div>'
+      +'<div class="ds-liste-layout">'
+      +'<div class="ds-info-col"><div id="ds-info-panel" class="ds-info-empty">Survolez un dossier pour afficher ses informations.</div></div>'
       +'<div id="ds-liste-scroll" class="ds-list ds-list-right">'+rows+'</div>'
+      +'</div>'
       +actions('<button class="btn btn-ghost" onclick="dsAccueil()">← Retour</button>')+'</div>';
   }
   function ecranSelUnique(id){ var d=dossierEntry(id); if(!d) return ecranAccueil();
@@ -21912,17 +21915,24 @@ ${lignes}
    ============================================================ */
 (function(){
   var st=document.createElement('style'); st.id='ds-wheel-mod'; st.textContent=
-    /* Conteneur défilant, rangé à droite, avec fondu (flou) en haut et en bas. */
-    /* Liste compacte, remontée et rangée à droite ; lignes plus larges. */
-    '.ds-list-right{max-width:none!important;width:min(680px,52vw);margin:2px 6vw 12px auto!important;'
-    +'max-height:48vh;overflow-y:auto;overflow-x:hidden;perspective:1100px;padding:13vh 12px;'
+    /* Disposition : panneau d'infos à GAUCHE (survol) + liste défilante à DROITE. */
+    '.ds-liste-layout{display:grid;grid-template-columns:1fr minmax(440px,600px);gap:28px;align-items:start;margin-top:6px}'
+    +'.ds-info-col{position:sticky;top:8px;min-width:0}'
+    +'#ds-info-panel{max-width:560px}'
+    +'.ds-info-empty{opacity:.6;font-size:14px;padding:26px 22px;border:1px dashed rgba(30,144,255,.3);border-radius:14px;max-width:520px}'
+    /* Liste défilante à droite ; lignes plus grandes ; fondu (flou) haut/bas. */
+    +'.ds-list-right{max-width:none!important;width:100%;margin:0 0 0 auto!important;'
+    +'max-height:60vh;overflow-y:auto;overflow-x:hidden;perspective:1200px;padding:16vh 6px;'
     +'scrollbar-width:none;'
     +'-webkit-mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.25) 7%,#000 22%,#000 78%,rgba(0,0,0,.25) 93%,transparent 100%);'
     +'mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.25) 7%,#000 22%,#000 78%,rgba(0,0,0,.25) 93%,transparent 100%)}'
     +'.ds-list-right::-webkit-scrollbar{width:0;height:0;display:none}'
     +'.ds-list-right .ds-row{transform-origin:center center;transform-style:preserve-3d;'
-    +'will-change:transform,opacity,filter;transition:box-shadow .15s}'
-    +'@media(max-width:820px){.ds-list-right{width:92vw;margin:4px auto 12px!important;max-height:56vh;padding:16vh 10px}}';
+    +'will-change:transform,opacity,filter;transition:box-shadow .15s;padding:16px 20px;gap:14px}'
+    +'.ds-list-right .ds-av{width:44px;height:44px;font-size:19px;border-radius:11px}'
+    +'.ds-list-right .ds-nom{font-size:16px}.ds-list-right .ds-meta{font-size:13px}.ds-list-right .ds-open{font-size:14px}'
+    +'@media(max-width:820px){.ds-liste-layout{grid-template-columns:1fr}.ds-info-col{display:none}'
+    +'.ds-list-right{width:100%;max-height:56vh;padding:16vh 8px}}';
   document.head.appendChild(st);
 
   function paint(box){
@@ -21943,12 +21953,34 @@ ${lignes}
       r.style.filter='blur('+bl.toFixed(2)+'px)';
     }
   }
+  /* ---- Panneau d'informations (survol d'un dossier) ---- */
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function dossierInfo(id){
+    var d=((db.cabinet&&db.cabinet.dossiers)||[]).find(function(x){return x&&x.id===id;})||{};
+    var s=(db.dossiersData&&db.dossiersData[id]&&db.dossiersData[id].societe)||{};
+    return { nom:d.nom||s.raison||'—', forme:s.formeJur||d.forme||'', siren:s.siren||d.siren||'', siret:s.siret||'',
+      ape:s.codeAPE||s.ape||'', tva:s.tvaIntra||'', activite:s.activite||d.activite||'', dirigeant:s.dirigeant||'',
+      adresse:[s.adresse,((s.cp||'')+' '+(s.ville||'')).trim()].filter(Boolean).join(', ')||d.ville||'' }; }
+  function infoItem(l,v,full){ return '<div class="dsc-item'+(full?' full':'')+'"><span class="dsc-l">'+esc(l)+'</span><span class="dsc-v">'+esc(v||'—')+'</span></div>'; }
+  function renderInfo(id){ var pan=document.getElementById('ds-info-panel'); if(!pan) return; var i=dossierInfo(id);
+    pan.className='';
+    pan.innerHTML='<div class="card dsc-card">'
+      +'<div class="dsc-head"><span class="dsc-av">'+esc((i.nom||'?')[0])+'</span>'
+      +'<span class="dsc-hmain"><span class="dsc-nom">'+esc(i.nom)+'</span>'
+      +'<span class="dsc-tags">'+(i.forme?('<span class="dsc-badge">'+esc(i.forme)+'</span>'):'')+(i.siren?('<span class="dsc-siren">SIREN '+esc(i.siren)+'</span>'):'')+'</span></span></div>'
+      +'<div class="dsc-grid">'+infoItem('SIREN',i.siren)+infoItem('SIRET',i.siret)+infoItem('Code APE',i.ape)+infoItem('N° TVA',i.tva)
+      +infoItem('Forme juridique',i.forme)+infoItem('Dirigeant',i.dirigeant)+infoItem('Activité',i.activite,true)+infoItem('Adresse',i.adresse,true)+'</div>'
+      +'</div>'; }
+
   function wire(){
     var box=document.getElementById('ds-liste-scroll'); if(!box) return;
     if(!box.__wheelWired){ box.__wheelWired=true;
       var ticking=false;
       box.addEventListener('scroll',function(){ if(ticking) return; ticking=true;
         requestAnimationFrame(function(){ paint(box); ticking=false; }); },{passive:true});
+      /* Survol d'une ligne → affiche ses infos dans le panneau de gauche. */
+      box.addEventListener('mouseover',function(ev){ var r=ev.target.closest?ev.target.closest('.ds-row[data-id]'):null; if(r){ renderInfo(r.getAttribute('data-id')); } });
+      box.addEventListener('focusin',function(ev){ var r=ev.target.closest?ev.target.closest('.ds-row[data-id]'):null; if(r){ renderInfo(r.getAttribute('data-id')); } });
     }
     requestAnimationFrame(function(){ paint(box); });
   }
