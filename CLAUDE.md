@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Spatial UI + Liquid Glass HAUTE QUALITÉ + transition d'ouverture sur l'écran (toutes les pages de présentation → modules) — v403
+## 🟢 Dernière mise à jour — Nouvelle identité YADA (logo icône + verbal + baseline) partout + transition de page plus RAPIDE — v404
+**Quoi :** (1) **Nouveaux logos officiels** utilisés dans tout le logiciel : **icône dégradée bleu→turquoise** (Y blanc + point vert) + **verbal « YADA »** + **baseline « PAIE · COMPTA · DSN »**. **Écriture BLANCHE sur fond sombre**, **écriture MARINE sur fond clair**. Remplace les anciens logos de la **barre latérale**, du **parcours d'entrée** (Espace dossiers / Liste / HUB), de l'**écran de connexion** et de la **barre mobile** — « logo principal » compris. (2) **Transition entre les pages plus RAPIDE** (demande) : matérialisation ~0,5 s → **~0,24 s** et balayage lumineux ~0,72 s → **~0,4 s**.
+
+**Comment :**
+- **`yada-addon195` (logos, 100% additif) :** `yadaIconSVG(px)` (icône SVG : `<rect rx=24>` dégradé `#2f6fe8→#1cc39b`, Y blanc `stroke-linecap:round`, point vert `#24d17a`) ; `yadaLockHTML(mode, px, withTag)` (icône + « YADA » + baseline ; `mode:'dark'`→blanc / `'light'`→marine `#0e1c3d`). **Balayage post-render `sweep()`** (greffé sur `render` + MutationObserver débouncé pour l'écran de connexion/mobile rendus hors `render`) remplace le `<svg>` (et l'ancien `<small>`) dans `aside .brand` (sans baseline, barre étroite) / `.login-brand` / `.sec-logo` (connexion) / `.m-title` (mobile compact). Idempotent (skip si `.yada-lock` présent), `id` de dégradé unique par instance.
+- **`yada-addon194` (vitesse) :** `.yada-spatial-in` `.5s→.24s` (translate/scale/blur réduits) ; `.yada-sheen` `.72s→.4s` ; nettoyage sheen 950→600 ms.
+
+**Validé :** `node --check` (188 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (barre latérale/entrée/connexion : `.yada-lock` injecté — icône dégradée + « YADA » blanc + baseline ; ancien `<svg>`/`<small>` retirés ; navigation → logo présent partout ; transition ~0,24 s ; clic OK ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v404**.
+
+---
+
+## 🟢 MAJ précédente — Spatial UI + Liquid Glass HAUTE QUALITÉ + transition d'ouverture sur l'écran (toutes les pages de présentation → modules) — v403
 **Quoi :** (1) **La transition suit l'ÉCRAN, pas la souris** : l'onde-souris (v402) est **masquée** et remplacée par une **transition d'ouverture haut de gamme** — à chaque changement d'écran, le contenu se **matérialise** (fondu + profondeur + flou qui se dissipe, ~0,5 s, easing soigné) **+ un balayage lumineux** (light-sweep bleu, `mix-blend-mode:screen`) traverse l'écran. (2) **Liquid Glass** : les surfaces passent en **verre dépoli translucide** (`backdrop-filter: blur + saturate`, dégradés translucides, bord lumineux, reflets `inset`, ombres profondes) — cartes, KPI, barre latérale, modales. (3) **Spatial UI** : profondeur par superposition (verre flottant + ombres douces), sans transform 3D persistant (pas de casse clic/scroll — leçon v397). (4) **Toutes les pages de présentation couvertes** : l'effet se déclenche sur **chaque écran du parcours d'entrée** (Espace dossiers → Liste des dossiers → HUB) **jusqu'à l'ouverture des modules** — la carte société, les tuiles de rubriques, le cadre d'infos et la liste des dossiers sont **en verre**. (5) **Qualité renforcée** : priorité de cascade garantie (préfixe `html` → bat les surcharges de thème, dont addon169), blur/saturate `!important`, sheen premium.
 
 **Comment — `yada-addon194` (100% additif, injecté en dernier → prioritaire) :**

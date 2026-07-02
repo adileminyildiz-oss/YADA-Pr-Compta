@@ -10972,7 +10972,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v403';
+    b.textContent='YADA · v404';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -22086,15 +22086,16 @@ ${lignes}
     st.textContent=`
     /* L'effet suit désormais l'ÉCRAN, pas la souris → onde-souris (v402) masquée. */
     .yada-ripple,.yada-ripple-dot{display:none!important}
-    /* Transition d'ouverture (matérialisation spatiale) — sur le contenu, à chaque page. */
-    @keyframes yadaSpatialIn{0%{opacity:0;transform:translateY(14px) scale(.982);filter:blur(9px)}55%{filter:blur(2px)}100%{opacity:1;transform:none;filter:none}}
-    .yada-spatial-in{animation:yadaSpatialIn .5s cubic-bezier(.16,.84,.32,1)}
-    /* Balayage lumineux (light-sweep) haut de gamme à chaque ouverture de page — sur
-       l'écran (pas la souris), pointer-events:none → n'intercepte aucun clic. */
-    @keyframes yadaSheen{0%{opacity:0;transform:translateX(-45%) skewX(-8deg)}28%{opacity:1}100%{opacity:0;transform:translateX(48%) skewX(-8deg)}}
+    /* Transition d'ouverture (matérialisation spatiale) — sur le contenu, à chaque page.
+       RAPIDE (demande utilisateur) : ~0,24 s. */
+    @keyframes yadaSpatialIn{0%{opacity:0;transform:translateY(8px) scale(.992);filter:blur(5px)}100%{opacity:1;transform:none;filter:none}}
+    .yada-spatial-in{animation:yadaSpatialIn .24s cubic-bezier(.22,.7,.32,1)}
+    /* Balayage lumineux (light-sweep) à chaque ouverture de page — sur l'écran (pas la
+       souris), pointer-events:none → n'intercepte aucun clic. RAPIDE : ~0,4 s. */
+    @keyframes yadaSheen{0%{opacity:0;transform:translateX(-45%) skewX(-8deg)}30%{opacity:1}100%{opacity:0;transform:translateX(48%) skewX(-8deg)}}
     .yada-sheen{position:fixed;inset:-10% -20%;pointer-events:none;z-index:70;mix-blend-mode:screen;
       background:linear-gradient(112deg,transparent 42%,rgba(120,182,255,.05) 47%,rgba(150,200,255,.14) 50%,rgba(120,182,255,.05) 53%,transparent 58%);
-      animation:yadaSheen .72s cubic-bezier(.22,.61,.36,1) forwards;will-change:transform,opacity}
+      animation:yadaSheen .4s cubic-bezier(.22,.61,.36,1) forwards;will-change:transform,opacity}
     /* ===== LIQUID GLASS + SPATIAL UI (thème noir, injecté en dernier → prioritaire) ===== */
     html body[data-theme="noir"] .card,html body[data-theme="noir"] .mod-wrap .card,html body[data-theme="noir"] .dash-wrap .card,html body[data-theme="noir"] .cli-col>.card{
       background:linear-gradient(157deg,rgba(40,60,94,.52),rgba(13,22,40,.46))!important;
@@ -22146,7 +22147,7 @@ ${lignes}
   function spawnSheen(){ try{ var s=document.createElement('div'); s.className='yada-sheen';
     document.body.appendChild(s);
     var k=function(){ try{ if(s&&s.parentNode) s.parentNode.removeChild(s); }catch(e){} };
-    s.addEventListener('animationend',k); setTimeout(k,950); }catch(e){} }
+    s.addEventListener('animationend',k); setTimeout(k,600); }catch(e){} }
   /* Transition d'ouverture : à CHAQUE changement d'ÉCRAN (pas à chaque re-rendu), on
      matérialise le contenu (fade + profondeur + flou) + balayage lumineux, puis retour
      à l'état de base (animation-fill-mode par défaut = none → aucun transform/filter
@@ -22175,6 +22176,68 @@ ${lignes}
       }catch(e){}
       return x; };
   }
+})();
+</script>
+<script id="yada-addon195">
+/* Nouvelle identité YADA (logos fournis) — partout dans le logiciel :
+   • icône dégradée bleu→turquoise (Y blanc + point vert),
+   • verbal « YADA » + baseline « PAIE · COMPTA · DSN ».
+   Écriture BLANCHE sur fond sombre, écriture MARINE sur fond clair.
+   100% additif : builders + balayage post-render qui remplace les anciens logos
+   (barre latérale, parcours d'entrée, écran de connexion, barre mobile). */
+(function(){
+  if(window.__yadaBrand195) return; window.__yadaBrand195=true;
+  var n=0;
+  function icon(px){ var id='yig'+(++n);
+    return '<svg class="yada-ic" width="'+px+'" height="'+px+'" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="YADA" style="flex:0 0 auto;display:block">'
+      +'<defs><linearGradient id="'+id+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2f6fe8"/><stop offset="1" stop-color="#1cc39b"/></linearGradient></defs>'
+      +'<rect x="3" y="3" width="94" height="94" rx="24" fill="url(#'+id+')"/>'
+      +'<path d="M33 31 L50 53 L67 31" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>'
+      +'<line x1="50" y1="53" x2="50" y2="73" stroke="#fff" stroke-width="12" stroke-linecap="round"/>'
+      +'<circle cx="70" cy="28" r="7.5" fill="#24d17a"/></svg>';
+  }
+  window.yadaIconSVG=icon;
+  /* mode : 'dark' (fond sombre → texte blanc) | 'light' (fond clair → texte marine). */
+  window.yadaLockHTML=function(mode, px, withTag){
+    var word=(mode==='light')?'#0e1c3d':'#ffffff';
+    var tag=(mode==='light')?'#5b6b86':'#a9c0e0';
+    var fam="Inter,'Segoe UI',system-ui,Arial,sans-serif";
+    var fs=Math.round(px*0.60), ts=Math.max(8,Math.round(px*0.205));
+    /* color en inline !important → gagne sur les règles de thème (blanc/marine garanti). */
+    var t=(withTag===false)?'':'<span style="font:800 '+ts+'px/1 '+fam+';letter-spacing:'+(ts*0.24).toFixed(1)+'px;color:'+tag+'!important;margin-top:'+Math.round(px*0.12)+'px;white-space:nowrap">PAIE · COMPTA · DSN</span>';
+    return '<span class="yada-lock" style="display:inline-flex;align-items:center;gap:'+Math.round(px*0.26)+'px">'
+      +icon(px)
+      +'<span style="display:flex;flex-direction:column;line-height:1"><span style="font:800 '+fs+'px/1 '+fam+';letter-spacing:'+(fs*0.03).toFixed(1)+'px;color:'+word+'!important">YADA</span>'+t+'</span></span>';
+  };
+  function sweep(){
+    try{
+      /* 1) Logo principal : barre latérale + parcours d'entrée (fonds sombres → blanc). */
+      document.querySelectorAll('aside .brand, .login-brand').forEach(function(c){
+        if(c.querySelector('.yada-lock')) return;
+        var svg=c.querySelector('svg'); var h=svg?(parseInt(svg.getAttribute('height'),10)||32):32;
+        var px=Math.max(30, Math.min(42, h+8));
+        var narrow=!!c.closest('aside');
+        var html=window.yadaLockHTML('dark', px, !narrow); /* barre latérale étroite → sans baseline */
+        if(svg){ svg.insertAdjacentHTML('beforebegin', html); svg.remove(); }
+        else { c.insertAdjacentHTML('afterbegin', html); }
+        c.querySelectorAll('small').forEach(function(s){ if(!s.closest('.yada-lock')) s.remove(); });
+      });
+      /* 2) Écran de connexion (#sec-lock) : « YADA<small>Précompta</small> » → lockup. */
+      document.querySelectorAll('.sec-logo').forEach(function(c){ if(c.querySelector('.yada-lock'))return;
+        c.innerHTML=window.yadaLockHTML('dark', 42, true); c.style.display='inline-flex'; });
+      /* 3) Barre mobile : titre compact (icône + YADA, sans baseline). */
+      document.querySelectorAll('.m-title').forEach(function(c){ if(c.querySelector('.yada-lock'))return;
+        c.innerHTML=window.yadaLockHTML('dark', 26, false); c.style.display='inline-flex'; c.style.alignItems='center'; });
+    }catch(e){}
+  }
+  window.yadaBrandSweep=sweep;
+  if(typeof render==='function' && !window.__brandRenderGuard){ window.__brandRenderGuard=true; var _r=render;
+    render=function(){ var x=_r.apply(this,arguments); try{ sweep(); }catch(e){} return x; }; }
+  try{ sweep(); }catch(e){}
+  /* Écran de connexion / barre mobile rendus hors render() → observer débouncé (idempotent). */
+  try{ var moT=0; var mo=new MutationObserver(function(){ if(moT) return;
+    moT=setTimeout(function(){ moT=0; sweep(); }, 120); });
+    mo.observe(document.body,{childList:true,subtree:true}); }catch(e){}
 })();
 </script>
 </body>
