@@ -107,6 +107,58 @@ Sous‑modules : `compta` (Analyse / Consultation), `journal`, `editions`, `fec`
 
 ---
 
+## 🔗 Session TRANSVERSE — **Règles comptables** (gardienne & validatrice)
+
+> Session à part, **non liée à un seul module** : elle fixe, conserve et **fait respecter**
+> les règles de gestion et de comptabilité sur **tous** les modules comptables.
+> À lancer/merger **en premier ou en isolation** (elle modifie les fonctions partagées
+> `posterFacture`/`genEcriture`/`posterBanque`/`posterOD`) → sinon conflits avec les
+> sessions par module.
+
+**Mission**
+- Toute demande de cette session = une **règle à fixer**. Une règle fixée est **définitive** :
+  conservée précieusement, maintenue à jour, **respectée partout**, jamais régressée.
+- Application **« les deux »** : **blocage à la saisie** pour les règles critiques
+  (équilibre, compte manquant/`000000000`, compte non `c9`) + **rapport de contrôle**
+  (Centre de contrôle comptable) pour le reste.
+- Architecture : **un moteur de règles central** (addon additif) qui enveloppe les points
+  de passage communs + un **Centre de contrôle comptable** qui scanne toutes les écritures.
+
+**Registre officiel des règles → `REGLES-COMPTABLES.md`** (créé et maintenu par cette session)
+- Une entrée par règle : **code** (ex. `EQL-01`), énoncé, périmètre, **sévérité**
+  (bloque / avertit), point d'accroche, date de fixation. **Jamais retirée** sans demande
+  explicite. C'est la **source de vérité** que le moteur fait respecter.
+
+### 🧷 Protocole de validation INTER‑SESSIONS (obligatoire)
+Les sessions Claude ne communiquent pas en direct : la coordination passe par le **registre
+partagé + la revue des PR**. **Tout changement de N'IMPORTE QUELLE session** (y compris les
+sessions par module et la session générale) **doit être validé par la session Règles.**
+
+1. **Annonce** — chaque session, dans la description de sa PR, liste les fonctions
+   comptables touchées et coche « **À VALIDER par la session Règles** ».
+2. **Revue** — la session Règles relit le **diff de la PR** contre `REGLES-COMPTABLES.md`.
+3. **Verdict** :
+   - ✅ **Conforme** → la session Règles valide (approbation PR) ; la PR peut être mergée.
+   - ❌ **Non conforme** → la session Règles **indique la règle enfreinte + LA SOLUTION**
+     (le correctif précis) à l'utilisateur ; **la PR n'est pas mergée** tant que ce n'est
+     pas corrigé.
+4. **Portée** — ce contrôle s'applique aussi aux changements de la **session générale**
+   (`application-mobile`) : ils passent par la session Règles avant merge.
+
+### Catalogue des règles retenues (toutes)
+- **A · Intégrité** (bloquantes) : Σ débit = Σ crédit ; comptes `c9` ; aucune ligne
+  mouvementée sans compte (ni vide ni `000000000`) ; débit **ou** crédit ; montants ≥ 0
+  arrondis 2 déc. ; ≥ 2 lignes, ≥ 1 débit & ≥ 1 crédit ; journal valide ; date dans l'exercice.
+- **B+C · Tiers & TVA** : compte auxiliaire 401/411 (jamais collectif seul) ; `tiersId`
+  rattaché (ACH/VTE) ; collectée 4457x crédit / déductible 4456x (hors 44567) débit ;
+  HT+TVA=TTC ; compte de TVA cohérent avec le taux.
+- **D · Banque & règlements** : contrepartie 512 + sens fiable (512 débit = entrant) ;
+  règlement « réglé » ⇒ mouvement 512 ; lettrage Σ débit = Σ crédit.
+- **E · Numérotation & clôture** : n° unique & chronologique ; pièce verrouillée non
+  modifiable (avoir/OD) ; à‑nouveaux (1→5) + résultat (120/129) à la clôture.
+
+---
+
 ## 🧭 Démarrer une session de module
 
 1. Ouvrir la session en annonçant : **« Cette session = module \<X\> »**.
