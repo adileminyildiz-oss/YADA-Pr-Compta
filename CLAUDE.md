@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — HUB : cartes réduites (société + rubriques) → bouton « Changer de dossier » visible — v393
+## 🟢 Dernière mise à jour — Liste des dossiers : panneau d'infos à gauche (survol) + liste à droite, lignes plus grandes — v394
+**Quoi :** sur l'écran « Liste des dossiers », la liste est **rangée à droite** (défilable, effet roue conservé) avec des **barres de dossier plus grandes**, et un **panneau d'informations s'affiche à gauche au survol** d'un dossier (nom, forme, SIREN, SIRET, Code APE, N° TVA, Dirigeant, Activité, Adresse). Au repos, le panneau invite « Survolez un dossier… ».
+
+**Comment :** `ecranListe` (populé) passe en grille `.ds-liste-layout` (col. gauche `#ds-info-panel` + col. droite `#ds-liste-scroll`) ; `dossierRow` reçoit `data-id`. `yada-addon192` : CSS `.ds-liste-layout{grid-template-columns:1fr minmax(440px,600px)}`, `.ds-info-col{position:sticky}`, lignes agrandies (`.ds-row{padding:16px 20px}`, avatar 44, nom 16px) ; `dossierInfo(id)` (lit `db.cabinet.dossiers` + `db.dossiersData[id].societe`), `renderInfo(id)` (carte `.dsc-*` réutilisée), écouteurs `mouseover`/`focusin` délégués sur le conteneur → remplit le panneau. Mobile : 1 colonne, panneau masqué. Validé : `node --check` (185 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (grille 980px/600px : info à gauche `x146`, liste à droite `x1154` ; lignes 74 px ; survol ligne 2 → panneau « DOSSIER 2 » + 8 infos ; boutons visibles ; 0 pageerror) + filet d'équilibre ✅. Badge → **v394**.
+
+---
+
+## 🟢 MAJ précédente — HUB : cartes réduites (société + rubriques) → bouton « Changer de dossier » visible — v393
 **Quoi :** sur la page du dossier (HUB), la carte société et les 5 rubriques remplissaient tout l'écran et le bouton **« Changer de dossier »** était coupé en bas. Les **cartes sont réduites** (paddings/tailles de police plus compacts, avatar plus petit) → la grille passe de ~640 px à ~437 px de haut et le bouton redevient **bien visible**.
 
 **Comment — surcharges compactes ajoutées à `ds-flow-mod` (`yada-addon189`) :** `.ds-tile{padding:10px 15px}` + libellés réduits ; `.dsc-head{padding:13px 18px}`, `.dsc-av{44×44}`, `.dsc-nom{18px}`, `.dsc-grid{padding:11px 15px 12px;gap:8px}`, `.dsc-item{padding:8px 11px}`, `.dsc-l{9.5px}/.dsc-v{12.5px}` ; `.ds-hub-side{gap:8px}` ; `.ds-hub-wrap .login-actions{margin-top:14px}`. Validé : `node --check` (185 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (H=1000 & 1150 : grille 437 px, bouton « Changer de dossier » bas 747 px → **visible** ; 0 pageerror) + filet d'équilibre ✅. Badge → **v393**.
