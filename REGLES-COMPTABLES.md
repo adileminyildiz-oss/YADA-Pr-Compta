@@ -121,3 +121,60 @@ plusieurs taux de TVA) restent possibles : la règle décrit la **structure natu
 lignes **parasites** et fixe l'**ordre** et le **rôle** de chaque ligne.
 
 ---
+
+## RC-003 — Séparation des écritures : ligne bleue + différenciation par le SOLDE et le COMPTE DE TIERS
+
+**Énoncé.**
+Les écritures doivent être **visuellement distinguées** les unes des autres, et leur **délimitation** (savoir où une
+écriture se termine et où la suivante commence) repose **uniquement** sur des critères **comptables**, jamais cosmétiques.
+
+### a) Ligne bleue de séparation
+
+**Entre chaque écriture, une ligne bleue doit apparaître** pour distinguer les écritures. Elle marque la frontière
+entre deux écritures partout où des écritures sont listées (Consultation / grand-livre, éditeur d'écritures, journal
+comptable, journaux imprimables…).
+
+### b) La frontière = le SOLDE (équilibre atteint)
+
+Une écriture est **complète (soldée)** dès que **Σ débit = Σ crédit** sur les lignes accumulées. Ce **solde** marque
+la **fin de l'écriture** :
+
+- une écriture peut être **à 2 lignes** (ex. banque) **ou à 3 lignes** (ex. HA/VT) — voir RC-002 ;
+- **dès qu'un solde apparaît**, l'écriture est bouclée → la **ligne bleue** est posée → la ligne suivante démarre
+  **une nouvelle écriture**.
+
+### c) La différenciation se fait par le SOLDE et le COMPTE DE TIERS — jamais par le libellé ni la date
+
+Pour regrouper des lignes en écritures (notamment à la lecture d'un FEC, d'un flux de lignes ou dans l'éditeur), on
+**ne se base ni sur le libellé ni sur la date**. On se base sur :
+
+1. **le solde** (équilibre Σ débit = Σ crédit, cf. b) ; **et**
+2. **le compte de tiers** : dans une écriture, un **compte de tiers n'apparaît qu'UNE seule fois**. **Une deuxième
+   occurrence** d'un compte de tiers **appartient à une autre écriture** → elle **ouvre l'écriture suivante**.
+
+> Autrement dit : deux lignes de tiers (deux `401…`/`411…` distincts, ou le même compte de tiers rencontré une 2ᵉ fois)
+> ne peuvent pas coexister dans une même écriture — la 2ᵉ marque une nouvelle écriture.
+
+### d) Notification du solde
+
+**Si un solde apparaît dans une écriture, il doit être notifié** (l'équilibre atteint est signalé à l'utilisateur).
+La ligne bleue de (a) est le repère visuel de ce solde ; l'état « soldé / non soldé » de l'écriture est rendu explicite.
+
+**Portée & lignes rouges.**
+- Une **ligne bleue** sépare **chaque** écriture, partout où les écritures sont affichées.
+- Le **découpage des lignes en écritures** est piloté par **le solde** (équilibre) **et** **l'unicité du compte de tiers**
+  dans l'écriture — **jamais** par le libellé ou la date.
+- Un **compte de tiers** ne figure **qu'une fois** par écriture ; sa **réapparition** déclenche une **nouvelle écriture**.
+- L'**atteinte du solde** doit être **notifiée**.
+
+**Exemple.**
+Flux de lignes : `[401DUPON (C 120) · 4456 (D 20) · 606 (D 100)]  [401DUPON (C 60) · 4456 (D 10) · 606 (D 50)]`.
+Le premier bloc solde à 120 = 120 **et** le compte de tiers `401DUPON` réapparaît ensuite → **deux écritures distinctes**,
+séparées par une **ligne bleue**, même si le libellé et la date sont identiques.
+
+**Références d'implémentation existantes (cohérentes avec cette règle).**
+Ligne bleue entre écritures : v205 (journal comptable), v207 (grand-livre / consultation), séparateurs
+`sgj-ecr-sep` / `lx-ecr-sep`. Notification du solde et ligne rouge « non soldée » : v216, v261, v267.
+**Toute évolution future doit préserver ce comportement.**
+
+---
