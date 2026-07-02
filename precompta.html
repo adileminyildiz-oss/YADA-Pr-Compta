@@ -10982,7 +10982,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v397';
+    b.textContent='YADA · v398';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21972,22 +21972,13 @@ ${lignes}
     +'.ds-list-right{width:100%;max-height:56vh;padding:16vh 8px}}';
   document.head.appendChild(st);
 
+  /* Plus de flou par ligne : les lignes restent NETTES. Le fondu (flou) est
+     uniquement sur les bords haut/bas via le masque CSS (mask-image). On s'assure
+     seulement qu'aucune ligne ne garde un flou/une opacité résiduels. */
   function paint(box){
     if(!box) return;
     var rows=box.querySelectorAll('.ds-row'); if(!rows.length) return;
-    var mid=box.scrollTop + box.clientHeight/2;
-    var half=Math.max(1, box.clientHeight*0.58);   // zone nette plus large (plus de lignes lisibles)
-    for(var i=0;i<rows.length;i++){ var r=rows[i];
-      var rc=r.offsetTop + r.offsetHeight/2;
-      var rel=(rc-mid)/half;                      // ~ -1 (haut) .. +1 (bas)
-      var cl=Math.max(-1.5,Math.min(1.5,rel));
-      /* Effet « flou » 2D uniquement (opacité + blur) : PAS de transform 3D — celles-ci
-         cassent le survol et le défilement (les lignes sortent du plan de la souris). */
-      var op=1-Math.min(1,Math.abs(cl))*0.7;       // fond dans le flou (haut/bas)
-      var bl=Math.min(4.5,Math.abs(cl)*3);
-      r.style.opacity=op.toFixed(3);
-      r.style.filter='blur('+bl.toFixed(2)+'px)';
-    }
+    for(var i=0;i<rows.length;i++){ rows[i].style.opacity=''; rows[i].style.filter=''; }
   }
   /* ---- Panneau d'informations (survol d'un dossier) ---- */
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }

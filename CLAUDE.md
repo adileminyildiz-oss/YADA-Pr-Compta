@@ -36,7 +36,14 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Liste des dossiers : défilement RÉTABLI (retrait des transforms 3D qui bloquaient molette & survol) — v397
+## 🟢 Dernière mise à jour — Liste des dossiers : lignes NETTES (flou par ligne retiré), flou seulement sur les bords + défilement trackpad — v398
+**Quoi :** la liste paraissait **floue** (chaque ligne recevait un `blur`/opacité selon sa position). Ce **flou par ligne est retiré** : les lignes sont **nettes**. Le **flou est conservé uniquement sur les bords haut/bas** (fondu du masque CSS `mask-image`). Le **défilement au trackpad/molette** fonctionne.
+
+**Comment — `yada-addon192` :** `paint()` ne calcule plus d'opacité/`blur` par ligne — il se contente d'effacer tout `opacity`/`filter` résiduel (lignes nettes) ; le fondu de bord vient du `mask-image` (inchangé) ; défilement natif (`overflow-y:auto` + `overscroll-behavior:contain` + `-webkit-overflow-scrolling:touch`, sans transform 3D depuis v397). Validé : `node --check` (185 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (session ouverte : 6 lignes `opacity:1`/`filter:none` — nettes ; masque de bord présent ; molette réelle → scrollTop 240 ; survol OK ; 0 pageerror) + filet d'équilibre ✅. Badge → **v398**.
+
+---
+
+## 🟢 MAJ précédente — Liste des dossiers : défilement RÉTABLI (retrait des transforms 3D qui bloquaient molette & survol) — v397
 **Quoi :** la liste des dossiers **ne défilait pas** (molette/trackpad) et le **survol ne marchait plus sur certaines lignes** : les **transforms 3D** de l'effet roue (`perspective` + `rotateX` + `translateZ`) sortaient les lignes du plan de la souris → clics/molette/survol la manquaient (surtout Safari). L'effet « flou » est conservé mais **en 2D uniquement** (opacité + `blur` + masque de fondu haut/bas) → **le défilement natif et le survol fonctionnent**. Ajout d'une **barre de défilement fine bleue** visible.
 
 **Comment — `yada-addon192` :** `paint()` ne pose plus de `transform` 3D (retrait `translateZ`/`rotateX`), garde `opacity`+`blur` ; `.ds-list-right` sans `perspective`, `overscroll-behavior:contain`, `scrollbar-width:thin` + `::-webkit-scrollbar` bleu 9px ; `.ds-row` sans `transform-style:preserve-3d`. Validé : `node --check` (185 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (avec session ouverte : survol ligne → panneau « DOSSIER 4 » ; **molette réelle → scrollTop 220→440** ; auparavant bloqué à 0 ; 0 pageerror) + filet d'équilibre ✅. Badge → **v397**.
