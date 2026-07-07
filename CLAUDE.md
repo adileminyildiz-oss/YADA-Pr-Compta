@@ -36,7 +36,21 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Cahier des charges trié par session + réorganisation de la navigation + transition discrète — v409
+## 🟢 Dernière mise à jour — Revue du cahier des charges : 5 demandes de plus implémentées (Pilotage épuré, Consultation plein écran, Éditions A4, brut↔net, libellés) — v410
+**Quoi :** revue complète des éléments du cahier des charges (« tu n'as pas pris en compte toutes les modifications ») → **5 demandes non comptables supplémentaires implémentées** :
+1. **Pilotage ÉPURÉ** : onglets **Impôts (IS/IR)**, **Actif/Passif** et **Agenda & RH** supprimés — seul « Pilotage » reste (liens Analytique / Suivi des règlements / Tableau de bord ; refonte gestion à venir §5 du cahier, IS/IR renaîtra dans Déclarations).
+2. **Consultation des comptes** : le module **s'ouvre PLEIN ÉCRAN** (reset `sgReduit` à chaque entrée) ; le carré **▢/▣ agrandit à tout l'écran** ; la **croix ✕** (fermer) et le bouton **─** (réduire) sont **retirés** de la barre (édition de la `.sg-win`, seule le toggle ▢ reste).
+3. **Éditions — aperçu A4** : à l'écran, `.doc-page` s'affiche au **format A4** (210 mm ≈ 794 px, `min-height:297mm`, `@media screen`) — l'impression était déjà A4 (`@page`).
+4. **RH / Salarié — brut ↔ net auto-complétés** : saisir le **brut** remplit le **net** et inversement — fiche (`sf-brut`/`sf-net`, écouteur `input` délégué) **et** onglet Salaires (`salSetSalaire` réécrit : `net = brut × 0,78`, `brut = net ÷ 0,78` — ratio indicatif du module).
+5. **Barre latérale** : majuscules en milieu de libellé retirées (« Analyse — centre de contrôle », « Charges et paie », « Immobilisations & financement(s) »).
+
+**Comment :** `yada-addon199` (1-4, 100% additif : override `pagePilotage`, wrap `render` pour le plein écran, `<style id="doc-a4-screen">`, écouteur `input` + override `salSetSalaire`) + éditions chirurgicales (`.sg-win` de `pageCompta` : ✕ et ─ retirés ; libellés LBL/MODULES/PAGES).
+
+**Validé :** `node --check` (192 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (pilotage 0 onglet + liens ; compta `sgReduit=false` malgré un état « réduit » persisté + `.sg-win` = [▢] seul ; `.doc-page` écran = 794 px ; brut 1000→net 780 & net 780→brut 1000, fiche live 2000→1560 ; libellés ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v410**.
+
+---
+
+## 🟢 MAJ précédente — Cahier des charges trié par session + réorganisation de la navigation + transition discrète — v409
 **Quoi :** réception d'un **cahier des charges complet** (dizaines de demandes tous modules) → (1) **tout est consigné et trié par session** dans **`CAHIER-DES-CHARGES.md`** (règles R1→R8 pour la session Règles, sections Déclarations/Permanent/RH/Pilotage/Comptabilité/Tiers/Espaces) ; (2) la part **non comptable (UI/navigation)** est **implémentée immédiatement** :
 - **Transition de page DISCRÈTE** (« un balayement invisible qui fait classe ») : simple fondu léger (~0,2 s) + balayage quasi invisible (opacités ≤ .05) — fini l'effet voyant (addon194 édité).
 - **Barre latérale — libellés propres** : `TIERS`→`Tiers`, suppression des parenthèses et de leur contenu (`Paramétrage (réglages)`→`Paramétrage`, `Module TVA (CA3)`→`Module TVA`, `Éditions (Balance…)`→`Éditions`, `Rapprochement (lettrage)`→`Rapprochement`, `Banque (512)`→`Banque`, `Sociétés (portefeuille)`→`Sociétés`, `Assistant IA (écritures)`→`Assistant IA`) ; `Société & création du dossier`→**`Sociétés`** (PAGES + LBL addon164).

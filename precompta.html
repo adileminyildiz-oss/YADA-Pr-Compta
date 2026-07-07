@@ -4130,7 +4130,7 @@ const PAGES=[
   {id:'facturation',ico:'⤳',sec:'Ventes',lbl:'Client'},
   {id:'achats',ico:'⎙',sec:'Achats',lbl:'Fournisseurs'},
   {id:'compta',ico:'▦',sec:'Comptabilité',lbl:'Consultation des comptes'},
-  {id:'chargespaie',ico:'',sec:'Comptabilité',lbl:'Charges et Paie'},
+  {id:'chargespaie',ico:'',sec:'Comptabilité',lbl:'Charges et paie'},
   {id:'journal',ico:'≣',sec:'Comptabilité',lbl:'Journal comptable'},
   {id:'ia',ico:'',sec:'Comptabilité',lbl:'Assistant IA'},
   {id:'tva',ico:'%',sec:'Comptabilité',lbl:'Module TVA'},
@@ -4141,7 +4141,7 @@ const PAGES=[
   {id:'saisiebq',ico:'✎',sec:'Trésorerie',lbl:'Saisie journal Banque'},
   {id:'rappro',ico:'⊜',sec:'Trésorerie',lbl:'Rapprochement'},
   {id:'reglements',ico:'⇄',sec:'Trésorerie',lbl:'Suivi des règlements'},
-  {id:'immos',ico:'',sec:'Immobilisations',lbl:'Immobilisations & Financements'},
+  {id:'immos',ico:'',sec:'Immobilisations',lbl:'Immobilisations & financements'},
   {id:'fraiskm',ico:'⛽',sec:'Immobilisations',lbl:'Frais kilométriques & carburant'},
   {id:'dossier',ico:'',sec:'Dossier',lbl:'Sociétés'},
   {id:'infosociete',ico:'',sec:'Dossier',lbl:'Informations société'},
@@ -6252,7 +6252,7 @@ function pageCompta(){
   const finPer=sgPer?(function(){ const [y,m]=sgPer.split('-').map(Number); const dj=new Date(y, m, 0).getDate(); return String(dj).padStart(2,'0')+'/'+String(m).padStart(2,'0')+'/'+y; })():'31/12/'+year;
   return `<div class="sg-app ${window.sgReduit?'sg-reduit':''}">
     <div class="sg-title"><span class="sg-exonav"><button class="sg-exoarr" title="Exercice précédent (année N-1)" onclick="event.stopPropagation();exPrecedent()">‹</button><span class="sg-exolbl">Exercice ${year}</span><button class="sg-exoarr" title="Exercice suivant (année N+1)" onclick="event.stopPropagation();exSuivant()">›</button><button class="sg-exoarr sg-edlink" title="Ouvrir les Éditions (Balance, Grand livre, Bilan, Compte de résultat…) — reliées au Centre de Contrôle" onclick="event.stopPropagation();current='editions';render()">🖨 Éditions</button></span>${(db.societe&&db.societe.dossierNom)||'PRÉCOMPTA'} 01/${year.slice(2)}-12/${year.slice(2)} (E) — Analyse · Centre de Contrôle
-      <span class="sg-win"><span class="sg-wbtn" title="Réduire la fenêtre" onclick="event.stopPropagation();sgReduireFenetre()">─</span><span class="sg-wbtn" title="${window.sgReduit?'Agrandir (plein écran)':'Réduire la fenêtre'}" onclick="event.stopPropagation();sgToggleReduit()">${window.sgReduit?'▣':'▢'}</span><span class="sg-wbtn" title="Fermer" onclick="event.stopPropagation();fileFermer()">✕</span></span></div>
+      <span class="sg-win"><span class="sg-wbtn" title="${window.sgReduit?'Agrandir (plein écran)':'Réduire la fenêtre'}" onclick="event.stopPropagation();sgToggleReduit()">${window.sgReduit?'▣':'▢'}</span></span></div>
     <div class="sg-menu"><span class="mi" onclick="event.stopPropagation();toggleFichier()">Fichier
         <div class="sg-dd" id="sg-fichier">
           <button onclick="fileEnregistrer()">Enregistrer</button>
@@ -10972,7 +10972,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v409';
+    b.textContent='YADA · v410';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -19677,9 +19677,9 @@ ${lignes}
   window.modnavToggle=function(key){ var s=openSet(); if(s.has(key)) s.delete(key); else s.add(key); saveOpen(s); try{ buildNav(); }catch(e){} };
 
   /* renommages / libellés par id de page */
-  var LBL={ compta:'Analyse — Centre de Contrôle', editions:'Éditions', journal:'Journal comptable', fec:'Import / Export FEC',
+  var LBL={ compta:'Analyse — centre de contrôle', editions:'Éditions', journal:'Journal comptable', fec:'Import / Export FEC',
     reglements:'Suivi des règlements', analytique:'Analytique & rentabilité', plancomptable:'Plan comptable',
-    ia:'Assistant IA', immos:'Immobilisations & Financements', fraiskm:'Frais km & carburant',
+    ia:'Assistant IA', immos:'Immobilisations & financements', fraiskm:'Frais km & carburant',
     banque:'Banque', saisiebq:'Saisie journal Banque', rappro:'Rapprochement' };
   function pget(id){ return (typeof PAGES!=='undefined'?PAGES:[]).find(function(p){ return p.id===id; }); }
   function lbl(id){ return LBL[id] || (pget(id)?pget(id).lbl:id); }
@@ -19692,8 +19692,8 @@ ${lignes}
     {key:'m-fourn', nom:'Fournisseurs', ico:'⎙', page:'achats'},
     {key:'m-clients', nom:'Clients', ico:'⤳', page:'facturation'},
     {key:'m-tiers', nom:'Tiers', ico:'⊞', page:'tiers'},
-    {key:'m-immo', nom:'Immobilisations et Financement', ico:'▤', subs:['immos','fraiskm']},
-    {key:'m-paie', nom:'Charges et Paie', ico:'◴', page:'chargespaie'},
+    {key:'m-immo', nom:'Immobilisations et financement', ico:'▤', subs:['immos','fraiskm']},
+    {key:'m-paie', nom:'Charges et paie', ico:'◴', page:'chargespaie'},
     {key:'m-tva', nom:'TVA', ico:'%', page:'tva'},
     /* Banque (512) & Saisie journal Banque retirés (demande) — le Rapprochement reste. */
     {key:'m-banque', nom:'Banque', ico:'▣', subs:['rappro']}
@@ -22317,6 +22317,85 @@ ${lignes}
   var st=document.createElement('style'); st.id='no-cloud-card';
   st.textContent='.card.cloud-card{display:none!important}';
   document.head.appendChild(st);
+})();
+</script>
+<script id="yada-addon199">
+/* CAHIER DES CHARGES (suite) — 4 demandes non comptables implémentées :
+   (1) PILOTAGE ÉPURÉ : suppression des onglets Impôts (IS/IR), Actif/Passif et
+       Agenda & RH — seul « Pilotage » reste (refonte gestion à venir, cf.
+       CAHIER-DES-CHARGES §5 ; IS/IR renaîtra dans le module Déclarations).
+   (2) CONSULTATION DES COMPTES : le module s'OUVRE PLEIN ÉCRAN ; le carré ▢/▣
+       agrandit à tout l'écran (✕ et ─ retirés de la barre — édition directe).
+   (3) ÉDITIONS : l'aperçu à l'écran s'affiche au FORMAT A4 (210×297 mm) —
+       l'impression était déjà en A4 (@page size:A4).
+   (4) RH / SALARIÉ : saisir le salaire BRUT complète automatiquement le NET, et
+       saisir le NET complète le BRUT (ratio indicatif net = brut × 0,78 du module).
+   100% additif. */
+(function(){
+  if(window.__cdc199) return; window.__cdc199=true;
+
+  /* (1) Pilotage épuré */
+  if(typeof window.pagePilotage==='function'){
+    window.pagePilotage=function(){
+      var h=(typeof head==='function')?head('Pilotage','Gestion & pilotage de la société — alimenté par la Consultation des comptes.'):'<div class="page-head"><h1>Pilotage</h1></div>';
+      return h
+        +'<div class="card"><h2>Pilotage</h2>'
+        +'<div class="sub">Le module de gestion (consolidation des ventes, coûts, trésorerie & cash-flow, rentabilités par client/produit/projet, seuil de rentabilité, budgets & écarts, stocks, ROI…) est en cours de refonte — il sera entièrement alimenté par les écritures de la Consultation des comptes.</div>'
+        +'<div class="row" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">'
+        +'<button class="btn btn-pri" onclick="current=\'analytique\';render()">Analytique &amp; rentabilité</button>'
+        +'<button class="btn btn-ghost" onclick="current=\'reglements\';render()">Suivi des règlements</button>'
+        +'<button class="btn btn-ghost" onclick="current=\'dash\';render()">Tableau de bord</button>'
+        +'</div></div>';
+    };
+  }
+
+  /* (2) Consultation : ouverture PLEIN ÉCRAN à chaque entrée dans le module */
+  if(typeof render==='function' && !window.__sgFullGuard){ window.__sgFullGuard=true;
+    var _r=render;
+    render=function(){
+      try{ var cur=(typeof current!=='undefined')?current:null;
+        if(cur==='compta' && window.__sgPrevCur!=='compta'){
+          window.sgReduit=false;
+          try{ localStorage.setItem('yada-sg-reduit','0'); }catch(e){}
+        }
+        window.__sgPrevCur=cur;
+      }catch(e){}
+      return _r.apply(this,arguments);
+    };
+  }
+
+  /* (3) Éditions : aperçu écran au format A4 (l'impression est déjà A4 via @page) */
+  if(!document.getElementById('doc-a4-screen')){
+    var st=document.createElement('style'); st.id='doc-a4-screen';
+    st.textContent='@media screen{.doc-page{width:210mm;max-width:210mm;min-height:297mm;box-sizing:border-box;margin:0 auto 16px;padding:14mm 12mm}}';
+    document.head.appendChild(st);
+  }
+
+  /* (4) Salarié : brut <-> net auto-complétés */
+  var RATIO=0.78; /* net estimatif = brut x 0,78 (convention du module Salarié) */
+  function r2n(n){ return Math.round((n+Number.EPSILON)*100)/100; }
+  /* Fiche salarié (champs sf-brut / sf-net) : complétion en direct à la saisie */
+  document.addEventListener('input', function(e){
+    try{ var t=e.target; if(!t||!t.id) return;
+      if(t.id==='sf-brut'){ var b=parseFloat(t.value); var n=document.getElementById('sf-net');
+        if(n && isFinite(b)) n.value=b?r2n(b*RATIO):''; }
+      else if(t.id==='sf-net'){ var nv=parseFloat(t.value); var br=document.getElementById('sf-brut');
+        if(br && isFinite(nv)) br.value=nv?r2n(nv/RATIO):''; }
+    }catch(_e){}
+  }, true);
+  /* Onglet Salaires (salSetSalaire) : compléter l'autre montant à chaque saisie */
+  if(typeof window.salSetSalaire==='function'){
+    window.salSetSalaire=function(id,k,v){
+      try{
+        var r=(db.parametres&&db.parametres.rh)||{}; var s=(r.salaries||[]).find(function(x){return x.id===id;});
+        if(!s) return;
+        var val=+v||0; s[k]=val;
+        if(k==='brut') s.net=val?r2n(val*RATIO):0;
+        else if(k==='net') s.brut=val?r2n(val/RATIO):0;
+        if(typeof save==='function')save(); if(typeof render==='function')render();
+      }catch(_e){}
+    };
+  }
 })();
 </script>
 </body>

@@ -24,6 +24,20 @@
   **« Synchronisation multi‑appareils (Pantry) » supprimée** de l'affichage.
 - ✅ **Permanent — Société & création** : renommé **« Sociétés »**.
 
+### Complément v410 (revue « éléments non pris en compte »)
+- ✅ **Pilotage ÉPURÉ** : onglets Impôts (IS/IR), Actif/Passif et Agenda & RH **supprimés** —
+  seul « Pilotage » reste (liens vers Analytique / Suivi des règlements / Tableau de bord ;
+  la refonte gestion complète reste au §5, IS/IR renaîtra dans Déclarations §2).
+- ✅ **Consultation des comptes** : le module **s'ouvre plein écran** ; le carré ▢/▣
+  **agrandit à tout l'écran** ; la **croix ✕** et le bouton **─** sont **retirés** de la barre.
+- ✅ **Éditions — aperçu A4** : l'aperçu à l'écran s'affiche au **format A4** (210×297 mm) ;
+  l'impression était déjà en A4 (`@page size:A4`). *(La règle R4 reste à consigner au registre.)*
+- ✅ **RH / Salarié — brut ↔ net** : saisir le **brut** complète automatiquement le **net**
+  (et inversement), dans la fiche (`sf-brut`/`sf-net`) et l'onglet Salaires (ratio indicatif
+  net = brut × 0,78 du module).
+- ✅ **Barre latérale — majuscules en milieu de libellé** retirées : « Analyse — centre de
+  contrôle », « Charges et paie », « Immobilisations & financement(s) ».
+
 ---
 
 ## 1 · SESSION RÈGLES (transverse) — règles à fixer au registre
