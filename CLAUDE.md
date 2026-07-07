@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Espace Admin : enregistrer les salariés (identifiants) + dossiers attitrés + accès global — v414
+## 🟢 Dernière mise à jour — Connexion à DEUX espaces (Cabinet / Client) + Admin accessible via l'Espace Cabinet — v415
+**Quoi :** la page de connexion propose désormais **deux choix seulement** — **Espace Cabinet** et **Espace Client** (le 3ᵉ bouton « Espace Admin » est retiré). L'**Espace Admin (superviseur) se connecte via l'Espace Cabinet** : en choisissant **Espace Cabinet** puis en saisissant l'**identifiant + mot de passe Admin** (`admin.admin@gmail.com`), on ouvre le **mode administration** (`role=admin`, interface Cabinet complète + carte/panneau Administration). L'Espace Cabinet accepte donc, sur le même bouton : le **compte principal Cabinet** (`aemconseil.sas@gmail.com` → `role=cabinet`), l'**Admin** (→ `role=admin`) et les **collaborateurs/salariés** (→ `role=cabinet` + `staffId`, dossiers filtrés). Le formulaire garde **identifiant + mot de passe** (empreintes SHA-256 salées, clair absent du source). Une note sous les boutons rappelle « L'Espace Admin (superviseur) se connecte via l'Espace Cabinet. »
+
+**Comment — `yada-addon38` (éditions chirurgicales) :** `secAfficher` retire le bouton `sec-cta-3` et ajoute la note ; `secEtape1` (Espace Cabinet) accepte l'identifiant s'il correspond à `CAB`, `ADM` **ou** un collaborateur ; `secEssayer` (Espace Cabinet) : après échec du compte principal, teste l'empreinte **Admin** (`sha(ADM.salt+email+'##'+mdp)` → `secOuvrir('admin', …)`) puis les collaborateurs. Texte « Connexion & sécurité » du Paramétrage mis à jour (deux espaces, Admin via Cabinet). Mobile inchangé (Client uniquement).
+
+**Validé :** `node --check` (195 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (écran de connexion : **2 boutons** Cabinet/Client, plus de bouton Admin, note présente ; **Admin via Cabinet** → `role=admin`/`isAdmin` ; **compte principal** → `role=cabinet` ; **salarié via Cabinet** → `role=cabinet`+`staffId` ; **mauvais mot de passe Admin refusé** ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v415**.
+
+---
+
+## 🟢 MAJ précédente — Espace Admin : enregistrer les salariés (identifiants) + dossiers attitrés + accès global — v414
 **Quoi :** l'**Espace Admin** devient un vrai espace de supervision de la **société qui occupe le logiciel** (le cabinet) :
 1. **Société exploitante** — carte de réglages (Dénomination, Forme, SIRET, Dirigeant, Adresse) enregistrés dans `db.cabinet.societe`.
 2. **Collaborateurs (salariés) & accès** — l'Admin **enregistre chaque salarié avec ses identifiants** (e-mail + mot de passe). Le **mot de passe est stocké en empreinte SHA-256 salée, JAMAIS en clair** (généré à la volée dans le navigateur via WebCrypto, schéma identique à la porte d'entrée `sha(sel+email+'##'+mdp)` + `sha(sel+email)`), dans `db.cabinet.staff` (données locales de l'appareil, jamais dans la source publique).

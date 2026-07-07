@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v414';
+    b.textContent='YADA · v415';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -11051,7 +11051,7 @@ ${lignes}
         +'<div class="sec-body"><h2>Bienvenue</h2><p class="sec-p">Choisissez votre espace pour vous connecter.</p>'
         +'<button class="sec-cta" onclick="secChoisir(\'cabinet\')">Espace Cabinet</button>'
         +'<button class="sec-cta sec-cta-2" onclick="secChoisir(\'client\')">Espace Client</button>'
-        +'<button class="sec-cta sec-cta-3" onclick="secChoisir(\'admin\')">Espace Admin</button></div>'
+        +'<p class="sec-p sec-adm-note">L\'Espace Admin (superviseur) se connecte via l\'Espace Cabinet.</p></div>'
         +'<div class="sec-ver">'+secVerTxt()+'</div></div>';
       o.classList.add('show'); return;
     }
@@ -11090,8 +11090,12 @@ ${lignes}
     if(rec && rec.emailHash){
       var eh=await sha(rec.salt+v.toLowerCase());
       if(eh!==rec.emailHash){
-        /* Espace Cabinet : accepter aussi un identifiant de collaborateur (salarié). */
-        if(CHOICE==='cabinet' && (await secStaffMatch(v.toLowerCase(), null))){ secEmail=v; secStep=2; secAfficher(); return; }
+        /* Espace Cabinet : accepter aussi l'identifiant Admin (superviseur) et les collaborateurs (salariés). */
+        if(CHOICE==='cabinet'){
+          var adEh=await sha(ADM.salt+v.toLowerCase());
+          if(adEh===ADM.emailHash){ secEmail=v; secStep=2; secAfficher(); return; }
+          if(await secStaffMatch(v.toLowerCase(), null)){ secEmail=v; secStep=2; secAfficher(); return; }
+        }
         if(e)e.textContent='Identifiant incorrect pour l\'espace '+secLabel(CHOICE)+'.';
         if(i){ try{ i.focus(); i.select(); }catch(_){} }
         return;                                   /* on RESTE à l'étape 1 : pas de champ mot de passe */
@@ -11128,9 +11132,13 @@ ${lignes}
       if(save) lcSet(CHOICE, em, pw); else lcDel(CHOICE);
       return secOuvrir(CHOICE, rem);
     }
-    /* Espace Cabinet : essayer les comptes collaborateurs (salariés). */
-    if(CHOICE==='cabinet'){ var sm=await secStaffMatch(em, pw);
-      if(sm){ window.staffId=sm.id; if(save) lcSet('cabinet', em, pw); else lcDel('cabinet'); return secOuvrir('cabinet', false); } }
+    /* Espace Cabinet : l'identifiant Admin (superviseur) OU un collaborateur (salarié) ouvre aussi via le Cabinet. */
+    if(CHOICE==='cabinet'){
+      var adH=await sha(ADM.salt+em+SEP+pw);
+      if(adH===ADM.hash){ if(save) lcSet('cabinet', em, pw); else lcDel('cabinet'); return secOuvrir('admin', rem); }
+      var sm=await secStaffMatch(em, pw);
+      if(sm){ window.staffId=sm.id; if(save) lcSet('cabinet', em, pw); else lcDel('cabinet'); return secOuvrir('cabinet', false); }
+    }
     if(e)e.textContent='Identifiants incorrects pour l\'espace '+secLabel(CHOICE)+'.';
     var p=document.getElementById('sec-pwd'); if(p){p.value='';p.focus();}
   };
@@ -11143,7 +11151,7 @@ ${lignes}
   if(typeof pageParametrage==='function'){ var _pp=pageParametrage; pageParametrage=function(){
     var delaySel='<select onchange="secSetDelay(this.value)">'+[['5','5 min'],['10','10 min'],['15','15 min'],['30','30 min'],['0','Désactivé']].map(function(o){return '<option value="'+o[0]+'" '+(String(secDelay())===o[0]?'selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';
     return _pp()+'<div class="card"><h2>Connexion & sécurité</h2>'
-      +'<div class="sub">Trois espaces avec <b>identifiants distincts</b> (Cabinet / Client / Admin). À l\'ouverture : choix de l\'espace puis connexion par e-mail + mot de passe (empreinte SHA-256 salée embarquée, clair absent du source). Verrouillage automatique par inactivité. Sécurité côté navigateur : dissuasive. Pour changer les identifiants, demandez au cabinet (redéploiement).</div>'
+      +'<div class="sub">Deux espaces au choix : <b>Cabinet</b> et <b>Client</b> (identifiants distincts). L\'<b>Espace Admin</b> (superviseur) se connecte <b>via l\'Espace Cabinet</b> (son identifiant ouvre le mode administration). À l\'ouverture : choix de l\'espace puis connexion par e-mail + mot de passe (empreinte SHA-256 salée embarquée, clair absent du source). Verrouillage automatique par inactivité. Sécurité côté navigateur : dissuasive. Pour changer les identifiants, demandez au cabinet (redéploiement).</div>'
       +'<div class="row g3" style="align-items:flex-end"><div class="field"><label>Espace courant</label><div class="kv2 ok">Espace '+(window.sessionRole==='client'?'Client':(window.sessionRole==='admin'?'Admin (superviseur)':'Cabinet'))+'</div></div>'
       +'<div class="field"><label>Verrouillage auto (inactivité)</label>'+delaySel+'</div>'
       +'<div class="field"><label>&nbsp;</label><button class="btn btn-ghost" onclick="(window.secDeconnexion||window.secVerrouiller)()">Se déconnecter</button></div></div></div>'; }; }
