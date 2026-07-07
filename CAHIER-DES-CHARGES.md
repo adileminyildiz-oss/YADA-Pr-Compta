@@ -169,9 +169,15 @@
     thèmes) pour **paramétrer l'espace Client et l'espace Cabinet**.
   - **ESPACE CLIENT** — demandes clients, transmission des factures fournisseurs, création des
     factures clients.
-- ⏳ **Connexion admin** : identifiant `admin.admin@gmail.com` + mot de passe fourni par
-  l'utilisateur. ⚠️ À stocker **en empreinte SHA‑256 salée** comme la gate existante (jamais en
-  clair dans le fichier public).
+- ✅ **Connexion à 3 espaces (v412)** : Cabinet (`aemconseil.sas@gmail.com`), Client
+  (`yada.assistance@gmail.com`), Admin (`admin.admin@gmail.com`) — mots de passe **hachés
+  SHA‑256 salés** (clair absent du source). Cabinet = interface complète ; Client = achats/
+  ventes + Tiers ; Admin = interface Cabinet + carte Administration (superviseur, données
+  partagées → impacte le Cabinet).
+- ⏳ **Outils Admin complets (reste)** : attribution de **droits** & **missions**, **notes
+  internes** éditables, **tableau d'avancement par salarié**, **barre latérale par thèmes**
+  pour paramétrer les espaces Client & Cabinet (chantier lourd — la carte Administration v412
+  en est l'amorce).
 
 ---
 

@@ -36,7 +36,19 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Consultation : « propager une deuxième page » = fenêtre VIVANTE (déplaçable & 100% utilisable) — v411
+## 🟢 Dernière mise à jour — Connexion à 3 espaces (Cabinet / Client / Admin) + identifiants dédiés + Espace Admin superviseur — v412
+**Quoi :** la page de connexion propose désormais **exactement 3 accès** : **Espace Cabinet**, **Espace Client**, **Espace Admin**. Identifiants dédiés (mots de passe **hachés SHA-256 salés**, **clair absent du source** — app publique) :
+- **Cabinet** : `aemconseil.sas@gmail.com` — gestion + comptabilité + pilotage (interface complète).
+- **Client** : `yada.assistance@gmail.com` — uniquement factures achat/vente + Tiers (nav restreinte existante).
+- **Admin** (superviseur) : `admin.admin@gmail.com` — **interface Cabinet complète + carte « Administration »** ; données partagées → les enregistrements/changements de l'Admin **impactent le Cabinet**.
+
+**Comment :** empreintes régénérées (schéma existant `sha(salt+email+'##'+pwd)` + `sha(salt+email)` ; e-mail insensible à la casse) → `CAB`/`CLI`/`ADM` ; helpers `secRec(c)`/`secLabel(c)` ; 3ᵉ bouton `secChoisir('admin')` ; `secEtape1`/`secEssayer`/`secOuvrir`/`boot` étendus au rôle `admin` (traité comme cabinet pour l'accès : `role()`/`applyRole` → `data-role=cabinet`, nav complète ; `window.isAdmin`). **`yada-addon201`** : style du 3ᵉ bouton + **badge « 🛡 ADMIN · Superviseur »** + **carte Administration** greffée en tête du Tableau de bord (accès global aux dossiers, tenue du Cabinet, + droits/missions/notes/suivi par salarié **à venir** — chantier §Architecture & Espaces). Texte Paramétrage « Connexion & sécurité » → « Trois espaces ». Mobile : Cabinet/Admin restent bloqués (Client uniquement), inchangé.
+
+**Sécurité :** identifiant vérifié **avant** l'accès au champ mot de passe ; empreintes salées uniquement (aucun mot de passe en clair). **Validé :** `node --check` (194 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (3 boutons ; **cabinet/client/admin** se connectent avec les bons identifiants ; **mauvais mot de passe → refusé** ; **e-mail inconnu → pas d'accès au mot de passe** ; Admin → `data-role=cabinet` + nav 15 items + carte/badge admin ; Cabinet → carte admin absente ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v412**.
+
+---
+
+## 🟢 MAJ précédente — Consultation : « propager une deuxième page » = fenêtre VIVANTE (déplaçable & 100% utilisable) — v411
 **Quoi :** dans la **Consultation des comptes** (et toutes ses sous-pages : grand-livre, éditeur, lx/rb/cp/im, modales), **propager une deuxième page** (bouton **⧉**) ne produit plus un **clone statique** dans une fenêtre navigateur (page morte, rien de modifiable) : **⧉ détache désormais la VRAIE page en fenêtre flottante dans l'application** — **déplaçable** (glisser la barre de titre), **redimensionnable** (poignée du coin bas-droit) et **entièrement utilisable** (DOM vivant : saisie, clics, filtres, lettrage — toutes les caractéristiques de la page restent modifiables).
 
 **Comment — `yada-addon200` (100% additif) :** **override de `wmPop`** (addon89) → si la fenêtre n'est pas déjà flottante, délègue à `wmToggle(k)` (sg → `sgToggleReduit()` ; autres → `float:true` + géométrie + `wmApplyGeom`) au lieu du `window.open` + clone HTML ; détection d'état par les classes vivantes (`.sg-reduit` / `.wm-float`) — le `WM.st` d'addon89 étant privé. Toast d'explication + info-bulle du bouton ⧉ mise à jour (« Propager en fenêtre déplaçable et utilisable », balayage idempotent post-render). La mécanique déplacement/redimensionnement/snap-haut d'addon89 est réutilisée telle quelle.
