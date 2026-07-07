@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Revue du cahier des charges : 5 demandes de plus implémentées (Pilotage épuré, Consultation plein écran, Éditions A4, brut↔net, libellés) — v410
+## 🟢 Dernière mise à jour — Consultation : « propager une deuxième page » = fenêtre VIVANTE (déplaçable & 100% utilisable) — v411
+**Quoi :** dans la **Consultation des comptes** (et toutes ses sous-pages : grand-livre, éditeur, lx/rb/cp/im, modales), **propager une deuxième page** (bouton **⧉**) ne produit plus un **clone statique** dans une fenêtre navigateur (page morte, rien de modifiable) : **⧉ détache désormais la VRAIE page en fenêtre flottante dans l'application** — **déplaçable** (glisser la barre de titre), **redimensionnable** (poignée du coin bas-droit) et **entièrement utilisable** (DOM vivant : saisie, clics, filtres, lettrage — toutes les caractéristiques de la page restent modifiables).
+
+**Comment — `yada-addon200` (100% additif) :** **override de `wmPop`** (addon89) → si la fenêtre n'est pas déjà flottante, délègue à `wmToggle(k)` (sg → `sgToggleReduit()` ; autres → `float:true` + géométrie + `wmApplyGeom`) au lieu du `window.open` + clone HTML ; détection d'état par les classes vivantes (`.sg-reduit` / `.wm-float`) — le `WM.st` d'addon89 étant privé. Toast d'explication + info-bulle du bouton ⧉ mise à jour (« Propager en fenêtre déplaçable et utilisable », balayage idempotent post-render). La mécanique déplacement/redimensionnement/snap-haut d'addon89 est réutilisée telle quelle.
+
+**Validé :** `node --check` (193 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (`wmPop('sg')` → `.sg-app.sg-reduit` flottante 1040px ; **drag réel** de la barre de titre (230,36)→(370,148) ; **clic réel** dans la fenêtre propagée OK ; `wmPop('ec')` → `.ec-win.wm-float` `position:fixed` + **saisie réelle** dans le filtre ; **1 seule page navigateur** (plus de clone) ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v411**.
+
+---
+
+## 🟢 MAJ précédente — Revue du cahier des charges : 5 demandes de plus implémentées (Pilotage épuré, Consultation plein écran, Éditions A4, brut↔net, libellés) — v410
 **Quoi :** revue complète des éléments du cahier des charges (« tu n'as pas pris en compte toutes les modifications ») → **5 demandes non comptables supplémentaires implémentées** :
 1. **Pilotage ÉPURÉ** : onglets **Impôts (IS/IR)**, **Actif/Passif** et **Agenda & RH** supprimés — seul « Pilotage » reste (liens Analytique / Suivi des règlements / Tableau de bord ; refonte gestion à venir §5 du cahier, IS/IR renaîtra dans Déclarations).
 2. **Consultation des comptes** : le module **s'ouvre PLEIN ÉCRAN** (reset `sgReduit` à chaque entrée) ; le carré **▢/▣ agrandit à tout l'écran** ; la **croix ✕** (fermer) et le bouton **─** (réduire) sont **retirés** de la barre (édition de la `.sg-win`, seule le toggle ▢ reste).

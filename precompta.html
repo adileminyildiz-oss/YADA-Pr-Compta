@@ -10972,7 +10972,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v410';
+    b.textContent='YADA · v411';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -22396,6 +22396,43 @@ ${lignes}
       }catch(_e){}
     };
   }
+})();
+</script>
+<script id="yada-addon200">
+/* CONSULTATION DES COMPTES — « propager une deuxième page » = fenêtre VIVANTE.
+   Avant : le bouton ⧉ (wmPop, addon89) ouvrait un CLONE STATIQUE dans une fenêtre
+   navigateur → page morte (rien n'était modifiable). Désormais ⧉ DÉTACHE LA VRAIE
+   PAGE en fenêtre flottante dans l'application :
+   • déplaçable (glisser la barre de titre — mécanique addon89 déjà en place),
+   • redimensionnable (poignée du coin bas-droit),
+   • 100% UTILISABLE : c'est le DOM vivant — saisie, clics, filtres, lettrage,
+     toutes les caractéristiques de la page restent modifiables.
+   Vaut pour la Consultation (sg) et toutes ses sous-pages (grand-livre cl,
+   éditeur ec, lx/rb/cp/im, modales). 100% additif (override de wmPop). */
+(function(){
+  if(window.__wmPopLive) return; window.__wmPopLive=true;
+  function isFloating(k){
+    try{
+      if(k==='sg'){ var sg=document.querySelector('.sg-app'); return !!(sg&&sg.classList.contains('sg-reduit')); }
+      var map={ lx:'#main .lx-app', cl:'#cl-overlay .lx-app', ec:'#ec-overlay .ec-win',
+        rb:'#main .rb-app', cp:'#main .cp-wrap', im:'#main .im-app', md:'#modal.show #modal-c' };
+      var el=document.querySelector(map[k]||''); return !!(el&&el.classList.contains('wm-float'));
+    }catch(e){ return false; }
+  }
+  window.wmPop=function(k){
+    try{
+      if(!isFloating(k)){
+        if(typeof window.wmToggle==='function') window.wmToggle(k);   /* sg → sgToggleReduit ; autres → float:true + géométrie */
+      }
+      if(typeof toast==='function') toast('Deuxième page propagée — déplacez-la par sa barre de titre, redimensionnez par le coin ; elle reste entièrement utilisable.');
+    }catch(e){}
+  };
+  /* Info-bulle du bouton ⧉ mise à jour (balayage idempotent après chaque rendu). */
+  function retitle(){ try{ document.querySelectorAll('.wm-ctrls .wm-b').forEach(function(b){
+    if(b.textContent==='⧉') b.title='Propager en fenêtre déplaçable et utilisable'; }); }catch(e){} }
+  if(typeof render==='function' && !window.__wmPopRetitle){ window.__wmPopRetitle=true;
+    var _r=render; render=function(){ var x=_r.apply(this,arguments); try{ retitle(); }catch(e){} return x; }; }
+  try{ retitle(); }catch(e){}
 })();
 </script>
 </body>
