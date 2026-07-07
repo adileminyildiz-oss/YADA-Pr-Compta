@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — L'Espace Cabinet (et l'Admin) ne se connecte JAMAIS directement : toujours par la page de connexion — v416
+## 🟢 Dernière mise à jour — Ouverture DIRECTE sur la page des identifiants (formulaire de connexion), sans écran « Choisissez votre espace » — v417
+**Quoi :** dès l'ouverture du logiciel, on arrive **directement sur la page de saisie des identifiants** (e-mail + mot de passe) — l'écran intermédiaire **« Choisissez votre espace »** (Cabinet / Client) est **supprimé**. Le choix de l'espace se fait par un **petit sélecteur en onglets « Espace Cabinet / Espace Client »** en haut du formulaire (défaut : **Cabinet** sur ordinateur ; **Client** sur mobile). Une note rappelle que l'**Admin (superviseur) se connecte via l'Espace Cabinet**. Vaut aussi après **déconnexion / verrouillage** : on revient directement sur le formulaire.
+
+**Comment — `yada-addon38` (3 éditions chirurgicales) :** `secAfficher` — la branche `if(!CHOICE){ écran de choix }` est remplacée par `if(!CHOICE) CHOICE = mob?'client':'cabinet'` → le formulaire s'affiche immédiatement (l'écran de choix n'existe plus) ; l'étape 1 reçoit un sélecteur d'onglets d'espace (`secBascule('cabinet'|'client')`) + la note Admin (desktop) ; le lien « ← Changer d'espace » est remplacé par les onglets. Nouvelle fonction `secBascule(sp)` (bascule Cabinet/Client, reset étape/e-mail). Le reste (empreintes SHA-256 salées, étape mot de passe, connexion directe réservée au Client v416, mobile = Client uniquement) est inchangé.
+
+**Validé :** `node --check` (195 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (à l'ouverture : **champ e-mail présent, pas d'écran « Choisissez votre espace »**, onglets [Cabinet, Client], onglet actif Cabinet, note Admin ; bascule vers Client OK ; **connexion Admin via le formulaire** → `role=admin` ; après déconnexion → formulaire affiché directement ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v417**.
+
+---
+
+## 🟢 MAJ précédente — L'Espace Cabinet (et l'Admin) ne se connecte JAMAIS directement : toujours par la page de connexion — v416
 **Quoi :** l'**Espace Cabinet** (et l'**Admin**, qui passe par le Cabinet) **ne s'ouvre plus jamais directement** : à chaque ouverture du logiciel, on **passe toujours par la page de connexion** (choix de l'espace + identifiant + mot de passe). La **connexion automatique « appareil de confiance »** (case « Rester connecté sur cet appareil ») reste **réservée à l'Espace Client**. Sur un appareil qui avait mémorisé le Cabinet/Admin, la mémorisation est **effacée** au démarrage → la page de connexion réapparaît.
 
 **Comment — `yada-addon38` (3 éditions chirurgicales) :** `boot()` — si `yada-remember` vaut `cabinet` ou `admin`, on l'**efface** et on **n'auto-connecte pas** (la page de connexion s'affiche) ; seule la valeur `client` déclenche encore la connexion directe. `secEssayer` — les connexions de l'Espace Cabinet (compte principal **et** Admin) ouvrent avec **`remember=false`** (jamais mémorisées) ; le Client garde le choix de la case. `secAfficher` (étape 2) — la case **« Rester connecté sur cet appareil »** n'est affichée **que pour le Client** (retirée pour Cabinet/Admin). Le verrouillage automatique par inactivité s'applique donc de nouveau au Cabinet/Admin.

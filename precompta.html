@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v416';
+    b.textContent='YADA · v417';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -11046,25 +11046,23 @@ ${lignes}
   function secAfficher(){ var o=el(); window.__secLocked=true;
     var mob=isMobile();
     if(mob) CHOICE='client'; /* sur mobile : seul l'Espace Client est accessible */
-    if(!CHOICE){
-      o.innerHTML='<div class="sec-screen">'+secHero()
-        +'<div class="sec-body"><h2>Bienvenue</h2><p class="sec-p">Choisissez votre espace pour vous connecter.</p>'
-        +'<button class="sec-cta" onclick="secChoisir(\'cabinet\')">Espace Cabinet</button>'
-        +'<button class="sec-cta sec-cta-2" onclick="secChoisir(\'client\')">Espace Client</button>'
-        +'<p class="sec-p sec-adm-note">L\'Espace Admin (superviseur) se connecte via l\'Espace Cabinet.</p></div>'
-        +'<div class="sec-ver">'+secVerTxt()+'</div></div>';
-      o.classList.add('show'); return;
-    }
+    /* Dès l'ouverture, on arrive DIRECTEMENT sur la page de saisie des identifiants
+       (plus d'écran « Choisissez votre espace » intermédiaire). Le sélecteur Cabinet/
+       Client est un petit onglet en haut du formulaire. Défaut : Cabinet (desktop). */
+    if(!CHOICE) CHOICE = mob?'client':'cabinet';
     var html='<div class="sec-screen">'+secHero()+'<div class="sec-body"><h2>Bienvenue</h2>'
       +'<div class="sec-err" id="sec-err"></div>';
     var sc=lcGet(CHOICE);   /* identifiants enregistrés sur cet appareil pour cet espace */
     if(secStep!==2){
-      /* Étape 1 : identifiant (pré-rempli si enregistré) */
+      /* Étape 1 : identifiant (pré-rempli si enregistré) — sélecteur d'espace en onglets (desktop). */
       var em1=secEmail||(sc&&sc.email)||'';
-      html+='<label class="sec-lab">Nom d\'utilisateur / e-mail</label>'
+      var tab=function(sp,lbl){ var on=(CHOICE===sp); return '<button class="sec-stab'+(on?' on':'')+'" onclick="secBascule(\''+sp+'\')" style="flex:1;padding:9px 6px;border-radius:9px;border:1px solid '+(on?'#1e90ff':'rgba(140,180,240,.35)')+';background:'+(on?'rgba(30,144,255,.20)':'transparent')+';color:#eaf2ff;font:600 13px system-ui,sans-serif;cursor:pointer">'+lbl+'</button>'; };
+      html+=(mob?'':'<div class="sec-space-tabs" style="display:flex;gap:8px;margin-bottom:12px">'+tab('cabinet','Espace Cabinet')+tab('client','Espace Client')+'</div>')
+        +(mob||CHOICE!=='cabinet'?'':'<p class="sec-p sec-adm-note" style="font-size:12px;opacity:.72;margin:-4px 0 12px">Admin (superviseur) : connectez-vous ici, via l\'Espace Cabinet.</p>')
+        +'<label class="sec-lab">Nom d\'utilisateur / e-mail</label>'
         +'<input id="sec-email" type="email" autocomplete="username" placeholder="vous@exemple.fr" value="'+String(em1).replace(/"/g,'&quot;')+'" onkeydown="if(event.key===\'Enter\')secEtape1()">'
         +'<button class="sec-cta" onclick="secEtape1()">Suivant</button>'
-        +'<div class="sec-links">'+(mob?'':'<button class="sec-link" onclick="secRetour()">← Changer d\'espace</button>')+'<button class="sec-link" onclick="secAide()">Identifiants oubliés ?</button></div>';
+        +'<div class="sec-links"><button class="sec-link" onclick="secAide()">Identifiants oubliés ?</button></div>';
     } else {
       /* Étape 2 : mot de passe (pré-rempli si enregistré, SAUF un démarrage sur deux). */
       var pw2=(secRequirePwd?'':((sc&&sc.pwd)||''));
@@ -11105,6 +11103,8 @@ ${lignes}
     secEmail=v; secStep=2; secAfficher(); };
   window.secEtapeRetour=function(){ secStep=1; secAfficher(); };
   window.secChoisir=function(r){ CHOICE=(isMobile()?'client':r); secStep=1; secAfficher(); };
+  /* Bascule d'espace directement depuis le formulaire de connexion (onglets Cabinet/Client). */
+  window.secBascule=function(sp){ CHOICE=(isMobile()?'client':sp); secStep=1; secEmail=''; secAfficher(); };
   window.secRetour=function(){ CHOICE=null; secStep=1; secEmail=''; secAfficher(); };
   function secCacher(){ var o=document.getElementById('sec-lock'); if(o){ o.classList.remove('show'); o.innerHTML=''; } window.__secLocked=false; secResetTimer(); }
   function clientDossierId(){ try{ if(CLIENT_DOSSIER && db&&db.dossiersData&&db.dossiersData[CLIENT_DOSSIER]) return CLIENT_DOSSIER;
