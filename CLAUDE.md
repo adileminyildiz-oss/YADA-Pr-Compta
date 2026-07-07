@@ -36,7 +36,24 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Page de connexion : correctif du bouton « Espace Admin » (flèche cassée) — v413
+## 🟢 Dernière mise à jour — Espace Admin : enregistrer les salariés (identifiants) + dossiers attitrés + accès global — v414
+**Quoi :** l'**Espace Admin** devient un vrai espace de supervision de la **société qui occupe le logiciel** (le cabinet) :
+1. **Société exploitante** — carte de réglages (Dénomination, Forme, SIRET, Dirigeant, Adresse) enregistrés dans `db.cabinet.societe`.
+2. **Collaborateurs (salariés) & accès** — l'Admin **enregistre chaque salarié avec ses identifiants** (e-mail + mot de passe). Le **mot de passe est stocké en empreinte SHA-256 salée, JAMAIS en clair** (généré à la volée dans le navigateur via WebCrypto, schéma identique à la porte d'entrée `sha(sel+email+'##'+mdp)` + `sha(sel+email)`), dans `db.cabinet.staff` (données locales de l'appareil, jamais dans la source publique).
+3. **Dossiers attitrés** — chaque salarié reçoit une **liste de dossiers attribués** (cases à cocher du portefeuille). **Lui seul les traite** : il se **connecte via l'Espace Cabinet** avec son identifiant, et le **portefeuille + la liste des dossiers sont filtrés à ses dossiers attitrés** (garde-fou : impossible d'ouvrir un dossier non attribué). Un **bandeau** rappelle son nom + le nombre de dossiers attitrés.
+4. **Accès global de l'Admin** — l'Admin voit **toutes les sociétés** du portefeuille (aucun filtre). Le compte principal Cabinet aussi.
+5. **Accès au panneau Admin** — bouton **« 🛡 Espace Admin — Collaborateurs & accès »** sur l'écran « Espace dossiers » (parcours d'entrée, avant d'ouvrir un dossier) + carte sur le Tableau de bord de l'Admin.
+
+**Comment :**
+- **`yada-addon38` (porte, éditions chirurgicales)** : `secStaffMatch(email, mdp)` cherche un collaborateur actif de `db.cabinet.staff` par empreinte ; `secEtape1` (l'identifiant d'un salarié est accepté pour l'Espace **Cabinet**) et `secEssayer` (si le compte principal échoue, on tente les collaborateurs → pose `window.staffId`, ouverture Cabinet) ; `window.staffId` remis à `null` dans `secEssayer`/`secVerrouiller`/`boot`.
+- **`yada-addon202` (100% additif)** : `yadaHashCreds` (empreintes salées WebCrypto) ; `staffAllowedIds()` (null = accès global admin/principal, sinon dossiers du salarié) + `staffFilterDossiers(list)` ; **wrap `choisirDossier`** (blocage des dossiers non attribués) ; `admCollabPanel()` (société + CRUD salariés + affectation de dossiers) ; handlers `admStaffAdd/Del/Actif/ResetPwd/Doss`, `admSocSave`, `admAssignToggle`, `admShowToggle` ; **wrap `ecranSelectionDossier`** (bouton d'accès + vue panneau) ; bandeau collaborateur sur `pageDash`.
+- **Filtrage du portefeuille** : `cabinetApercu`/`rafraichirCabinet` et les deux `dossiers()` du parcours d'entrée (addon188/189) passent par `staffFilterDossiers`.
+
+**Validé :** `node --check` (195 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (Admin : bouton d'entrée + panneau société/collaborateurs/ajout ; création d'un salarié → **hash présent, aucun mot de passe en clair** dans l'objet stocké ; empreintes vérifiées avec le schéma de la porte ; **connexion réelle du salarié via la porte Cabinet** → `role=cabinet`, `staffId` posé, dossiers filtrés à `[d-b]` ; garde-fou bloque un dossier non attribué ; mauvais mot de passe refusé ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v414**.
+
+---
+
+## 🟢 MAJ précédente — Page de connexion : correctif du bouton « Espace Admin » (flèche cassée) — v413
 **Quoi :** sur la page de connexion, le 3ᵉ bouton affichait **« Espace Admin▯92 »** (glyphe parasite) au lieu de **« Espace Admin → »**. Cause : dans `yada-addon201`, la CSS du bouton est injectée via une **chaîne JS** (`style.textContent`) et contenait `content:"\2192"` → l'échappement `\2192` était **interprété par JavaScript** (octal + « 92 ») **avant** d'atteindre la CSS. Corrigé en utilisant le **caractère flèche littéral `→`** (convention UTF-8 du projet). Bonus : le bouton Admin passe en **flex** (libellé à gauche, flèche à droite) pour s'aligner exactement sur « Espace Cabinet » / « Espace Client ».
 
 **Comment — 1 édition de `yada-addon201` :** `content:"\2192"` → `content:"→"` ; `.sec-cta-3` reçoit `display:flex;align-items:center` (+ fond/bordure en `!important` pour un rendu cohérent). Aucune logique modifiée.

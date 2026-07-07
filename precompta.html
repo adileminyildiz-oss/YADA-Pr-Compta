@@ -4248,9 +4248,10 @@ function accederQonto(url){
 window.accederQonto=accederQonto;
 function cabinetApercu(){
   const cab=db.cabinet||cabinetDefaut();
-  const actifs=cab.dossiers.filter(d=>d.actif).length;
+  const portefeuille=(window.staffFilterDossiers?window.staffFilterDossiers(cab.dossiers):cab.dossiers);
+  const actifs=portefeuille.filter(d=>d.actif).length;
   const q=(dashRecherche||'').toLowerCase();
-  let liste=cab.dossiers.slice();
+  let liste=portefeuille.slice();
   if(q) liste=liste.filter(d=>(d.nom||'').toLowerCase().includes(q)||(d.ville||'').toLowerCase().includes(q)||(d.activite||'').toLowerCase().includes(q));
   liste.sort((a,b)=>(b.favori?1:0)-(a.favori?1:0));
   return head('Bienvenue, '+cab.collaborateur,'Visualisez et gérez votre cabinet comptable — '+cab.cabinetNom+' · '+cab.role)+
@@ -4290,7 +4291,7 @@ function cabinetTable(liste){
 }
 function rafraichirCabinet(){ const el=document.getElementById('rg-portfolio'); if(!el)return;
   const cab=db.cabinet; const q=(dashRecherche||'').toLowerCase();
-  let liste=cab.dossiers.slice(); if(q) liste=liste.filter(d=>(d.nom||'').toLowerCase().includes(q)||(d.ville||'').toLowerCase().includes(q)||(d.activite||'').toLowerCase().includes(q));
+  let liste=(window.staffFilterDossiers?window.staffFilterDossiers(cab.dossiers):cab.dossiers).slice(); if(q) liste=liste.filter(d=>(d.nom||'').toLowerCase().includes(q)||(d.ville||'').toLowerCase().includes(q)||(d.activite||'').toLowerCase().includes(q));
   liste.sort((a,b)=>(b.favori?1:0)-(a.favori?1:0));
   el.innerHTML=cabinetTable(liste);
 }
@@ -10972,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v413';
+    b.textContent='YADA · v414';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -10998,6 +10999,16 @@ ${lignes}
   var ADM={ salt:'ff23a9fd573f1e12', hash:'b85658e650e53f86b1e6b5b376e42f63cbe23842cdcae5e129e6f1622f579dfd', emailHash:'e7dec6c38c706457000bf50a7c61f50b34052b082e983e48a1f89f2aefc5bf73' };
   function secRec(c){ return c==='client'?CLI:(c==='admin'?ADM:CAB); }
   function secLabel(c){ return c==='client'?'Client':(c==='admin'?'Admin':'Cabinet'); }
+  if(typeof window.staffId==='undefined') window.staffId=null;
+  /* Collaborateurs (salariés) enregistrés par l'Admin : identifiants dans db.cabinet.staff,
+     empreintes SHA-256 salées (jamais en clair). L'Espace Cabinet accepte le compte principal
+     OU un compte collaborateur ; le collaborateur ne voit que ses dossiers attitrés. */
+  async function secStaffMatch(em, pwd){
+    try{ var st=(typeof db!=='undefined' && db && db.cabinet && db.cabinet.staff)||[]; em=(em||'').toLowerCase();
+      for(var i=0;i<st.length;i++){ var s=st[i]; if(!s||s.actif===false||!s.salt) continue;
+        if(pwd==null){ if(s.emailHash && (await sha(s.salt+em))===s.emailHash) return s; }
+        else { if(s.hash && (await sha(s.salt+em+SEP+pwd))===s.hash) return s; } }
+    }catch(e){} return null; }
   var CLIENT_DOSSIER='d-ama'; /* dossier exclusif du portail Client */
   var CHOICE=null; var secStep=1; var secEmail='';
   window.__secLocked=false; var secTimer=null;
@@ -11079,6 +11090,8 @@ ${lignes}
     if(rec && rec.emailHash){
       var eh=await sha(rec.salt+v.toLowerCase());
       if(eh!==rec.emailHash){
+        /* Espace Cabinet : accepter aussi un identifiant de collaborateur (salarié). */
+        if(CHOICE==='cabinet' && (await secStaffMatch(v.toLowerCase(), null))){ secEmail=v; secStep=2; secAfficher(); return; }
         if(e)e.textContent='Identifiant incorrect pour l\'espace '+secLabel(CHOICE)+'.';
         if(i){ try{ i.focus(); i.select(); }catch(_){} }
         return;                                   /* on RESTE à l'étape 1 : pas de champ mot de passe */
@@ -11102,6 +11115,7 @@ ${lignes}
     else if(typeof render==='function'){ render(); }
     secCacher(); if(typeof toast==='function') toast('Espace '+secLabel(role)+' ✓'); }
   window.secEssayer=async function(){ if(!CHOICE){ secAfficher(); return; } var e=document.getElementById('sec-err');
+    window.staffId=null;                          /* par défaut : compte principal (pas un collaborateur) */
     var em=((document.getElementById('sec-email')||{}).value||secEmail||''); em=em.trim().toLowerCase();
     if(!em){ secStep=1; secAfficher(); return; }
     var pw=(document.getElementById('sec-pwd')||{}).value||'';
@@ -11114,11 +11128,14 @@ ${lignes}
       if(save) lcSet(CHOICE, em, pw); else lcDel(CHOICE);
       return secOuvrir(CHOICE, rem);
     }
+    /* Espace Cabinet : essayer les comptes collaborateurs (salariés). */
+    if(CHOICE==='cabinet'){ var sm=await secStaffMatch(em, pw);
+      if(sm){ window.staffId=sm.id; if(save) lcSet('cabinet', em, pw); else lcDel('cabinet'); return secOuvrir('cabinet', false); } }
     if(e)e.textContent='Identifiants incorrects pour l\'espace '+secLabel(CHOICE)+'.';
     var p=document.getElementById('sec-pwd'); if(p){p.value='';p.focus();}
   };
   window.secAide=function(){ alert('Identifiants gérés par le cabinet.\n\nEspace Cabinet et Espace Client ont des identifiants distincts. Contactez le cabinet pour les obtenir ou les réinitialiser.'); };
-  window.secVerrouiller=function(){ ssDel('yada-role'); lsDel(KR); CHOICE=null; secStep=1; secEmail=''; window.sessionRole='cabinet'; window.selClientMode=false; try{ connecte=false; }catch(e){} secAfficher(); };
+  window.secVerrouiller=function(){ ssDel('yada-role'); lsDel(KR); CHOICE=null; secStep=1; secEmail=''; window.staffId=null; window.sessionRole='cabinet'; window.selClientMode=false; try{ connecte=false; }catch(e){} secAfficher(); };
   window.secSetDelay=function(v){ lsSet(KD,String(v)); secResetTimer(); if(typeof toast==='function')toast('Verrouillage auto : '+(v==0?'désactivé':v+' min')); };
   function unlocked(){ return !!ssGet('yada-role'); }
   function secResetTimer(){ if(secTimer){clearTimeout(secTimer);secTimer=null;} var d=secDelay(); if(d>0 && !secLocked() && unlocked() && !lsGet(KR)){ secTimer=setTimeout(window.secVerrouiller, d*60000); } }
@@ -11132,7 +11149,7 @@ ${lignes}
       +'<div class="field"><label>&nbsp;</label><button class="btn btn-ghost" onclick="(window.secDeconnexion||window.secVerrouiller)()">Se déconnecter</button></div></div></div>'; }; }
   function addSideBtn(){ try{ var foot=document.querySelector('.side-foot'); if(foot && !document.getElementById('sec-side-btn')){ var b=document.createElement('button'); b.id='sec-side-btn'; b.textContent='Déconnexion'; b.onclick=function(){ (window.secDeconnexion||window.secVerrouiller)(); }; foot.insertBefore(b, foot.firstChild.nextSibling); } }catch(e){} }
   if(typeof render==='function'){ var _r=render; render=function(){ var x=_r.apply(this,arguments); addSideBtn(); return x; }; }
-  function boot(){ var role=ssGet('yada-role'); var auto=false;
+  function boot(){ var role=ssGet('yada-role'); var auto=false; window.staffId=null;
     var valid=function(r){ return r==='cabinet'||r==='client'||r==='admin'; };
     if(isMobile() && (role==='cabinet'||role==='admin')) role=null; /* mobile : pas d'accès cabinet/admin */
     if(!valid(role)){ var rem=lsGet(KR); if(valid(rem)){ if(!(isMobile()&&(rem==='cabinet'||rem==='admin'))){ role=rem; auto=true; ssSet('yada-role', role); } } }
@@ -21554,7 +21571,7 @@ ${lignes}
    ============================================================ */
 (function(){
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
-  function dossiers(){ var c=db.cabinet||(typeof cabinetDefaut==='function'?cabinetDefaut():{dossiers:[]}); return (c.dossiers||[]).slice().sort(function(a,b){return String(a.nom||'').localeCompare(String(b.nom||''),'fr',{sensitivity:'base',numeric:true}); }); }
+  function dossiers(){ var c=db.cabinet||(typeof cabinetDefaut==='function'?cabinetDefaut():{dossiers:[]}); var arr=(window.staffFilterDossiers?window.staffFilterDossiers(c.dossiers||[]):(c.dossiers||[])); return arr.slice().sort(function(a,b){return String(a.nom||'').localeCompare(String(b.nom||''),'fr',{sensitivity:'base',numeric:true}); }); }
   function rowsHTML(){
     return dossiers().map(function(d){ var actif=(d.id===db.activeId);
       return '<div class="df-row'+(actif?' actif':'')+'" onclick="dossierFloatChoisir(\''+d.id+'\')" title="Entrer dans '+esc(d.nom||'')+'">'
@@ -21633,7 +21650,7 @@ ${lignes}
    ============================================================ */
 (function(){
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
-  function dossiers(){ var c=db.cabinet||(typeof cabinetDefaut==='function'?cabinetDefaut():{dossiers:[]}); return (c.dossiers||[]).slice().sort(function(a,b){return String(a.nom||'').localeCompare(String(b.nom||''),'fr',{sensitivity:'base',numeric:true}); }); }
+  function dossiers(){ var c=db.cabinet||(typeof cabinetDefaut==='function'?cabinetDefaut():{dossiers:[]}); var arr=(window.staffFilterDossiers?window.staffFilterDossiers(c.dossiers||[]):(c.dossiers||[])); return arr.slice().sort(function(a,b){return String(a.nom||'').localeCompare(String(b.nom||''),'fr',{sensitivity:'base',numeric:true}); }); }
   function dossierEntry(id){ return ((db.cabinet&&db.cabinet.dossiers)||[]).find(function(x){return x.id===id;})||null; }
   function societeInfo(id){ var d=dossierEntry(id)||{}; var s=(db.dossiersData&&db.dossiersData[id]&&db.dossiersData[id].societe)||{};
     return { nom:d.nom||s.raison||'—', forme:s.formeJur||d.forme||'', siren:s.siren||d.siren||'', siret:s.siret||'',
@@ -22479,7 +22496,8 @@ ${lignes}
       return '<div class="adm-it"'+clickable+'><b>'+it[0]+'</b><span>'+it[1]+'</span></div>'; }).join('');
     return '<div class="card adm-card"><h2><span class="adm-badge">🛡 ADMIN · Superviseur</span> Administration du cabinet</h2>'
       +'<div class="sub">Espace de supervision : vous disposez de l\'interface complète du Cabinet ; les enregistrements et changements que vous effectuez impactent directement l\'espace Cabinet (données partagées).</div>'
-      +'<div class="adm-scope">'+grid+'</div></div>';
+      +'<div class="adm-scope">'+grid+'</div></div>'
+      +(window.admCollabPanel?window.admCollabPanel():'');
   }
   /* Greffe sur le Tableau de bord (dash) — injectée en tête du .dash-wrap. */
   if(typeof window.pageDash==='function'){ var _d=window.pageDash;
@@ -22487,6 +22505,182 @@ ${lignes}
       try{ if(isAdmin()){ h=h.replace('<div class="dash-wrap">','<div class="dash-wrap">'+admCard()); } }catch(e){}
       return h; };
   }
+})();
+</script>
+
+<script id="yada-addon202">
+/* ============================================================
+   ESPACE ADMIN — Collaborateurs & accès + dossiers attitrés.
+   - L'Admin enregistre les SALARIÉS du cabinet avec leurs IDENTIFIANTS
+     (mot de passe stocké en empreinte SHA-256 salée, JAMAIS en clair).
+   - Chaque salarié reçoit une liste de DOSSIERS ATTITRÉS : lui seul les
+     traite. Il se connecte via l'Espace Cabinet ; le portefeuille et la
+     liste des dossiers sont filtrés à ses dossiers attitrés.
+   - L'Admin a un ACCÈS GLOBAL à toutes les sociétés.
+   100% additif. Les identifiants collaborateurs vivent dans db.cabinet.staff
+   (données locales de l'appareil), jamais dans la source publique.
+   ============================================================ */
+(function(){
+  if(window.__admCollab) return; window.__admCollab=true;
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function val(id){ var e=document.getElementById(id); return e?String(e.value||'').trim():''; }
+  var SEP='##';
+  /* SHA-256 identique au schéma de la porte d'entrée (addon38) → les empreintes se vérifient. */
+  async function sha(s){ try{ if(window.crypto&&crypto.subtle){ var b=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+      return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0');}).join(''); } }catch(e){}
+    var h=5381; for(var i=0;i<s.length;i++){ h=(((h<<5)+h)^s.charCodeAt(i))>>>0; } return 'f'+h.toString(16); }
+  /* Empreintes salées d'un identifiant collaborateur (jamais de mot de passe en clair). */
+  window.yadaHashCreds=async function(email,pwd){
+    var salt=''; try{ var a=new Uint8Array(8); if(window.crypto&&crypto.getRandomValues){ crypto.getRandomValues(a); salt=Array.from(a).map(function(x){return x.toString(16).padStart(2,'0');}).join(''); } }catch(e){}
+    if(!salt){ salt=(''+(typeof uid==='function'?uid():'')+ (new Date()).getTime().toString(16)).replace(/[^0-9a-f]/g,'').slice(0,16)||'0000000000000000'; }
+    var em=(email||'').toLowerCase();
+    return { salt:salt, hash:await sha(salt+em+SEP+(pwd||'')), emailHash:await sha(salt+em) };
+  };
+  function ensureStaff(){ try{ if(!db.cabinet) return; if(!Array.isArray(db.cabinet.staff)) db.cabinet.staff=[]; if(!db.cabinet.societe||typeof db.cabinet.societe!=='object') db.cabinet.societe={}; }catch(e){} }
+  window.__ensureStaff=ensureStaff;
+  function stById(id){ ensureStaff(); return (db.cabinet.staff||[]).find(function(x){return x.id===id;}); }
+
+  /* ---- Filtrage des dossiers pour un collaborateur (salarié) ---- */
+  window.staffAllowedIds=function(){
+    try{ if(window.sessionRole==='admin') return null;         /* Admin : accès global */
+      var sid=window.staffId; if(!sid) return null;             /* compte principal cabinet : tout */
+      var s=(db.cabinet&&db.cabinet.staff||[]).find(function(x){return x.id===sid;});
+      if(s&&Array.isArray(s.dossiers)) return s.dossiers.slice();
+    }catch(e){}
+    return []; };
+  window.staffFilterDossiers=function(list){ var ids=window.staffAllowedIds(); if(ids==null) return list||[]; return (list||[]).filter(function(d){ return ids.indexOf(d.id)>=0; }); };
+  /* Garde-fou : un collaborateur ne peut ouvrir qu'un dossier attitré. */
+  if(typeof window.choisirDossier==='function'){ var _cd=window.choisirDossier;
+    window.choisirDossier=function(id){ var ids=window.staffAllowedIds&&window.staffAllowedIds();
+      if(ids!=null && ids.indexOf(id)<0){ if(typeof toast==='function') toast('Dossier non attribué à ce collaborateur.'); return false; }
+      return _cd.apply(this,arguments); }; }
+
+  /* ---- Panneau d'administration (Société exploitante + collaborateurs) ---- */
+  function assignBox(s){
+    var doss=(db.cabinet.dossiers||[]); var set=(s.dossiers||[]);
+    var chks=doss.map(function(d){ var on=set.indexOf(d.id)>=0;
+      return '<label class="adm-chk"><input type="checkbox" '+(on?'checked':'')+' onchange="admStaffDoss(\''+s.id+'\',\''+esc(d.id)+'\',this.checked)"> '+esc(d.nom||d.id)+'</label>'; }).join('')
+      ||'<span class="adm-empty">Aucun dossier au portefeuille.</span>';
+    return '<div class="adm-assign"><div class="adm-assign-h">Dossiers attitrés à '+esc([s.prenom,s.nom].filter(Boolean).join(' ')||'ce collaborateur')+' :</div><div class="adm-chks">'+chks+'</div></div>';
+  }
+  window.admCollabPanel=function(){
+    if(window.sessionRole!=='admin') return ''; ensureStaff();
+    var cab=db.cabinet||{}; var soc=cab.societe||{}; var doss=(cab.dossiers||[]);
+    var rows=(cab.staff||[]).map(function(s){ var n=(s.dossiers||[]).length; var assign=(window.admAssign===s.id)?assignBox(s):'';
+      return '<div class="adm-staff'+(s.actif===false?' off':'')+'">'
+        +'<div class="adm-staff-h"><span class="adm-av">'+esc(((s.prenom||s.nom||'?')[0]||'?').toUpperCase())+'</span>'
+        +'<div class="adm-staff-id"><b>'+esc([s.prenom,s.nom].filter(Boolean).join(' ')||'Collaborateur')+'</b>'
+        +'<span>'+esc(s.email||'')+' · '+n+' dossier'+(n>1?'s':'')+' attitré'+(n>1?'s':'')+(s.actif===false?' · inactif':'')+'</span></div>'
+        +'<div class="adm-staff-act">'
+        +'<button class="btn btn-ghost btn-sm" onclick="admAssignToggle(\''+s.id+'\')">Dossiers attitrés</button>'
+        +'<button class="btn btn-ghost btn-sm" onclick="admStaffResetPwd(\''+s.id+'\')">Mot de passe</button>'
+        +'<button class="btn btn-ghost btn-sm" onclick="admStaffActif(\''+s.id+'\')">'+(s.actif===false?'Activer':'Désactiver')+'</button>'
+        +'<button class="btn btn-ghost btn-sm adm-danger" onclick="admStaffDel(\''+s.id+'\')">Supprimer</button>'
+        +'</div></div>'+assign+'</div>';
+    }).join('')||'<div class="adm-empty">Aucun collaborateur enregistré pour le moment.</div>';
+    var opts=doss.map(function(d){ return '<label class="adm-chk"><input type="checkbox" class="adm-newd" value="'+esc(d.id)+'"> '+esc(d.nom||d.id)+'</label>'; }).join('')||'<span class="adm-empty">Aucun dossier au portefeuille.</span>';
+    var collab='<div class="card adm-collab"><h2><span class="adm-badge">🛡 ADMIN</span> Collaborateurs &amp; accès</h2>'
+      +'<div class="sub">Enregistrez les salariés du cabinet et attribuez à chacun ses dossiers. Un collaborateur se connecte via l\'<b>Espace Cabinet</b> avec son identifiant et ne voit que ses <b>dossiers attitrés</b>. L\'Admin conserve un <b>accès global</b> à toutes les sociétés.</div>'
+      +'<div class="adm-staff-list">'+rows+'</div></div>';
+    var add='<div class="card adm-add"><h2>➕ Enregistrer un collaborateur</h2>'
+      +'<div class="sub">Créez un accès (identifiant + mot de passe) pour un salarié. Le mot de passe est stocké <b>chiffré</b> (empreinte SHA-256 salée), jamais en clair.</div>'
+      +'<div class="adm-grid">'
+      +'<div class="fld"><label>Prénom</label><input id="adm-new-prenom"></div>'
+      +'<div class="fld"><label>Nom</label><input id="adm-new-nom"></div>'
+      +'<div class="fld"><label>Identifiant (e-mail)</label><input id="adm-new-email" type="email" placeholder="salarie@cabinet.fr"></div>'
+      +'<div class="fld"><label>Mot de passe</label><input id="adm-new-pwd" type="password"></div>'
+      +'</div>'
+      +'<div class="adm-doss"><label>Dossiers attitrés</label><div class="adm-chks">'+opts+'</div></div>'
+      +'<div style="margin-top:10px"><button class="btn btn-pri btn-sm" onclick="admStaffAdd()">Créer le collaborateur</button></div></div>';
+    var socCard='<div class="card adm-soc"><h2>🏢 Société exploitante (le cabinet)</h2>'
+      +'<div class="sub">La société qui occupe le logiciel et ses réglages. L\'Admin supervise cette société et dispose d\'un accès global au portefeuille.</div>'
+      +'<div class="adm-grid">'
+      +'<div class="fld"><label>Dénomination</label><input id="adm-soc-nom" value="'+esc(soc.nom||cab.cabinetNom||'')+'"></div>'
+      +'<div class="fld"><label>Forme juridique</label><input id="adm-soc-forme" value="'+esc(soc.forme||'')+'"></div>'
+      +'<div class="fld"><label>SIRET</label><input id="adm-soc-siret" value="'+esc(soc.siret||'')+'"></div>'
+      +'<div class="fld"><label>Dirigeant</label><input id="adm-soc-dir" value="'+esc(soc.dirigeant||cab.collaborateur||'')+'"></div>'
+      +'<div class="fld fld-wide"><label>Adresse</label><input id="adm-soc-adr" value="'+esc(soc.adresse||'')+'"></div>'
+      +'</div>'
+      +'<div style="margin-top:10px"><button class="btn btn-pri btn-sm" onclick="admSocSave()">Enregistrer la société</button></div></div>';
+    return socCard+collab+add;
+  };
+
+  window.admAssignToggle=function(id){ window.admAssign=(window.admAssign===id?null:id); if(typeof render==='function') render(); };
+  window.admStaffDoss=function(id,did,on){ var s=stById(id); if(!s)return; s.dossiers=s.dossiers||[]; var i=s.dossiers.indexOf(did);
+    if(on){ if(i<0)s.dossiers.push(did); } else if(i>=0) s.dossiers.splice(i,1); if(typeof save==='function')save(); if(typeof render==='function')render(); };
+  window.admStaffActif=function(id){ var s=stById(id); if(!s)return; s.actif=(s.actif===false); if(typeof save==='function')save(); if(typeof render==='function')render(); };
+  window.admStaffDel=function(id){ var s=stById(id); if(!s)return;
+    var go=function(){ db.cabinet.staff=(db.cabinet.staff||[]).filter(function(x){return x.id!==id;}); if(typeof save==='function')save(); if(typeof render==='function')render(); if(typeof toast==='function')toast('Collaborateur supprimé'); };
+    var msg='Supprimer le collaborateur « '+(([s.prenom,s.nom].filter(Boolean).join(' '))||s.email||'')+' » et son accès au logiciel ?';
+    if(window.yadaConfirm) yadaConfirm(msg, go, {danger:true}); else if(confirm(msg)) go(); };
+  window.admStaffResetPwd=function(id){ var s=stById(id); if(!s)return;
+    var apply=function(v){ v=(v||'').trim(); if(!v)return; yadaHashCreds(s.email,v).then(function(c){ s.salt=c.salt; s.hash=c.hash; s.emailHash=c.emailHash; if(typeof save==='function')save(); if(typeof toast==='function')toast('Mot de passe mis à jour'); }); };
+    if(window.yadaPrompt) yadaPrompt('Nouveau mot de passe pour '+(s.email||'ce collaborateur'), '', apply); else apply(prompt('Nouveau mot de passe')); };
+  window.admStaffAdd=function(){ ensureStaff();
+    var pr=val('adm-new-prenom'), no=val('adm-new-nom'), em=val('adm-new-email').toLowerCase(), pw=val('adm-new-pwd');
+    if(!em||!pw){ if(typeof toast==='function')toast('Identifiant et mot de passe requis'); return; }
+    if((db.cabinet.staff||[]).some(function(x){return (x.email||'').toLowerCase()===em;})){ if(typeof toast==='function')toast('Un collaborateur avec cet identifiant existe déjà'); return; }
+    var dss=[].slice.call(document.querySelectorAll('.adm-newd:checked')).map(function(c){return c.value;});
+    yadaHashCreds(em,pw).then(function(c){
+      db.cabinet.staff.push({ id:'stf-'+(typeof uid==='function'?uid():String((new Date()).getTime())), prenom:pr, nom:no, email:em, salt:c.salt, hash:c.hash, emailHash:c.emailHash, dossiers:dss, actif:true, dateCreation:(typeof todayStr==='function'?todayStr():'') });
+      if(typeof save==='function')save(); if(typeof render==='function')render(); if(typeof toast==='function')toast('Collaborateur créé — il peut se connecter via l\'Espace Cabinet'); }); };
+  window.admSocSave=function(){ ensureStaff(); var s=db.cabinet.societe;
+    s.nom=val('adm-soc-nom'); s.forme=val('adm-soc-forme'); s.siret=val('adm-soc-siret'); s.dirigeant=val('adm-soc-dir'); s.adresse=val('adm-soc-adr');
+    if(s.nom) db.cabinet.cabinetNom=s.nom; if(typeof save==='function')save(); if(typeof toast==='function')toast('Société enregistrée'); };
+
+  /* Accès à l'Espace Admin depuis le parcours d'entrée (avant d'ouvrir un dossier). */
+  window.admShowToggle=function(v){ window.admShow=(v===undefined?!window.admShow:v); if(typeof render==='function') render(); };
+  if(typeof window.ecranSelectionDossier==='function'){ var _es=window.ecranSelectionDossier;
+    window.ecranSelectionDossier=function(){
+      if(window.sessionRole==='admin' && window.admShow){
+        return '<div class="login-wrap adm-wrap">'
+          +'<div class="login-title">🛡 Espace Admin</div>'
+          +'<div class="login-sub">Société exploitante, collaborateurs &amp; dossiers attitrés — accès global au portefeuille.</div>'
+          +'<div style="margin:6px 0 14px"><button class="btn btn-ghost" onclick="admShowToggle(false)">← Retour aux dossiers</button></div>'
+          +(window.admCollabPanel?window.admCollabPanel():'')+'</div>';
+      }
+      var h=_es.apply(this,arguments);
+      try{ if(window.sessionRole==='admin' && h.indexOf('login-wrap')>=0 && h.indexOf('adm-topbar')<0){
+        h=h.replace('<div class="login-wrap"','<div class="adm-topbar"><button class="btn btn-pri btn-sm" onclick="admShowToggle(true)">🛡 Espace Admin — Collaborateurs &amp; accès</button></div><div class="login-wrap"'); } }catch(e){}
+      return h; };
+  }
+
+  /* Bandeau discret pour un collaborateur connecté (rappel de ses dossiers attitrés). */
+  if(typeof window.pageDash==='function'){ var _pd=window.pageDash;
+    window.pageDash=function(){ var h=_pd.apply(this,arguments);
+      try{ if(window.sessionRole==='cabinet' && window.staffId){ var s=stById(window.staffId); if(s){ var n=(s.dossiers||[]).length;
+        var b='<div class="card staff-banner"><b>👤 '+esc([s.prenom,s.nom].filter(Boolean).join(' ')||'Collaborateur')+'</b> · '+n+' dossier'+(n>1?'s':'')+' attitré'+(n>1?'s':'')+' — vous ne voyez et ne traitez que vos dossiers attribués.</div>';
+        h=h.replace('<div class="dash-wrap">','<div class="dash-wrap">'+b); } } }catch(e){}
+      return h; }; }
+
+  /* Styles */
+  try{ var st=document.createElement('style'); st.id='adm-collab-mod'; st.textContent=
+    '.adm-collab .adm-staff-list{margin-top:8px;display:flex;flex-direction:column;gap:8px}'
+    +'.adm-staff{border:1px solid rgba(120,180,255,.22);border-radius:12px;padding:10px 12px;background:rgba(120,180,255,.05)}'
+    +'.adm-staff.off{opacity:.55}'
+    +'.adm-staff-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}'
+    +'.adm-av{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font:800 15px system-ui,sans-serif;color:#eaf2ff;background:linear-gradient(135deg,#2f6fe8,#1cc39b);flex:0 0 auto}'
+    +'.adm-staff-id{flex:1;min-width:150px}.adm-staff-id b{display:block;font-size:14px}.adm-staff-id span{font-size:12px;opacity:.72}'
+    +'.adm-staff-act{display:flex;gap:6px;flex-wrap:wrap}'
+    +'.adm-staff-act .adm-danger{color:#ff9a92;border-color:rgba(255,120,110,.45)}'
+    +'.adm-assign{margin-top:9px;border-top:1px solid rgba(120,180,255,.18);padding-top:9px}'
+    +'.adm-assign-h{font-size:12.5px;opacity:.8;margin-bottom:6px}'
+    +'.adm-chks{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px}'
+    +'.adm-chk{display:flex;align-items:center;gap:7px;font-size:12.5px;background:rgba(120,180,255,.06);border:1px solid rgba(120,180,255,.16);border-radius:9px;padding:6px 9px;cursor:pointer}'
+    +'.adm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:8px}'
+    +'.adm-grid .fld-wide{grid-column:1/-1}'
+    +'.adm-grid .fld label{display:block;font-size:11.5px;opacity:.72;margin-bottom:3px}'
+    +'.adm-doss{margin-top:10px}.adm-doss>label{display:block;font-size:11.5px;opacity:.72;margin-bottom:5px}'
+    +'.adm-empty{font-size:12.5px;opacity:.6}'
+    +'.staff-banner{background:linear-gradient(135deg,#16304a,#0f2236);border:1px solid rgba(120,180,255,.3)}'
+    +'.adm-topbar{max-width:1160px;margin:0 auto;padding:12px 16px 0;text-align:right}'
+    +'.adm-wrap{max-width:1160px;text-align:left}'
+    +'.adm-wrap .card{text-align:left}';
+    document.head.appendChild(st); }catch(e){}
+
+  /* Migration : garantir la structure au démarrage. */
+  try{ ensureStaff(); }catch(e){}
+  setTimeout(function(){ try{ ensureStaff(); }catch(e){} }, 1200);
 })();
 </script>
 </body>
