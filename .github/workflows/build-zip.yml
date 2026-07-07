@@ -33,7 +33,9 @@ jobs:
 
       - name: Générer version.json depuis le badge de version
         run: |
-          V=$(grep -oE "v[0-9]+ · noir & bleu" precompta.html | head -1 | grep -oE "[0-9]+")
+          # Badge actuel : « YADA · vNNN » (l'ancien motif « vNNN · noir & bleu » n'existe plus).
+          # `|| true` : sous bash -e, une assignation dont la substitution échoue tue le job.
+          V=$(grep -oE "YADA · v[0-9]+" precompta.html | head -1 | grep -oE "[0-9]+" || true)
           if [ -n "$V" ]; then
             echo "{\"version\":\"$V\"}" > version.json
             echo "version.json → $V"
