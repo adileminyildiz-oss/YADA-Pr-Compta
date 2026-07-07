@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Ouverture DIRECTE sur la page des identifiants (formulaire de connexion), sans écran « Choisissez votre espace » — v417
+## 🟢 Dernière mise à jour — Sélecteur d'espace au design d'origine (boutons Espace Cabinet / Espace Client) sur le formulaire de connexion — v418
+**Quoi :** sur la page de connexion (qui s'ouvre directement sur le formulaire, v417), le **sélecteur d'espace** reprend le **même design qu'avant** : les deux boutons **« Espace Cabinet »** et **« Espace Client »** au style d'origine (`sec-cta` bleu dégradé pour l'espace actif, `sec-cta-2` contour bleu pour l'autre), au lieu des petits onglets improvisés (styles en ligne). Les boutons sont côte à côte en tête du formulaire ; cliquer bascule l'espace (`secBascule`). Reste inchangé : ouverture directe sur le formulaire, note « Admin via l'Espace Cabinet », étapes e-mail → mot de passe, empreintes SHA-256 salées.
+
+**Comment — `yada-addon38` + `sec-charme` (2 éditions) :** l'étape 1 rend `spBtn(sp,lbl)` = `<button class="sec-cta[ sec-cta-2]">` (actif = `sec-cta`, inactif = `sec-cta sec-cta-2`) au lieu des `.sec-stab` en ligne ; ajout au style `sec-charme` de `.sec-space-choice` (flex, 2 colonnes), `.sec-space-choice .sec-cta` (compact) et `.sec-adm-note` (petit). Aucune logique modifiée.
+
+**Validé :** `node --check` (195 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (sélecteur = boutons `sec-cta`/`sec-cta sec-cta-2`, plus de `.sec-stab` ; capture @2x conforme au design d'origine ; connexion Admin via le formulaire → `role=admin` ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v418**.
+
+---
+
+## 🟢 MAJ précédente — Ouverture DIRECTE sur la page des identifiants (formulaire de connexion), sans écran « Choisissez votre espace » — v417
 **Quoi :** dès l'ouverture du logiciel, on arrive **directement sur la page de saisie des identifiants** (e-mail + mot de passe) — l'écran intermédiaire **« Choisissez votre espace »** (Cabinet / Client) est **supprimé**. Le choix de l'espace se fait par un **petit sélecteur en onglets « Espace Cabinet / Espace Client »** en haut du formulaire (défaut : **Cabinet** sur ordinateur ; **Client** sur mobile). Une note rappelle que l'**Admin (superviseur) se connecte via l'Espace Cabinet**. Vaut aussi après **déconnexion / verrouillage** : on revient directement sur le formulaire.
 
 **Comment — `yada-addon38` (3 éditions chirurgicales) :** `secAfficher` — la branche `if(!CHOICE){ écran de choix }` est remplacée par `if(!CHOICE) CHOICE = mob?'client':'cabinet'` → le formulaire s'affiche immédiatement (l'écran de choix n'existe plus) ; l'étape 1 reçoit un sélecteur d'onglets d'espace (`secBascule('cabinet'|'client')`) + la note Admin (desktop) ; le lien « ← Changer d'espace » est remplacé par les onglets. Nouvelle fonction `secBascule(sp)` (bascule Cabinet/Client, reset étape/e-mail). Le reste (empreintes SHA-256 salées, étape mot de passe, connexion directe réservée au Client v416, mobile = Client uniquement) est inchangé.
