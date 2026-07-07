@@ -174,10 +174,15 @@
   SHA‑256 salés** (clair absent du source). Cabinet = interface complète ; Client = achats/
   ventes + Tiers ; Admin = interface Cabinet + carte Administration (superviseur, données
   partagées → impacte le Cabinet).
+- ✅ **Admin — Collaborateurs & dossiers attitrés (v414)** : société exploitante (réglages) ;
+  **enregistrement des salariés avec identifiants** (mot de passe **haché SHA‑256 salé**, jamais
+  en clair, dans `db.cabinet.staff`) ; **dossiers attitrés** par salarié → le salarié se connecte
+  via l'**Espace Cabinet** et ne voit/traite que ses dossiers (garde‑fou d'ouverture) ; **Admin =
+  accès global** à toutes les sociétés.
 - ⏳ **Outils Admin complets (reste)** : attribution de **droits** & **missions**, **notes
   internes** éditables, **tableau d'avancement par salarié**, **barre latérale par thèmes**
-  pour paramétrer les espaces Client & Cabinet (chantier lourd — la carte Administration v412
-  en est l'amorce).
+  pour paramétrer les espaces Client & Cabinet (chantier lourd — les cartes Administration v412
+  et Collaborateurs v414 en sont l'amorce).
 
 ---
 
