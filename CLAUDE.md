@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Connexion à 3 espaces (Cabinet / Client / Admin) + identifiants dédiés + Espace Admin superviseur — v412
+## 🟢 Dernière mise à jour — Page de connexion : correctif du bouton « Espace Admin » (flèche cassée) — v413
+**Quoi :** sur la page de connexion, le 3ᵉ bouton affichait **« Espace Admin▯92 »** (glyphe parasite) au lieu de **« Espace Admin → »**. Cause : dans `yada-addon201`, la CSS du bouton est injectée via une **chaîne JS** (`style.textContent`) et contenait `content:"\2192"` → l'échappement `\2192` était **interprété par JavaScript** (octal + « 92 ») **avant** d'atteindre la CSS. Corrigé en utilisant le **caractère flèche littéral `→`** (convention UTF-8 du projet). Bonus : le bouton Admin passe en **flex** (libellé à gauche, flèche à droite) pour s'aligner exactement sur « Espace Cabinet » / « Espace Client ».
+
+**Comment — 1 édition de `yada-addon201` :** `content:"\2192"` → `content:"→"` ; `.sec-cta-3` reçoit `display:flex;align-items:center` (+ fond/bordure en `!important` pour un rendu cohérent). Aucune logique modifiée.
+
+**Validé :** `node --check` (194 scripts, 0 erreur) + brace CSS (2010/2010) + capture Playwright (les 3 boutons « Espace Cabinet / Client / Admin » s'affichent proprement, flèche `→` alignée à droite, plus de glyphe parasite). Badge → **v413**.
+
+---
+
+## 🟢 MAJ précédente — Connexion à 3 espaces (Cabinet / Client / Admin) + identifiants dédiés + Espace Admin superviseur — v412
 **Quoi :** la page de connexion propose désormais **exactement 3 accès** : **Espace Cabinet**, **Espace Client**, **Espace Admin**. Identifiants dédiés (mots de passe **hachés SHA-256 salés**, **clair absent du source** — app publique) :
 - **Cabinet** : `aemconseil.sas@gmail.com` — gestion + comptabilité + pilotage (interface complète).
 - **Client** : `yada.assistance@gmail.com` — uniquement factures achat/vente + Tiers (nav restreinte existante).
