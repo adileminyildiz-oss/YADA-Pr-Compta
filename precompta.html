@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v415';
+    b.textContent='YADA · v416';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -11073,7 +11073,8 @@ ${lignes}
         +'<label class="sec-lab">Mot de passe</label>'+secHint
         +'<input id="sec-pwd" type="password" autocomplete="current-password" placeholder="••••••••" value="'+String(pw2).replace(/"/g,'&quot;')+'" onkeydown="if(event.key===\'Enter\')secEssayer()">'
         +'<label class="sec-remember"><input type="checkbox" id="sec-savecreds" '+(sc?'checked':'')+'> Enregistrer mes identifiants sur cet appareil</label>'
-        +'<label class="sec-remember"><input type="checkbox" id="sec-remember" '+(lsGet(KR)===CHOICE?'checked':'')+'> Rester connecté sur cet appareil</label>'
+        /* « Rester connecté » (connexion directe) réservé au Client — le Cabinet/Admin passe toujours par la connexion. */
+        +((CHOICE==='client')?('<label class="sec-remember"><input type="checkbox" id="sec-remember" '+(lsGet(KR)===CHOICE?'checked':'')+'> Rester connecté sur cet appareil</label>'):'')
         +'<button class="sec-cta" onclick="secEssayer()">Se connecter</button>'
         +'<div class="sec-links"><button class="sec-link" onclick="secEtapeRetour()">← Retour</button><button class="sec-link" onclick="secAide()">Identifiants oubliés ?</button></div>';
     }
@@ -11130,12 +11131,13 @@ ${lignes}
     if(h===rec.hash){
       /* Enregistrer / effacer les identifiants sur cet appareil selon la case cochée. */
       if(save) lcSet(CHOICE, em, pw); else lcDel(CHOICE);
-      return secOuvrir(CHOICE, rem);
+      /* Connexion directe (rester connecté) réservée au Client : le Cabinet ne se mémorise jamais. */
+      return secOuvrir(CHOICE, CHOICE==='client'?rem:false);
     }
     /* Espace Cabinet : l'identifiant Admin (superviseur) OU un collaborateur (salarié) ouvre aussi via le Cabinet. */
     if(CHOICE==='cabinet'){
       var adH=await sha(ADM.salt+em+SEP+pw);
-      if(adH===ADM.hash){ if(save) lcSet('cabinet', em, pw); else lcDel('cabinet'); return secOuvrir('admin', rem); }
+      if(adH===ADM.hash){ if(save) lcSet('cabinet', em, pw); else lcDel('cabinet'); return secOuvrir('admin', false); }
       var sm=await secStaffMatch(em, pw);
       if(sm){ window.staffId=sm.id; if(save) lcSet('cabinet', em, pw); else lcDel('cabinet'); return secOuvrir('cabinet', false); }
     }
@@ -11160,7 +11162,12 @@ ${lignes}
   function boot(){ var role=ssGet('yada-role'); var auto=false; window.staffId=null;
     var valid=function(r){ return r==='cabinet'||r==='client'||r==='admin'; };
     if(isMobile() && (role==='cabinet'||role==='admin')) role=null; /* mobile : pas d'accès cabinet/admin */
-    if(!valid(role)){ var rem=lsGet(KR); if(valid(rem)){ if(!(isMobile()&&(rem==='cabinet'||rem==='admin'))){ role=rem; auto=true; ssSet('yada-role', role); } } }
+    if(!valid(role)){ var rem=lsGet(KR);
+      /* Connexion directe (appareil de confiance) RÉSERVÉE à l'Espace Client :
+         l'Espace Cabinet (et l'Admin qui passe par le Cabinet) passe TOUJOURS par la
+         page de connexion — jamais d'ouverture directe. */
+      if(rem==='cabinet'||rem==='admin'){ lsDel(KR); rem=null; }
+      if(valid(rem)){ role=rem; auto=true; ssSet('yada-role', role); } }
     if(valid(role)){ CHOICE=role; window.sessionRole=role; window.selClientMode=(role==='client'); window.isAdmin=(role==='admin'); secResetTimer();
       if(role==='client'){ var id=clientDossierId(); if(id && typeof choisirDossierClient==='function') choisirDossierClient(id); }
       else if(auto && typeof render==='function'){ try{ render(); }catch(e){} }
