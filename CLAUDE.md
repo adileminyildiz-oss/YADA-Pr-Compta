@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Sélecteur d'espace au design d'origine (boutons Espace Cabinet / Espace Client) sur le formulaire de connexion — v418
+## 🟢 Dernière mise à jour — Restauration du DESIGN PRINCIPAL : écran d'accueil « Choisissez votre espace » d'abord, puis le formulaire — v419
+**Quoi :** restauration du **design principal** de la page de connexion demandé : à l'ouverture, on revoit d'abord l'**écran d'accueil « Bienvenue — Choisissez votre espace »** avec les **deux gros boutons Espace Cabinet / Espace Client** (design d'origine `sec-cta`/`sec-cta-2`) + la note « Admin via l'Espace Cabinet » ; **après avoir choisi un espace**, on arrive sur le **formulaire e-mail → mot de passe**. Annule l'ouverture directe sur le formulaire (v417) et le sélecteur en tête de formulaire (v418). Les comportements v416 sont conservés (Cabinet/Admin ne se connectent jamais directement ; « Rester connecté » réservé au Client).
+
+**Comment — `yada-addon38` (2 éditions, retour à l'état v416) :** `secAfficher` — rétablissement de la branche `if(!CHOICE){ écran de choix (2 boutons secChoisir) }` (au lieu du défaut direct) ; étape 1 du formulaire — retrait du sélecteur d'espace en tête, retour du lien « ← Changer d'espace » (`secRetour`). `secBascule` et la CSS `.sec-space-choice` deviennent inutilisés (laissés, sans effet).
+
+**Validé :** `node --check` (195 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (à l'ouverture : écran « Choisissez votre espace » avec 2 boutons, **pas** de champ e-mail, note Admin ; clic « Espace Cabinet » → étape e-mail + lien « Changer d'espace » ; **connexion Admin via ce parcours** → `role=admin` ; capture @2x conforme ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v419**.
+
+---
+
+## 🟢 MAJ précédente — Sélecteur d'espace au design d'origine (boutons Espace Cabinet / Espace Client) sur le formulaire de connexion — v418
 **Quoi :** sur la page de connexion (qui s'ouvre directement sur le formulaire, v417), le **sélecteur d'espace** reprend le **même design qu'avant** : les deux boutons **« Espace Cabinet »** et **« Espace Client »** au style d'origine (`sec-cta` bleu dégradé pour l'espace actif, `sec-cta-2` contour bleu pour l'autre), au lieu des petits onglets improvisés (styles en ligne). Les boutons sont côte à côte en tête du formulaire ; cliquer bascule l'espace (`secBascule`). Reste inchangé : ouverture directe sur le formulaire, note « Admin via l'Espace Cabinet », étapes e-mail → mot de passe, empreintes SHA-256 salées.
 
 **Comment — `yada-addon38` + `sec-charme` (2 éditions) :** l'étape 1 rend `spBtn(sp,lbl)` = `<button class="sec-cta[ sec-cta-2]">` (actif = `sec-cta`, inactif = `sec-cta sec-cta-2`) au lieu des `.sec-stab` en ligne ; ajout au style `sec-charme` de `.sec-space-choice` (flex, 2 colonnes), `.sec-space-choice .sec-cta` (compact) et `.sec-adm-note` (petit). Aucune logique modifiée.
