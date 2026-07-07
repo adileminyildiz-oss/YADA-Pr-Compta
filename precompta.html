@@ -10972,7 +10972,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v412';
+    b.textContent='YADA · v413';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -22455,8 +22455,8 @@ ${lignes}
   if(window.__adminSpace) return; window.__adminSpace=true;
   /* style du 3e bouton + badge superviseur + carte admin */
   try{ var st=document.createElement('style'); st.id='admin-space-mod'; st.textContent=
-    '#sec-lock button.sec-cta-3{background:linear-gradient(135deg,#1f2c47,#0e1730);color:#eaf2ff;border:1px solid rgba(120,180,255,.5)}'
-    +'#sec-lock button.sec-cta-3::after{content:"\2192";margin-left:auto;font-size:19px;opacity:.55}'
+    '#sec-lock button.sec-cta-3{display:flex;align-items:center;background:linear-gradient(135deg,#22406e,#122a52)!important;color:#eaf2ff!important;border:1px solid rgba(120,180,255,.5)!important}'
+    +'#sec-lock button.sec-cta-3::after{content:"→";margin-left:auto;font-size:19px;opacity:.6}'
     +'.adm-badge{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#1f2c47,#0e1730);color:#cfe0ff;border:1px solid rgba(120,180,255,.5);border-radius:20px;padding:3px 12px;font:700 11.5px system-ui,sans-serif;letter-spacing:.4px}'
     +'.adm-card .adm-scope{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:10px}'
     +'.adm-scope .adm-it{background:rgba(120,180,255,.07);border:1px solid rgba(120,180,255,.2);border-radius:11px;padding:11px 13px}'
