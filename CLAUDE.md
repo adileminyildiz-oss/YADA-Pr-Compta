@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Règles de comptabilité de MBC appliquées à TOUTES les sociétés (actuelles & futures) — v408
+## 🟢 Dernière mise à jour — Cahier des charges trié par session + réorganisation de la navigation + transition discrète — v409
+**Quoi :** réception d'un **cahier des charges complet** (dizaines de demandes tous modules) → (1) **tout est consigné et trié par session** dans **`CAHIER-DES-CHARGES.md`** (règles R1→R8 pour la session Règles, sections Déclarations/Permanent/RH/Pilotage/Comptabilité/Tiers/Espaces) ; (2) la part **non comptable (UI/navigation)** est **implémentée immédiatement** :
+- **Transition de page DISCRÈTE** (« un balayement invisible qui fait classe ») : simple fondu léger (~0,2 s) + balayage quasi invisible (opacités ≤ .05) — fini l'effet voyant (addon194 édité).
+- **Barre latérale — libellés propres** : `TIERS`→`Tiers`, suppression des parenthèses et de leur contenu (`Paramétrage (réglages)`→`Paramétrage`, `Module TVA (CA3)`→`Module TVA`, `Éditions (Balance…)`→`Éditions`, `Rapprochement (lettrage)`→`Rapprochement`, `Banque (512)`→`Banque`, `Sociétés (portefeuille)`→`Sociétés`, `Assistant IA (écritures)`→`Assistant IA`) ; `Société & création du dossier`→**`Sociétés`** (PAGES + LBL addon164).
+- **Navigation réorganisée** : sous-modules **Banque (512)**, **Saisie journal Banque** et **Assistant IA** **retirés** de la barre latérale Comptabilité (RUBRIQUES + MODULES ; le Rapprochement reste) ; **Import/Export FEC déplacé** de Comptabilité → **Permanent** ; **Suivi des règlements ajouté** en sous-module de **Pilotages**.
+- **Paramétrage** : carte **« ☁ Synchronisation multi-appareils (Pantry) » masquée** (`yada-addon198`, CSS `.cloud-card{display:none}` — moteur de synchro intact).
+
+**Validé :** `node --check` (191 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (rubrique Comptabilité sans banque/saisiebq/ia/fec ; Permanent avec fec ; Pilotages avec reglements ; libellés renommés ; carte Pantry masquée ; transition CSS discrète ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v409**. *(Le reste du cahier des charges est routé vers les sessions par module — les parties comptables passeront par la validation de la session Règles avant merge.)*
+
+---
+
+## 🟢 MAJ précédente — Règles de comptabilité de MBC appliquées à TOUTES les sociétés (actuelles & futures) — v408
 **Quoi :** la **base comptable de MBC** (plan comptable **BTP + PCG complet**, TVA automatique, comptes de tiers auxiliaires) est désormais appliquée à **chaque dossier du portefeuille** et à **tout nouveau dossier**. Ainsi toutes les sociétés partagent les mêmes règles comptables que MBC. **100% additif & idempotent** : `chargerPlanBTP` n'ajoute que les comptes **absents** (aucun compte/écriture supprimé), `migrerAuxTiers` **préserve** les numéros de compte saisis à la main, et les journaux standard (OD/ODP/ODC/ODTVA) étaient déjà garantis pour tous (addon247). Le plan de saisie reste global (`COMPTES ∪ db.plan`).
 
 **Comment — `yada-addon197` (100% additif) :** `appliquerReglesMBC()` applique `baseMBC()` (= `chargerPlanBTP()`) au **dossier actif** puis, via `withDataset(ds, baseMBC)`, à **tous les datasets** de `db.dossiersData`. Lancé **au démarrage** (toutes les sociétés existantes) + **second passage à 2 s** (filet pour la restauration asynchrone IndexedDB des gros dossiers) ; **wrap de `chargerDossier`** garantit la base MBC à chaque ouverture (les nouveaux dossiers chargent déjà le plan BTP via `creerDossierComplet`/`choisirDossier`).

@@ -4122,31 +4122,31 @@ function construireSCI42(){
    ============================================================ */
 const PAGES=[
   {id:'dash',ico:'◧',sec:'Pilotage',lbl:'Tableau de bord'},
-  {id:'societe',ico:'',sec:'Pilotage',lbl:'Sociétés (portefeuille)'},
+  {id:'societe',ico:'',sec:'Pilotage',lbl:'Sociétés'},
   {id:'pilotage',ico:'◉',sec:'Comptabilité',lbl:'Pilotage'},
   {id:'salarie',ico:'▥',sec:'Comptabilité',lbl:'Salarié'},
   {id:'client',ico:'',sec:'Espace Client',lbl:'Espace Client'},
-  {id:'tiers',ico:'⊞',sec:'Référentiel',lbl:'TIERS'},
+  {id:'tiers',ico:'⊞',sec:'Référentiel',lbl:'Tiers'},
   {id:'facturation',ico:'⤳',sec:'Ventes',lbl:'Client'},
   {id:'achats',ico:'⎙',sec:'Achats',lbl:'Fournisseurs'},
   {id:'compta',ico:'▦',sec:'Comptabilité',lbl:'Consultation des comptes'},
   {id:'chargespaie',ico:'',sec:'Comptabilité',lbl:'Charges et Paie'},
   {id:'journal',ico:'≣',sec:'Comptabilité',lbl:'Journal comptable'},
-  {id:'ia',ico:'',sec:'Comptabilité',lbl:'Assistant IA (écritures)'},
-  {id:'tva',ico:'%',sec:'Comptabilité',lbl:'Module TVA (CA3)'},
-  {id:'editions',ico:'',sec:'Comptabilité',lbl:'Éditions (Balance, Grand livre…)'},
+  {id:'ia',ico:'',sec:'Comptabilité',lbl:'Assistant IA'},
+  {id:'tva',ico:'%',sec:'Comptabilité',lbl:'Module TVA'},
+  {id:'editions',ico:'',sec:'Comptabilité',lbl:'Éditions'},
   {id:'fec',ico:'⇅',sec:'Comptabilité',lbl:'Import / Export FEC'},
   {id:'analytique',ico:'◭',sec:'Pilotage',lbl:'Analytique & rentabilité'},
-  {id:'banque',ico:'',sec:'Trésorerie',lbl:'Banque (512)'},
+  {id:'banque',ico:'',sec:'Trésorerie',lbl:'Banque'},
   {id:'saisiebq',ico:'✎',sec:'Trésorerie',lbl:'Saisie journal Banque'},
-  {id:'rappro',ico:'⊜',sec:'Trésorerie',lbl:'Rapprochement (lettrage)'},
+  {id:'rappro',ico:'⊜',sec:'Trésorerie',lbl:'Rapprochement'},
   {id:'reglements',ico:'⇄',sec:'Trésorerie',lbl:'Suivi des règlements'},
   {id:'immos',ico:'',sec:'Immobilisations',lbl:'Immobilisations & Financements'},
   {id:'fraiskm',ico:'⛽',sec:'Immobilisations',lbl:'Frais kilométriques & carburant'},
-  {id:'dossier',ico:'',sec:'Dossier',lbl:'Société & création du dossier'},
+  {id:'dossier',ico:'',sec:'Dossier',lbl:'Sociétés'},
   {id:'infosociete',ico:'',sec:'Dossier',lbl:'Informations société'},
   {id:'coffre',ico:'',sec:'Dossier',lbl:'Coffre-fort identifiants'},
-  {id:'parametrage',ico:'',sec:'Dossier',lbl:'Paramétrage (réglages)'},
+  {id:'parametrage',ico:'',sec:'Dossier',lbl:'Paramétrage'},
   {id:'plancomptable',ico:'',sec:'Dossier',lbl:'Plan comptable'},
 ];
 let current='dash';
@@ -10972,7 +10972,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v408';
+    b.textContent='YADA · v409';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -19680,21 +19680,23 @@ ${lignes}
   var LBL={ compta:'Analyse — Centre de Contrôle', editions:'Éditions', journal:'Journal comptable', fec:'Import / Export FEC',
     reglements:'Suivi des règlements', analytique:'Analytique & rentabilité', plancomptable:'Plan comptable',
     ia:'Assistant IA', immos:'Immobilisations & Financements', fraiskm:'Frais km & carburant',
-    banque:'Banque (512)', saisiebq:'Saisie journal Banque', rappro:'Rapprochement (lettrage)' };
+    banque:'Banque', saisiebq:'Saisie journal Banque', rappro:'Rapprochement' };
   function pget(id){ return (typeof PAGES!=='undefined'?PAGES:[]).find(function(p){ return p.id===id; }); }
   function lbl(id){ return LBL[id] || (pget(id)?pget(id).lbl:id); }
   function ico(id){ return (pget(id)&&pget(id).ico)||'•'; }
 
   var PILOTAGE=['dash','societe','client'];
   var MODULES=[
-    {key:'m-compta', nom:'Comptabilité', ico:'▦', subs:['compta','journal','editions','fec','reglements','analytique','plancomptable','ia','pilotage','salarie']},
+    /* FEC déplacé vers Permanent ; Assistant IA retiré de la barre latérale (demande). */
+    {key:'m-compta', nom:'Comptabilité', ico:'▦', subs:['compta','journal','editions','reglements','analytique','plancomptable','pilotage','salarie']},
     {key:'m-fourn', nom:'Fournisseurs', ico:'⎙', page:'achats'},
     {key:'m-clients', nom:'Clients', ico:'⤳', page:'facturation'},
     {key:'m-tiers', nom:'Tiers', ico:'⊞', page:'tiers'},
     {key:'m-immo', nom:'Immobilisations et Financement', ico:'▤', subs:['immos','fraiskm']},
     {key:'m-paie', nom:'Charges et Paie', ico:'◴', page:'chargespaie'},
     {key:'m-tva', nom:'TVA', ico:'%', page:'tva'},
-    {key:'m-banque', nom:'Banque', ico:'▣', subs:['banque','saisiebq','rappro']}
+    /* Banque (512) & Saisie journal Banque retirés (demande) — le Rapprochement reste. */
+    {key:'m-banque', nom:'Banque', ico:'▣', subs:['rappro']}
   ];
   var REGLAGES=['dossier','infosociete','coffre','parametrage'];
 
@@ -21638,11 +21640,14 @@ ${lignes}
   ];
   /* Chaque rubrique regroupe UNIQUEMENT ses modules (page sans barre latérale). */
   var RUBRIQUES={
-    permanent:{ titre:'Permanent', desc:'Paramétrages principaux du dossier.', mods:['infosociete','parametrage','plancomptable','coffre','dossier'] },
+    /* Import/Export FEC déplacé de Comptabilité → Permanent (demande). */
+    permanent:{ titre:'Permanent', desc:'Paramétrages principaux du dossier.', mods:['infosociete','parametrage','plancomptable','coffre','dossier','fec'] },
     declarations:{ titre:'Déclarations', desc:'Tous les modules de déclarations.', mods:['tva'] },
     rh:{ titre:'Ressources Humaines', desc:'Modules Ressources Humaines uniquement.', mods:['salarie','chargespaie'] },
-    pilotages:{ titre:'Pilotages', desc:'Pilotage analytique & comptable uniquement.', mods:['dash','pilotage','analytique','societe'] },
-    comptabilite:{ titre:'Comptabilité', desc:'Tous les modules de comptabilité.', mods:['compta','journal','editions','fec','reglements','tiers','achats','facturation','banque','saisiebq','rappro','immos','ia'] }
+    /* + Suivi des règlements en sous-module de Pilotage (demande). */
+    pilotages:{ titre:'Pilotages', desc:'Pilotage analytique & comptable uniquement.', mods:['dash','pilotage','analytique','societe','reglements'] },
+    /* Banque (512), Saisie journal Banque et Assistant IA retirés (demande). */
+    comptabilite:{ titre:'Comptabilité', desc:'Tous les modules de comptabilité.', mods:['compta','journal','editions','reglements','tiers','achats','facturation','rappro','immos'] }
   };
   function modLabel(id){ try{ var p=(typeof PAGES!=='undefined'?PAGES:[]).find(function(x){return x.id===id;}); return p?p.lbl:id; }catch(e){ return id; } }
 
@@ -22086,16 +22091,15 @@ ${lignes}
     st.textContent=`
     /* L'effet suit désormais l'ÉCRAN, pas la souris → onde-souris (v402) masquée. */
     .yada-ripple,.yada-ripple-dot{display:none!important}
-    /* Transition d'ouverture (matérialisation spatiale) — sur le contenu, à chaque page.
-       RAPIDE (demande utilisateur) : ~0,24 s. */
-    @keyframes yadaSpatialIn{0%{opacity:0;transform:translateY(8px) scale(.992);filter:blur(5px)}100%{opacity:1;transform:none;filter:none}}
-    .yada-spatial-in{animation:yadaSpatialIn .24s cubic-bezier(.22,.7,.32,1)}
-    /* Balayage lumineux (light-sweep) à chaque ouverture de page — sur l'écran (pas la
-       souris), pointer-events:none → n'intercepte aucun clic. RAPIDE : ~0,4 s. */
+    /* Transition d'ouverture DISCRÈTE (demande : « un balayement invisible qui fait
+       classe ») : simple fondu très léger, sans translation ni flou visible. */
+    @keyframes yadaSpatialIn{0%{opacity:.55}100%{opacity:1}}
+    .yada-spatial-in{animation:yadaSpatialIn .2s ease-out}
+    /* Balayage quasi invisible — sur l'écran, pointer-events:none. */
     @keyframes yadaSheen{0%{opacity:0;transform:translateX(-45%) skewX(-8deg)}30%{opacity:1}100%{opacity:0;transform:translateX(48%) skewX(-8deg)}}
     .yada-sheen{position:fixed;inset:-10% -20%;pointer-events:none;z-index:70;mix-blend-mode:screen;
-      background:linear-gradient(112deg,transparent 42%,rgba(120,182,255,.05) 47%,rgba(150,200,255,.14) 50%,rgba(120,182,255,.05) 53%,transparent 58%);
-      animation:yadaSheen .4s cubic-bezier(.22,.61,.36,1) forwards;will-change:transform,opacity}
+      background:linear-gradient(112deg,transparent 44%,rgba(140,190,255,.02) 48%,rgba(160,205,255,.05) 50%,rgba(140,190,255,.02) 52%,transparent 56%);
+      animation:yadaSheen .45s cubic-bezier(.22,.61,.36,1) forwards;will-change:transform,opacity}
     /* ===== LIQUID GLASS + SPATIAL UI (thème noir, injecté en dernier → prioritaire) ===== */
     html body[data-theme="noir"] .card,html body[data-theme="noir"] .mod-wrap .card,html body[data-theme="noir"] .dash-wrap .card,html body[data-theme="noir"] .cli-col>.card{
       background:linear-gradient(157deg,rgba(40,60,94,.52),rgba(13,22,40,.46))!important;
@@ -22302,6 +22306,17 @@ ${lignes}
      La création de dossier (creerDossierComplet / choisirDossier) charge déjà le plan BTP. */
   if(typeof window.chargerDossier==='function'){ var _cd=window.chargerDossier;
     window.chargerDossier=function(){ var r=_cd.apply(this,arguments); try{ baseMBC(); }catch(e){} return r; }; }
+})();
+</script>
+<script id="yada-addon198">
+/* Paramétrage : carte « ☁ Synchronisation multi-appareils (Pantry) » SUPPRIMÉE de
+   l'affichage (demande). 100% additif : masquage CSS de .cloud-card — le moteur de
+   synchro (addon102) reste intact pour les dossiers déjà configurés. */
+(function(){
+  if(document.getElementById('no-cloud-card')) return;
+  var st=document.createElement('style'); st.id='no-cloud-card';
+  st.textContent='.card.cloud-card{display:none!important}';
+  document.head.appendChild(st);
 })();
 </script>
 </body>
