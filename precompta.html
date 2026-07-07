@@ -10972,7 +10972,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v411';
+    b.textContent='YADA · v412';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -10991,8 +10991,13 @@ ${lignes}
 (function(){
   window.__secDual=true;
   var SEP='##', KD='yada-lock-delay';
-  var CAB={ salt:'bde7c60ed8ebbc65', hash:'c439eeb815469a50d3b3aad73f63759ee5e045689956710fc297f27d2676a87f', emailHash:'89e87026dc8b40c116b4132d994445e39aa481ccf9853d24bdd809002087c1f3' };
-  var CLI={ salt:'9fb44c9e64732c08', hash:'281b9f17f7420ac6a1173aa6d0655042d555be7c9eab6d9f4460686c614054ce', emailHash:'43c0ac40fffb9fb4259289371d72b3f62a9527e4c0f6431f95dbdc353ff557e5' };
+  /* Empreintes SHA-256 salées (identifiants + mots de passe) — CLAIR ABSENT du source.
+     Cabinet : aemconseil.sas@gmail.com · Client : yada.assistance@gmail.com · Admin : admin.admin@gmail.com */
+  var CAB={ salt:'a83ada7ba2a67b2e', hash:'a562c320689610512fc736c4a55894c71306b02f98e4c5e3dee2bdb396566561', emailHash:'8fdfde6edadad4895a532cd4c742a7c3b47f09583d601322d0a6372cd1b8d85f' };
+  var CLI={ salt:'ca1b8798d8b209fb', hash:'7243bf530c3266730b636e6bd85a26fc050e87aed0570bbcd856df334996b3f4', emailHash:'7a26b8920d31e70ec60303c0c45d347b705902bc73e39a10ebaf7fb74e96b631' };
+  var ADM={ salt:'ff23a9fd573f1e12', hash:'b85658e650e53f86b1e6b5b376e42f63cbe23842cdcae5e129e6f1622f579dfd', emailHash:'e7dec6c38c706457000bf50a7c61f50b34052b082e983e48a1f89f2aefc5bf73' };
+  function secRec(c){ return c==='client'?CLI:(c==='admin'?ADM:CAB); }
+  function secLabel(c){ return c==='client'?'Client':(c==='admin'?'Admin':'Cabinet'); }
   var CLIENT_DOSSIER='d-ama'; /* dossier exclusif du portail Client */
   var CHOICE=null; var secStep=1; var secEmail='';
   window.__secLocked=false; var secTimer=null;
@@ -11034,7 +11039,8 @@ ${lignes}
       o.innerHTML='<div class="sec-screen">'+secHero()
         +'<div class="sec-body"><h2>Bienvenue</h2><p class="sec-p">Choisissez votre espace pour vous connecter.</p>'
         +'<button class="sec-cta" onclick="secChoisir(\'cabinet\')">Espace Cabinet</button>'
-        +'<button class="sec-cta sec-cta-2" onclick="secChoisir(\'client\')">Espace Client</button></div>'
+        +'<button class="sec-cta sec-cta-2" onclick="secChoisir(\'client\')">Espace Client</button>'
+        +'<button class="sec-cta sec-cta-3" onclick="secChoisir(\'admin\')">Espace Admin</button></div>'
         +'<div class="sec-ver">'+secVerTxt()+'</div></div>';
       o.classList.add('show'); return;
     }
@@ -11069,11 +11075,11 @@ ${lignes}
     if(!v){ if(e)e.textContent='Renseignez votre identifiant.'; if(i)i.focus(); return; }
     /* L'identifiant doit être CORRECT avant d'accéder au mot de passe :
        on compare l'empreinte salée de l'identifiant à celle attendue pour l'espace. */
-    var rec=(CHOICE==='client')?CLI:CAB;
+    var rec=secRec(CHOICE);
     if(rec && rec.emailHash){
       var eh=await sha(rec.salt+v.toLowerCase());
       if(eh!==rec.emailHash){
-        if(e)e.textContent='Identifiant incorrect pour l\'espace '+(CHOICE==='cabinet'?'Cabinet':'Client')+'.';
+        if(e)e.textContent='Identifiant incorrect pour l\'espace '+secLabel(CHOICE)+'.';
         if(i){ try{ i.focus(); i.select(); }catch(_){} }
         return;                                   /* on RESTE à l'étape 1 : pas de champ mot de passe */
       }
@@ -11088,17 +11094,19 @@ ${lignes}
       if(db&&db.activeId&&db.dossiersData&&db.dossiersData[db.activeId]) return db.activeId;
       if(db&&db.cabinet&&db.cabinet.dossiers&&db.cabinet.dossiers[0]) return db.cabinet.dossiers[0].id; }catch(e){} return null; }
   function secOuvrir(role, remember){ ssSet('yada-role', role); window.sessionRole=role; window.selClientMode=(role==='client');
+    /* ADMIN = superviseur : interface Cabinet complète + outils d'administration ; données partagées → impacte le Cabinet. */
+    window.isAdmin=(role==='admin');
     if(remember===true) lsSet(KR, role); else if(remember===false) lsDel(KR);
     /* on rend la page de destination SOUS l'écran de connexion, puis on retire l'écran : aucune page intermédiaire visible */
     if(role==='client'){ var id=clientDossierId(); if(id && typeof choisirDossierClient==='function'){ choisirDossierClient(id); } else if(typeof render==='function'){ current=(window.CLIENT_HOME||'facturation'); render(); } }
     else if(typeof render==='function'){ render(); }
-    secCacher(); if(typeof toast==='function') toast(role==='cabinet'?'Espace Cabinet ✓':'Espace Client ✓'); }
+    secCacher(); if(typeof toast==='function') toast('Espace '+secLabel(role)+' ✓'); }
   window.secEssayer=async function(){ if(!CHOICE){ secAfficher(); return; } var e=document.getElementById('sec-err');
     var em=((document.getElementById('sec-email')||{}).value||secEmail||''); em=em.trim().toLowerCase();
     if(!em){ secStep=1; secAfficher(); return; }
     var pw=(document.getElementById('sec-pwd')||{}).value||'';
     if(!pw){ if(e)e.textContent='Renseignez votre mot de passe.'; var pp=document.getElementById('sec-pwd'); if(pp)pp.focus(); return; }
-    var rec=(CHOICE==='client')?CLI:CAB; var h=await sha(rec.salt+em+SEP+pw);
+    var rec=secRec(CHOICE); var h=await sha(rec.salt+em+SEP+pw);
     var rem=!!((document.getElementById('sec-remember')||{}).checked);
     var save=!!((document.getElementById('sec-savecreds')||{}).checked);
     if(h===rec.hash){
@@ -11106,7 +11114,7 @@ ${lignes}
       if(save) lcSet(CHOICE, em, pw); else lcDel(CHOICE);
       return secOuvrir(CHOICE, rem);
     }
-    if(e)e.textContent='Identifiants incorrects pour l\'espace '+(CHOICE==='cabinet'?'Cabinet':'Client')+'.';
+    if(e)e.textContent='Identifiants incorrects pour l\'espace '+secLabel(CHOICE)+'.';
     var p=document.getElementById('sec-pwd'); if(p){p.value='';p.focus();}
   };
   window.secAide=function(){ alert('Identifiants gérés par le cabinet.\n\nEspace Cabinet et Espace Client ont des identifiants distincts. Contactez le cabinet pour les obtenir ou les réinitialiser.'); };
@@ -11118,19 +11126,20 @@ ${lignes}
   if(typeof pageParametrage==='function'){ var _pp=pageParametrage; pageParametrage=function(){
     var delaySel='<select onchange="secSetDelay(this.value)">'+[['5','5 min'],['10','10 min'],['15','15 min'],['30','30 min'],['0','Désactivé']].map(function(o){return '<option value="'+o[0]+'" '+(String(secDelay())===o[0]?'selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';
     return _pp()+'<div class="card"><h2>Connexion & sécurité</h2>'
-      +'<div class="sub">Deux espaces avec <b>identifiants distincts</b> (Cabinet / Client). À l\'ouverture : choix de l\'espace puis connexion par e-mail + mot de passe (empreinte SHA-256 salée embarquée, clair absent du source). Verrouillage automatique par inactivité. Sécurité côté navigateur : dissuasive. Pour changer les identifiants, demandez au cabinet (redéploiement).</div>'
-      +'<div class="row g3" style="align-items:flex-end"><div class="field"><label>Espace courant</label><div class="kv2 ok">'+(window.sessionRole==='client'?'Espace Client':'Espace Cabinet')+'</div></div>'
+      +'<div class="sub">Trois espaces avec <b>identifiants distincts</b> (Cabinet / Client / Admin). À l\'ouverture : choix de l\'espace puis connexion par e-mail + mot de passe (empreinte SHA-256 salée embarquée, clair absent du source). Verrouillage automatique par inactivité. Sécurité côté navigateur : dissuasive. Pour changer les identifiants, demandez au cabinet (redéploiement).</div>'
+      +'<div class="row g3" style="align-items:flex-end"><div class="field"><label>Espace courant</label><div class="kv2 ok">Espace '+(window.sessionRole==='client'?'Client':(window.sessionRole==='admin'?'Admin (superviseur)':'Cabinet'))+'</div></div>'
       +'<div class="field"><label>Verrouillage auto (inactivité)</label>'+delaySel+'</div>'
       +'<div class="field"><label>&nbsp;</label><button class="btn btn-ghost" onclick="(window.secDeconnexion||window.secVerrouiller)()">Se déconnecter</button></div></div></div>'; }; }
   function addSideBtn(){ try{ var foot=document.querySelector('.side-foot'); if(foot && !document.getElementById('sec-side-btn')){ var b=document.createElement('button'); b.id='sec-side-btn'; b.textContent='Déconnexion'; b.onclick=function(){ (window.secDeconnexion||window.secVerrouiller)(); }; foot.insertBefore(b, foot.firstChild.nextSibling); } }catch(e){} }
   if(typeof render==='function'){ var _r=render; render=function(){ var x=_r.apply(this,arguments); addSideBtn(); return x; }; }
   function boot(){ var role=ssGet('yada-role'); var auto=false;
-    if(isMobile() && role==='cabinet') role=null; /* mobile : pas d'accès cabinet */
-    if(!(role==='cabinet'||role==='client')){ var rem=lsGet(KR); if(rem==='cabinet'||rem==='client'){ if(!(isMobile()&&rem==='cabinet')){ role=rem; auto=true; ssSet('yada-role', role); } } }
-    if(role==='cabinet'||role==='client'){ CHOICE=role; window.sessionRole=role; window.selClientMode=(role==='client'); secResetTimer();
+    var valid=function(r){ return r==='cabinet'||r==='client'||r==='admin'; };
+    if(isMobile() && (role==='cabinet'||role==='admin')) role=null; /* mobile : pas d'accès cabinet/admin */
+    if(!valid(role)){ var rem=lsGet(KR); if(valid(rem)){ if(!(isMobile()&&(rem==='cabinet'||rem==='admin'))){ role=rem; auto=true; ssSet('yada-role', role); } } }
+    if(valid(role)){ CHOICE=role; window.sessionRole=role; window.selClientMode=(role==='client'); window.isAdmin=(role==='admin'); secResetTimer();
       if(role==='client'){ var id=clientDossierId(); if(id && typeof choisirDossierClient==='function') choisirDossierClient(id); }
       else if(auto && typeof render==='function'){ try{ render(); }catch(e){} }
-      if(auto && typeof toast==='function') setTimeout(function(){ toast('Connecté automatiquement ('+(role==='cabinet'?'Cabinet':'Client')+') — appareil de confiance'); },200);
+      if(auto && typeof toast==='function') setTimeout(function(){ toast('Connecté automatiquement ('+secLabel(role)+') — appareil de confiance'); },200);
     } else { CHOICE=null; secAfficher(); } }
   window.__secBoot=boot;
   if(document.body) boot(); else document.addEventListener('DOMContentLoaded', boot);
@@ -22433,6 +22442,51 @@ ${lignes}
   if(typeof render==='function' && !window.__wmPopRetitle){ window.__wmPopRetitle=true;
     var _r=render; render=function(){ var x=_r.apply(this,arguments); try{ retitle(); }catch(e){} return x; }; }
   try{ retitle(); }catch(e){}
+})();
+</script>
+<script id="yada-addon201">
+/* ESPACE ADMIN (superviseur) — 3e accès de la page de connexion.
+   L'Admin ouvre l'interface CABINET complète (données partagées → ses changements
+   impactent le Cabinet) + un marqueur & une carte « Administration » (amorce des
+   outils : accès global aux dossiers, droits, missions, notes internes, suivi par
+   salarié — le build complet est un chantier § Architecture & Espaces).
+   100% additif. */
+(function(){
+  if(window.__adminSpace) return; window.__adminSpace=true;
+  /* style du 3e bouton + badge superviseur + carte admin */
+  try{ var st=document.createElement('style'); st.id='admin-space-mod'; st.textContent=
+    '#sec-lock button.sec-cta-3{background:linear-gradient(135deg,#1f2c47,#0e1730);color:#eaf2ff;border:1px solid rgba(120,180,255,.5)}'
+    +'#sec-lock button.sec-cta-3::after{content:"\2192";margin-left:auto;font-size:19px;opacity:.55}'
+    +'.adm-badge{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#1f2c47,#0e1730);color:#cfe0ff;border:1px solid rgba(120,180,255,.5);border-radius:20px;padding:3px 12px;font:700 11.5px system-ui,sans-serif;letter-spacing:.4px}'
+    +'.adm-card .adm-scope{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:10px}'
+    +'.adm-scope .adm-it{background:rgba(120,180,255,.07);border:1px solid rgba(120,180,255,.2);border-radius:11px;padding:11px 13px}'
+    +'.adm-scope .adm-it b{display:block;font-size:13.5px}.adm-scope .adm-it span{font-size:12px;opacity:.72}';
+    document.head.appendChild(st); }catch(e){}
+
+  function isAdmin(){ return window.sessionRole==='admin'; }
+
+  /* Carte « Administration » en tête du Tableau de bord, uniquement pour l'Admin. */
+  function admCard(){
+    if(!isAdmin()) return '';
+    var items=[
+      ['Accès global aux dossiers','Superviser tous les dossiers du portefeuille (Sociétés).',"current='societe';render()"],
+      ['Tenue du Cabinet','Contrôler et corriger la tenue comptable — vos changements impactent le Cabinet.',"current='dash';render()"],
+      ['Droits & missions','Attribuer des droits et des missions (à venir).',''],
+      ['Notes internes','Notes d\'informations internes au cabinet (à venir).',''],
+      ['Suivi par salarié','Tableau d\'avancement par salarié (à venir).','']
+    ];
+    var grid=items.map(function(it){ var clickable=it[2]?(' style="cursor:pointer" onclick="'+it[2]+'"'):'';
+      return '<div class="adm-it"'+clickable+'><b>'+it[0]+'</b><span>'+it[1]+'</span></div>'; }).join('');
+    return '<div class="card adm-card"><h2><span class="adm-badge">🛡 ADMIN · Superviseur</span> Administration du cabinet</h2>'
+      +'<div class="sub">Espace de supervision : vous disposez de l\'interface complète du Cabinet ; les enregistrements et changements que vous effectuez impactent directement l\'espace Cabinet (données partagées).</div>'
+      +'<div class="adm-scope">'+grid+'</div></div>';
+  }
+  /* Greffe sur le Tableau de bord (dash) — injectée en tête du .dash-wrap. */
+  if(typeof window.pageDash==='function'){ var _d=window.pageDash;
+    window.pageDash=function(){ var h=_d.apply(this,arguments);
+      try{ if(isAdmin()){ h=h.replace('<div class="dash-wrap">','<div class="dash-wrap">'+admCard()); } }catch(e){}
+      return h; };
+  }
 })();
 </script>
 </body>
