@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v418';
+    b.textContent='YADA · v419';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -11046,24 +11046,28 @@ ${lignes}
   function secAfficher(){ var o=el(); window.__secLocked=true;
     var mob=isMobile();
     if(mob) CHOICE='client'; /* sur mobile : seul l'Espace Client est accessible */
-    /* Dès l'ouverture, on arrive DIRECTEMENT sur la page de saisie des identifiants
-       (plus d'écran « Choisissez votre espace » intermédiaire). Le sélecteur Cabinet/
-       Client est un petit onglet en haut du formulaire. Défaut : Cabinet (desktop). */
-    if(!CHOICE) CHOICE = mob?'client':'cabinet';
+    /* Écran d'accueil « Choisissez votre espace » (design principal) : d'abord le choix
+       de l'espace (2 boutons), PUIS le formulaire e-mail + mot de passe. */
+    if(!CHOICE){
+      o.innerHTML='<div class="sec-screen">'+secHero()
+        +'<div class="sec-body"><h2>Bienvenue</h2><p class="sec-p">Choisissez votre espace pour vous connecter.</p>'
+        +'<button class="sec-cta" onclick="secChoisir(\'cabinet\')">Espace Cabinet</button>'
+        +'<button class="sec-cta sec-cta-2" onclick="secChoisir(\'client\')">Espace Client</button>'
+        +'<p class="sec-p sec-adm-note">L\'Espace Admin (superviseur) se connecte via l\'Espace Cabinet.</p></div>'
+        +'<div class="sec-ver">'+secVerTxt()+'</div></div>';
+      o.classList.add('show'); return;
+    }
     var html='<div class="sec-screen">'+secHero()+'<div class="sec-body"><h2>Bienvenue</h2>'
       +'<div class="sec-err" id="sec-err"></div>';
     var sc=lcGet(CHOICE);   /* identifiants enregistrés sur cet appareil pour cet espace */
     if(secStep!==2){
-      /* Étape 1 : identifiant (pré-rempli si enregistré) — sélecteur d'espace avec le
-         MÊME design que la page de choix précédente (boutons sec-cta / sec-cta-2). */
+      /* Étape 1 : identifiant (pré-rempli si enregistré). L'espace a déjà été choisi
+         sur l'écran d'accueil ; « ← Changer d'espace » y revient. */
       var em1=secEmail||(sc&&sc.email)||'';
-      var spBtn=function(sp,lbl){ var on=(CHOICE===sp); return '<button class="sec-cta'+(on?'':' sec-cta-2')+'" onclick="secBascule(\''+sp+'\')">'+lbl+'</button>'; };
-      html+=(mob?'':'<div class="sec-space-choice">'+spBtn('cabinet','Espace Cabinet')+spBtn('client','Espace Client')+'</div>')
-        +(mob||CHOICE!=='cabinet'?'':'<p class="sec-p sec-adm-note">Admin (superviseur) : connectez-vous ici, via l\'Espace Cabinet.</p>')
-        +'<label class="sec-lab">Nom d\'utilisateur / e-mail</label>'
+      html+='<label class="sec-lab">Nom d\'utilisateur / e-mail</label>'
         +'<input id="sec-email" type="email" autocomplete="username" placeholder="vous@exemple.fr" value="'+String(em1).replace(/"/g,'&quot;')+'" onkeydown="if(event.key===\'Enter\')secEtape1()">'
         +'<button class="sec-cta" onclick="secEtape1()">Suivant</button>'
-        +'<div class="sec-links"><button class="sec-link" onclick="secAide()">Identifiants oubliés ?</button></div>';
+        +'<div class="sec-links">'+(mob?'':'<button class="sec-link" onclick="secRetour()">← Changer d\'espace</button>')+'<button class="sec-link" onclick="secAide()">Identifiants oubliés ?</button></div>';
     } else {
       /* Étape 2 : mot de passe (pré-rempli si enregistré, SAUF un démarrage sur deux). */
       var pw2=(secRequirePwd?'':((sc&&sc.pwd)||''));
