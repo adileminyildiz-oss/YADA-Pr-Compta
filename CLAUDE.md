@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Connexion à DEUX espaces (Cabinet / Client) + Admin accessible via l'Espace Cabinet — v415
+## 🟢 Dernière mise à jour — L'Espace Cabinet (et l'Admin) ne se connecte JAMAIS directement : toujours par la page de connexion — v416
+**Quoi :** l'**Espace Cabinet** (et l'**Admin**, qui passe par le Cabinet) **ne s'ouvre plus jamais directement** : à chaque ouverture du logiciel, on **passe toujours par la page de connexion** (choix de l'espace + identifiant + mot de passe). La **connexion automatique « appareil de confiance »** (case « Rester connecté sur cet appareil ») reste **réservée à l'Espace Client**. Sur un appareil qui avait mémorisé le Cabinet/Admin, la mémorisation est **effacée** au démarrage → la page de connexion réapparaît.
+
+**Comment — `yada-addon38` (3 éditions chirurgicales) :** `boot()` — si `yada-remember` vaut `cabinet` ou `admin`, on l'**efface** et on **n'auto-connecte pas** (la page de connexion s'affiche) ; seule la valeur `client` déclenche encore la connexion directe. `secEssayer` — les connexions de l'Espace Cabinet (compte principal **et** Admin) ouvrent avec **`remember=false`** (jamais mémorisées) ; le Client garde le choix de la case. `secAfficher` (étape 2) — la case **« Rester connecté sur cet appareil »** n'est affichée **que pour le Client** (retirée pour Cabinet/Admin). Le verrouillage automatique par inactivité s'applique donc de nouveau au Cabinet/Admin.
+
+**Validé :** `node --check` (195 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (appareil « mémorisé cabinet » → **page de connexion affichée**, mémorisation effacée ; « mémorisé admin » → idem ; « mémorisé client » → connexion directe conservée ; aucun appareil mémorisé → page de connexion ; étape 2 Cabinet **sans** case « Rester connecté », Client **avec** ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v416**.
+
+---
+
+## 🟢 MAJ précédente — Connexion à DEUX espaces (Cabinet / Client) + Admin accessible via l'Espace Cabinet — v415
 **Quoi :** la page de connexion propose désormais **deux choix seulement** — **Espace Cabinet** et **Espace Client** (le 3ᵉ bouton « Espace Admin » est retiré). L'**Espace Admin (superviseur) se connecte via l'Espace Cabinet** : en choisissant **Espace Cabinet** puis en saisissant l'**identifiant + mot de passe Admin** (`admin.admin@gmail.com`), on ouvre le **mode administration** (`role=admin`, interface Cabinet complète + carte/panneau Administration). L'Espace Cabinet accepte donc, sur le même bouton : le **compte principal Cabinet** (`aemconseil.sas@gmail.com` → `role=cabinet`), l'**Admin** (→ `role=admin`) et les **collaborateurs/salariés** (→ `role=cabinet` + `staffId`, dossiers filtrés). Le formulaire garde **identifiant + mot de passe** (empreintes SHA-256 salées, clair absent du source). Une note sous les boutons rappelle « L'Espace Admin (superviseur) se connecte via l'Espace Cabinet. »
 
 **Comment — `yada-addon38` (éditions chirurgicales) :** `secAfficher` retire le bouton `sec-cta-3` et ajoute la note ; `secEtape1` (Espace Cabinet) accepte l'identifiant s'il correspond à `CAB`, `ADM` **ou** un collaborateur ; `secEssayer` (Espace Cabinet) : après échec du compte principal, teste l'empreinte **Admin** (`sha(ADM.salt+email+'##'+mdp)` → `secOuvrir('admin', …)`) puis les collaborateurs. Texte « Connexion & sécurité » du Paramétrage mis à jour (deux espaces, Admin via Cabinet). Mobile inchangé (Client uniquement).
