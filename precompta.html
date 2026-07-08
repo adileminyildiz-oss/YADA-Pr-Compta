@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v425';
+    b.textContent='YADA · v426';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -22695,26 +22695,24 @@ ${lignes}
   if(typeof window.ecranSelectionDossier==='function'){ var _es=window.ecranSelectionDossier;
     window.ecranSelectionDossier=function(){
       if(window.sessionRole==='admin' && window.admShow){
-        var navItem=function(id,lbl){ return '<button class="adm-side-btn" onclick="admGoto(\''+id+'\')">'+lbl+'</button>'; };
+        var MODS=[['collab','⊞','Collaborateurs &amp; accès'],['parametrage','≣','Paramétrage'],['documentation','▤','Documentation'],['pilotages','◉','Pilotages']];
+        var curMod=window.admModule||'collab';
+        var modBtn=function(m){ return '<button class="adm-mod-btn'+(curMod===m[0]?' on':'')+'" onclick="admSetModule(\''+m[0]+'\')"><span class="adm-mod-ico">'+m[1]+'</span><span class="adm-mod-lbl">'+m[2]+'</span></button>'; };
         return '<div class="adm-shell">'
           +'<aside class="adm-side">'
             +'<button class="adm-side-btn adm-side-back" onclick="admShowToggle(false)">← Retour aux dossiers</button>'
             +'<div class="adm-side-title">🛡 Espace Admin</div>'
-            +navItem('adm-sec-soc','Société exploitante')
-            +navItem('adm-sec-users','Utilisateurs du cabinet')
-            +navItem('adm-sec-add','Enregistrer un utilisateur')
-            +navItem('adm-sec-doss','Dossiers &amp; attribution')
+            +'<div class="adm-mod-sec">Modules</div>'
+            +MODS.map(modBtn).join('')
           +'</aside>'
           +'<div class="adm-content" id="adm-content">'
-            +'<div class="login-title">Espace Admin</div>'
-            +'<div class="login-sub">Société exploitante, collaborateurs &amp; dossiers — accès global au portefeuille. Utilisez la barre latérale pour accéder à chaque section ; la page défile.</div>'
-            +(window.admCollabPanel?window.admCollabPanel():'')
+            +(window.admModuleContent?window.admModuleContent():'')
           +'</div>'
         +'</div>';
       }
       var h=_es.apply(this,arguments);
       try{ if(window.sessionRole==='admin' && h.indexOf('login-wrap')>=0 && h.indexOf('adm-topbar')<0){
-        h=h.replace('<div class="login-wrap"','<div class="adm-topbar"><button class="btn btn-pri btn-sm" onclick="admShowToggle(true)">🛡 Espace Admin — Collaborateurs &amp; accès</button></div><div class="login-wrap"'); } }catch(e){}
+        h=h.replace('<div class="login-wrap"','<div class="adm-topbar"><button class="btn btn-pri btn-sm" onclick="admShowToggle(true)">🛡 Espace Admin</button></div><div class="login-wrap"'); } }catch(e){}
       return h; };
   }
 
@@ -23101,12 +23099,94 @@ ${lignes}
   if(typeof window.render!=='function') return;
   var _r=window.render;
   window.render=function(){
-    var ac=null; try{ var c=document.getElementById('adm-content'); if(c) ac=c.scrollTop; }catch(e){}
+    var switching=!!window.__admModuleSwitch;   /* changement de module → on remonte en haut */
+    var ac=null; try{ var c=document.getElementById('adm-content'); if(c && !switching) ac=c.scrollTop; }catch(e){}
     var x=_r.apply(this,arguments);
-    if(ac!=null){ var restore=function(){ try{ var c2=document.getElementById('adm-content'); if(c2 && Math.abs(c2.scrollTop-ac)>1) c2.scrollTop=ac; }catch(e){} };
-      restore(); setTimeout(restore,0); setTimeout(restore,40); }
+    var apply=function(){ try{ var c2=document.getElementById('adm-content'); if(!c2) return;
+      if(switching){ c2.scrollTop=0; } else if(ac!=null && Math.abs(c2.scrollTop-ac)>1){ c2.scrollTop=ac; } }catch(e){} };
+    apply(); setTimeout(apply,0); setTimeout(apply,40);
+    window.__admModuleSwitch=false;
     return x;
   };
+})();
+</script>
+
+<script id="yada-addon208">
+/* ============================================================
+   ESPACE ADMIN — liste de MODULES (comme l'espace cabinet).
+   La barre latérale de l'Espace Admin liste des modules : Collaborateurs & accès,
+   Paramétrage, Documentation, Pilotages. Chaque module s'affiche dans le contenu.
+   100% additif.
+   ============================================================ */
+(function(){
+  if(window.__admModules) return; window.__admModules=true;
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function ens(){ try{ if(window.__ensureStaff) window.__ensureStaff(); }catch(e){} }
+  function staff(){ ens(); return (db.cabinet&&db.cabinet.staff)||[]; }
+  function doss(){ return (db.cabinet&&db.cabinet.dossiers)||[]; }
+
+  window.admSetModule=function(m){ window.admModule=m; window.__admModuleSwitch=true; if(typeof render==='function') render(); };
+
+  /* Module PARAMÉTRAGE (Espace Admin). */
+  function modParametrage(){
+    var d=(typeof window.secDelay==='function')?window.secDelay():10;
+    var opts=[['5','5 min'],['10','10 min'],['15','15 min'],['30','30 min'],['0','Désactivé']].map(function(o){ return '<option value="'+o[0]+'" '+(String(d)===o[0]?'selected':'')+'>'+o[1]+'</option>'; }).join('');
+    return '<div class="login-title">Paramétrage</div><div class="login-sub">Réglages de l\'Espace Admin et de la sécurité de connexion.</div>'
+      +'<div class="card"><h2>Sécurité & connexion</h2>'
+        +'<div class="sub">Verrouillage automatique par inactivité (s\'applique à tous les espaces).</div>'
+        +'<div class="adm-grid"><div class="fld"><label>Verrouillage auto (inactivité)</label><select onchange="secSetDelay(this.value)">'+opts+'</select></div></div></div>'
+      +'<div class="card"><h2>Société exploitante</h2>'
+        +'<div class="sub">Toutes les données de la société (dénomination, SIREN/SIRET, adresse, dirigeant, coordonnées bancaires…) se règlent dans le module <b>Collaborateurs & accès</b>.</div>'
+        +'<button class="btn btn-ghost btn-sm" onclick="admSetModule(\'collab\')">Ouvrir « Collaborateurs & accès »</button></div>'
+      +'<div class="card"><h2>Synchronisation</h2>'
+        +'<div class="sub">La synchronisation multi-appareils (occupation des dossiers en temps réel comprise) se configure dans le <b>Paramétrage</b> de l\'Espace Cabinet.</div></div>';
+  }
+
+  /* Module DOCUMENTATION (guide de l'Espace Admin). */
+  function modDocumentation(){
+    var doc=function(t,c){ return '<div class="card"><h2>'+t+'</h2><div class="sub">'+c+'</div></div>'; };
+    return '<div class="login-title">Documentation</div><div class="login-sub">Guide d\'utilisation de l\'Espace Admin.</div>'
+      +doc('Utilisateurs & identifiants','Enregistrez chaque salarié avec un identifiant (e-mail + mot de passe). Le mot de passe est stocké chiffré (empreinte SHA-256 salée) et reste affichable côté Admin. Chaque salarié se connecte via l\'<b>Espace Cabinet</b> avec son identifiant.')
+      +doc('Dossiers attitrés','Dans « Collaborateurs & accès », attribuez un ou plusieurs salariés à chaque dossier. Un salarié ne voit et ne traite que ses dossiers attribués ; l\'Admin conserve un accès global.')
+      +doc('Occupation — un seul à la fois','Un dossier peut avoir plusieurs responsables, mais un seul y travaille à la fois : un <b>voyant rouge</b> indique qu\'il est occupé, <b>vert</b> qu\'il est libre. Le second peut entrer pour <b>vérifier</b> le travail.')
+      +doc('Alertes de connexion','À la connexion, chaque salarié est informé des <b>nouveaux dossiers</b> reçus et des dossiers <b>retirés</b> de sa responsabilité.');
+  }
+
+  /* Module PILOTAGES (supervision du cabinet). */
+  function modPilotages(){
+    var st=staff(), ds=doss();
+    var actifs=st.filter(function(s){return s.actif!==false;}).length;
+    var attrib=ds.filter(function(d){return (d.responsables||[]).length>0;}).length;
+    var STALE=20*60*1000, nowt=(new Date()).getTime();
+    var occ=ds.filter(function(d){return d.occupe && d.occupe.ts && (nowt-d.occupe.ts)<STALE;}).length;
+    var kpi=function(lbl,val){ return '<div class="kpi"><div class="lbl">'+lbl+'</div><div class="val">'+val+'</div></div>'; };
+    var rows=st.map(function(s){ var n=(s.dossiers||[]).length;
+      return '<tr><td><b>'+esc([s.prenom,s.nom].filter(Boolean).join(' ')||s.email)+'</b> <span class="mini" style="opacity:.6">'+esc(s.email)+'</span></td><td class="r num">'+n+'</td><td>'+(s.actif===false?'inactif':'actif')+'</td></tr>'; }).join('')
+      ||'<tr><td colspan="3" class="adm-empty">Aucun collaborateur enregistré.</td></tr>';
+    return '<div class="login-title">Pilotages</div><div class="login-sub">Supervision du cabinet — collaborateurs, dossiers et attribution.</div>'
+      +'<div class="card"><h2>Vue d\'ensemble</h2><div class="grid g4" style="margin-top:8px">'
+        +kpi('Collaborateurs actifs',actifs)+kpi('Dossiers',ds.length)+kpi('Dossiers attribués',attrib)+kpi('Dossiers occupés',occ)
+      +'</div></div>'
+      +'<div class="card"><h2>Charge par collaborateur</h2><table><thead><tr><th>Collaborateur</th><th class="r">Dossiers</th><th>État</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+
+  window.admModuleContent=function(){
+    var m=window.admModule||'collab';
+    if(m==='parametrage') return modParametrage();
+    if(m==='documentation') return modDocumentation();
+    if(m==='pilotages') return modPilotages();
+    return '<div class="login-title">Collaborateurs & accès</div><div class="login-sub">Société exploitante, collaborateurs & dossiers — accès global au portefeuille.</div>'
+      +(window.admCollabPanel?window.admCollabPanel():'');
+  };
+
+  try{ var st=document.createElement('style'); st.id='adm-modules-mod'; st.textContent=
+    '.adm-mod-sec{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;opacity:.5;margin:14px 6px 7px}'
+    +'.adm-mod-btn{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:rgba(120,180,255,.06);border:1px solid rgba(120,180,255,.16);color:#dbe8ff;border-radius:10px;padding:11px 12px;font-size:13px;cursor:pointer;margin-bottom:6px;transition:background .12s,border-color .12s}'
+    +'.adm-mod-btn:hover{background:rgba(30,144,255,.14);border-color:rgba(30,144,255,.5)}'
+    +'.adm-mod-btn.on{background:linear-gradient(120deg,#2f9bff,#0a64d6);border-color:#1e90ff;color:#fff;font-weight:600}'
+    +'.adm-mod-ico{width:22px;text-align:center;font-size:15px;opacity:.92;flex:0 0 auto}'
+    +'.adm-mod-lbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}';
+    document.head.appendChild(st); }catch(e){}
 })();
 </script>
 </body>

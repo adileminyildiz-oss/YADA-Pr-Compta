@@ -36,7 +36,19 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Admin : « Retour aux dossiers » en haut de la barre latérale + tableau Dossiers redessiné + page immobile après action — v425
+## 🟢 Dernière mise à jour — Espace Admin : liste de MODULES (Collaborateurs & accès · Paramétrage · Documentation · Pilotages) — v426
+**Quoi :** l'Espace Admin devient une **application à modules** avec sa propre **barre latérale de modules** (même style que l'espace Cabinet). La barre latérale liste : **← Retour aux dossiers** (en haut), le titre **Espace Admin**, puis une section **« Modules »** avec 4 modules — **Collaborateurs & accès** (l'ancien panneau : société exploitante + utilisateurs + dossiers), **Paramétrage** (verrouillage auto, renvois société/synchro), **Documentation** (guide : utilisateurs, dossiers attitrés, occupation, alertes), **Pilotages** (supervision : KPI collaborateurs actifs / dossiers / attribués / occupés + charge par collaborateur). Cliquer un module l'affiche dans le contenu (défilable, page immobile pour les actions internes ; un changement de module remonte en haut).
+
+**Comment :**
+- **`yada-addon202` (édition)** : la vue `admShow` de `ecranSelectionDossier` rend une **barre latérale de modules** (`.adm-mod-btn` avec icône + libellé, actif en surbrillance) + un contenu `#adm-content` alimenté par `window.admModuleContent()`. Bouton d'entrée renommé « 🛡 Espace Admin ».
+- **`yada-addon208` (100% additif)** : `admSetModule(m)` (change `window.admModule` + `render`) ; `admModuleContent()` (dispatch collab/parametrage/documentation/pilotages) ; `modParametrage`/`modDocumentation`/`modPilotages` ; `<style id="adm-modules-mod">` (boutons de module façon nav cabinet).
+- **`yada-addon207` (édition)** : sur un **changement de module** (`__admModuleSwitch`), le contenu **remonte en haut** ; sinon le défilement est **préservé** (page immobile pour les actions).
+
+**Validé :** `node --check` (201 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (barre latérale = [Collaborateurs & accès, Paramétrage, Documentation, Pilotages] ; défaut collab avec société ; Pilotages → « Vue d'ensemble » + « Charge par collaborateur » ; Paramétrage → « Sécurité & connexion » ; Documentation → guide ; capture @2x conforme ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v426**.
+
+---
+
+## 🟢 MAJ précédente — Admin : « Retour aux dossiers » en haut de la barre latérale + tableau Dossiers redessiné + page immobile après action — v425
 **Quoi :** trois améliorations de l'Espace Admin.
 1. **« ← Retour aux dossiers » en haut** de la barre latérale (avant le titre et les sections), au lieu du bas.
 2. **Tableau « Dossiers & attribution » redessiné (plus esthétique)** : chaque dossier est une **carte** (en-tête à dégradé bleu→turquoise avec **avatar** initiale + nom + forme + **badge « N responsable(s) »** vert), des **chips cliquables** par salarié (pastille + nom ; **bleu plein quand sélectionné**, contour sinon) pour ajouter/retirer, et des **pastilles vertes « Tracé par »**. Remplace la table + cases à cocher.
