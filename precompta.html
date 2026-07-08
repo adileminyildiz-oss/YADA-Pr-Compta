@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v428';
+    b.textContent='YADA · v429';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -23296,15 +23296,35 @@ ${lignes}
       +'<div class="login-title">🛡 Espace Admin</div>'
       +'<div class="login-sub">Choisissez le module sur lequel vous voulez travailler.</div>'
       +'<div class="adm-hub-grid adm-hub-in">'+tiles+'</div>'
-      +'<div class="login-actions"><button class="btn btn-ghost" onclick="admShowToggle(false)">← Retour aux dossiers</button></div>'
+      +'<div class="login-actions"><button class="btn btn-ghost" onclick="admHubBack()">← Retour aux dossiers</button></div>'
       +'</div>';
   }
+
+  /* Retour aux dossiers depuis la liste de modules : animation INVERSE (les tuiles
+     repartent du net vers le flou, de bas en haut) avant de revenir à l'accueil. */
+  window.admHubBack=function(){
+    var g=document.querySelector('.adm-hub-grid');
+    var reduce=false; try{ reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches; }catch(e){}
+    if(!g || reduce){ return window.admShowToggle(false); }
+    g.classList.remove('adm-hub-in'); g.classList.add('adm-hub-out');
+    var done=false, fin=function(){ if(done) return; done=true; window.admShowToggle(false); };
+    setTimeout(fin, 1250); /* delai max .48s + durée .72s */
+  };
 
   if(typeof window.ecranSelectionDossier==='function'){ var _es=window.ecranSelectionDossier;
     window.ecranSelectionDossier=function(){
       /* Espace Admin ouvert SANS module choisi → liste de modules (blur→net). */
       if(window.sessionRole==='admin' && window.admShow && !window.admModule){
         return admHubHTML();
+      }
+      /* Module choisi → contenu PLEINE LARGEUR, SANS barre latérale. */
+      if(window.sessionRole==='admin' && window.admShow && window.admModule){
+        return '<div class="adm-solo">'
+          +'<div class="adm-solo-bar">'
+            +'<button class="btn btn-ghost" onclick="admSetModule(null)">← Retour aux modules</button>'
+          +'</div>'
+          +'<div class="adm-content" id="adm-content">'+(window.admModuleContent?window.admModuleContent():'')+'</div>'
+        +'</div>';
       }
       var h=_es.apply(this,arguments);
       try{
@@ -23324,6 +23344,12 @@ ${lignes}
             else if(h.indexOf('Importer des données (JSON)</button></div>')>=0) h=h.replace('Importer des données (JSON)</button></div>','Importer des données (JSON)</button></div>'+arow);
           }
         }
+        /* Écran « Liste des dossiers » (Importer présent, mais pas le bouton Liste Dossier) :
+           bouton Espace Admin À CÔTÉ d'« Importer des données (JSON) », admin seulement. */
+        else if(window.sessionRole==='admin' && h.indexOf('Importer des données (JSON)</button>')>=0 && h.indexOf('id="adm-enter-inline"')<0){
+          var abtn='<button id="adm-enter-inline" class="btn btn-gold" onclick="admShowToggle(true)">🛡 Espace Admin</button>';
+          h=h.replace('Importer des données (JSON)</button>','Importer des données (JSON)</button>'+abtn);
+        }
       }catch(e){}
       return h;
     };
@@ -23337,13 +23363,20 @@ ${lignes}
     +'.adm-hub-ic{width:46px;height:46px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font:800 22px system-ui,sans-serif;border-radius:12px;background:linear-gradient(135deg,#2f6fe8,#1cc39b);color:#eaf2ff}'
     +'.adm-hub-tx{flex:1;min-width:0}.adm-hub-tx b{display:block;font-size:15.5px}.adm-hub-tx small{font-size:12px;opacity:.72}'
     +'.adm-hub-go{font-size:12.5px;opacity:.8;flex:0 0 auto}'
-    +'@keyframes admHubIn{0%{opacity:0;filter:blur(14px);transform:translateY(10px) scale(.98)}100%{opacity:1;filter:blur(0);transform:none}}'
-    +'.adm-hub-in>*{animation:admHubIn .5s cubic-bezier(.2,.7,.2,1) both}'
-    +'.adm-hub-in>*:nth-child(2){animation-delay:.06s}.adm-hub-in>*:nth-child(3){animation-delay:.12s}.adm-hub-in>*:nth-child(4){animation-delay:.18s}'
+    +'@keyframes admHubIn{0%{opacity:0;filter:blur(14px);transform:translateY(-14px) scale(.98)}100%{opacity:1;filter:blur(0);transform:none}}'
+    +'.adm-hub-in>*{animation:admHubIn .72s cubic-bezier(.2,.7,.2,1) both}'
+    +'.adm-hub-in>*:nth-child(1){animation-delay:0s}.adm-hub-in>*:nth-child(2){animation-delay:.16s}.adm-hub-in>*:nth-child(3){animation-delay:.32s}.adm-hub-in>*:nth-child(4){animation-delay:.48s}'
+    +'@keyframes admHubOut{0%{opacity:1;filter:blur(0);transform:none}100%{opacity:0;filter:blur(14px);transform:translateY(-14px) scale(.98)}}'
+    +'.adm-hub-out>*{animation:admHubOut .72s cubic-bezier(.4,0,.8,.4) both}'
+    +'.adm-hub-out>*:nth-child(4){animation-delay:0s}.adm-hub-out>*:nth-child(3){animation-delay:.16s}.adm-hub-out>*:nth-child(2){animation-delay:.32s}.adm-hub-out>*:nth-child(1){animation-delay:.48s}'
     +'.adm-enter-row{margin-top:10px;display:flex;justify-content:flex-start}'
+    /* Module Admin en PLEINE LARGEUR (sans barre latérale). */
+    +'.adm-solo{display:flex;flex-direction:column;height:100dvh;max-height:100dvh;width:100%}'
+    +'.adm-solo-bar{flex:0 0 auto;display:flex;gap:8px;align-items:center;padding:12px 18px;border-bottom:1px solid rgba(120,180,255,.18)}'
+    +'.adm-solo .adm-content{flex:1;min-height:0;overflow-y:auto;padding:18px 22px}'
     /* Sur l'accueil, la Déconnexion inline remplace le bouton flottant → on masque le flottant. */
     +'body:has(#adm-logout-btn) #yada-logout{display:none !important}'
-    +'@media(prefers-reduced-motion:reduce){.adm-hub-in>*{animation:none}}';
+    +'@media(prefers-reduced-motion:reduce){.adm-hub-in>*,.adm-hub-out>*{animation:none}}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
