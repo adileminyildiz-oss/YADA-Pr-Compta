@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v420';
+    b.textContent='YADA · v421';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -22590,32 +22590,30 @@ ${lignes}
   window.admCollabPanel=function(){
     if(window.sessionRole!=='admin') return ''; ensureStaff();
     var cab=db.cabinet||{}; var soc=cab.societe||{}; var doss=(cab.dossiers||[]);
-    var rows=(cab.staff||[]).map(function(s){ var n=(s.dossiers||[]).length; var assign=(window.admAssign===s.id)?assignBox(s):'';
+    var rows=(cab.staff||[]).map(function(s){ var n=(s.dossiers||[]).length; var edit=(window.admEdit===s.id && window.admStaffEditBox)?window.admStaffEditBox(s):'';
       return '<div class="adm-staff'+(s.actif===false?' off':'')+'">'
         +'<div class="adm-staff-h"><span class="adm-av">'+esc(((s.prenom||s.nom||'?')[0]||'?').toUpperCase())+'</span>'
         +'<div class="adm-staff-id"><b>'+esc([s.prenom,s.nom].filter(Boolean).join(' ')||'Collaborateur')+'</b>'
-        +'<span>'+esc(s.email||'')+' · '+n+' dossier'+(n>1?'s':'')+' attitré'+(n>1?'s':'')+(s.actif===false?' · inactif':'')+'</span></div>'
+        +'<span>'+esc(s.email||'')+' · '+n+' dossier'+(n>1?'s':'')+' tracé'+(n>1?'s':'')+(s.actif===false?' · inactif':'')+'</span></div>'
         +'<div class="adm-staff-act">'
-        +'<button class="btn btn-ghost btn-sm" onclick="admAssignToggle(\''+s.id+'\')">Dossiers attitrés</button>'
+        +'<button class="btn btn-ghost btn-sm" onclick="admStaffEdit(\''+s.id+'\')">Modifier</button>'
         +'<button class="btn btn-ghost btn-sm" onclick="admStaffResetPwd(\''+s.id+'\')">Mot de passe</button>'
         +'<button class="btn btn-ghost btn-sm" onclick="admStaffActif(\''+s.id+'\')">'+(s.actif===false?'Activer':'Désactiver')+'</button>'
         +'<button class="btn btn-ghost btn-sm adm-danger" onclick="admStaffDel(\''+s.id+'\')">Supprimer</button>'
-        +'</div></div>'+assign+'</div>';
+        +'</div></div>'+edit+'</div>';
     }).join('')||'<div class="adm-empty">Aucun collaborateur enregistré pour le moment.</div>';
-    var opts=doss.map(function(d){ return '<label class="adm-chk"><input type="checkbox" class="adm-newd" value="'+esc(d.id)+'"> '+esc(d.nom||d.id)+'</label>'; }).join('')||'<span class="adm-empty">Aucun dossier au portefeuille.</span>';
-    var collab='<div class="card adm-collab"><h2><span class="adm-badge">🛡 ADMIN</span> Collaborateurs &amp; accès</h2>'
-      +'<div class="sub">Enregistrez les salariés du cabinet et attribuez à chacun ses dossiers. Un collaborateur se connecte via l\'<b>Espace Cabinet</b> avec son identifiant et ne voit que ses <b>dossiers attitrés</b>. L\'Admin conserve un <b>accès global</b> à toutes les sociétés.</div>'
+    var collab='<div class="card adm-collab"><h2><span class="adm-badge">🛡 ADMIN</span> Utilisateurs du cabinet (salariés)</h2>'
+      +'<div class="sub">Chaque salarié a un <b>identifiant</b> (adresse e-mail + mot de passe) pour accéder à son espace via l\'<b>Espace Cabinet</b>. Il ne traite que ses <b>dossiers attribués</b> (voir le tableau des dossiers plus bas). Bouton <b>✎ Modifier</b> pour changer ses paramètres. L\'Admin conserve un <b>accès global</b>.</div>'
       +'<div class="adm-staff-list">'+rows+'</div></div>';
-    var add='<div class="card adm-add"><h2>➕ Enregistrer un collaborateur</h2>'
-      +'<div class="sub">Créez un accès (identifiant + mot de passe) pour un salarié. Le mot de passe est stocké <b>chiffré</b> (empreinte SHA-256 salée), jamais en clair.</div>'
+    var add='<div class="card adm-add"><h2>➕ Enregistrer un utilisateur (salarié)</h2>'
+      +'<div class="sub">Créez un accès (identifiant + mot de passe) pour un salarié. Le mot de passe est stocké <b>chiffré</b> (empreinte SHA-256 salée), jamais en clair. Les dossiers s\'attribuent ensuite dans le tableau ci-dessous.</div>'
       +'<div class="adm-grid">'
       +'<div class="fld"><label>Prénom</label><input id="adm-new-prenom"></div>'
       +'<div class="fld"><label>Nom</label><input id="adm-new-nom"></div>'
       +'<div class="fld"><label>Identifiant (e-mail)</label><input id="adm-new-email" type="email" placeholder="salarie@cabinet.fr"></div>'
       +'<div class="fld"><label>Mot de passe</label><input id="adm-new-pwd" type="password"></div>'
       +'</div>'
-      +'<div class="adm-doss"><label>Dossiers attitrés</label><div class="adm-chks">'+opts+'</div></div>'
-      +'<div style="margin-top:10px"><button class="btn btn-pri btn-sm" onclick="admStaffAdd()">Créer le collaborateur</button></div></div>';
+      +'<div style="margin-top:10px"><button class="btn btn-pri btn-sm" onclick="admStaffAdd()">Créer l\'utilisateur</button></div></div>';
     var socCard='<div class="card adm-soc"><h2>🏢 Société exploitante (le cabinet)</h2>'
       +'<div class="sub">La société qui occupe le logiciel et ses réglages. L\'Admin supervise cette société et dispose d\'un accès global au portefeuille.</div>'
       +'<div class="adm-grid">'
@@ -22626,7 +22624,7 @@ ${lignes}
       +'<div class="fld fld-wide"><label>Adresse</label><input id="adm-soc-adr" value="'+esc(soc.adresse||'')+'"></div>'
       +'</div>'
       +'<div style="margin-top:10px"><button class="btn btn-pri btn-sm" onclick="admSocSave()">Enregistrer la société</button></div></div>';
-    return socCard+collab+add;
+    return socCard+collab+add+(window.admDossiersPanel?window.admDossiersPanel():'');
   };
 
   window.admAssignToggle=function(id){ window.admAssign=(window.admAssign===id?null:id); if(typeof render==='function') render(); };
@@ -22644,10 +22642,9 @@ ${lignes}
     var pr=val('adm-new-prenom'), no=val('adm-new-nom'), em=val('adm-new-email').toLowerCase(), pw=val('adm-new-pwd');
     if(!em||!pw){ if(typeof toast==='function')toast('Identifiant et mot de passe requis'); return; }
     if((db.cabinet.staff||[]).some(function(x){return (x.email||'').toLowerCase()===em;})){ if(typeof toast==='function')toast('Un collaborateur avec cet identifiant existe déjà'); return; }
-    var dss=[].slice.call(document.querySelectorAll('.adm-newd:checked')).map(function(c){return c.value;});
     yadaHashCreds(em,pw).then(function(c){
-      db.cabinet.staff.push({ id:'stf-'+(typeof uid==='function'?uid():String((new Date()).getTime())), prenom:pr, nom:no, email:em, salt:c.salt, hash:c.hash, emailHash:c.emailHash, dossiers:dss, actif:true, dateCreation:(typeof todayStr==='function'?todayStr():'') });
-      if(typeof save==='function')save(); if(typeof render==='function')render(); if(typeof toast==='function')toast('Collaborateur créé — il peut se connecter via l\'Espace Cabinet'); }); };
+      db.cabinet.staff.push({ id:'stf-'+(typeof uid==='function'?uid():String((new Date()).getTime())), prenom:pr, nom:no, email:em, salt:c.salt, hash:c.hash, emailHash:c.emailHash, dossiers:[], actif:true, dateCreation:(typeof todayStr==='function'?todayStr():'') });
+      if(typeof save==='function')save(); if(typeof render==='function')render(); if(typeof toast==='function')toast('Utilisateur créé — attribuez-lui des dossiers dans le tableau ci-dessous'); }); };
   window.admSocSave=function(){ ensureStaff(); var s=db.cabinet.societe;
     s.nom=val('adm-soc-nom'); s.forme=val('adm-soc-forme'); s.siret=val('adm-soc-siret'); s.dirigeant=val('adm-soc-dir'); s.adresse=val('adm-soc-adr');
     if(s.nom) db.cabinet.cabinetNom=s.nom; if(typeof save==='function')save(); if(typeof toast==='function')toast('Société enregistrée'); };
@@ -22705,6 +22702,113 @@ ${lignes}
   /* Migration : garantir la structure au démarrage. */
   try{ ensureStaff(); }catch(e){}
   setTimeout(function(){ try{ ensureStaff(); }catch(e){} }, 1200);
+})();
+</script>
+
+<script id="yada-addon203">
+/* ============================================================
+   ESPACE ADMIN — Interface DOSSIERS (attribution par adresse e-mail) + édition des utilisateurs.
+   - Chaque dossier est attribué à UN SEUL salarié et TRACÉ par son adresse e-mail :
+     lui seul le traite. Réassigner un dossier le retire de l'ancien salarié (exclusivité).
+   - Bouton « ✎ Modifier » : change les paramètres d'un utilisateur (prénom, nom, e-mail,
+     mot de passe). Changer l'e-mail nécessite un nouveau mot de passe (empreintes recalculées).
+   100% additif. Empreintes SHA-256 salées, jamais de mot de passe en clair.
+   ============================================================ */
+(function(){
+  if(window.__admDossiers) return; window.__admDossiers=true;
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function val(id){ var e=document.getElementById(id); return e?String(e.value||'').trim():''; }
+  function ens(){ try{ if(window.__ensureStaff) window.__ensureStaff(); }catch(e){} }
+  function staff(){ ens(); return (db.cabinet&&db.cabinet.staff)||[]; }
+  function doss(){ return (db.cabinet&&db.cabinet.dossiers)||[]; }
+  function stById(id){ return staff().find(function(x){return x.id===id;}); }
+  function stByEmail(em){ em=(em||'').toLowerCase(); return staff().find(function(x){return (x.email||'').toLowerCase()===em;}); }
+
+  /* Normalise les attributions : 1 seul salarié par dossier (exclusivité) + trace l'e-mail
+     du responsable sur le dossier (d.responsableEmail). Renvoie true si quelque chose a changé. */
+  function normalize(){ ens(); var st=staff(), ds=doss(), changed=false;
+    ds.forEach(function(d){
+      var owners=st.filter(function(s){ return Array.isArray(s.dossiers)&&s.dossiers.indexOf(d.id)>=0; });
+      if(owners.length>1){ owners.slice(1).forEach(function(s){ var i=s.dossiers.indexOf(d.id); if(i>=0){ s.dossiers.splice(i,1); changed=true; } }); }
+      var owner=owners[0];
+      if(owner){ if((d.responsableEmail||'')!==(owner.email||'')){ d.responsableEmail=owner.email||''; changed=true; } }
+      else if(d.responsableEmail){ var s=stByEmail(d.responsableEmail);
+        if(s){ s.dossiers=s.dossiers||[]; if(s.dossiers.indexOf(d.id)<0){ s.dossiers.push(d.id); changed=true; } }
+        else { d.responsableEmail=''; changed=true; } }
+    });
+    return changed; }
+  window.__admNormalizeAssignments=normalize;
+
+  /* Attribuer un dossier à un salarié (par e-mail) — EXCLUSIF : retire des autres. */
+  window.admDossierAssign=function(dossierId, email){ ens();
+    var st=staff();
+    st.forEach(function(s){ if(Array.isArray(s.dossiers)){ var i=s.dossiers.indexOf(dossierId); if(i>=0) s.dossiers.splice(i,1); } });
+    var d=doss().find(function(x){return x.id===dossierId;});
+    email=(email||'').toLowerCase();
+    if(email){ var s=stByEmail(email); if(s){ s.dossiers=s.dossiers||[]; if(s.dossiers.indexOf(dossierId)<0) s.dossiers.push(dossierId); }
+      if(d) d.responsableEmail=email; }
+    else if(d){ d.responsableEmail=''; }
+    if(typeof save==='function')save(); if(typeof render==='function')render();
+    if(typeof toast==='function') toast(email?('Dossier attribué à '+email):'Dossier laissé sans responsable'); };
+
+  /* Interface DOSSIERS de l'Espace Admin (tableau : dossier → salarié responsable + trace e-mail). */
+  window.admDossiersPanel=function(){ if(window.sessionRole!=='admin') return ''; ens();
+    if(normalize() && typeof save==='function') save();
+    var ds=doss(); var act=staff().filter(function(s){return s.actif!==false;});
+    var rows=ds.map(function(d){
+      var opts='<option value="">— Non attribué</option>'+act.map(function(s){ var sel=((d.responsableEmail||'').toLowerCase()===(s.email||'').toLowerCase())?' selected':'';
+        return '<option value="'+esc(s.email)+'"'+sel+'>'+esc(([s.prenom,s.nom].filter(Boolean).join(' ')||s.email)+' — '+s.email)+'</option>'; }).join('');
+      var trace=d.responsableEmail?('<span class="adm-trace">'+esc(d.responsableEmail)+'</span>'):'<span class="adm-empty">non tracé</span>';
+      return '<tr><td><b>'+esc(d.nom||d.id)+'</b>'+(d.forme?(' <span class="mini">'+esc(d.forme)+'</span>'):'')+'</td>'
+        +'<td><select class="adm-dsel" onchange="admDossierAssign(\''+esc(d.id)+'\',this.value)">'+opts+'</select></td>'
+        +'<td>'+trace+'</td></tr>';
+    }).join('')||'<tr><td colspan="3" class="adm-empty">Aucun dossier au portefeuille — créez ou importez des dossiers.</td></tr>';
+    return '<div class="card adm-doss-panel"><h2>Dossiers &amp; attribution — 1 salarié (adresse e-mail) par dossier</h2>'
+      +'<div class="sub">Chaque dossier est <b>attribué à un seul salarié</b> et <b>tracé par son adresse e-mail</b> : lui seul le traite (connexion via l\'Espace Cabinet avec son identifiant). Réassigner un dossier le retire automatiquement du salarié précédent. L\'Admin garde l\'accès à tous les dossiers.</div>'
+      +'<table class="adm-doss-table"><thead><tr><th>Dossier</th><th>Salarié responsable (adresse e-mail)</th><th>Tracé par</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  };
+
+  /* Édition des paramètres d'un utilisateur (prénom, nom, e-mail, mot de passe). */
+  window.admStaffEdit=function(id){ window.admEdit=(window.admEdit===id?null:id); if(typeof render==='function') render(); };
+  window.admStaffEditBox=function(s){
+    return '<div class="adm-edit"><div class="adm-grid">'
+      +'<div class="fld"><label>Prénom</label><input id="adm-ed-prenom" value="'+esc(s.prenom||'')+'"></div>'
+      +'<div class="fld"><label>Nom</label><input id="adm-ed-nom" value="'+esc(s.nom||'')+'"></div>'
+      +'<div class="fld"><label>Identifiant (e-mail)</label><input id="adm-ed-email" type="email" value="'+esc(s.email||'')+'"></div>'
+      +'<div class="fld"><label>Mot de passe <span class="mini">(vide = inchangé ; requis si l\'e-mail change)</span></label><input id="adm-ed-pwd" type="password" placeholder="••••••••"></div>'
+      +'</div>'
+      +'<div style="margin-top:8px"><button class="btn btn-pri btn-sm" onclick="admStaffSaveEdit(\''+s.id+'\')">Enregistrer</button> '
+      +'<button class="btn btn-ghost btn-sm" onclick="admStaffEdit(\''+s.id+'\')">Annuler</button></div></div>';
+  };
+  window.admStaffSaveEdit=function(id){ ens(); var s=stById(id); if(!s)return;
+    var pr=val('adm-ed-prenom'), no=val('adm-ed-nom'), em=val('adm-ed-email').toLowerCase(), pw=val('adm-ed-pwd');
+    if(!em){ if(typeof toast==='function')toast('L\'identifiant (e-mail) est requis'); return; }
+    if(staff().some(function(x){return x.id!==id && (x.email||'').toLowerCase()===em;})){ if(typeof toast==='function')toast('Un autre utilisateur a déjà cet identifiant'); return; }
+    var oldEmail=(s.email||'').toLowerCase(); var emailChange=(em!==oldEmail);
+    var finish=function(){ s.prenom=pr; s.nom=no;
+      if(emailChange){ /* reporter la trace des dossiers de l'ancien vers le nouvel e-mail */
+        doss().forEach(function(d){ if((d.responsableEmail||'').toLowerCase()===oldEmail) d.responsableEmail=em; });
+        s.email=em; }
+      if(typeof save==='function')save(); window.admEdit=null; if(typeof render==='function')render(); if(typeof toast==='function')toast('Utilisateur mis à jour'); };
+    if(emailChange || pw){
+      if(emailChange && !pw){ if(typeof toast==='function')toast('Changer l\'e-mail nécessite un nouveau mot de passe'); return; }
+      window.yadaHashCreds(em, pw||'').then(function(c){ s.salt=c.salt; s.hash=c.hash; s.emailHash=c.emailHash; finish(); });
+    } else { finish(); }
+  };
+
+  /* Styles */
+  try{ var st=document.createElement('style'); st.id='adm-doss-mod'; st.textContent=
+    '.adm-doss-table{width:100%;border-collapse:collapse;margin-top:10px}'
+    +'.adm-doss-table th,.adm-doss-table td{text-align:left;padding:9px 10px;border-bottom:1px solid rgba(120,180,255,.16);font-size:13px;vertical-align:middle}'
+    +'.adm-doss-table th{font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;opacity:.7}'
+    +'.adm-doss-table .mini{font-size:11px;opacity:.6}'
+    +'.adm-dsel{width:100%;max-width:340px}'
+    +'.adm-trace{display:inline-flex;align-items:center;gap:5px;background:rgba(36,209,122,.12);border:1px solid rgba(36,209,122,.4);color:#7de3a8;border-radius:8px;padding:3px 9px;font-size:12px}'
+    +'.adm-edit{margin-top:9px;border-top:1px solid rgba(120,180,255,.18);padding-top:10px}';
+    document.head.appendChild(st); }catch(e){}
+
+  /* Normalisation unique au démarrage (exclusivité + trace des attributions héritées). */
+  setTimeout(function(){ try{ if(normalize() && typeof save==='function') save(); }catch(e){} }, 1400);
 })();
 </script>
 </body>
