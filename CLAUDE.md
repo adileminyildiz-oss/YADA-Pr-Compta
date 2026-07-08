@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Espace Admin : flou haut→bas (plus lent) + animation inverse au retour + module en pleine largeur (sans barre latérale) + bouton Espace Admin près d'Importer sur la Liste — v429
+## 🟢 Dernière mise à jour — Espace Admin : ancien bouton flottant « Espace Admin » (barre supérieure) retiré aussi de l'écran « Liste des dossiers » — v430
+**Quoi :** sur l'écran **« Liste des dossiers »** (Admin), l'**ancien bouton flottant « Espace Admin »** (barre supérieure haut-droite, `.adm-topbar` d'addon202) est **retiré** — il était en doublon du bouton dédié (à côté d'« Importer des données (JSON) »). En v428/v429 il n'était retiré que sur l'accueil.
+
+**Comment — `yada-addon210` (1 édition) :** le retrait de `.adm-topbar` (`h.replace(/<div class="adm-topbar">[\s\S]*?<\/div>/,'')`) est désormais fait **avant** les branches, pour **tous les écrans admin** (accueil ET liste). Le bouton dédié reste : sous « Liste Dossier » (accueil, `#adm-enter-row`) et à côté d'« Importer » (liste, `#adm-enter-inline`).
+
+**Validé :** `node --check` (203 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (liste : plus de `.adm-topbar`, bouton `#adm-enter-inline` conservé ; accueil : plus de `.adm-topbar`, `#adm-enter-row` conservé ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v430**.
+
+---
+
+## 🟢 MAJ précédente — Espace Admin : flou haut→bas (plus lent) + animation inverse au retour + module en pleine largeur (sans barre latérale) + bouton Espace Admin près d'Importer sur la Liste — v429
 **Quoi :** quatre ajustements de l'Espace Admin (parcours d'entrée).
 1. **Flou de haut en bas, légèrement plus lent** — la liste de modules apparaît « du flou en net » **de haut en bas** (les tuiles descendent depuis le haut, `translateY(-14px)`), avec un **enchaînement plus marqué** (délais 0 / .16 / .32 / .48 s) et une **durée un peu ralentie** (`.5s → .72s`).
 2. **Animation INVERSE au « ← Retour aux dossiers »** (depuis la liste de modules) — les tuiles repartent **du net vers le flou, de bas en haut** (keyframe `admHubOut`, stagger inversé), puis retour à l'accueil.

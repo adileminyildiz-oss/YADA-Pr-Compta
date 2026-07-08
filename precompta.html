@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v429';
+    b.textContent='YADA · v430';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -23328,10 +23328,12 @@ ${lignes}
       }
       var h=_es.apply(this,arguments);
       try{
+        /* Retirer l'ancien bouton Espace Admin de la barre supérieure (addon202) sur
+           TOUS les écrans admin (accueil ET liste des dossiers) : il est remplacé par
+           le bouton dédié plus bas (sous « Liste Dossier » / à côté d'« Importer »). */
+        if(window.sessionRole==='admin') h=h.replace(/<div class="adm-topbar">[\s\S]*?<\/div>/,'');
         /* Écran d'accueil « Espace dossiers » (présence du bouton Liste Dossier). */
         if(h.indexOf('dsOuvrirListe()')>=0){
-          /* retirer l'ancien bouton Espace Admin de la barre supérieure (addon202). */
-          h=h.replace(/<div class="adm-topbar">[\s\S]*?<\/div>/,'');
           /* Déconnexion à droite d'Importer (tous rôles sur cet écran). */
           if(h.indexOf('id="adm-logout-btn"')<0 && h.indexOf('Importer des données (JSON)</button>')>=0){
             var dbtn='<button id="adm-logout-btn" class="btn btn-ghost" onclick="admDoLogout()" title="Fermer la session et revenir à la connexion">Déconnexion</button>';
