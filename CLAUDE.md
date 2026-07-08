@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Espace Admin : ancien bouton flottant « Espace Admin » (barre supérieure) retiré aussi de l'écran « Liste des dossiers » — v430
+## 🟢 Dernière mise à jour — Animations Admin plus fluides + écran de connexion : textes sous le logo retirés + logo YADA agrandi — v431
+**Quoi :** deux finitions.
+1. **Animations de l'Espace Admin plus fluides** — la liste de modules (entrée blur→net et sortie inverse) utilise des **courbes d'accélération plus douces** (entrée `cubic-bezier(.16,1,.3,1)`, sortie `cubic-bezier(.7,0,.84,0)`), un **enchaînement resserré** (stagger .11/.22/.33 s en entrée, .09/.18/.27 s en sortie), des **hints GPU** (`will-change`, `translate3d`, `backface-visibility`) pour éviter les à-coups, et un léger **relèvement au survol** des tuiles. Durées ajustées (entrée .78s, sortie .6s).
+2. **Écran de connexion épuré + logo agrandi** — les **textes sous le logo** (« La pré-comptabilité, simplifiée. » + les 3 puces Facturation / Écritures / Espace client) sont **supprimés** ; le **logo YADA est agrandi** (lockup `yadaLockHTML` px 42 → 72 : icône 72 px, « YADA » ~43 px, baseline PAIE · COMPTA · DSN).
+
+**Comment :** `yada-addon210` (`<style id="adm-entry-mod">` : keyframes `admHubIn`/`admHubOut` easing + `will-change` + `translate3d`, stagger resserré ; `admHubBack` timeout 920 ms) ; `secHero()` ne rend plus `.sec-tagline`/`.sec-points` ; `yada-addon195` (sweep) : lockup de `#sec-lock .sec-logo` en **72 px** (au lieu de 42).
+
+**Validé :** `node --check` (203 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (connexion : plus de `.sec-tagline`/`.sec-points`, lockup présent, icône 72 px + « YADA » 43 px ; anim CSS `cubic-bezier(.16,1,.3,1)` + `will-change` ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v431**.
+
+---
+
+## 🟢 MAJ précédente — Espace Admin : ancien bouton flottant « Espace Admin » (barre supérieure) retiré aussi de l'écran « Liste des dossiers » — v430
 **Quoi :** sur l'écran **« Liste des dossiers »** (Admin), l'**ancien bouton flottant « Espace Admin »** (barre supérieure haut-droite, `.adm-topbar` d'addon202) est **retiré** — il était en doublon du bouton dédié (à côté d'« Importer des données (JSON) »). En v428/v429 il n'était retiré que sur l'accueil.
 
 **Comment — `yada-addon210` (1 édition) :** le retrait de `.adm-topbar` (`h.replace(/<div class="adm-topbar">[\s\S]*?<\/div>/,'')`) est désormais fait **avant** les branches, pour **tous les écrans admin** (accueil ET liste). Le bouton dédié reste : sous « Liste Dossier » (accueil, `#adm-enter-row`) et à côté d'« Importer » (liste, `#adm-enter-inline`).

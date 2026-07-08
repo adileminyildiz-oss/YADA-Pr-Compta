@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v430';
+    b.textContent='YADA · v431';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -11038,10 +11038,8 @@ ${lignes}
   function isMobile(){ try{ if(window.matchMedia) return window.matchMedia('(max-width:820px)').matches; }catch(e){} return (window.innerWidth||1024)<=820; }
   window.__secMobile=isMobile;
   function secVerTxt(){ try{ var b=document.getElementById('yada-ver'); if(b&&b.textContent) return b.textContent.replace('YADA · ',''); }catch(e){} return 'YADA · Précompta'; }
-  function secHero(){ return '<div class="sec-hero">'
+  function secHero(){ return '<div class="sec-hero sec-hero-logo">'
     +'<div class="sec-logo">YADA<small>Précompta</small></div>'
-    +'<div class="sec-tagline">La pré-comptabilité, simplifiée.</div>'
-    +'<ul class="sec-points"><li>Facturation, achats &amp; TVA</li><li>Écritures, FEC &amp; éditions</li><li>Espace client sécurisé</li></ul>'
     +'</div>'; }
   function secAfficher(){ var o=el(); window.__secLocked=true;
     var mob=isMobile();
@@ -22289,7 +22287,7 @@ ${lignes}
       });
       /* 2) Écran de connexion (#sec-lock) : « YADA<small>Précompta</small> » → lockup. */
       document.querySelectorAll('.sec-logo').forEach(function(c){ if(c.querySelector('.yada-lock'))return;
-        c.innerHTML=window.yadaLockHTML('dark', 42, true); c.style.display='inline-flex'; });
+        c.innerHTML=window.yadaLockHTML('dark', 72, true); c.style.display='inline-flex'; });
       /* 3) Barre mobile : titre compact (icône + YADA, sans baseline). */
       document.querySelectorAll('.m-title').forEach(function(c){ if(c.querySelector('.yada-lock'))return;
         c.innerHTML=window.yadaLockHTML('dark', 26, false); c.style.display='inline-flex'; c.style.alignItems='center'; });
@@ -23308,7 +23306,7 @@ ${lignes}
     if(!g || reduce){ return window.admShowToggle(false); }
     g.classList.remove('adm-hub-in'); g.classList.add('adm-hub-out');
     var done=false, fin=function(){ if(done) return; done=true; window.admShowToggle(false); };
-    setTimeout(fin, 1250); /* delai max .48s + durée .72s */
+    setTimeout(fin, 920); /* délai max .27s + durée .6s */
   };
 
   if(typeof window.ecranSelectionDossier==='function'){ var _es=window.ecranSelectionDossier;
@@ -23360,17 +23358,18 @@ ${lignes}
   try{ var st=document.createElement('style'); st.id='adm-entry-mod'; st.textContent=
     '.adm-hub-wrap{max-width:640px}'
     +'.adm-hub-grid{display:flex;flex-direction:column;gap:12px;margin-top:18px}'
-    +'.adm-hub-tile{display:flex;align-items:center;gap:14px;text-align:left;padding:16px 18px;border:1px solid rgba(30,144,255,.32);border-radius:14px;background:rgba(30,144,255,.07);cursor:pointer;color:inherit;transition:background .12s,border-color .12s}'
-    +'.adm-hub-tile:hover{background:rgba(30,144,255,.18);border-color:#1e90ff}'
+    +'.adm-hub-tile{display:flex;align-items:center;gap:14px;text-align:left;padding:16px 18px;border:1px solid rgba(30,144,255,.32);border-radius:14px;background:rgba(30,144,255,.07);cursor:pointer;color:inherit;transition:background .24s ease,border-color .24s ease,transform .24s cubic-bezier(.16,1,.3,1);transform:translateZ(0);backface-visibility:hidden}'
+    +'.adm-hub-tile:hover{background:rgba(30,144,255,.18);border-color:#1e90ff;transform:translateY(-1px) translateZ(0)}'
+    +'.adm-hub-tile:active{transform:scale(.99) translateZ(0)}'
     +'.adm-hub-ic{width:46px;height:46px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font:800 22px system-ui,sans-serif;border-radius:12px;background:linear-gradient(135deg,#2f6fe8,#1cc39b);color:#eaf2ff}'
     +'.adm-hub-tx{flex:1;min-width:0}.adm-hub-tx b{display:block;font-size:15.5px}.adm-hub-tx small{font-size:12px;opacity:.72}'
     +'.adm-hub-go{font-size:12.5px;opacity:.8;flex:0 0 auto}'
-    +'@keyframes admHubIn{0%{opacity:0;filter:blur(14px);transform:translateY(-14px) scale(.98)}100%{opacity:1;filter:blur(0);transform:none}}'
-    +'.adm-hub-in>*{animation:admHubIn .72s cubic-bezier(.2,.7,.2,1) both}'
-    +'.adm-hub-in>*:nth-child(1){animation-delay:0s}.adm-hub-in>*:nth-child(2){animation-delay:.16s}.adm-hub-in>*:nth-child(3){animation-delay:.32s}.adm-hub-in>*:nth-child(4){animation-delay:.48s}'
-    +'@keyframes admHubOut{0%{opacity:1;filter:blur(0);transform:none}100%{opacity:0;filter:blur(14px);transform:translateY(-14px) scale(.98)}}'
-    +'.adm-hub-out>*{animation:admHubOut .72s cubic-bezier(.4,0,.8,.4) both}'
-    +'.adm-hub-out>*:nth-child(4){animation-delay:0s}.adm-hub-out>*:nth-child(3){animation-delay:.16s}.adm-hub-out>*:nth-child(2){animation-delay:.32s}.adm-hub-out>*:nth-child(1){animation-delay:.48s}'
+    +'@keyframes admHubIn{0%{opacity:0;filter:blur(12px);transform:translate3d(0,-16px,0) scale(.985)}60%{filter:blur(2px)}100%{opacity:1;filter:blur(0);transform:translate3d(0,0,0) scale(1)}}'
+    +'.adm-hub-in>*{animation:admHubIn .78s cubic-bezier(.16,1,.3,1) both;will-change:transform,filter,opacity;backface-visibility:hidden}'
+    +'.adm-hub-in>*:nth-child(1){animation-delay:0s}.adm-hub-in>*:nth-child(2){animation-delay:.11s}.adm-hub-in>*:nth-child(3){animation-delay:.22s}.adm-hub-in>*:nth-child(4){animation-delay:.33s}'
+    +'@keyframes admHubOut{0%{opacity:1;filter:blur(0);transform:translate3d(0,0,0) scale(1)}100%{opacity:0;filter:blur(12px);transform:translate3d(0,-16px,0) scale(.985)}}'
+    +'.adm-hub-out>*{animation:admHubOut .6s cubic-bezier(.7,0,.84,0) both;will-change:transform,filter,opacity;backface-visibility:hidden}'
+    +'.adm-hub-out>*:nth-child(4){animation-delay:0s}.adm-hub-out>*:nth-child(3){animation-delay:.09s}.adm-hub-out>*:nth-child(2){animation-delay:.18s}.adm-hub-out>*:nth-child(1){animation-delay:.27s}'
     +'.adm-enter-row{margin-top:10px;display:flex;justify-content:flex-start}'
     /* Module Admin en PLEINE LARGEUR (sans barre latérale). */
     +'.adm-solo{display:flex;flex-direction:column;height:100dvh;max-height:100dvh;width:100%}'
