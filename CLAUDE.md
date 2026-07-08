@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Animations Admin plus fluides + écran de connexion : textes sous le logo retirés + logo YADA agrandi — v431
+## 🟢 Dernière mise à jour — Cache vidé (service worker `yada-v31 → yada-v32`) pour purger les anciens designs — v432
+**Quoi :** **aucun changement fonctionnel** — **invalidation du cache** pour supprimer tout **ancien design en cache** (appareils / PWA qui gardaient une version antérieure et affichaient d'anciens écrans). Bump du cache du service worker (`yada-v31 → yada-v32`) → au prochain chargement, l'`activate` du SW **purge tous les caches ≠ CACHE** et le service worker « réseau d'abord » sert **la dernière version** ; l'auto-mise à jour (addon103) détecte `version.json` (432) et recharge. Badge → **v432**.
+
+**Comment :** `sw.js` `CACHE 'yada-v31' → 'yada-v32'` (l'`activate` supprime les caches ≠ CACHE) ; badge `#yada-ver` → v432 ; `version.json` → 432. Aucune logique/écriture/UI modifiée.
+
+**Validé :** `node --check` (203 scripts, 0 erreur ; `sw.js` OK) + brace CSS (2010/2010) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v432**.
+
+---
+
+## 🟢 MAJ précédente — Animations Admin plus fluides + écran de connexion : textes sous le logo retirés + logo YADA agrandi — v431
 **Quoi :** deux finitions.
 1. **Animations de l'Espace Admin plus fluides** — la liste de modules (entrée blur→net et sortie inverse) utilise des **courbes d'accélération plus douces** (entrée `cubic-bezier(.16,1,.3,1)`, sortie `cubic-bezier(.7,0,.84,0)`), un **enchaînement resserré** (stagger .11/.22/.33 s en entrée, .09/.18/.27 s en sortie), des **hints GPU** (`will-change`, `translate3d`, `backface-visibility`) pour éviter les à-coups, et un léger **relèvement au survol** des tuiles. Durées ajustées (entrée .78s, sortie .6s).
 2. **Écran de connexion épuré + logo agrandi** — les **textes sous le logo** (« La pré-comptabilité, simplifiée. » + les 3 puces Facturation / Écritures / Espace client) sont **supprimés** ; le **logo YADA est agrandi** (lockup `yadaLockHTML` px 42 → 72 : icône 72 px, « YADA » ~43 px, baseline PAIE · COMPTA · DSN).
