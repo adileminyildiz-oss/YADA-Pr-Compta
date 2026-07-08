@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v424';
+    b.textContent='YADA · v425';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -22698,13 +22698,12 @@ ${lignes}
         var navItem=function(id,lbl){ return '<button class="adm-side-btn" onclick="admGoto(\''+id+'\')">'+lbl+'</button>'; };
         return '<div class="adm-shell">'
           +'<aside class="adm-side">'
+            +'<button class="adm-side-btn adm-side-back" onclick="admShowToggle(false)">← Retour aux dossiers</button>'
             +'<div class="adm-side-title">🛡 Espace Admin</div>'
             +navItem('adm-sec-soc','Société exploitante')
             +navItem('adm-sec-users','Utilisateurs du cabinet')
             +navItem('adm-sec-add','Enregistrer un utilisateur')
             +navItem('adm-sec-doss','Dossiers &amp; attribution')
-            +'<div class="adm-side-spacer"></div>'
-            +'<button class="adm-side-btn adm-side-back" onclick="admShowToggle(false)">← Retour aux dossiers</button>'
           +'</aside>'
           +'<div class="adm-content" id="adm-content">'
             +'<div class="login-title">Espace Admin</div>'
@@ -22807,19 +22806,27 @@ ${lignes}
   window.admDossiersPanel=function(){ if(window.sessionRole!=='admin') return ''; ens();
     if(normalize() && typeof save==='function') save();
     var ds=doss(); var act=staff().filter(function(s){return s.actif!==false;});
-    var rows=ds.map(function(d){
-      var chks=act.length? act.map(function(s){ var on=Array.isArray(s.dossiers)&&s.dossiers.indexOf(d.id)>=0;
-        return '<label class="adm-uchk"><input type="checkbox" '+(on?'checked':'')+' onchange="admDossierToggleUser(\''+esc(d.id)+'\',\''+esc(s.email)+'\',this.checked)"> '+esc([s.prenom,s.nom].filter(Boolean).join(' ')||s.email)+'</label>'; }).join('')
+    var av=function(nm){ return esc(((nm||'?')[0]||'?').toUpperCase()); };
+    var cards=ds.map(function(d){
+      var chips=act.length? act.map(function(s){ var on=Array.isArray(s.dossiers)&&s.dossiers.indexOf(d.id)>=0; var nm=[s.prenom,s.nom].filter(Boolean).join(' ')||s.email;
+        return '<button type="button" class="adm-uchip'+(on?' on':'')+'" onclick="admDossierToggleUser(\''+esc(d.id)+'\',\''+esc(s.email)+'\','+(!on)+')" title="'+esc(s.email)+'"><span class="adm-uchip-dot"></span>'+esc(nm)+'</button>'; }).join('')
         : '<span class="adm-empty">Aucun utilisateur — créez d\'abord un salarié.</span>';
       var resp=(d.responsables||[]).filter(Boolean);
-      var trace=resp.length? resp.map(function(e){ return '<span class="adm-trace">'+esc(e)+'</span>'; }).join(' ') : '<span class="adm-empty">non tracé</span>';
-      return '<tr><td><b>'+esc(d.nom||d.id)+'</b>'+(d.forme?(' <span class="mini">'+esc(d.forme)+'</span>'):'')+'</td>'
-        +'<td><div class="adm-uchks">'+chks+'</div></td>'
-        +'<td>'+trace+'</td></tr>';
-    }).join('')||'<tr><td colspan="3" class="adm-empty">Aucun dossier au portefeuille — créez ou importez des dossiers.</td></tr>';
+      var trace=resp.length? resp.map(function(e){ return '<span class="adm-trace">'+esc(e)+'</span>'; }).join('') : '<span class="adm-empty">non tracé</span>';
+      var n=resp.length;
+      return '<div class="adm-doss-card">'
+        +'<div class="adm-doss-head"><span class="adm-doss-av">'+av(d.nom||d.id)+'</span>'
+          +'<div class="adm-doss-id"><b>'+esc(d.nom||d.id)+'</b>'+(d.forme?('<span class="adm-doss-forme">'+esc(d.forme)+'</span>'):'')+'</div>'
+          +'<span class="adm-doss-badge'+(n?' has':'')+'">'+n+' responsable'+(n>1?'s':'')+'</span></div>'
+        +'<div class="adm-doss-body">'
+          +'<div class="adm-doss-lbl">Salariés responsables <span class="mini">(cliquer pour ajouter / retirer)</span></div>'
+          +'<div class="adm-uchips">'+chips+'</div>'
+          +'<div class="adm-doss-lbl" style="margin-top:11px">Tracé par</div><div class="adm-doss-traces">'+trace+'</div>'
+        +'</div></div>';
+    }).join('')||'<div class="adm-empty" style="padding:16px 4px">Aucun dossier au portefeuille — créez ou importez des dossiers.</div>';
     return '<div class="card adm-doss-panel" id="adm-sec-doss"><h2>Dossiers &amp; attribution — utilisateurs par dossier</h2>'
-      +'<div class="sub">Cochez le ou les <b>salariés responsables</b> de chaque dossier (plusieurs possibles). Chaque dossier est <b>tracé par les adresses e-mail</b> cochées. <b>Un seul travaille à la fois</b> : le second peut entrer pour <b>vérifier</b> le travail — un <b>voyant rouge</b> indique qu\'il est occupé, <b>vert</b> qu\'il est libre. L\'Admin garde l\'accès à tous les dossiers.</div>'
-      +'<table class="adm-doss-table"><thead><tr><th>Dossier</th><th>Salariés responsables</th><th>Tracé par</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+      +'<div class="sub">Cliquez le ou les <b>salariés responsables</b> de chaque dossier (plusieurs possibles). Chaque dossier est <b>tracé par les adresses e-mail</b> sélectionnées. <b>Un seul travaille à la fois</b> : le second peut entrer pour <b>vérifier</b> le travail — un <b>voyant rouge</b> indique qu\'il est occupé, <b>vert</b> qu\'il est libre. L\'Admin garde l\'accès à tous les dossiers.</div>'
+      +'<div class="adm-doss-list">'+cards+'</div></div>';
   };
   /* Révéler / masquer un mot de passe dans la liste des utilisateurs. */
   window.admPwToggle=function(btn){ try{ var code=btn.previousElementSibling; if(!code) return;
@@ -22855,13 +22862,25 @@ ${lignes}
 
   /* Styles */
   try{ var st=document.createElement('style'); st.id='adm-doss-mod'; st.textContent=
-    '.adm-doss-table{width:100%;border-collapse:collapse;margin-top:10px}'
-    +'.adm-doss-table th,.adm-doss-table td{text-align:left;padding:9px 10px;border-bottom:1px solid rgba(120,180,255,.16);font-size:13px;vertical-align:middle}'
-    +'.adm-doss-table th{font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;opacity:.7}'
-    +'.adm-doss-table .mini{font-size:11px;opacity:.6}'
-    +'.adm-uchks{display:flex;flex-wrap:wrap;gap:6px}'
-    +'.adm-uchk{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;background:rgba(120,180,255,.06);border:1px solid rgba(120,180,255,.18);border-radius:8px;padding:5px 9px;cursor:pointer}'
-    +'.adm-trace{display:inline-flex;align-items:center;gap:5px;background:rgba(36,209,122,.12);border:1px solid rgba(36,209,122,.4);color:#7de3a8;border-radius:8px;padding:3px 9px;font-size:12px;margin:2px}'
+    '.adm-doss-list{display:flex;flex-direction:column;gap:12px;margin-top:12px}'
+    +'.adm-doss-card{border:1px solid rgba(120,180,255,.2);border-radius:14px;background:linear-gradient(180deg,rgba(120,180,255,.06),rgba(120,180,255,.02));overflow:hidden;transition:border-color .12s,box-shadow .12s}'
+    +'.adm-doss-card:hover{border-color:rgba(30,144,255,.4);box-shadow:0 6px 20px rgba(0,0,0,.22)}'
+    +'.adm-doss-head{display:flex;align-items:center;gap:12px;padding:12px 14px;background:linear-gradient(135deg,rgba(47,111,232,.16),rgba(28,195,155,.08));border-bottom:1px solid rgba(120,180,255,.16)}'
+    +'.adm-doss-av{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font:800 16px system-ui,sans-serif;color:#eaf2ff;background:linear-gradient(135deg,#2f6fe8,#1cc39b);flex:0 0 auto}'
+    +'.adm-doss-id{flex:1;min-width:0}.adm-doss-id b{display:block;font-size:14.5px;line-height:1.2}'
+    +'.adm-doss-forme{font-size:10.5px;opacity:.6;text-transform:uppercase;letter-spacing:.6px}'
+    +'.adm-doss-badge{font-size:11.5px;padding:4px 11px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);opacity:.7;white-space:nowrap;flex:0 0 auto}'
+    +'.adm-doss-badge.has{background:rgba(36,209,122,.14);border-color:rgba(36,209,122,.42);color:#7de3a8;opacity:1}'
+    +'.adm-doss-body{padding:12px 14px}'
+    +'.adm-doss-lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;opacity:.6;margin-bottom:8px}.adm-doss-lbl .mini{text-transform:none;letter-spacing:0}'
+    +'.adm-uchips{display:flex;flex-wrap:wrap;gap:8px}'
+    +'.adm-uchip{display:inline-flex;align-items:center;gap:8px;background:rgba(120,180,255,.06);border:1px solid rgba(120,180,255,.22);color:#dbe8ff;border-radius:20px;padding:7px 13px 7px 11px;font-size:12.5px;cursor:pointer;transition:all .12s}'
+    +'.adm-uchip:hover{border-color:rgba(30,144,255,.55);background:rgba(30,144,255,.12)}'
+    +'.adm-uchip-dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.28);flex:0 0 auto}'
+    +'.adm-uchip.on{background:linear-gradient(120deg,#2f9bff,#0a64d6);border-color:#1e90ff;color:#fff;font-weight:600}'
+    +'.adm-uchip.on .adm-uchip-dot{background:#fff;border-color:#fff;box-shadow:0 0 6px rgba(255,255,255,.75)}'
+    +'.adm-doss-traces{display:flex;flex-wrap:wrap;gap:6px}'
+    +'.adm-trace{display:inline-flex;align-items:center;gap:5px;background:rgba(36,209,122,.12);border:1px solid rgba(36,209,122,.4);color:#7de3a8;border-radius:8px;padding:3px 10px;font-size:12px}'
     +'.adm-edit{margin-top:9px;border-top:1px solid rgba(120,180,255,.18);padding-top:10px}'
     +'.adm-cred{display:block;font-size:12px;opacity:.85;margin-top:2px}'
     +'.adm-cred code{background:rgba(120,180,255,.1);border:1px solid rgba(120,180,255,.2);border-radius:6px;padding:1px 6px;font-size:12px}'
@@ -23029,8 +23048,9 @@ ${lignes}
     +'.adm-side-btn:hover{background:rgba(30,144,255,.16);border-color:rgba(30,144,255,.55)}'
     +'.adm-side-btn.on{background:linear-gradient(120deg,#2f9bff,#0a64d6);border-color:#1e90ff;color:#fff;font-weight:600}'
     +'.adm-side-spacer{flex:1}'
-    +'.adm-side-back{margin-top:8px;background:transparent;border-color:rgba(255,255,255,.14);color:#aab8d0}'
-    +'.adm-content{height:100dvh;overflow-y:auto;padding:26px 30px 70px;scroll-behavior:smooth}'
+    +'.adm-side-back{margin:0 0 6px;background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.16);color:#c3d0e6;font-weight:600}'
+    +'.adm-side-back:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.3)}'
+    +'.adm-content{height:100dvh;overflow-y:auto;padding:26px 30px 70px}'
     +'.adm-content .login-title{margin-bottom:2px}.adm-content .login-sub{margin-bottom:16px}'
     +'.adm-flash{animation:admFlash 1.2s ease-out}'
     +'@keyframes admFlash{0%{box-shadow:0 0 0 2px rgba(30,144,255,.8),0 0 22px rgba(30,144,255,.6)}100%{box-shadow:none}}'
@@ -23066,6 +23086,27 @@ ${lignes}
     +'@media(max-width:820px){#yada-logout{top:8px;right:10px;padding:7px 11px;font-size:12px}}';
     document.head.appendChild(st); }catch(e){}
   upd();
+})();
+</script>
+
+<script id="yada-addon207">
+/* ============================================================
+   Espace Admin — la page reste IMMOBILE après une action (ne remonte pas en haut).
+   À chaque `render()` (déclenché par une action : attribution, enregistrement, édition…),
+   on mémorise le défilement du conteneur Admin (`#adm-content`) et on le restaure après
+   la reconstruction du DOM. 100% additif ; wrap le plus externe (assigné en dernier).
+   ============================================================ */
+(function(){
+  if(window.__admScrollKeep) return; window.__admScrollKeep=true;
+  if(typeof window.render!=='function') return;
+  var _r=window.render;
+  window.render=function(){
+    var ac=null; try{ var c=document.getElementById('adm-content'); if(c) ac=c.scrollTop; }catch(e){}
+    var x=_r.apply(this,arguments);
+    if(ac!=null){ var restore=function(){ try{ var c2=document.getElementById('adm-content'); if(c2 && Math.abs(c2.scrollTop-ac)>1) c2.scrollTop=ac; }catch(e){} };
+      restore(); setTimeout(restore,0); setTimeout(restore,40); }
+    return x;
+  };
 })();
 </script>
 </body>
