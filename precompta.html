@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v422';
+    b.textContent='YADA · v423';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -22608,10 +22608,10 @@ ${lignes}
         +'<button class="btn btn-ghost btn-sm adm-danger" onclick="admStaffDel(\''+s.id+'\')">Supprimer</button>'
         +'</div></div>'+edit+'</div>';
     }).join('')||'<div class="adm-empty">Aucun collaborateur enregistré pour le moment.</div>';
-    var collab='<div class="card adm-collab"><h2><span class="adm-badge">🛡 ADMIN</span> Utilisateurs du cabinet (salariés)</h2>'
+    var collab='<div class="card adm-collab" id="adm-sec-users"><h2><span class="adm-badge">🛡 ADMIN</span> Utilisateurs du cabinet (salariés)</h2>'
       +'<div class="sub">Chaque salarié a un <b>identifiant</b> (adresse e-mail + mot de passe) pour accéder à son espace via l\'<b>Espace Cabinet</b>. Il ne traite que ses <b>dossiers attribués</b> (voir le tableau des dossiers plus bas). Bouton <b>✎ Modifier</b> pour changer ses paramètres. L\'Admin conserve un <b>accès global</b>.</div>'
       +'<div class="adm-staff-list">'+rows+'</div></div>';
-    var add='<div class="card adm-add"><h2>➕ Enregistrer un utilisateur (salarié)</h2>'
+    var add='<div class="card adm-add" id="adm-sec-add"><h2>➕ Enregistrer un utilisateur (salarié)</h2>'
       +'<div class="sub">Créez un accès (identifiant + mot de passe) pour un salarié. Le mot de passe est stocké <b>chiffré</b> (empreinte SHA-256 salée), jamais en clair. Les dossiers s\'attribuent ensuite dans le tableau ci-dessous.</div>'
       +'<div class="adm-grid">'
       +'<div class="fld"><label>Prénom</label><input id="adm-new-prenom"></div>'
@@ -22620,7 +22620,7 @@ ${lignes}
       +'<div class="fld"><label>Mot de passe</label><input id="adm-new-pwd" type="password"></div>'
       +'</div>'
       +'<div style="margin-top:10px"><button class="btn btn-pri btn-sm" onclick="admStaffAdd()">Créer l\'utilisateur</button></div></div>';
-    var socCard='<div class="card adm-soc"><h2>🏢 Société exploitante (le cabinet)</h2>'
+    var socCard='<div class="card adm-soc" id="adm-sec-soc"><h2>🏢 Société exploitante (le cabinet)</h2>'
       +'<div class="sub">La société qui occupe le logiciel et ses réglages. L\'Admin supervise cette société et dispose d\'un accès global au portefeuille.</div>'
       +'<div class="adm-grid">'
       +'<div class="fld"><label>Dénomination</label><input id="adm-soc-nom" value="'+esc(soc.nom||cab.cabinetNom||'')+'"></div>'
@@ -22660,11 +22660,23 @@ ${lignes}
   if(typeof window.ecranSelectionDossier==='function'){ var _es=window.ecranSelectionDossier;
     window.ecranSelectionDossier=function(){
       if(window.sessionRole==='admin' && window.admShow){
-        return '<div class="login-wrap adm-wrap">'
-          +'<div class="login-title">🛡 Espace Admin</div>'
-          +'<div class="login-sub">Société exploitante, collaborateurs &amp; dossiers attitrés — accès global au portefeuille.</div>'
-          +'<div style="margin:6px 0 14px"><button class="btn btn-ghost" onclick="admShowToggle(false)">← Retour aux dossiers</button></div>'
-          +(window.admCollabPanel?window.admCollabPanel():'')+'</div>';
+        var navItem=function(id,lbl){ return '<button class="adm-side-btn" onclick="admGoto(\''+id+'\')">'+lbl+'</button>'; };
+        return '<div class="adm-shell">'
+          +'<aside class="adm-side">'
+            +'<div class="adm-side-title">🛡 Espace Admin</div>'
+            +navItem('adm-sec-soc','Société exploitante')
+            +navItem('adm-sec-users','Utilisateurs du cabinet')
+            +navItem('adm-sec-add','Enregistrer un utilisateur')
+            +navItem('adm-sec-doss','Dossiers &amp; attribution')
+            +'<div class="adm-side-spacer"></div>'
+            +'<button class="adm-side-btn adm-side-back" onclick="admShowToggle(false)">← Retour aux dossiers</button>'
+          +'</aside>'
+          +'<div class="adm-content" id="adm-content">'
+            +'<div class="login-title">Espace Admin</div>'
+            +'<div class="login-sub">Société exploitante, collaborateurs &amp; dossiers — accès global au portefeuille. Utilisez la barre latérale pour accéder à chaque section ; la page défile.</div>'
+            +(window.admCollabPanel?window.admCollabPanel():'')
+          +'</div>'
+        +'</div>';
       }
       var h=_es.apply(this,arguments);
       try{ if(window.sessionRole==='admin' && h.indexOf('login-wrap')>=0 && h.indexOf('adm-topbar')<0){
@@ -22767,7 +22779,7 @@ ${lignes}
         +'<td><div class="adm-uchks">'+chks+'</div></td>'
         +'<td>'+trace+'</td></tr>';
     }).join('')||'<tr><td colspan="3" class="adm-empty">Aucun dossier au portefeuille — créez ou importez des dossiers.</td></tr>';
-    return '<div class="card adm-doss-panel"><h2>Dossiers &amp; attribution — utilisateurs par dossier</h2>'
+    return '<div class="card adm-doss-panel" id="adm-sec-doss"><h2>Dossiers &amp; attribution — utilisateurs par dossier</h2>'
       +'<div class="sub">Cochez le ou les <b>salariés responsables</b> de chaque dossier (plusieurs possibles). Chaque dossier est <b>tracé par les adresses e-mail</b> cochées. <b>Un seul travaille à la fois</b> : le second peut entrer pour <b>vérifier</b> le travail — un <b>voyant rouge</b> indique qu\'il est occupé, <b>vert</b> qu\'il est libre. L\'Admin garde l\'accès à tous les dossiers.</div>'
       +'<table class="adm-doss-table"><thead><tr><th>Dossier</th><th>Salariés responsables</th><th>Tracé par</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
   };
@@ -22939,6 +22951,53 @@ ${lignes}
   /* Migration : initialiser dossiersSeen (les salariés existants ne reçoivent pas d'alerte
      tant qu'aucun changement n'a lieu ; les nouveaux ont dossiersSeen=[] → alerte au 1er login). */
   setTimeout(function(){ try{ staff().forEach(function(s){ if(!Array.isArray(s.dossiersSeen)) s.dossiersSeen=(s.dossiers||[]).slice(); }); }catch(e){} }, 1500);
+})();
+</script>
+
+<script id="yada-addon205">
+/* ============================================================
+   ESPACE ADMIN — Barre latérale + page défilable.
+   La vue Admin s'affiche en « barre latérale (sections) + contenu défilant » :
+   chaque bouton de la barre fait défiler jusqu'à sa section (Société exploitante,
+   Utilisateurs, Enregistrer un utilisateur, Dossiers & attribution). Le contenu est
+   un conteneur défilant propre (`.adm-content`), donc la page défile toujours.
+   100% additif.
+   ============================================================ */
+(function(){
+  if(window.__admShell) return; window.__admShell=true;
+  /* Défiler le contenu Admin jusqu'à une section + surbrillance brève. */
+  window.admGoto=function(id){ try{ var el=document.getElementById(id); var c=document.getElementById('adm-content'); if(!el||!c) return;
+    var top=el.offsetTop-14; if(c.scrollTo) c.scrollTo({top:top,behavior:'smooth'}); else c.scrollTop=top;
+    el.classList.add('adm-flash'); setTimeout(function(){ try{ el.classList.remove('adm-flash'); }catch(e){} }, 1200);
+  }catch(e){} };
+  /* Surbrillance du bouton de la barre correspondant à la section visible. */
+  function highlight(){ try{ var c=document.getElementById('adm-content'); if(!c) return;
+    var secs=[['adm-sec-soc',0],['adm-sec-users',0],['adm-sec-add',0],['adm-sec-doss',0]];
+    var cur=null, top=c.scrollTop+80;
+    secs.forEach(function(p){ var el=document.getElementById(p[0]); if(el && el.offsetTop<=top) cur=p[0]; });
+    document.querySelectorAll('.adm-side-btn').forEach(function(b){ b.classList.remove('on'); });
+    if(cur){ var btn=document.querySelector('.adm-side-btn[onclick*="'+cur+'"]'); if(btn) btn.classList.add('on'); }
+  }catch(e){} }
+  document.addEventListener('scroll', function(e){ if(e.target && e.target.id==='adm-content') highlight(); }, true);
+  if(typeof window.render==='function'){ var _r=window.render; window.render=function(){ var x=_r.apply(this,arguments); setTimeout(highlight,30); return x; }; }
+
+  try{ var st=document.createElement('style'); st.id='adm-shell-mod'; st.textContent=
+    '.adm-shell{display:grid;grid-template-columns:236px 1fr;height:100dvh;max-height:100dvh;width:100%}'
+    +'.adm-side{background:linear-gradient(180deg,#0b1a2e,#08111d);border-right:1px solid rgba(120,180,255,.18);'
+    +'padding:20px 12px 14px;position:sticky;top:0;height:100dvh;overflow-y:auto;display:flex;flex-direction:column;gap:6px}'
+    +'.adm-side-title{font:800 15px system-ui,sans-serif;color:#cfe0ff;padding:2px 6px 10px;letter-spacing:.3px}'
+    +'.adm-side-btn{display:block;width:100%;text-align:left;background:rgba(120,180,255,.06);border:1px solid rgba(120,180,255,.16);'
+    +'color:#dbe8ff;border-radius:10px;padding:11px 12px;font-size:13px;cursor:pointer;transition:background .12s,border-color .12s}'
+    +'.adm-side-btn:hover{background:rgba(30,144,255,.16);border-color:rgba(30,144,255,.55)}'
+    +'.adm-side-btn.on{background:linear-gradient(120deg,#2f9bff,#0a64d6);border-color:#1e90ff;color:#fff;font-weight:600}'
+    +'.adm-side-spacer{flex:1}'
+    +'.adm-side-back{margin-top:8px;background:transparent;border-color:rgba(255,255,255,.14);color:#aab8d0}'
+    +'.adm-content{height:100dvh;overflow-y:auto;padding:26px 30px 70px;scroll-behavior:smooth}'
+    +'.adm-content .login-title{margin-bottom:2px}.adm-content .login-sub{margin-bottom:16px}'
+    +'.adm-flash{animation:admFlash 1.2s ease-out}'
+    +'@keyframes admFlash{0%{box-shadow:0 0 0 2px rgba(30,144,255,.8),0 0 22px rgba(30,144,255,.6)}100%{box-shadow:none}}'
+    +'@media(max-width:820px){.adm-shell{grid-template-columns:1fr;height:auto}.adm-side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;overflow:visible}.adm-side-spacer{display:none}.adm-side-btn{width:auto}.adm-content{height:auto;overflow:visible}}';
+    document.head.appendChild(st); }catch(e){}
 })();
 </script>
 </body>

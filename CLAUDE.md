@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Admin : utilisateurs (identifiants + mot de passe affichés) + multi-attribution + alerte de connexion + voyant d'occupation rouge/vert — v422
+## 🟢 Dernière mise à jour — Espace Admin : barre latérale (sections) + page défilable — v423
+**Quoi :** l'Espace Admin s'affiche désormais en **barre latérale + contenu défilant**. La barre latérale (à gauche, collante) liste **toutes les sections** — **Société exploitante**, **Utilisateurs du cabinet**, **Enregistrer un utilisateur**, **Dossiers & attribution** — + un bouton **« ← Retour aux dossiers »**. Cliquer une section **fait défiler la page** jusqu'à elle (surbrillance brève) ; le contenu est un **conteneur défilant propre** → la page défile toujours (fini le contenu coupé). Le bouton de section actif est mis en surbrillance selon la position de défilement. Responsive : sur mobile, la barre passe au-dessus en ligne et tout défile normalement.
+
+**Comment :**
+- **`yada-addon202` (édition)** : la vue `admShow` de `ecranSelectionDossier` rend `<div class="adm-shell"><aside class="adm-side">…nav `admGoto`…</aside><div class="adm-content" id="adm-content">…admCollabPanel()…</div></div>` ; **ids d'ancrage** ajoutés aux 4 cartes (`adm-sec-soc/users/add/doss`).
+- **`yada-addon205` (100% additif)** : `admGoto(id)` (défilement `#adm-content` vers la section + `.adm-flash`), `highlight()` (bouton actif selon `scrollTop`, greffé sur `render` + écouteur `scroll` capture), `<style id="adm-shell-mod">` (grille `236px 1fr`, `.adm-side` collante `100dvh`, `.adm-content{height:100dvh;overflow-y:auto}`, media ≤820px).
+
+**Validé :** `node --check` (198 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (barre latérale = [Société exploitante, Utilisateurs du cabinet, Enregistrer un utilisateur, Dossiers & attribution, Retour] ; `#adm-content` défilable `scrollHeight 1410 > 820` ; `admGoto('adm-sec-doss')` → `scrollTop 590` ; capture @2x conforme ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v423**.
+
+---
+
+## 🟢 MAJ précédente — Admin : utilisateurs (identifiants + mot de passe affichés) + multi-attribution + alerte de connexion + voyant d'occupation rouge/vert — v422
 **Quoi :** l'Espace Admin gère finement les dossiers et les utilisateurs :
 1. **Liste des utilisateurs avec leurs droits** — chaque salarié affiche son **identifiant (e-mail)** ET son **mot de passe de connexion** (bouton **Afficher/Masquer**), le **nombre de dossiers** et la **liste de ses dossiers** (tags). *(Le mot de passe est conservé en clair **uniquement dans les données locales de l'appareil** `db.cabinet.staff.pwdClair`, jamais dans la source publique ; l'empreinte SHA-256 salée reste utilisée pour la connexion.)*
 2. **Multi-attribution** — un dossier peut être attribué à **plusieurs utilisateurs** (cases à cocher par dossier). L'Admin **ajoute/retire** un dossier d'un salarié ; « Tracé par » liste toutes les adresses responsables.
