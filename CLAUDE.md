@@ -36,7 +36,21 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Nom du collaborateur connecté affiché + signature des éditions avec ce nom — v427
+## 🟢 Dernière mise à jour — Bandeau d'entrée au nom du collaborateur connecté + Espace Admin en liste de modules (blur→net) + Déconnexion près d'Importer — v428
+**Quoi :** trois ajustements du parcours d'entrée.
+1. **Bandeau d'accueil au nom du collaborateur CONNECTÉ** — le bandeau haut-droite de l'écran « Espace dossiers » (`.login-cab`) affiche désormais le **nom lié à l'identifiant de connexion** (au lieu du nom fixe du cabinet) : un **salarié** → son nom complet + « Collaborateur » ; l'**Admin** → « Admin (superviseur) » ; sinon le collaborateur/rôle du cabinet.
+2. **Bouton « 🛡 Espace Admin » déplacé SOUS « Liste Dossier »** (rangée dédiée, au lieu de la barre supérieure). Un clic ouvre d'abord une **LISTE DE MODULES** (tuiles Collaborateurs & accès · Paramétrage · Documentation · Pilotages) qui **apparaissent du flou en net** (blur→net), façon liste des modules d'un dossier ; choisir une tuile entre dans le module (barre latérale Admin + contenu, inchangés).
+3. **Bouton « Déconnexion » ajouté à DROITE de « Importer des données (JSON) »** sur l'écran d'accueil (le bouton flottant `#yada-logout` est masqué sur cet écran, via `body:has(#adm-logout-btn)`).
+
+**Comment :**
+- **`loginHead()` (addon189, édition)** : calcule le nom/rôle connecté (`window.staffId` → salarié dans `db.cabinet.staff` ; `window.sessionRole==='admin'` → Admin (superviseur) ; sinon `c.collaborateur · c.role`).
+- **`yada-addon210` (100% additif, override le plus externe de `ecranSelectionDossier`)** : si `sessionRole==='admin' && admShow && !admModule` → `admHubHTML()` (tuiles `.adm-hub-tile` + `.adm-hub-in` = keyframe `admHubIn` blur(14px)→0) ; sinon post-traite l'accueil (retrait de l'ancien `.adm-topbar`, injection Déconnexion après Importer, injection `#adm-enter-row` avec le bouton Espace Admin sous la rangée). `admShowToggle(v)` remet `admModule=null` à l'ouverture (liste de modules à chaque entrée). `admDoLogout` = `secDeconnexion`/`secVerrouiller`. `<style id="adm-entry-mod">`.
+
+**Validé :** `node --check` (203 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (bandeau : cabinet « Adil-emin Yildiz · Collaborateur », salarié « Sarah Durand · Collaborateur », admin « Adil-emin Yildiz · Admin (superviseur) » ; accueil admin : bouton Espace Admin sous les actions (plus de topbar) + Déconnexion après Importer ; clic → hub 4 tuiles `.adm-hub-in` ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v428**.
+
+---
+
+## 🟢 MAJ précédente — Nom du collaborateur connecté affiché + signature des éditions avec ce nom — v427
 **Quoi :** deux ajouts liés aux accès des salariés.
 1. **Nom du collaborateur connecté** — une puce **« Connecté : <nom> »** s'affiche **sous le bouton Déconnexion** (haut-droite) et **change à chaque connexion** : pour un salarié, son **nom complet** ; sinon le compte (Compte cabinet / Admin (superviseur) / nom du Client). Chaque salarié a bien son propre espace (identifiant + mot de passe attribués dans l'Admin, dossiers filtrés).
 2. **Signature des éditions** — **toutes les éditions** (documents `.doc-page` : balance, grand-livre, journaux, bilan, compte de résultat…) reçoivent automatiquement une **signature « Établi par : \<nom du collaborateur\> — le \<date\> »**, à l'écran **et à l'impression**. Le nom est celui du collaborateur connecté.
