@@ -36,7 +36,24 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Cache vidé (service worker `yada-v31 → yada-v32`) pour purger les anciens designs — v432
+## 🟢 Dernière mise à jour — Espace Admin : nouveau module PAIE complet (infos de paie de tous les salariés · critères DSN · transmission DSN aux organismes · fiches de paie) — v433
+**Quoi :** ajout d'un **module « Paie »** dans l'Espace Admin (5ᵉ tuile de la liste de modules) pour la **responsable de paie** :
+1. **Salariés & paie** — remplir les **informations de paie de TOUS les salariés** : identité (NIR, date/lieu de naissance, sexe, nationalité, adresse), contrat (matricule, dates entrée/sortie, nature du contrat, code **PCS-ESE**, statut cadre/non-cadre, temps de travail, quotité, IDCC) et **rémunération par période** (brut, primes, heures, taux PAS). KPI brut / net imposable / net à payer / coût employeur par salarié.
+2. **DSN** — **tous les critères d'une DSN valide** contrôlés (société : SIREN/SIRET/APE/adresse ; point de dépôt Net-Entreprises ; par salarié : nom/prénom/NIR/naissance/entrée/contrat/PCS-ESE/rémunération). **Checklist ✓/✗** avec le détail des champs manquants ; **génération du fichier DSN** (représentatif de la norme **NEODeS**, blocs S10/S20/S21, téléchargeable `.dsn`) ; **transmission aux organismes** (dépôt → contrôle de conformité → transmise → accusé de réception (ARL) → traitée, + branche refusée) ; identifiants **organismes** (URSSAF, AGIRC-ARRCO, prévoyance).
+3. **Fiches de paie** — **génération de bulletins complets** (employeur, salarié, brut, cotisations salariales & patronales, net imposable, PAS, net à payer, coût employeur), à l'écran (modale) **et à l'impression / PDF** (`.doc-page`).
+
+**Comment :**
+- **`yada-addon208` (édition)** : tuile/dispatch `paie` (version simple, supplantée par la complète) ; `<style>` `.adm-paie-in`.
+- **`yada-addon210`** : 5ᵉ tuile `['paie','▥','Paie',…]` dans le hub + stagger d'animation étendu au 5ᵉ élément (timeout retour 1020 ms).
+- **`yada-addon211` (100% additif)** : override de `window.admModuleContent` pour `paie` → `admPaieModule()` (onglets Salariés & paie / Fiches de paie / DSN) ; données `db.cabinet.paie` (organismes, dépôt, envois DSN par période) + champs par salarié sur `db.cabinet.staff` (identité/contrat) et `s.paie[période]` (rémunération) ; `paieCalc` (cotisations ~22 % sal. / 42 % pat., net imposable, PAS, net à payer, coût) ; `dsnValide()` (checklist), `dsnText()` (fichier NEODeS représentatif), cycle `admDsnDeposer/Avancer/Refuser/Reset`, `bulletinHTML()` + `admPaieBulletin/Imprimer`. `<style id="adm-paie-full-mod">`.
+
+**Limites :** taux de cotisations **indicatifs** (modèle simplifié) ; fichier DSN **représentatif** de NEODeS (à fiabiliser via DSN-val avant transmission réelle) ; la transmission est un **workflow** interne (dépôt réel via Net-Entreprises / API DSN à brancher).
+
+**Validé :** `node --check` (204 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (module Paie : 3 onglets ; saisie des critères DSN d'un salarié ; **DSN valide ✓** après complétion société+dépôt ; dépôt → « Déposée » → « Contrôle de conformité » ; bulletin = Net à payer + coût employeur + nom ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v433**.
+
+---
+
+## 🟢 MAJ précédente — Cache vidé (service worker `yada-v31 → yada-v32`) pour purger les anciens designs — v432
 **Quoi :** **aucun changement fonctionnel** — **invalidation du cache** pour supprimer tout **ancien design en cache** (appareils / PWA qui gardaient une version antérieure et affichaient d'anciens écrans). Bump du cache du service worker (`yada-v31 → yada-v32`) → au prochain chargement, l'`activate` du SW **purge tous les caches ≠ CACHE** et le service worker « réseau d'abord » sert **la dernière version** ; l'auto-mise à jour (addon103) détecte `version.json` (432) et recharge. Badge → **v432**.
 
 **Comment :** `sw.js` `CACHE 'yada-v31' → 'yada-v32'` (l'`activate` supprime les caches ≠ CACHE) ; badge `#yada-ver` → v432 ; `version.json` → 432. Aucune logique/écriture/UI modifiée.
