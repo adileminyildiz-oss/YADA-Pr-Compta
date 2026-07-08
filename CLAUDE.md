@@ -36,7 +36,22 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Admin : toutes les données de la société exploitante + bouton Déconnexion universel — v424
+## 🟢 Dernière mise à jour — Admin : « Retour aux dossiers » en haut de la barre latérale + tableau Dossiers redessiné + page immobile après action — v425
+**Quoi :** trois améliorations de l'Espace Admin.
+1. **« ← Retour aux dossiers » en haut** de la barre latérale (avant le titre et les sections), au lieu du bas.
+2. **Tableau « Dossiers & attribution » redessiné (plus esthétique)** : chaque dossier est une **carte** (en-tête à dégradé bleu→turquoise avec **avatar** initiale + nom + forme + **badge « N responsable(s) »** vert), des **chips cliquables** par salarié (pastille + nom ; **bleu plein quand sélectionné**, contour sinon) pour ajouter/retirer, et des **pastilles vertes « Tracé par »**. Remplace la table + cases à cocher.
+3. **Page immobile après une action** : dans l'Espace Admin, toute action (attribution, enregistrement, édition, mot de passe…) **ne fait plus remonter la page en haut** — le défilement du conteneur `#adm-content` est mémorisé avant `render()` puis **restauré à l'identique** après (instantané).
+
+**Comment :**
+- **`yada-addon202` (éditions)** : ordre de la barre latérale (bouton retour en 1er) ; `admDossiersPanel` rend une **liste de cartes** `.adm-doss-card` (en-tête `.adm-doss-head`, chips `.adm-uchip` avec `.on`, traces `.adm-trace`) au lieu d'une table ; styles `.adm-doss-list/card/head/av/badge/uchip…` ; `.adm-side-back` restylé.
+- **`yada-addon205` (édition)** : retrait de `scroll-behavior:smooth` sur `.adm-content` (la restauration devient **instantanée** ; `admGoto` garde son `scrollTo({behavior:'smooth'})` explicite).
+- **`yada-addon207` (100% additif, wrap de `render` le plus externe)** : mémorise `#adm-content.scrollTop` avant rendu, le restaure après (`+ setTimeout 0/40`).
+
+**Validé :** `node --check` (200 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (barre latérale = [Retour, Titre, Société, Utilisateurs, Enregistrer, Dossiers] ; 3 cartes redessinées + chips bleus ; **défilement 1500 → action (toggle) → 1500 préservé** ; capture @2x conforme ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v425**.
+
+---
+
+## 🟢 MAJ précédente — Admin : toutes les données de la société exploitante + bouton Déconnexion universel — v424
 **Quoi :** deux ajouts.
 1. **Société exploitante — toutes les données** : la carte « Société exploitante (le cabinet) » de l'Espace Admin passe de 5 champs à une **fiche complète groupée** (23 champs) — **Identité** (Dénomination, Forme, Capital social, SIREN, SIRET, N° TVA intracom, Code APE/NAF, RCS, Date de création, Activité), **Adresse & contacts** (Adresse, CP, Ville, Pays, Téléphone, E-mail, Site web), **Dirigeant** (Nom + qualité, e-mail, téléphone), **Coordonnées bancaires** (Banque, IBAN, BIC). « Enregistrer la société » persiste **tout** dans `db.cabinet.societe`.
 2. **Bouton Déconnexion universel** : un bouton **« Déconnexion »** (flottant, haut-droite) est affiché **dans tous les espaces** (Cabinet, Client, Admin) dès qu'une session est ouverte ; masqué sur la page de connexion. Un clic lance la déconnexion (`secDeconnexion` → « Fin de session » avec enregistrement, sinon `secVerrouiller`).
