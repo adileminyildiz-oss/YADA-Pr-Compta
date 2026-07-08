@@ -36,7 +36,20 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Cache vidé pour afficher le design principal (2 gros boutons) partout — v420
+## 🟢 Dernière mise à jour — Espace Admin : interface DOSSIERS (attribution par adresse e-mail, tracé) + édition des utilisateurs — v421
+**Quoi :** l'Espace Admin gagne une **interface dédiée aux dossiers** et un **bouton pour modifier les paramètres des utilisateurs** :
+1. **Utilisateurs du cabinet (salariés)** — chaque salarié a un **identifiant** (e-mail + mot de passe, empreinte SHA-256 salée, jamais en clair). Bouton **« Modifier »** par utilisateur → édite prénom, nom, **e-mail** et mot de passe (changer l'e-mail exige un nouveau mot de passe → empreintes recalculées ; la trace des dossiers suit le nouvel e-mail). + Mot de passe / Désactiver / Supprimer.
+2. **Dossiers & attribution (tableau)** — chaque dossier est **attribué à UN SEUL salarié** via un menu déroulant d'adresses e-mail et **tracé par cette adresse** (colonne « Tracé par », pastille verte). **Exclusivité** : réassigner un dossier le **retire automatiquement** du salarié précédent (un dossier = une seule adresse e-mail responsable). Le salarié se connecte via l'Espace Cabinet et ne traite que ses dossiers attribués (filtrage `staffAllowedIds`/`staffFilterDossiers`) ; l'Admin garde l'accès global.
+
+**Comment :**
+- **`yada-addon202` (éditions)** : la carte collaborateurs affiche un bouton **Modifier** (au lieu des cases « Dossiers attitrés »), libellés « … tracé(s) » ; l'ajout d'utilisateur ne demande plus les dossiers (attribués ensuite dans le tableau) ; `admCollabPanel` appelle `admDossiersPanel()`.
+- **`yada-addon203` (100% additif)** : `admDossiersPanel()` (tableau dossier → sélecteur d'e-mail → trace), `admDossierAssign(dossierId,email)` (attribution **exclusive** + `dossier.responsableEmail`), `admStaffEdit`/`admStaffEditBox`/`admStaffSaveEdit` (édition des paramètres, recalcul d'empreintes si e-mail/mot de passe changent, report de la trace), `__admNormalizeAssignments` (1 responsable/dossier + trace des attributions héritées au démarrage). `<style id="adm-doss-mod">`.
+
+**Validé :** `node --check` (196 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (panneau Dossiers + tableau ; attribution `d-a`→Sarah puis réassignation →Marc **exclusive** (retirée de Sarah), trace `responsableEmail` mise à jour ; filtrage salarié conforme ; **édition d'e-mail** → empreintes recalculées, connexion au nouvel e-mail vérifiée, trace des dossiers reportée ; capture @2x conforme ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v421**.
+
+---
+
+## 🟢 MAJ précédente — Cache vidé pour afficher le design principal (2 gros boutons) partout — v420
 **Quoi :** aucun changement fonctionnel — **invalidation du cache** pour que le **design principal restauré en v419** (écran d'accueil « Choisissez votre espace » avec les **deux gros boutons Espace Cabinet / Espace Client**) s'affiche **immédiatement en ligne**, y compris sur les appareils/PWA qui gardaient une ancienne version en cache. Bump du cache du service worker (`yada-v30 → yada-v31`) → au prochain chargement, l'ancien cache est purgé et le service worker « réseau d'abord » sert la dernière version. Badge → **v420**.
 
 **Comment :** `sw.js` `CACHE 'yada-v30' → 'yada-v31'` (l'`activate` supprime les caches ≠ CACHE) ; badge `#yada-ver` → v420 ; `version.json` → 420 (l'auto-mise à jour addon103 détecte la nouvelle version et recharge). Aucune logique/écriture/UI modifiée.
