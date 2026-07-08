@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Restauration du DESIGN PRINCIPAL : écran d'accueil « Choisissez votre espace » d'abord, puis le formulaire — v419
+## 🟢 Dernière mise à jour — Cache vidé pour afficher le design principal (2 gros boutons) partout — v420
+**Quoi :** aucun changement fonctionnel — **invalidation du cache** pour que le **design principal restauré en v419** (écran d'accueil « Choisissez votre espace » avec les **deux gros boutons Espace Cabinet / Espace Client**) s'affiche **immédiatement en ligne**, y compris sur les appareils/PWA qui gardaient une ancienne version en cache. Bump du cache du service worker (`yada-v30 → yada-v31`) → au prochain chargement, l'ancien cache est purgé et le service worker « réseau d'abord » sert la dernière version. Badge → **v420**.
+
+**Comment :** `sw.js` `CACHE 'yada-v30' → 'yada-v31'` (l'`activate` supprime les caches ≠ CACHE) ; badge `#yada-ver` → v420 ; `version.json` → 420 (l'auto-mise à jour addon103 détecte la nouvelle version et recharge). Aucune logique/écriture/UI modifiée.
+
+**Validé :** `node --check` (195 scripts, 0 erreur ; `sw.js` OK) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v420**.
+
+---
+
+## 🟢 MAJ précédente — Restauration du DESIGN PRINCIPAL : écran d'accueil « Choisissez votre espace » d'abord, puis le formulaire — v419
 **Quoi :** restauration du **design principal** de la page de connexion demandé : à l'ouverture, on revoit d'abord l'**écran d'accueil « Bienvenue — Choisissez votre espace »** avec les **deux gros boutons Espace Cabinet / Espace Client** (design d'origine `sec-cta`/`sec-cta-2`) + la note « Admin via l'Espace Cabinet » ; **après avoir choisi un espace**, on arrive sur le **formulaire e-mail → mot de passe**. Annule l'ouverture directe sur le formulaire (v417) et le sélecteur en tête de formulaire (v418). Les comportements v416 sont conservés (Cabinet/Admin ne se connectent jamais directement ; « Rester connecté » réservé au Client).
 
 **Comment — `yada-addon38` (2 éditions, retour à l'état v416) :** `secAfficher` — rétablissement de la branche `if(!CHOICE){ écran de choix (2 boutons secChoisir) }` (au lieu du défaut direct) ; étape 1 du formulaire — retrait du sélecteur d'espace en tête, retour du lien « ← Changer d'espace » (`secRetour`). `secBascule` et la CSS `.sec-space-choice` deviennent inutilisés (laissés, sans effet).
