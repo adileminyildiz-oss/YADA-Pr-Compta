@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Espace Admin : liste de MODULES (Collaborateurs & accès · Paramétrage · Documentation · Pilotages) — v426
+## 🟢 Dernière mise à jour — Nom du collaborateur connecté affiché + signature des éditions avec ce nom — v427
+**Quoi :** deux ajouts liés aux accès des salariés.
+1. **Nom du collaborateur connecté** — une puce **« Connecté : <nom> »** s'affiche **sous le bouton Déconnexion** (haut-droite) et **change à chaque connexion** : pour un salarié, son **nom complet** ; sinon le compte (Compte cabinet / Admin (superviseur) / nom du Client). Chaque salarié a bien son propre espace (identifiant + mot de passe attribués dans l'Admin, dossiers filtrés).
+2. **Signature des éditions** — **toutes les éditions** (documents `.doc-page` : balance, grand-livre, journaux, bilan, compte de résultat…) reçoivent automatiquement une **signature « Établi par : \<nom du collaborateur\> — le \<date\> »**, à l'écran **et à l'impression**. Le nom est celui du collaborateur connecté.
+
+**Comment — `yada-addon209` (100% additif) :** `yadaCurrentUserName()` (salarié via `staffId` → nom, sinon rôle) ; puce `#yada-user` (greffée sur `render` + intervalle 800 ms, visible si session ouverte) ; `signDocPages(root)` ajoute un bloc `.doc-sign` à chaque `.doc-page:not([data-yadasign])` (idempotent) ; **wrap `window.print`** (signe avant impression) + **MutationObserver** (signe les éditions ajoutées dynamiquement dans `#print-area`/modales) + greffe `render`. `<style id="collab-sign-mod">` (puce + `.doc-sign` en noir sur blanc pour l'impression).
+
+**Validé :** `node --check` (202 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (puce « Connecté : Admin (superviseur) » puis « Connecté : Sarah Durand » après bascule salarié ; `.doc-page` inséré → signé « Établi par : Sarah Durand — le … » ; après renommage → nouvelle édition signée « Marc Leroy » ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v427**.
+
+---
+
+## 🟢 MAJ précédente — Espace Admin : liste de MODULES (Collaborateurs & accès · Paramétrage · Documentation · Pilotages) — v426
 **Quoi :** l'Espace Admin devient une **application à modules** avec sa propre **barre latérale de modules** (même style que l'espace Cabinet). La barre latérale liste : **← Retour aux dossiers** (en haut), le titre **Espace Admin**, puis une section **« Modules »** avec 4 modules — **Collaborateurs & accès** (l'ancien panneau : société exploitante + utilisateurs + dossiers), **Paramétrage** (verrouillage auto, renvois société/synchro), **Documentation** (guide : utilisateurs, dossiers attitrés, occupation, alertes), **Pilotages** (supervision : KPI collaborateurs actifs / dossiers / attribués / occupés + charge par collaborateur). Cliquer un module l'affiche dans le contenu (défilable, page immobile pour les actions internes ; un changement de module remonte en haut).
 
 **Comment :**

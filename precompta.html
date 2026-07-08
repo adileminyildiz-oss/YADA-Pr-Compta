@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v426';
+    b.textContent='YADA · v427';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -23187,6 +23187,64 @@ ${lignes}
     +'.adm-mod-ico{width:22px;text-align:center;font-size:15px;opacity:.92;flex:0 0 auto}'
     +'.adm-mod-lbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}';
     document.head.appendChild(st); }catch(e){}
+})();
+</script>
+
+<script id="yada-addon209">
+/* ============================================================
+   Collaborateur connecté — nom affiché sous le bouton de connexion + SIGNATURE sur les éditions.
+   - Le NOM du collaborateur connecté est affiché (sous le bouton Déconnexion) et change à
+     chaque connexion (salarié : son nom ; sinon compte cabinet / admin / client).
+   - Toutes les ÉDITIONS (documents `.doc-page`) reçoivent une signature « Établi par : <nom> »
+     avec le nom du collaborateur (à l'écran et à l'impression). 100% additif.
+   ============================================================ */
+(function(){
+  if(window.__collabSign) return; window.__collabSign=true;
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  /* Nom d'affichage de la session courante. */
+  window.yadaCurrentUserName=function(){ try{
+    if(window.staffId){ var s=((db.cabinet&&db.cabinet.staff)||[]).find(function(x){return x.id===window.staffId;}); if(s) return [s.prenom,s.nom].filter(Boolean).join(' ')||s.email||'Collaborateur'; }
+    if(window.sessionRole==='admin') return 'Admin (superviseur)';
+    if(window.sessionRole==='client') return ((db.societe&&(db.societe.raison||db.societe.dossierNom))||'Client');
+    return ((db.cabinet&&db.cabinet.collaborateur)||'Compte cabinet');
+  }catch(e){ return ''; } };
+  function loggedIn(){ try{ var locked=(typeof window.__secLocked!=='undefined')?window.__secLocked:!!document.querySelector('#sec-lock.show'); return !!sessionStorage.getItem('yada-role') && !locked; }catch(e){ return false; } }
+
+  /* Puce « Connecté : <nom> » sous le bouton Déconnexion. */
+  function ensureChip(){ var c=document.getElementById('yada-user'); if(!c){ c=document.createElement('div'); c.id='yada-user'; document.body.appendChild(c); } return c; }
+  function updChip(){ try{ var c=ensureChip(); if(loggedIn()){ c.textContent='Connecté : '+window.yadaCurrentUserName(); c.style.display='block'; } else c.style.display='none'; }catch(e){} }
+
+  /* Signature des éditions (documents .doc-page). */
+  function frToday(){ try{ if(typeof frDate==='function' && typeof todayStr==='function') return frDate(todayStr()); var d=new Date(); var z=function(n){return (n<10?'0':'')+n;}; return z(d.getDate())+'/'+z(d.getMonth()+1)+'/'+d.getFullYear(); }catch(e){ return ''; } }
+  function signDocPages(root){ try{ var scope=root||document; var pages=scope.querySelectorAll?scope.querySelectorAll('.doc-page:not([data-yadasign])'):[];
+    for(var i=0;i<pages.length;i++){ var p=pages[i]; p.setAttribute('data-yadasign','1');
+      var sig=document.createElement('div'); sig.className='doc-sign';
+      sig.innerHTML='<div class="doc-sign-l">Établi par : <b>'+esc(window.yadaCurrentUserName())+'</b></div><div class="doc-sign-d">le '+esc(frToday())+'</div>';
+      p.appendChild(sig); }
+  }catch(e){} }
+  window.yadaSignDocPages=signDocPages;
+  /* Signer avant impression. */
+  try{ var _print=window.print; window.print=function(){ try{ signDocPages(document); }catch(e){} return _print.apply(this,arguments); }; }catch(e){}
+  /* Signer les éditions ajoutées dynamiquement (#print-area, modales). */
+  try{ var mo=new MutationObserver(function(muts){ var need=false; muts.forEach(function(m){ if(m.addedNodes&&m.addedNodes.length) need=true; }); if(need) setTimeout(function(){ signDocPages(document); },0); });
+    mo.observe(document.body,{childList:true,subtree:true}); }catch(e){}
+
+  if(typeof window.render==='function'){ var _r=window.render; window.render=function(){ var x=_r.apply(this,arguments); updChip(); setTimeout(function(){ updChip(); signDocPages(document); },0); return x; }; }
+  setInterval(updChip, 800);
+
+  try{ var st=document.createElement('style'); st.id='collab-sign-mod'; st.textContent=
+    '#yada-user{display:none;position:fixed;top:52px;right:14px;z-index:99979;max-width:260px;'
+    +'background:rgba(12,26,44,.92);color:#cfe0ff;border:1px solid rgba(120,180,255,.4);border-radius:10px;'
+    +'padding:6px 12px;font:600 12px system-ui,sans-serif;box-shadow:0 6px 16px rgba(0,0,0,.3);text-align:right}'
+    +'@media(max-width:820px){#yada-user{top:44px;right:10px;font-size:11px;padding:5px 10px}}'
+    /* signature des éditions */
+    +'.doc-page .doc-sign{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-top:30px;padding-top:12px;border-top:1px solid #d5d5d5;font-size:12.5px;color:#222}'
+    +'.doc-page .doc-sign .doc-sign-l b{font-size:13.5px}'
+    +'.doc-page .doc-sign .doc-sign-d{opacity:.75;white-space:nowrap}'
+    +'body[data-theme] .doc-page .doc-sign{color:#222 !important;border-top-color:#d5d5d5 !important}'
+    +'body[data-theme] .doc-page .doc-sign *{color:#222 !important}';
+    document.head.appendChild(st); }catch(e){}
+  updChip();
 })();
 </script>
 </body>
