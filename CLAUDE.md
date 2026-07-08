@@ -36,7 +36,23 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Espace Admin : interface DOSSIERS (attribution par adresse e-mail, tracé) + édition des utilisateurs — v421
+## 🟢 Dernière mise à jour — Admin : utilisateurs (identifiants + mot de passe affichés) + multi-attribution + alerte de connexion + voyant d'occupation rouge/vert — v422
+**Quoi :** l'Espace Admin gère finement les dossiers et les utilisateurs :
+1. **Liste des utilisateurs avec leurs droits** — chaque salarié affiche son **identifiant (e-mail)** ET son **mot de passe de connexion** (bouton **Afficher/Masquer**), le **nombre de dossiers** et la **liste de ses dossiers** (tags). *(Le mot de passe est conservé en clair **uniquement dans les données locales de l'appareil** `db.cabinet.staff.pwdClair`, jamais dans la source publique ; l'empreinte SHA-256 salée reste utilisée pour la connexion.)*
+2. **Multi-attribution** — un dossier peut être attribué à **plusieurs utilisateurs** (cases à cocher par dossier). L'Admin **ajoute/retire** un dossier d'un salarié ; « Tracé par » liste toutes les adresses responsables.
+3. **Alerte de connexion** — à la connexion d'un salarié, un message indique **« Vous avez N nouveau(x) dossier(s) en votre responsabilité »** et/ou **« N dossier(s) retiré(s) de votre responsabilité »** (comparé au dernier état vu `dossiersSeen`).
+4. **Voyant d'occupation rouge/vert** — plusieurs responsables peuvent accéder à un dossier, mais **un seul y travaille à la fois** : ouvrir un dossier le marque **occupé** (`d.occupe = {id,nom,ts}`). Les autres voient un **voyant ROUGE luminant** (occupé) dans la liste des dossiers + un **bandeau « Dossier occupé par X — consultation (vérification) »** ; **VERT** quand il est libre. Verrou relâché en quittant/déconnexion (+ auto-relâche après 20 min d'inactivité). Occupation partagée via la synchro cloud.
+
+**Comment :**
+- **`yada-addon202` (éditions)** : ligne utilisateur → identifiant + mot de passe (`pwdClair` + bouton `admPwToggle`) + « N dossiers » + tags ; `pwdClair` enregistré à la création (`admStaffAdd`) et à la réinitialisation (`admStaffResetPwd`).
+- **`yada-addon203` (éditions)** : `admDossiersPanel` → **cases à cocher multi** par dossier ; `admDossierToggleUser(dossierId,email,on)` (ajout/retrait) + `syncResp` (`d.responsables=[e-mails]`) ; `normalize` multi ; `admStaffSaveEdit` enregistre `pwdClair` + resync des responsables si l'e-mail change.
+- **`yada-addon204` (100% additif)** : `me()`/`occState`/`occSet`/`occClear` (verrou d'occupation), wrap `choisirDossier` (prise du verrou / mode vérification) + `retourSelectionDossier`/`quitterEspaceClient`/`dsRetourModule`/`secVerrouiller` (relâche) ; `notify(s)` (alerte connexion via `yadaAlert`, met à jour `dossiersSeen`) greffée sur `render` (1×/login) ; `paintLights()` (voyant `.ds-occ` rouge/vert sur `.ds-row`) + `paintBanner()` ; battement 45 s (auto-relâche + rafraîchissement). `<style id="occ-mod">` (pastilles + `@keyframes occPulse`).
+
+**Validé :** `node --check` (197 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (`pwdClair` stocké & affichable ; **multi-attribution** d-a→[sarah,marc] ; **alerte** « 1 nouveau » puis « 1 retiré » ; **occupation** : Sarah ouvre d-b → `occupe` posé, état `self` (vert) ; vue Marc → `autre` (rouge) ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v422**.
+
+---
+
+## 🟢 MAJ précédente — Espace Admin : interface DOSSIERS (attribution par adresse e-mail, tracé) + édition des utilisateurs — v421
 **Quoi :** l'Espace Admin gagne une **interface dédiée aux dossiers** et un **bouton pour modifier les paramètres des utilisateurs** :
 1. **Utilisateurs du cabinet (salariés)** — chaque salarié a un **identifiant** (e-mail + mot de passe, empreinte SHA-256 salée, jamais en clair). Bouton **« Modifier »** par utilisateur → édite prénom, nom, **e-mail** et mot de passe (changer l'e-mail exige un nouveau mot de passe → empreintes recalculées ; la trace des dossiers suit le nouvel e-mail). + Mot de passe / Désactiver / Supprimer.
 2. **Dossiers & attribution (tableau)** — chaque dossier est **attribué à UN SEUL salarié** via un menu déroulant d'adresses e-mail et **tracé par cette adresse** (colonne « Tracé par », pastille verte). **Exclusivité** : réassigner un dossier le **retire automatiquement** du salarié précédent (un dossier = une seule adresse e-mail responsable). Le salarié se connecte via l'Espace Cabinet et ne traite que ses dossiers attribués (filtrage `staffAllowedIds`/`staffFilterDossiers`) ; l'Admin garde l'accès global.
