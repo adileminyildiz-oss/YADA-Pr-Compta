@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v432';
+    b.textContent='YADA · v433';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -23176,11 +23176,41 @@ ${lignes}
       +'<div class="card"><h2>Charge par collaborateur</h2><table><thead><tr><th>Collaborateur</th><th class="r">Dossiers</th><th>État</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
   }
 
+  /* Module PAIE (paie des collaborateurs du cabinet). */
+  function stById(id){ return staff().find(function(x){return x&&x.id===id;}); }
+  function eurf(n){ try{ if(typeof eur==='function') return eur(n); }catch(e){} return (Number(n)||0).toFixed(2)+' €'; }
+  window.admPaieSetBrut=function(id,v){ var s=stById(id); if(!s)return; var b=parseFloat(String(v).replace(',','.'))||0; s.salaireBrut=b; s.salaireNet=Math.round(b*0.78*100)/100; if(typeof save==='function')save(); if(typeof render==='function')render(); };
+  window.admPaieSetNet=function(id,v){ var s=stById(id); if(!s)return; var n=parseFloat(String(v).replace(',','.'))||0; s.salaireNet=n; s.salaireBrut=Math.round(n/0.78*100)/100; if(typeof save==='function')save(); if(typeof render==='function')render(); };
+  window.admPaieSetPoste=function(id,v){ var s=stById(id); if(!s)return; s.poste=String(v||''); if(typeof save==='function')save(); };
+  function modPaie(){
+    var st=staff(), totB=0,totN=0,totC=0;
+    var rows=st.map(function(s){
+      var b=+s.salaireBrut||0, n=+s.salaireNet||(b?Math.round(b*0.78*100)/100:0), cout=Math.round(b*1.42*100)/100;
+      totB+=b; totN+=n; totC+=cout;
+      var nm=[s.prenom,s.nom].filter(Boolean).join(' ')||s.email;
+      return '<tr>'
+        +'<td><b>'+esc(nm)+'</b><div class="mini" style="opacity:.6">'+esc(s.email||'')+'</div></td>'
+        +'<td><input class="adm-paie-in" value="'+esc(s.poste||'')+'" placeholder="Poste" onchange="admPaieSetPoste(\''+esc(s.id)+'\',this.value)"></td>'
+        +'<td><input class="adm-paie-in num" type="number" step="0.01" min="0" value="'+(b||'')+'" onchange="admPaieSetBrut(\''+esc(s.id)+'\',this.value)"></td>'
+        +'<td><input class="adm-paie-in num" type="number" step="0.01" min="0" value="'+(n||'')+'" onchange="admPaieSetNet(\''+esc(s.id)+'\',this.value)"></td>'
+        +'<td class="r num">'+eurf(cout)+'</td></tr>';
+    }).join('') || '<tr><td colspan="5" class="adm-empty">Aucun collaborateur — enregistrez des salariés dans « Collaborateurs & accès ».</td></tr>';
+    var kpi=function(l,v){ return '<div class="kpi"><div class="lbl">'+l+'</div><div class="val">'+v+'</div></div>'; };
+    return '<div class="login-title">Paie</div><div class="login-sub">Paie des collaborateurs du cabinet — salaires bruts / nets et coût employeur.</div>'
+      +'<div class="card"><h2>Vue d\'ensemble</h2><div class="grid g4" style="margin-top:8px">'
+        +kpi('Salariés',st.length)+kpi('Masse salariale brute',eurf(totB))+kpi('Total net',eurf(totN))+kpi('Coût employeur',eurf(totC))
+      +'</div></div>'
+      +'<div class="card"><h2>Salaires par collaborateur</h2>'
+        +'<div class="sub">Saisir le brut remplit le net automatiquement (et inversement, ratio indicatif) ; le coût employeur inclut ~42 % de charges patronales (indicatif).</div>'
+        +'<table><thead><tr><th>Collaborateur</th><th>Poste</th><th class="r">Brut mensuel</th><th class="r">Net mensuel</th><th class="r">Coût employeur</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+
   window.admModuleContent=function(){
     var m=window.admModule||'collab';
     if(m==='parametrage') return modParametrage();
     if(m==='documentation') return modDocumentation();
     if(m==='pilotages') return modPilotages();
+    if(m==='paie') return modPaie();
     return '<div class="login-title">Collaborateurs & accès</div><div class="login-sub">Société exploitante, collaborateurs & dossiers — accès global au portefeuille.</div>'
       +(window.admCollabPanel?window.admCollabPanel():'');
   };
@@ -23191,7 +23221,10 @@ ${lignes}
     +'.adm-mod-btn:hover{background:rgba(30,144,255,.14);border-color:rgba(30,144,255,.5)}'
     +'.adm-mod-btn.on{background:linear-gradient(120deg,#2f9bff,#0a64d6);border-color:#1e90ff;color:#fff;font-weight:600}'
     +'.adm-mod-ico{width:22px;text-align:center;font-size:15px;opacity:.92;flex:0 0 auto}'
-    +'.adm-mod-lbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}';
+    +'.adm-mod-lbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
+    +'.adm-paie-in{width:100%;box-sizing:border-box;background:rgba(120,180,255,.06);border:1px solid rgba(120,180,255,.2);color:inherit;border-radius:8px;padding:6px 9px;font-size:13px}'
+    +'.adm-paie-in.num{text-align:right}'
+    +'.adm-paie-in:focus{outline:none;border-color:#1e90ff;background:rgba(30,144,255,.1)}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
@@ -23280,6 +23313,7 @@ ${lignes}
   function admHubHTML(){
     var MODS=[
       ['collab','⊞','Collaborateurs & accès','Société exploitante · utilisateurs · dossiers & attribution'],
+      ['paie','▥','Paie','Salaires des collaborateurs · brut / net · coût employeur'],
       ['parametrage','≣','Paramétrage','Verrouillage auto · renvois société / synchro'],
       ['documentation','▤','Documentation','Guide : utilisateurs · dossiers · occupation · alertes'],
       ['pilotages','◉','Pilotages','Supervision : KPI collaborateurs · dossiers · charge']
@@ -23306,7 +23340,7 @@ ${lignes}
     if(!g || reduce){ return window.admShowToggle(false); }
     g.classList.remove('adm-hub-in'); g.classList.add('adm-hub-out');
     var done=false, fin=function(){ if(done) return; done=true; window.admShowToggle(false); };
-    setTimeout(fin, 920); /* délai max .27s + durée .6s */
+    setTimeout(fin, 1020); /* délai max .36s + durée .6s */
   };
 
   if(typeof window.ecranSelectionDossier==='function'){ var _es=window.ecranSelectionDossier;
@@ -23366,10 +23400,10 @@ ${lignes}
     +'.adm-hub-go{font-size:12.5px;opacity:.8;flex:0 0 auto}'
     +'@keyframes admHubIn{0%{opacity:0;filter:blur(12px);transform:translate3d(0,-16px,0) scale(.985)}60%{filter:blur(2px)}100%{opacity:1;filter:blur(0);transform:translate3d(0,0,0) scale(1)}}'
     +'.adm-hub-in>*{animation:admHubIn .78s cubic-bezier(.16,1,.3,1) both;will-change:transform,filter,opacity;backface-visibility:hidden}'
-    +'.adm-hub-in>*:nth-child(1){animation-delay:0s}.adm-hub-in>*:nth-child(2){animation-delay:.11s}.adm-hub-in>*:nth-child(3){animation-delay:.22s}.adm-hub-in>*:nth-child(4){animation-delay:.33s}'
+    +'.adm-hub-in>*:nth-child(1){animation-delay:0s}.adm-hub-in>*:nth-child(2){animation-delay:.11s}.adm-hub-in>*:nth-child(3){animation-delay:.22s}.adm-hub-in>*:nth-child(4){animation-delay:.33s}.adm-hub-in>*:nth-child(5){animation-delay:.44s}'
     +'@keyframes admHubOut{0%{opacity:1;filter:blur(0);transform:translate3d(0,0,0) scale(1)}100%{opacity:0;filter:blur(12px);transform:translate3d(0,-16px,0) scale(.985)}}'
     +'.adm-hub-out>*{animation:admHubOut .6s cubic-bezier(.7,0,.84,0) both;will-change:transform,filter,opacity;backface-visibility:hidden}'
-    +'.adm-hub-out>*:nth-child(4){animation-delay:0s}.adm-hub-out>*:nth-child(3){animation-delay:.09s}.adm-hub-out>*:nth-child(2){animation-delay:.18s}.adm-hub-out>*:nth-child(1){animation-delay:.27s}'
+    +'.adm-hub-out>*:nth-child(5){animation-delay:0s}.adm-hub-out>*:nth-child(4){animation-delay:.09s}.adm-hub-out>*:nth-child(3){animation-delay:.18s}.adm-hub-out>*:nth-child(2){animation-delay:.27s}.adm-hub-out>*:nth-child(1){animation-delay:.36s}'
     +'.adm-enter-row{margin-top:10px;display:flex;justify-content:flex-start}'
     /* Module Admin en PLEINE LARGEUR (sans barre latérale). */
     +'.adm-solo{display:flex;flex-direction:column;height:100dvh;max-height:100dvh;width:100%}'
@@ -23378,6 +23412,240 @@ ${lignes}
     /* Sur l'accueil, la Déconnexion inline remplace le bouton flottant → on masque le flottant. */
     +'body:has(#adm-logout-btn) #yada-logout{display:none !important}'
     +'@media(prefers-reduced-motion:reduce){.adm-hub-in>*,.adm-hub-out>*{animation:none}}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+
+<script id="yada-addon211">
+/* ============================================================
+   ESPACE ADMIN — Module PAIE complet : la responsable de paie remplit les
+   informations de paie de TOUS les salariés, avec tous les critères pour une
+   DSN valide, la transmission de la DSN aux organismes, et la génération des
+   fiches de paie complètes.
+   100% additif : override de window.admModuleContent pour le module 'paie'.
+   ============================================================ */
+(function(){
+  if(window.__admPaieFull) return; window.__admPaieFull=true;
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function num(v){ v=parseFloat(String(v==null?'':v).replace(',','.')); return isFinite(v)?v:0; }
+  function R2(n){ return (typeof r2==='function')?r2(n):Math.round((n||0)*100)/100; }
+  function EUR(n){ try{ if(typeof eur==='function') return eur(n); }catch(e){} return (Number(n)||0).toFixed(2)+' €'; }
+  function saveR(){ try{ if(typeof save==='function') save(); }catch(e){} try{ if(typeof render==='function') render(); }catch(e){} }
+  function saveOnly(){ try{ if(typeof save==='function') save(); }catch(e){} }
+  function soc(){ return (db.cabinet&&db.cabinet.societe)||{}; }
+  function staff(){ try{ if(window.__ensureStaff) window.__ensureStaff(); }catch(e){} return (db.cabinet&&db.cabinet.staff)||[]; }
+  function stById(id){ return staff().find(function(x){return x&&x.id===id;}); }
+  function P(){ db.cabinet=db.cabinet||{}; var p=db.cabinet.paie=db.cabinet.paie||{};
+    p.organismes=p.organismes||[{nom:'URSSAF',id:''},{nom:'AGIRC-ARRCO (retraite)',id:''},{nom:'Prévoyance / Mutuelle',id:''}];
+    p.dsn=p.dsn||{}; p.dsn.depot=p.dsn.depot||{point:'Net-Entreprises',siret:'',id:'',connecte:false}; p.dsn.envois=p.dsn.envois||{};
+    return p; }
+  function periode(){ if(!window.__admPaiePer){ try{ window.__admPaiePer=(new Date()).toISOString().slice(0,7); }catch(e){ window.__admPaiePer='2026-01'; } } return window.__admPaiePer; }
+  function perLabel(k){ try{ var m=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre']; var a=k.split('-'); return m[(+a[1])-1]+' '+a[0]; }catch(e){ return k; } }
+  function salPer(s){ s.paie=s.paie||{}; var k=periode(); if(!s.paie[k]) s.paie[k]={brut:num(s.salaireBrut)||0,primes:0,heures:151.67,pasTaux:0}; return s.paie[k]; }
+  function paieCalc(s){ var pp=salPer(s); var base=num(pp.brut), primes=num(pp.primes); var brut=R2(base+primes);
+    var cotisSal=R2(brut*0.22), cotisPat=R2(brut*0.42); var netImpo=R2(brut-cotisSal);
+    var pasTaux=num(pp.pasTaux)/100; var pas=R2(netImpo*pasTaux); var netAPayer=R2(netImpo-pas); var cout=R2(brut+cotisPat);
+    return {base:base,primes:primes,brut:brut,cotisSal:cotisSal,cotisPat:cotisPat,netImpo:netImpo,pas:pas,netAPayer:netAPayer,cout:cout,heures:num(pp.heures)}; }
+  function nom(s){ return [s.prenom,s.nom].filter(Boolean).join(' ')||s.email||'(sans nom)'; }
+
+  window.admPaieTab=function(t){ window.__admPaieTab=t; saveR(); };
+  window.admPaieSetPeriode=function(v){ window.__admPaiePer=v||periode(); saveR(); };
+  window.admPaieSel=function(id){ window.__admPaieSel=id; saveR(); };
+  window.admPaieField=function(id,key,v){ var s=stById(id); if(!s)return; s[key]=v; saveOnly(); };
+  window.admPaiePer=function(id,key,v){ var s=stById(id); if(!s)return; var pp=salPer(s); pp[key]=v;
+    if(key==='brut'){ s.salaireBrut=num(v); s.salaireNet=R2(num(v)*0.78); } saveR(); };
+  window.admPaieOrg=function(i,v){ var p=P(); if(p.organismes[i]) p.organismes[i].id=v; saveOnly(); };
+  window.admDsnDepot=function(key,v){ P().dsn.depot[key]=v; saveOnly(); };
+
+  /* ---- Champs identité / contrat (critères DSN) ---- */
+  var IDENT=[['nir','N° de sécurité sociale (NIR)','text'],['dateNaissance','Date de naissance','date'],['lieuNaissance','Lieu de naissance','text'],['sexe','Sexe','sel:H=Homme|F=Femme'],['nationalite','Nationalité','text'],['adresse','Adresse','text'],['cp','Code postal','text'],['ville','Ville','text']];
+  var CONTRAT=[['matricule','Matricule','text'],['dateEntree','Date d\'entrée','date'],['dateSortie','Date de sortie (le cas échéant)','date'],['typeContrat','Nature du contrat','sel:CDI=CDI|CDD=CDD|APP=Apprentissage|PRO=Contrat de professionnalisation|STG=Stage'],['pcsEse','Emploi (code PCS-ESE)','text'],['statutCadre','Statut','sel:NC=Non cadre|C=Cadre'],['tempsTravail','Temps de travail','sel:PLEIN=Temps plein|PARTIEL=Temps partiel'],['quotite','Quotité (h / mois)','text'],['idcc','Convention collective (IDCC)','text']];
+  function fld(id,f,valObj){ var key=f[0],lbl=f[1],ty=f[2]; var v=(valObj[key]!=null?valObj[key]:'');
+    var oc='admPaieField(\''+esc(id)+'\',\''+esc(key)+'\',this.value)';
+    if(String(ty).indexOf('sel:')===0){ var opts=ty.slice(4).split('|').map(function(o){ var kv=o.split('='); return '<option value="'+esc(kv[0])+'"'+(String(v)===kv[0]?' selected':'')+'>'+esc(kv[1])+'</option>'; }).join('');
+      return '<div class="fld"><label>'+esc(lbl)+'</label><select onchange="'+oc+'"><option value="">—</option>'+opts+'</select></div>'; }
+    return '<div class="fld"><label>'+esc(lbl)+'</label><input type="'+ty+'" value="'+esc(v)+'" onchange="'+oc+'"></div>'; }
+
+  /* ---- Validité DSN ---- */
+  function socMiss(){ var s=soc(); var need=[['nom','Dénomination'],['siren','SIREN'],['siret','SIRET'],['codeAPE','Code APE/NAF'],['adresse','Adresse'],['cp','Code postal'],['ville','Ville']]; return need.filter(function(n){return !String(s[n[0]]||'').trim();}).map(function(n){return n[1];}); }
+  function salMiss(s){ var pp=salPer(s); var m=[]; if(!String(s.prenom||'').trim())m.push('Prénom'); if(!String(s.nom||'').trim())m.push('Nom');
+    var nir=String(s.nir||'').replace(/\D/g,''); if(nir.length<13)m.push('NIR'); if(!s.dateNaissance)m.push('Date de naissance');
+    if(!s.dateEntree)m.push('Date d\'entrée'); if(!s.typeContrat)m.push('Nature du contrat'); if(!String(s.pcsEse||'').trim())m.push('Code PCS-ESE');
+    if(num(pp.brut)<=0)m.push('Rémunération brute'); return m; }
+  function depotMiss(){ var d=P().dsn.depot; var m=[]; if(!String(d.id||'').trim())m.push('Identifiant Net-Entreprises'); if(!String(d.siret||'').trim())m.push('SIRET déclarant'); return m; }
+  function dsnValide(){ var sm=socMiss(), dm=depotMiss(); var st=staff(); var sals=st.map(function(s){return {s:s,miss:salMiss(s)};});
+    var okSals=sals.filter(function(x){return x.miss.length===0;}); return {socMiss:sm,depotMiss:dm,sals:sals,okSals:okSals,ok:(sm.length===0 && st.length>0 && okSals.length===st.length)}; }
+
+  /* ---- Génération de la DSN (représentative, structure NEODeS) ---- */
+  function dsnText(){ var s=soc(), p=P(), per=periode(); var st=staff(); var L=[];
+    var pack=per.replace('-','')+'01';
+    L.push('S10.G00.00.001,\''+(p.dsn.depot.point||'YADA')+'\'');
+    L.push('S10.G00.00.005,\'01\'');
+    L.push('S10.G00.00.006,\'DSN mensuelle\'');
+    L.push('S10.G00.01.001,\''+(s.siren||'')+'\'');
+    L.push('S20.G00.05.001,\'01\''); L.push('S20.G00.05.005,\''+pack+'\'');
+    L.push('S21.G00.06.001,\''+(s.siren||'')+'\''); L.push('S21.G00.06.002,\''+(s.nom||'')+'\'');
+    L.push('S21.G00.06.004,\''+(s.adresse||'')+'\''); L.push('S21.G00.06.005,\''+(s.cp||'')+'\''); L.push('S21.G00.06.006,\''+(s.ville||'')+'\'');
+    var siret=String(s.siret||''); L.push('S21.G00.11.001,\''+(siret.slice(9)||'')+'\''); L.push('S21.G00.11.002,\''+(s.codeAPE||'')+'\'');
+    st.forEach(function(x){ var c=paieCalc(x); var nir=String(x.nir||'').replace(/\D/g,'');
+      L.push('S21.G00.30.001,\''+nir+'\''); L.push('S21.G00.30.002,\''+(x.nom||'')+'\''); L.push('S21.G00.30.004,\''+(x.prenom||'')+'\'');
+      L.push('S21.G00.30.006,\''+(x.dateNaissance||'').replace(/-/g,'')+'\''); L.push('S21.G00.30.007,\''+(x.lieuNaissance||'')+'\'');
+      L.push('S21.G00.40.001,\''+(x.dateEntree||'').replace(/-/g,'')+'\''); L.push('S21.G00.40.007,\''+(x.typeContrat||'')+'\''); L.push('S21.G00.40.004,\''+(x.pcsEse||'')+'\'');
+      L.push('S21.G00.40.002,\''+(x.statutCadre==='C'?'01':'02')+'\'');
+      L.push('S21.G00.50.001,\''+pack+'\''); L.push('S21.G00.51.011,\''+per.replace('-','')+'01\''); L.push('S21.G00.51.013,\'001\''); L.push('S21.G00.51.014,\''+c.brut.toFixed(2)+'\'');
+      L.push('S21.G00.50.002,\''+c.netImpo.toFixed(2)+'\''); L.push('S21.G00.50.004,\''+c.netAPayer.toFixed(2)+'\'');
+    });
+    L.push('S90.G00.90.001,\''+L.length+'\''); return L.join('\r\n'); }
+  function dlText(name,text){ try{ var b=new Blob([text],{type:'text/plain;charset=utf-8'}); var u=URL.createObjectURL(b); var a=document.createElement('a'); a.href=u; a.download=name; document.body.appendChild(a); a.click(); setTimeout(function(){ try{URL.revokeObjectURL(u);a.remove();}catch(e){} },120); }catch(e){} }
+  window.admDsnTelecharger=function(){ dlText('DSN-'+periode()+'.dsn', dsnText()); if(typeof toast==='function') toast('DSN '+perLabel(periode())+' générée (fichier téléchargé).'); };
+
+  /* ---- Transmission DSN aux organismes ---- */
+  var DSN_ETAPES=['Déposée','Contrôle de conformité','Transmise aux organismes','Accusé de réception (ARL)','Traitée'];
+  function envoi(){ var p=P(),k=periode(); return p.dsn.envois[k]; }
+  window.admDsnDeposer=function(){ var v=dsnValide(); if(!v.ok || v.depotMiss.length){ if(typeof toast==='function') toast('DSN incomplète — complétez les critères et le point de dépôt avant de déposer.'); return; }
+    var p=P(),k=periode(); var dt=(typeof todayStr==='function')?todayStr():new Date().toISOString().slice(0,10);
+    p.dsn.envois[k]={statut:'Déposée',refuse:false,flux:[{etape:'Déposée',date:dt}]}; saveR(); if(typeof toast==='function') toast('DSN '+perLabel(k)+' déposée auprès de '+(p.dsn.depot.point||'l\'opérateur')+'.'); };
+  window.admDsnAvancer=function(){ var e=envoi(); if(!e||e.refuse)return; var i=DSN_ETAPES.indexOf(e.statut); if(i<0||i>=DSN_ETAPES.length-1)return;
+    var dt=(typeof todayStr==='function')?todayStr():new Date().toISOString().slice(0,10); e.statut=DSN_ETAPES[i+1]; e.flux.push({etape:e.statut,date:dt}); saveR(); };
+  window.admDsnRefuser=function(){ var e=envoi(); if(!e)return; var dt=(typeof todayStr==='function')?todayStr():new Date().toISOString().slice(0,10); e.refuse=true; e.statut='Refusée'; e.flux.push({etape:'Refusée',date:dt}); saveR(); };
+  window.admDsnReset=function(){ var p=P(),k=periode(); delete p.dsn.envois[k]; saveR(); };
+
+  /* ---- Fiche de paie (bulletin) ---- */
+  function bulletinHTML(s){ var c=paieCalc(s), so=soc(), per=periode();
+    var row=function(lbl,base,tsal,psal,tpat,ppat){ return '<tr><td>'+lbl+'</td><td class="r">'+(base||'')+'</td><td class="r">'+(tsal||'')+'</td><td class="r">'+(psal||'')+'</td><td class="r">'+(tpat||'')+'</td><td class="r">'+(ppat||'')+'</td></tr>'; };
+    return '<div class="doc-page bp-page">'
+      +'<div style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap">'
+        +'<div><div style="font-size:16px;font-weight:800">'+esc(so.nom||'—')+'</div><div>'+esc(so.adresse||'')+'</div><div>'+esc((so.cp||'')+' '+(so.ville||''))+'</div><div>SIRET '+esc(so.siret||'—')+' · APE '+esc(so.codeAPE||'—')+'</div></div>'
+        +'<div style="text-align:right"><div style="font-size:15px;font-weight:800">BULLETIN DE PAIE</div><div>Période : '+esc(perLabel(per))+'</div><div>Paiement le '+esc((typeof frDate==='function'&&s.paie&&s.paie[per]?'':''))+'</div></div>'
+      +'</div><hr>'
+      +'<div style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap">'
+        +'<div><b>'+esc(nom(s))+'</b><div>'+esc(s.adresse||'')+'</div><div>'+esc((s.cp||'')+' '+(s.ville||''))+'</div><div>N° SS : '+esc(s.nir||'—')+'</div></div>'
+        +'<div style="text-align:right"><div>Emploi (PCS-ESE) : '+esc(s.pcsEse||'—')+'</div><div>Statut : '+esc(s.statutCadre==='C'?'Cadre':'Non cadre')+'</div><div>Contrat : '+esc(s.typeContrat||'—')+'</div><div>Entrée : '+esc(s.dateEntree||'—')+'</div></div>'
+      +'</div><hr>'
+      +'<table class="bp-t"><thead><tr><th>Rubrique</th><th class="r">Base</th><th class="r">Taux sal.</th><th class="r">Part sal.</th><th class="r">Taux pat.</th><th class="r">Part pat.</th></tr></thead><tbody>'
+        +row('Salaire de base', EUR(c.base),'','','','')
+        +(c.primes?row('Primes / éléments variables', EUR(c.primes),'','','',''):'')
+        +row('<b>Salaire brut</b>','','','<b>'+EUR(c.brut)+'</b>','','')
+        +row('Cotisations salariales', EUR(c.brut),'22,00 %', EUR(c.cotisSal),'','')
+        +row('Cotisations patronales', EUR(c.brut),'','','42,00 %', EUR(c.cotisPat))
+        +row('<b>Net imposable</b>','','','<b>'+EUR(c.netImpo)+'</b>','','')
+        +row('Prélèvement à la source', EUR(c.netImpo),(num(salPer(s).pasTaux)).toFixed(2)+' %', EUR(c.pas),'','')
+      +'</tbody></table>'
+      +'<div style="display:flex;justify-content:space-between;margin-top:12px;font-weight:800;font-size:15px"><span>NET À PAYER</span><span>'+EUR(c.netAPayer)+'</span></div>'
+      +'<div style="display:flex;justify-content:space-between;margin-top:6px;opacity:.8"><span>Coût total employeur</span><span>'+EUR(c.cout)+'</span></div>'
+      +'<div style="margin-top:10px;font-size:11px;opacity:.7">Bulletin établi sur la base des informations de paie saisies. Taux de cotisations indicatifs (modèle simplifié) — à fiabiliser selon la convention collective et les organismes.</div>'
+      +'</div>'; }
+  window.admPaieBulletin=function(id){ var s=stById(id); if(!s)return; var html=bulletinHTML(s);
+    if(typeof openModal==='function'){ try{ var mc=document.getElementById('modal-c'); if(mc){ document.getElementById('modal').classList.add('show'); mc.innerHTML='<div class="modal-h"><b>Bulletin de paie — '+esc(nom(s))+'</b><button class="btn btn-ghost btn-sm" onclick="closeModal()">Fermer</button></div><div class="modal-b">'+html+'<div style="margin-top:10px"><button class="btn btn-pri btn-sm" onclick="admPaieImprimer(\''+esc(id)+'\')">Imprimer / PDF</button></div></div>'; return; } }catch(e){} }
+    admPaieImprimer(id); };
+  window.admPaieImprimer=function(id){ var s=stById(id); if(!s)return; var pa=document.getElementById('print-area'); if(pa){ pa.innerHTML=bulletinHTML(s); } if(typeof toast==='function')toast('Fenêtre d\'impression → « Enregistrer en PDF »'); setTimeout(function(){ try{window.print();}catch(e){} },150); };
+
+  /* ---- Rendu du module ---- */
+  function kpi(l,v){ return '<div class="kpi"><div class="lbl">'+l+'</div><div class="val">'+v+'</div></div>'; }
+  function perSelect(){ var cur=periode(); var opts=[]; try{ var d=new Date(cur+'-01'); for(var i=0;i<12;i++){ var k=d.toISOString().slice(0,7); opts.push('<option value="'+k+'"'+(k===cur?' selected':'')+'>'+esc(perLabel(k))+'</option>'); d.setMonth(d.getMonth()-1); } }catch(e){ opts.push('<option>'+esc(cur)+'</option>'); }
+    return '<select class="adm-paie-in" style="max-width:220px" onchange="admPaieSetPeriode(this.value)">'+opts.join('')+'</select>'; }
+
+  function tabSalaries(){ var st=staff();
+    if(window.__admPaieSel){ var s=stById(window.__admPaieSel); if(s){
+      var c=paieCalc(s), pp=salPer(s), miss=salMiss(s);
+      return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h2 style="margin:0">Informations de paie — '+esc(nom(s))+'</h2>'
+          +'<button class="btn btn-ghost btn-sm" onclick="admPaieSel(\'\')">‹ Retour à la liste</button></div>'
+        +(miss.length?('<div class="sub" style="color:#ffb4ad">⚠ Critères DSN manquants : '+esc(miss.join(', '))+'</div>'):'<div class="sub" style="color:#7fdba0">✓ Toutes les informations requises pour la DSN sont présentes.</div>')
+        +'<div class="adm-soc-gh">Identité du salarié</div><div class="adm-grid">'+IDENT.map(function(f){return fld(s.id,f,s);}).join('')+'</div>'
+        +'<div class="adm-soc-gh">Contrat</div><div class="adm-grid">'+CONTRAT.map(function(f){return fld(s.id,f,s);}).join('')+'</div>'
+        +'<div class="adm-soc-gh">Rémunération — '+esc(perLabel(periode()))+'</div><div class="adm-grid">'
+          +'<div class="fld"><label>Salaire brut de base</label><input type="number" step="0.01" min="0" value="'+(num(pp.brut)||'')+'" onchange="admPaiePer(\''+esc(s.id)+'\',\'brut\',this.value)"></div>'
+          +'<div class="fld"><label>Primes / variables</label><input type="number" step="0.01" min="0" value="'+(num(pp.primes)||'')+'" onchange="admPaiePer(\''+esc(s.id)+'\',\'primes\',this.value)"></div>'
+          +'<div class="fld"><label>Heures travaillées</label><input type="number" step="0.01" min="0" value="'+(num(pp.heures)||'')+'" onchange="admPaiePer(\''+esc(s.id)+'\',\'heures\',this.value)"></div>'
+          +'<div class="fld"><label>Taux PAS (%)</label><input type="number" step="0.01" min="0" value="'+(num(pp.pasTaux)||'')+'" onchange="admPaiePer(\''+esc(s.id)+'\',\'pasTaux\',this.value)"></div>'
+        +'</div>'
+        +'<div class="grid g4" style="margin-top:10px">'+kpi('Brut',EUR(c.brut))+kpi('Net imposable',EUR(c.netImpo))+kpi('Net à payer',EUR(c.netAPayer))+kpi('Coût employeur',EUR(c.cout))+'</div>'
+        +'<div style="margin-top:12px"><button class="btn btn-pri btn-sm" onclick="admPaieBulletin(\''+esc(s.id)+'\')">Générer la fiche de paie</button></div>'
+      +'</div>'; } }
+    var rows=st.map(function(s){ var c=paieCalc(s), miss=salMiss(s); var ok=miss.length===0;
+      return '<tr><td><b>'+esc(nom(s))+'</b><div class="mini" style="opacity:.6">'+esc(s.email||'')+'</div></td>'
+        +'<td>'+esc(s.typeContrat||'—')+'</td><td class="r num">'+EUR(c.brut)+'</td><td class="r num">'+EUR(c.netAPayer)+'</td>'
+        +'<td>'+(ok?'<span style="color:#7fdba0">✓ complet</span>':'<span style="color:#ffb4ad" title="'+esc(miss.join(', '))+'">⚠ à compléter</span>')+'</td>'
+        +'<td class="r"><button class="btn btn-ghost btn-sm" onclick="admPaieSel(\''+esc(s.id)+'\')">Compléter / Modifier</button> <button class="btn btn-ghost btn-sm" onclick="admPaieBulletin(\''+esc(s.id)+'\')">Fiche de paie</button></td></tr>';
+    }).join('') || '<tr><td colspan="6" class="adm-empty">Aucun salarié — enregistrez-les dans « Collaborateurs & accès ».</td></tr>';
+    return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h2 style="margin:0">Salariés — informations de paie</h2><div>Période : '+perSelect()+'</div></div>'
+      +'<div class="sub">La responsable de paie remplit ici les informations de paie de tous les salariés (identité, contrat, rémunération) — critères nécessaires à une DSN valide.</div>'
+      +'<table><thead><tr><th>Salarié</th><th>Contrat</th><th class="r">Brut</th><th class="r">Net à payer</th><th>DSN</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+
+  function tabBulletins(){ var st=staff();
+    var rows=st.map(function(s){ var c=paieCalc(s);
+      return '<tr><td><b>'+esc(nom(s))+'</b></td><td class="r num">'+EUR(c.brut)+'</td><td class="r num">'+EUR(c.netAPayer)+'</td><td class="r num">'+EUR(c.cout)+'</td>'
+        +'<td class="r"><button class="btn btn-pri btn-sm" onclick="admPaieBulletin(\''+esc(s.id)+'\')">Voir / Imprimer</button></td></tr>';
+    }).join('') || '<tr><td colspan="5" class="adm-empty">Aucun salarié.</td></tr>';
+    return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h2 style="margin:0">Fiches de paie</h2><div>Période : '+perSelect()+'</div></div>'
+      +'<div class="sub">Génère les bulletins de paie complets (employeur, salarié, brut, cotisations, net imposable, PAS, net à payer, coût employeur) pour la période — à l\'écran et à l\'impression / PDF.</div>'
+      +'<table><thead><tr><th>Salarié</th><th class="r">Brut</th><th class="r">Net à payer</th><th class="r">Coût employeur</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+
+  function tabDSN(){ var v=dsnValide(), p=P(), per=periode(), e=envoi(); var d=p.dsn.depot;
+    var checkRow=function(ok,lbl,det){ return '<div class="adm-dsn-chk"><span class="'+(ok?'ok':'ko')+'">'+(ok?'✓':'✗')+'</span> '+esc(lbl)+(det?'<span class="mini" style="opacity:.7"> — '+esc(det)+'</span>':'')+'</div>'; };
+    var salChecks=v.sals.map(function(x){ return checkRow(x.miss.length===0, nom(x.s), x.miss.length?('manque : '+x.miss.join(', ')):'complet'); }).join('') || '<div class="adm-empty">Aucun salarié.</div>';
+    var orgRows=p.organismes.map(function(o,i){ return '<div class="fld"><label>'+esc(o.nom)+' — identifiant</label><input class="adm-paie-in" value="'+esc(o.id||'')+'" onchange="admPaieOrg('+i+',this.value)"></div>'; }).join('');
+    /* transmission */
+    var transHTML;
+    if(!e){ var canDep=v.ok && v.depotMiss.length===0; transHTML='<div class="sub">La DSN de la période n\'est pas encore déposée.</div>'
+        +'<button class="btn btn-pri btn-sm" '+(canDep?'':'disabled')+' onclick="admDsnDeposer()">Déposer & transmettre la DSN aux organismes</button>'
+        +(canDep?'':'<div class="mini" style="opacity:.7;margin-top:6px">Complétez les critères manquants et le point de dépôt ci-dessus pour activer le dépôt.</div>'); }
+    else { var steps=DSN_ETAPES.map(function(et){ var done=e.flux.some(function(f){return f.etape===et;}); var fl=e.flux.filter(function(f){return f.etape===et;})[0];
+        return '<div class="adm-dsn-step'+(done?' done':'')+(e.statut===et?' cur':'')+'"><span class="adm-dsn-dot"></span><span>'+esc(et)+'</span>'+(fl?'<span class="mini" style="opacity:.6"> · '+esc(fl.date)+'</span>':'')+'</div>'; }).join('');
+      var canAdv=!e.refuse && DSN_ETAPES.indexOf(e.statut)<DSN_ETAPES.length-1;
+      transHTML='<div class="sub">Statut : <b>'+esc(e.statut)+'</b>'+(e.refuse?' (refusée)':'')+'</div><div class="adm-dsn-timeline">'+(e.refuse?'<div class="adm-dsn-step cur"><span class="adm-dsn-dot" style="background:#ff5a5a"></span><span>Refusée</span></div>':steps)+'</div>'
+        +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">'
+        +(canAdv?'<button class="btn btn-pri btn-sm" onclick="admDsnAvancer()">Étape suivante</button>':'')
+        +(!e.refuse && DSN_ETAPES.indexOf(e.statut)<DSN_ETAPES.length-1?'<button class="btn btn-ghost btn-sm" onclick="admDsnRefuser()">Marquer refusée (anomalie)</button>':'')
+        +'<button class="btn btn-ghost btn-sm" onclick="admDsnReset()">Réinitialiser le dépôt</button></div>'; }
+
+    return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h2 style="margin:0">DSN — '+esc(perLabel(per))+'</h2><div>Période : '+perSelect()+'</div></div>'
+        +'<div class="sub">Déclaration Sociale Nominative mensuelle : vérification des critères, génération du fichier et transmission aux organismes. '+(v.ok?'<b style="color:#7fdba0">DSN valide ✓</b>':'<b style="color:#ffb4ad">DSN incomplète</b>')+'</div>'
+        +'<div class="grid g4" style="margin-top:6px">'+kpi('Salariés',v.sals.length)+kpi('Salariés conformes',v.okSals.length)+kpi('Société',v.socMiss.length?'à compléter':'OK')+kpi('Point de dépôt',d.connecte||d.id?'configuré':'à configurer')+'</div></div>'
+      +'<div class="card"><h2>Critères de validité</h2>'
+        +checkRow(v.socMiss.length===0,'Société exploitante (SIREN, SIRET, APE, adresse)', v.socMiss.length?('manque : '+v.socMiss.join(', ')):'complet')
+        +checkRow(v.depotMiss.length===0,'Point de dépôt (Net-Entreprises)', v.depotMiss.length?('manque : '+v.depotMiss.join(', ')):'configuré')
+        +'<div class="adm-soc-gh">Salariés</div>'+salChecks+'</div>'
+      +'<div class="card"><h2>Organismes destinataires</h2><div class="sub">Identifiants de rattachement (URSSAF, retraite, prévoyance).</div><div class="adm-grid">'+orgRows+'</div></div>'
+      +'<div class="card"><h2>Point de dépôt (transmission)</h2><div class="adm-grid">'
+        +'<div class="fld"><label>Plateforme de dépôt</label><input class="adm-paie-in" value="'+esc(d.point||'')+'" onchange="admDsnDepot(\'point\',this.value)"></div>'
+        +'<div class="fld"><label>SIRET déclarant</label><input class="adm-paie-in" value="'+esc(d.siret||'')+'" onchange="admDsnDepot(\'siret\',this.value)"></div>'
+        +'<div class="fld"><label>Identifiant Net-Entreprises</label><input class="adm-paie-in" value="'+esc(d.id||'')+'" onchange="admDsnDepot(\'id\',this.value)"></div>'
+        +'</div></div>'
+      +'<div class="card"><h2>Fichier & transmission DSN</h2>'
+        +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="btn btn-ghost btn-sm" onclick="admDsnTelecharger()">Générer & télécharger la DSN (.dsn)</button></div>'
+        +transHTML
+        +'<div class="mini" style="opacity:.65;margin-top:10px">Le fichier DSN produit est représentatif de la norme NEODeS (blocs S10/S20/S21). À fiabiliser (contrôle DSN-val) avant transmission réelle via Net-Entreprises / API DSN.</div></div>';
+  }
+
+  function admPaieModule(){ var tab=window.__admPaieTab||'sal';
+    var tb=function(id,lbl){ return '<button class="adm-paie-tab'+(tab===id?' on':'')+'" onclick="admPaieTab(\''+id+'\')">'+lbl+'</button>'; };
+    var body = tab==='bul'?tabBulletins() : tab==='dsn'?tabDSN() : tabSalaries();
+    return '<div class="login-title">Paie</div><div class="login-sub">Gestion de la paie des salariés, DSN et fiches de paie.</div>'
+      +'<div class="adm-paie-tabs">'+tb('sal','Salariés & paie')+tb('bul','Fiches de paie')+tb('dsn','DSN')+'</div>'
+      +body;
+  }
+  window.__admPaieModule=admPaieModule;
+
+  /* Override du dispatch : le module 'paie' devient le module complet. */
+  if(typeof window.admModuleContent==='function'){ var _amc=window.admModuleContent;
+    window.admModuleContent=function(){ if(window.admModule==='paie'){ try{ return admPaieModule(); }catch(e){ return '<div class="card">Erreur module Paie</div>'; } } return _amc.apply(this,arguments); }; }
+
+  try{ var st=document.createElement('style'); st.id='adm-paie-full-mod'; st.textContent=
+    '.adm-paie-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px}'
+    +'.adm-paie-tab{background:rgba(120,180,255,.06);border:1px solid rgba(120,180,255,.2);color:#dbe8ff;border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;transition:background .15s,border-color .15s}'
+    +'.adm-paie-tab:hover{background:rgba(30,144,255,.14);border-color:rgba(30,144,255,.5)}'
+    +'.adm-paie-tab.on{background:linear-gradient(120deg,#2f9bff,#0a64d6);border-color:#1e90ff;color:#fff;font-weight:600}'
+    +'.adm-dsn-chk{padding:5px 0;font-size:13px;border-bottom:1px solid rgba(120,180,255,.08)}'
+    +'.adm-dsn-chk .ok{color:#7fdba0;font-weight:800}.adm-dsn-chk .ko{color:#ff8f88;font-weight:800}'
+    +'.adm-dsn-timeline{display:flex;flex-direction:column;gap:6px;margin-top:8px}'
+    +'.adm-dsn-step{display:flex;align-items:center;gap:9px;font-size:13px;opacity:.55}'
+    +'.adm-dsn-step.done{opacity:1}.adm-dsn-step.cur{font-weight:700}'
+    +'.adm-dsn-dot{width:11px;height:11px;border-radius:50%;background:#3a5170;flex:0 0 auto}'
+    +'.adm-dsn-step.done .adm-dsn-dot{background:#2f9bff}'
+    +'.bp-page .bp-t{width:100%;border-collapse:collapse;margin-top:8px}.bp-page .bp-t th,.bp-page .bp-t td{border:1px solid #d5d5d5;padding:6px 8px;font-size:12.5px}.bp-page .bp-t .r{text-align:right}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
