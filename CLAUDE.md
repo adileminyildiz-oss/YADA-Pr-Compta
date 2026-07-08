@@ -36,7 +36,20 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Espace Admin : barre latérale (sections) + page défilable — v423
+## 🟢 Dernière mise à jour — Admin : toutes les données de la société exploitante + bouton Déconnexion universel — v424
+**Quoi :** deux ajouts.
+1. **Société exploitante — toutes les données** : la carte « Société exploitante (le cabinet) » de l'Espace Admin passe de 5 champs à une **fiche complète groupée** (23 champs) — **Identité** (Dénomination, Forme, Capital social, SIREN, SIRET, N° TVA intracom, Code APE/NAF, RCS, Date de création, Activité), **Adresse & contacts** (Adresse, CP, Ville, Pays, Téléphone, E-mail, Site web), **Dirigeant** (Nom + qualité, e-mail, téléphone), **Coordonnées bancaires** (Banque, IBAN, BIC). « Enregistrer la société » persiste **tout** dans `db.cabinet.societe`.
+2. **Bouton Déconnexion universel** : un bouton **« Déconnexion »** (flottant, haut-droite) est affiché **dans tous les espaces** (Cabinet, Client, Admin) dès qu'une session est ouverte ; masqué sur la page de connexion. Un clic lance la déconnexion (`secDeconnexion` → « Fin de session » avec enregistrement, sinon `secVerrouiller`).
+
+**Comment :**
+- **`yada-addon202` (éditions)** : `SOC_FIELDS` (groupes → [id,libellé,clé,type,large]) ; `socCard` construit la fiche groupée (pré-remplissage `nom←cabinetNom`, `dirigeant←collaborateur`, `pays←France`) ; `admSocSave` itère `SOC_FIELDS` et enregistre chaque clé. Styles `.adm-soc-group/.adm-soc-gh`.
+- **`yada-addon206` (100% additif)** : `#yada-logout` créé une fois, `loggedIn()` = `sessionStorage 'yada-role'` && `!__secLocked` ; `upd()` greffé sur `render` (+ `setTimeout(0)`) + intervalle 600 ms ; `doLogout()` → `secDeconnexion`/`secVerrouiller`. Le voile de connexion (`#sec-lock`, z-index 100000) recouvre le bouton (z-index 99980) → invisible sur la page de connexion. `<style id="logout-btn-mod">`.
+
+**Validé :** `node --check` (199 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (société : 23 champs, enregistrement de nom/siren/siret/tva/ape/capital/iban/email vérifié dans `db.cabinet.societe` ; Déconnexion : masqué sur la porte, visible en admin **et** client, clic → déconnexion ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v424**.
+
+---
+
+## 🟢 MAJ précédente — Espace Admin : barre latérale (sections) + page défilable — v423
 **Quoi :** l'Espace Admin s'affiche désormais en **barre latérale + contenu défilant**. La barre latérale (à gauche, collante) liste **toutes les sections** — **Société exploitante**, **Utilisateurs du cabinet**, **Enregistrer un utilisateur**, **Dossiers & attribution** — + un bouton **« ← Retour aux dossiers »**. Cliquer une section **fait défiler la page** jusqu'à elle (surbrillance brève) ; le contenu est un **conteneur défilant propre** → la page défile toujours (fini le contenu coupé). Le bouton de section actif est mis en surbrillance selon la position de défilement. Responsive : sur mobile, la barre passe au-dessus en ligne et tout défile normalement.
 
 **Comment :**
