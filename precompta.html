@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v456';
+    b.textContent='YADA · v457';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -24206,29 +24206,35 @@ ${lignes}
 })();
 </script>
 <script id="yada-addon215">
-/* v454/v455/v456 — Éditeur d'écritures (Consultation → édition d'un journal, tous dossiers) :
+/* v454/v455/v456/v457 — Éditeur d'écritures (Consultation → édition d'un journal, tous dossiers) :
    correctif de couleur — plus de bande claire/blanche (barre de lettrage) et en-têtes
    de colonnes rendus bien visibles (texte clair sur fond bleu nuit).
    v455 : l'en-tête de colonnes (collant) reste OPAQUE au défilement — z-index élevé
    pour que les écritures passent DERRIÈRE et non par-dessus (plus de transparence).
    v456 : la ligne d'en-tête (barre de lettrage + libellés de colonnes) reçoit un fond
    PLEIN quasi-noir + des CONTOURS NOIRS → aucune transparence, on ne voit jamais
-   l'arrière (fenêtre en lecture seule / écritures) à travers l'en-tête. */
+   l'arrière (fenêtre en lecture seule / écritures) à travers l'en-tête.
+   v457 : barres d'en-tête COMPACTÉES (Traitements / Filtre / Lettrage) + en-tête de
+   colonnes COLLÉ EN HAUT, sans espace — le filet noir sous l'en-tête ne dépasse plus
+   (plus de bande vide entre l'en-tête et les écritures). */
 (function(){
   try{ var st=document.createElement('style'); st.id='ec-fix-colors-mod'; st.textContent=
-    /* barre de lettrage : fond quasi-noir plein + contours noirs */
-    '.ec-sage .ec-letbar{background:#080b10 !important;border-top:1px solid #000 !important;border-bottom:1px solid #000 !important;box-shadow:0 1px 0 #000 !important}'
+    /* barres d'en-tête compactées → tout collé en haut, pas d'espace entre les lignes */
+    '.ec-sage .ec-trtbar{padding:3px 12px !important}'
+    +'.ec-sage .ec-filtbar{padding:3px 12px !important}'
+    /* barre de lettrage : fond quasi-noir plein + contours noirs + compacte */
+    +'.ec-sage .ec-letbar{background:#080b10 !important;padding:3px 12px !important;border-top:1px solid #000 !important;border-bottom:1px solid #000 !important;box-shadow:none !important}'
     +'.ec-sage .ec-letbar .ec-llbl{color:#cfe0f5 !important;-webkit-text-fill-color:#cfe0f5 !important}'
     +'.ec-sage .ec-letbar .ec-lbtn{background:#16304a !important;border:1px solid #2a557e !important;color:#eaf2ff !important;-webkit-text-fill-color:#eaf2ff !important}'
     +'.ec-sage .ec-letbar .ec-lbtn:hover{background:#1d3e5e !important}'
     +'.ec-sage .ec-letbar .ec-lhint{color:#9fb6d0 !important;-webkit-text-fill-color:#9fb6d0 !important}'
     +'.ec-sage .ec-letbar *{color:#cfe0f5}'
-    /* en-têtes de colonnes : fond plein quasi-noir + libellés clairs + CONTOURS NOIRS ;
-       z-index élevé → la ligne d'en-tête reste OPAQUE au défilement (plus de bleed-through
-       des écritures qui passaient PAR-DESSUS l'en-tête collant, z-index:auto). */
+    /* en-têtes de colonnes : fond plein quasi-noir + libellés clairs + CONTOUR NOIR (inset,
+       ne dépasse pas → aucun espace/bande vide sous l'en-tête, il reste COLLÉ aux écritures) ;
+       z-index élevé → l'en-tête reste OPAQUE au défilement (aucun bleed-through, aucune transparence). */
     +'.ec-sage .ec-table thead th{background:#0a0f16 !important;color:#dceaff !important;-webkit-text-fill-color:#dceaff !important;'
-    +'border-top:1px solid #000 !important;border-right:1px solid #000 !important;border-bottom:2px solid #000 !important;'
-    +'box-shadow:inset 0 0 0 1px rgba(0,0,0,.7),0 2px 0 #000 !important;font-weight:700 !important;opacity:1 !important;'
+    +'border-top:none !important;border-right:1px solid #000 !important;border-bottom:1px solid #000 !important;'
+    +'box-shadow:inset 0 0 0 1px rgba(0,0,0,.6) !important;font-weight:700 !important;opacity:1 !important;'
     +'position:sticky !important;top:0 !important;z-index:6 !important}'
     /* fond noir plein derrière la rangée d\'en-tête → aucun interstice ne laisse voir l\'arrière */
     +'.ec-sage .ec-tablewrap thead{background:#0a0f16 !important}'
