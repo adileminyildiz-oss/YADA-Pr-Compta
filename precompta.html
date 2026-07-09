@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v447';
+    b.textContent='YADA · v448';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21701,7 +21701,7 @@ ${lignes}
   function modLabel(id){ try{ var p=(typeof PAGES!=='undefined'?PAGES:[]).find(function(x){return x.id===id;}); return p?p.lbl:id; }catch(e){ return id; } }
 
   /* --- état & actions --- */
-  window.dsAccueil=function(){ window.dsListe=false; window.dsHub=false; if(typeof render==='function') render(); };
+  window.dsAccueil=function(){ window.dsListe=false; window.dsHub=false; window.dsSel=null; window.dsRub=null; window.dsActiveRub=null; if(typeof render==='function') render(); };
   window.dsOuvrirListe=function(){ window.dsListe=true; window.dsHub=false; if(typeof render==='function') render(); };
   window.dsSelectionner=function(id){ window.dsSel=id; window.dsListe=false; window.dsHub=true; if(typeof render==='function') render(); };
   window.dsOuvrirHub=function(){ if(window.dsSel){ window.dsHub=true; if(typeof render==='function') render(); } };
@@ -21778,7 +21778,7 @@ ${lignes}
       +'<div class="login-title">Dossier sélectionné</div>'
       +'<div class="login-sub">Cliquez sur le dossier pour l\'ouvrir.</div>'
       +'<div class="dossier-grid ds-grid-solo">'+carte+'</div>'
-      +actions('<button class="btn btn-ghost ds-back-btn" onclick="dsOuvrirListe()"><span class="ds-back-arrow">←</span> Retour aux dossiers</button>')+'</div>';
+      +actions('<button class="btn btn-ghost ds-back-btn" onclick="dsAccueil()"><span class="ds-back-arrow">←</span> Retour aux dossiers</button>')+'</div>';
   }
   function socRow(lbl,val){ if(!val) return ''; return '<div class="ds-soc-row"><span>'+esc(lbl)+'</span><b>'+esc(val)+'</b></div>'; }
   function socItem(lbl,val,full){ return '<div class="dsc-item'+(full?' full':'')+'"><span class="dsc-l">'+esc(lbl)+'</span><span class="dsc-v">'+esc(val||'—')+'</span></div>'; }
@@ -21799,7 +21799,7 @@ ${lignes}
       +'<div class="login-title">'+esc(i.nom)+'</div>'
       +'<div class="login-sub">Dossier — choisissez une rubrique.</div>'
       +'<div class="ds-hub-grid"><div class="ds-hub-main">'+soc+'</div><div class="ds-hub-side">'+tiles+'</div></div>'
-      +'<div class="login-actions"><button class="btn btn-ghost ds-back-btn" onclick="dsOuvrirListe()"><span class="ds-back-arrow">←</span> Retour aux dossiers</button></div>'
+      +'<div class="login-actions"><button class="btn btn-ghost ds-back-btn" onclick="dsAccueil()"><span class="ds-back-arrow">←</span> Retour aux dossiers</button></div>'
       +'</div>';
   }
   function ecranRubrique(key){ var R=RUBRIQUES[key]; if(!R) return ecranHub(window.dsSel);
@@ -21811,7 +21811,7 @@ ${lignes}
       +'<div class="login-sub">'+esc(i.nom)+' — '+esc(R.desc)+'</div>'
       +'<div class="ds-rub-grid">'+tiles+'</div>'
       +'<div class="login-actions"><button class="btn btn-ghost" onclick="dsRetourHub()">← Retour au dossier</button>'
-      +'<button class="btn btn-ghost ds-back-btn" onclick="dsOuvrirListe()"><span class="ds-back-arrow">←</span> Retour aux dossiers</button></div>'
+      +'<button class="btn btn-ghost ds-back-btn" onclick="dsAccueil()"><span class="ds-back-arrow">←</span> Retour aux dossiers</button></div>'
       +'</div>';
   }
   function dsScreen(){
@@ -23084,12 +23084,19 @@ ${lignes}
    ============================================================ */
 (function(){
   if(window.__logoutBtn) return; window.__logoutBtn=true;
-  function loggedIn(){ try{ var locked=(typeof window.__secLocked!=='undefined')?window.__secLocked:!!document.querySelector('#sec-lock.show');
-    return !!sessionStorage.getItem('yada-role') && !locked; }catch(e){ return false; } }
-  function doLogout(){ try{ if(typeof window.secDeconnexion==='function') return window.secDeconnexion(); if(typeof window.secVerrouiller==='function') return window.secVerrouiller(); }catch(e){} }
+  function loggedIn(){ try{ var locked=((typeof window.__secLocked!=='undefined')&&window.__secLocked)||!!document.querySelector('#sec-lock.show');
+    /* robuste : session active via window.sessionRole OU sessionStorage */
+    return (!!window.sessionRole || !!sessionStorage.getItem('yada-role')) && !locked; }catch(e){ return false; } }
+  function autreLogout(){ try{
+    /* un autre bouton de déconnexion est déjà visible (barre latérale cabinet / accueil / liste) → éviter le doublon */
+    if(document.body.classList.contains('has-side-logout')) return true;
+    var ids=['adm-logout-btn','adm-logout-inline','yada-logout-below'];
+    for(var i=0;i<ids.length;i++){ var e=document.getElementById(ids[i]); if(e){ var s=getComputedStyle(e); var r=e.getBoundingClientRect(); if(s.display!=='none'&&s.visibility!=='hidden'&&r.width>0) return true; } }
+  }catch(e){} return false; }
+  function doLogout(){ try{ if(typeof window.admDoLogout==='function') return window.admDoLogout(); if(typeof window.secDeconnexion==='function') return window.secDeconnexion(); if(typeof window.secVerrouiller==='function') return window.secVerrouiller(); }catch(e){} }
   function ensureBtn(){ var b=document.getElementById('yada-logout'); if(!b){ b=document.createElement('button'); b.id='yada-logout'; b.type='button';
     b.textContent='Déconnexion'; b.onclick=doLogout; document.body.appendChild(b); } return b; }
-  function upd(){ try{ var b=ensureBtn(); b.style.display=loggedIn()?'inline-flex':'none'; }catch(e){} }
+  function upd(){ try{ var b=ensureBtn(); b.style.display=(loggedIn() && !autreLogout())?'inline-flex':'none'; }catch(e){} }
   if(typeof window.render==='function'){ var _r=window.render; window.render=function(){ var x=_r.apply(this,arguments); upd(); setTimeout(upd,0); return x; }; }
   setInterval(upd, 600);
   document.addEventListener('DOMContentLoaded', upd);
@@ -24129,10 +24136,11 @@ ${lignes}
    le bouton de déconnexion FLOTTANT (haut-droite) est masqué là où le bouton latéral existe. */
 (function(){
   function doLogout(){ try{ if(typeof window.secDeconnexion==='function') return window.secDeconnexion(); if(typeof window.secVerrouiller==='function') return window.secVerrouiller(); }catch(e){} }
+  function sideVisible(foot){ try{ if(!foot) return false; if(foot.offsetParent===null) return false; var r=foot.getBoundingClientRect(); return r.width>0 && r.height>0; }catch(e){ return false; } }
   function place(){
     var foot=document.querySelector('.side-foot');
     var tog=foot?foot.querySelector('.sf-toggle'):null;
-    if(foot && tog){
+    if(foot && tog && sideVisible(foot)){
       var b=document.getElementById('yada-logout-below');
       if(!b){ b=document.createElement('button'); b.id='yada-logout-below'; b.type='button'; b.className='sf-logout-below'; b.textContent='Déconnexion'; b.onclick=doLogout; }
       /* toujours en enfant direct de .side-foot, immédiatement après le bouton Outils (jamais happé dans le menu) */

@@ -36,7 +36,22 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Parcours d'entrée : « Changer de dossier » → « ← Retour aux dossiers » (flèche animée) + animation au clic d'un dossier + Déconnexion sur la Liste des dossiers — v447
+## 🟢 Dernière mise à jour — Déconnexion garantie dans CHAQUE espace + « Retour » du dossier ramène à la page principale (après authentification) — v448
+**Quoi :**
+1. **Un bouton Déconnexion dans chaque espace** — correction : le bouton flottant était masqué à tort sur les écrans où la barre latérale existe dans le DOM mais **n'est pas visible** (accueil, Liste, HUB, Espace Admin, Client) → aucun bouton visible. Désormais chaque espace affiche **exactement un** bouton Déconnexion : barre latérale (Cabinet, sous « Outils »), en ligne (accueil / Liste des dossiers), ou **flottant** (Espace Admin, HUB/rubrique, Espace Client).
+2. **« Retour » du dossier → page principale** — depuis la page d'un dossier (HUB / rubrique / dossier sélectionné), le bouton **« ← Retour aux dossiers »** ramène désormais à la **page principale** (l'écran juste après l'authentification : « Espace dossiers »), au lieu de la liste des dossiers.
+
+**Comment :**
+- `yada-addon213` : `place()` ne pose le bouton latéral (`#yada-logout-below`) et la classe `has-side-logout` **que si la barre latérale est réellement visible** (`sideVisible()` : `offsetParent!==null` + rect > 0) → sur les écrans sans barre latérale visible, la classe est retirée et le flottant réapparaît.
+- `yada-addon206` : `loggedIn()` robuste (`window.sessionRole` **ou** `sessionStorage 'yada-role'`) ; `autreLogout()` masque le flottant quand un autre bouton Déconnexion visible existe (barre latérale / accueil / liste) → jamais de doublon ; `doLogout` privilégie `admDoLogout`.
+- `dsAccueil()` réinitialise aussi `dsSel`/`dsRub`/`dsActiveRub` (retour à « Espace dossiers ») ; les 3 boutons « Retour aux dossiers » (`ecranHub`/`ecranRubrique`/`ecranSelUnique`) appellent `dsAccueil()`.
+- `sw.js` yada-v40, badge v448, `version.json` 448.
+
+**Validé :** `node --check` (207 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (Déconnexion visible = **1** dans chaque espace : Admin / accueil / HUB / Cabinet / Client ; « Retour » du HUB → `dsSel=null`, écran « Espace dossiers » (Liste Dossier/Créer/Importer) ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v448**.
+
+---
+
+## 🟢 MAJ précédente — Parcours d'entrée : « Changer de dossier » → « ← Retour aux dossiers » (flèche animée) + animation au clic d'un dossier + Déconnexion sur la Liste des dossiers — v447
 **Quoi :**
 1. **Bouton renommé + animé** — dans le HUB (et les vues rubrique / dossier sélectionné), le bouton **« Changer de dossier »** devient **« ← Retour aux dossiers »** avec une **flèche animée** (glisse au survol, appui `scale`).
 2. **Animation au clic d'un dossier** — cliquer une ligne de dossier (Liste des dossiers) joue une **animation de sélection** (léger zoom + halo bleu) avant de naviguer vers le HUB.
