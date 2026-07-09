@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Déconnexion garantie dans CHAQUE espace + « Retour » du dossier ramène à la page principale (après authentification) — v448
+## 🟢 Dernière mise à jour — Déconnexion : bouton déplacé à côté de « ← Retour aux dossiers » (plus flottant) sur les pages de dossier — v449
+**Quoi :** sur les pages du parcours dossier (HUB, rubrique, dossier sélectionné), le bouton **« Déconnexion »** n'est plus **flottant** (haut-droite) : il est placé **à côté du bouton « ← Retour aux dossiers »** (dans la barre d'actions). Le bouton flottant se masque automatiquement sur ces écrans (un seul bouton visible).
+
+**Comment :** ajout de `<button class="btn btn-ghost ds-logout-btn" onclick="admDoLogout()">Déconnexion</button>` après « Retour aux dossiers » dans `ecranHub`/`ecranRubrique`/`ecranSelUnique` ; `yada-addon206` `autreLogout()` détecte aussi `.ds-logout-btn` visible → le bouton flottant `#yada-logout` est masqué sur ces pages (pas de doublon). `sw.js` yada-v41, badge v449, `version.json` 449.
+
+**Validé :** `node --check` (207 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (HUB : barre d'actions = [« ← Retour aux dossiers », « Déconnexion »], Déconnexion à côté du bouton retour, bouton flottant masqué ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v449**.
+
+---
+
+## 🟢 MAJ précédente — Déconnexion garantie dans CHAQUE espace + « Retour » du dossier ramène à la page principale (après authentification) — v448
 **Quoi :**
 1. **Un bouton Déconnexion dans chaque espace** — correction : le bouton flottant était masqué à tort sur les écrans où la barre latérale existe dans le DOM mais **n'est pas visible** (accueil, Liste, HUB, Espace Admin, Client) → aucun bouton visible. Désormais chaque espace affiche **exactement un** bouton Déconnexion : barre latérale (Cabinet, sous « Outils »), en ligne (accueil / Liste des dossiers), ou **flottant** (Espace Admin, HUB/rubrique, Espace Client).
 2. **« Retour » du dossier → page principale** — depuis la page d'un dossier (HUB / rubrique / dossier sélectionné), le bouton **« ← Retour aux dossiers »** ramène désormais à la **page principale** (l'écran juste après l'authentification : « Espace dossiers »), au lieu de la liste des dossiers.

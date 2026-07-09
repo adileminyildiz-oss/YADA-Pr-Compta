@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v448';
+    b.textContent='YADA · v449';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21778,7 +21778,7 @@ ${lignes}
       +'<div class="login-title">Dossier sélectionné</div>'
       +'<div class="login-sub">Cliquez sur le dossier pour l\'ouvrir.</div>'
       +'<div class="dossier-grid ds-grid-solo">'+carte+'</div>'
-      +actions('<button class="btn btn-ghost ds-back-btn" onclick="dsAccueil()"><span class="ds-back-arrow">←</span> Retour aux dossiers</button>')+'</div>';
+      +actions('<button class="btn btn-ghost ds-back-btn" onclick="dsAccueil()"><span class="ds-back-arrow">←</span> Retour aux dossiers</button><button class="btn btn-ghost ds-logout-btn" onclick="admDoLogout()">Déconnexion</button>')+'</div>';
   }
   function socRow(lbl,val){ if(!val) return ''; return '<div class="ds-soc-row"><span>'+esc(lbl)+'</span><b>'+esc(val)+'</b></div>'; }
   function socItem(lbl,val,full){ return '<div class="dsc-item'+(full?' full':'')+'"><span class="dsc-l">'+esc(lbl)+'</span><span class="dsc-v">'+esc(val||'—')+'</span></div>'; }
@@ -21799,7 +21799,7 @@ ${lignes}
       +'<div class="login-title">'+esc(i.nom)+'</div>'
       +'<div class="login-sub">Dossier — choisissez une rubrique.</div>'
       +'<div class="ds-hub-grid"><div class="ds-hub-main">'+soc+'</div><div class="ds-hub-side">'+tiles+'</div></div>'
-      +'<div class="login-actions"><button class="btn btn-ghost ds-back-btn" onclick="dsAccueil()"><span class="ds-back-arrow">←</span> Retour aux dossiers</button></div>'
+      +'<div class="login-actions"><button class="btn btn-ghost ds-back-btn" onclick="dsAccueil()"><span class="ds-back-arrow">←</span> Retour aux dossiers</button><button class="btn btn-ghost ds-logout-btn" onclick="admDoLogout()">Déconnexion</button></div>'
       +'</div>';
   }
   function ecranRubrique(key){ var R=RUBRIQUES[key]; if(!R) return ecranHub(window.dsSel);
@@ -21811,7 +21811,7 @@ ${lignes}
       +'<div class="login-sub">'+esc(i.nom)+' — '+esc(R.desc)+'</div>'
       +'<div class="ds-rub-grid">'+tiles+'</div>'
       +'<div class="login-actions"><button class="btn btn-ghost" onclick="dsRetourHub()">← Retour au dossier</button>'
-      +'<button class="btn btn-ghost ds-back-btn" onclick="dsAccueil()"><span class="ds-back-arrow">←</span> Retour aux dossiers</button></div>'
+      +'<button class="btn btn-ghost ds-back-btn" onclick="dsAccueil()"><span class="ds-back-arrow">←</span> Retour aux dossiers</button><button class="btn btn-ghost ds-logout-btn" onclick="admDoLogout()">Déconnexion</button></div>'
       +'</div>';
   }
   function dsScreen(){
@@ -23090,8 +23090,8 @@ ${lignes}
   function autreLogout(){ try{
     /* un autre bouton de déconnexion est déjà visible (barre latérale cabinet / accueil / liste) → éviter le doublon */
     if(document.body.classList.contains('has-side-logout')) return true;
-    var ids=['adm-logout-btn','adm-logout-inline','yada-logout-below'];
-    for(var i=0;i<ids.length;i++){ var e=document.getElementById(ids[i]); if(e){ var s=getComputedStyle(e); var r=e.getBoundingClientRect(); if(s.display!=='none'&&s.visibility!=='hidden'&&r.width>0) return true; } }
+    var els=[document.getElementById('adm-logout-btn'),document.getElementById('adm-logout-inline'),document.getElementById('yada-logout-below'),document.querySelector('.ds-logout-btn')];
+    for(var i=0;i<els.length;i++){ var e=els[i]; if(e){ var s=getComputedStyle(e); var r=e.getBoundingClientRect(); if(s.display!=='none'&&s.visibility!=='hidden'&&r.width>0) return true; } }
   }catch(e){} return false; }
   function doLogout(){ try{ if(typeof window.admDoLogout==='function') return window.admDoLogout(); if(typeof window.secDeconnexion==='function') return window.secDeconnexion(); if(typeof window.secVerrouiller==='function') return window.secVerrouiller(); }catch(e){} }
   function ensureBtn(){ var b=document.getElementById('yada-logout'); if(!b){ b=document.createElement('button'); b.id='yada-logout'; b.type='button';
