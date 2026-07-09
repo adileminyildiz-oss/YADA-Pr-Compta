@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v445';
+    b.textContent='YADA · v446';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -23851,12 +23851,14 @@ ${lignes}
     try{ document.body.removeChild(meas); }catch(e){}
     var np=pages.length; var pg=Math.min(Math.max(window.__admCtrPage||0,0),np-1); window.__admCtrPage=pg;
     var pageBlocks=(pages[pg]&&pages[pg].length)?pages[pg]:blocks; /* filet : jamais de page vide */
-    /* Échelle : ajuster à la LARGEUR disponible, jamais agrandir (≤ 1) ; conteneur défilable. */
+    /* Hauteur du conteneur = hauteur de la barre latérale (bornée à 88vh), puis
+       échelle ajustée pour que la PAGE A4 ENTIÈRE tienne (largeur ET hauteur) → aucune coupe. */
+    var sideH=(side&&side.offsetHeight>200)?side.offsetHeight:640;
+    var targetH=Math.max(420, Math.min(sideH, Math.round((window.innerHeight||900)*0.88)));
+    if(prev){ prev.style.height=targetH+'px'; prev.style.overflowY='auto'; prev.style.overflowX='hidden'; prev.style.alignItems='flex-start'; prev.style.justifyContent='center'; }
     var availW=(prev&&prev.clientWidth>60?prev.clientWidth:560)-24;
-    var scale=availW/CTR_A4W; if(!(scale>0.15)) scale=0.6; if(scale>1) scale=1;
-    if(prev){ var sideH=(side&&side.offsetHeight>200)?side.offsetHeight:640;
-      prev.style.height=Math.min(sideH, Math.round((window.innerHeight||900)*0.82))+'px';
-      prev.style.overflowY='auto'; prev.style.overflowX='hidden'; prev.style.alignItems='flex-start'; }
+    var availH=targetH-24;
+    var scale=Math.min(availW/CTR_A4W, availH/CTR_A4H); if(!(scale>0.1)) scale=0.5; if(scale>1) scale=1;
     host.innerHTML='<div style="height:'+Math.round(CTR_A4H*scale)+'px;width:'+Math.round(CTR_A4W*scale)+'px;margin:0 auto"><div class="ctr-a4" style="width:'+CTR_A4W+'px;min-height:'+CTR_A4H+'px;padding:'+CTR_PAD+'px;transform:scale('+scale+');transform-origin:top left">'+pageBlocks.join('')+'</div></div>';
     var pager=document.getElementById('adm-ctr-pager');
     if(pager){ pager.innerHTML = (np>1) ? ('<button class="btn btn-ghost btn-sm" '+(pg<=0?'disabled':'')+' onclick="admCtrPage(-1)">‹ Page précédente</button><span class="mini" style="opacity:.75">Page '+(pg+1)+' / '+np+'</span><button class="btn btn-ghost btn-sm" '+(pg>=np-1?'disabled':'')+' onclick="admCtrPage(1)">Page suivante ›</button>') : '<span class="mini" style="opacity:.6">Page 1 / '+np+'</span>'; }
@@ -23873,12 +23875,21 @@ ${lignes}
     soc4.forEach(function(f){ var v=so[f[0]]; if(v==null||String(v).trim()==='') m.push(f[1]); });
     return m; }
   function ctrGenBlockHTML(s){ var m=ctrManques(s);
+    var ap='<button class="btn btn-ghost btn-sm" onclick="admCtrApercu()">👁 Aperçu du contrat</button>';
     var enr='<button class="btn btn-ghost btn-sm" onclick="admCtrEnregistrer()">Enregistrer</button>';
     if(m.length) return '<div class="ctr-gen-warn">⚠ Complétez toutes les conditions du contrat avant de le générer.<div class="mini" style="margin-top:4px;opacity:.85">Manquant : '+esc(m.join(', '))+'</div></div>'
-      +'<div class="ctr-gen-actions"><button class="btn btn-pri btn-sm" disabled style="opacity:.55;cursor:not-allowed">Générer le contrat (PDF)</button>'+enr+'</div>';
+      +'<div class="ctr-gen-actions">'+ap+'<button class="btn btn-pri btn-sm" disabled style="opacity:.55;cursor:not-allowed">Générer le contrat (PDF)</button>'+enr+'</div>';
     return '<div class="ctr-gen-ok">✓ Toutes les conditions sont remplies — le contrat peut être généré.</div>'
-      +'<div class="ctr-gen-actions"><button class="btn btn-pri btn-sm" onclick="admCtrGenerer()">Générer le contrat (PDF)</button>'+enr+'</div>'
+      +'<div class="ctr-gen-actions">'+ap+'<button class="btn btn-pri btn-sm" onclick="admCtrGenerer()">Générer le contrat (PDF)</button>'+enr+'</div>'
       +(s.contratGenere?'<div class="mini" style="color:#7fdba0;text-align:center;margin-top:6px">Généré le '+esc(frd(s.contratGenereDate)||'')+' — visible dans la liste des salariés.</div>':''); }
+  /* Aperçu du contrat à la demande (fenêtre) — plus d'aperçu en direct. */
+  window.admCtrApercu=function(){ var s=stById(window.__admCtrSel); if(!s){ if(typeof toast==='function')toast('Sélectionnez un salarié.'); return; }
+    var mc=document.getElementById('modal-c'); var mo=document.getElementById('modal');
+    if(mc&&mo){ mo.classList.add('show');
+      mc.innerHTML='<div class="modal-h"><b>Aperçu du contrat — '+esc(nom(s))+'</b><button class="btn btn-ghost btn-sm" onclick="closeModal()">Fermer</button></div>'
+        +'<div class="modal-b"><div class="ctr-apercu-scroll">'+contratHTML(s)+'</div>'
+        +'<div style="margin-top:12px;text-align:center"><button class="btn btn-pri btn-sm" onclick="admCtrImprimer(\''+esc(s.id)+'\')">Imprimer / PDF</button></div></div>';
+    } else { admCtrImprimer(s.id); } };
   window.admCtrEnregistrer=function(){ var s=stById(window.__admCtrSel); if(!s){ if(typeof toast==='function')toast('Sélectionnez un salarié.'); return; } try{ if(typeof save==='function') save(); }catch(e){} if(typeof toast==='function') toast('Contrat enregistré ✓'); };
   window.admCtrImprimer=function(id){ var s=stById(id||window.__admCtrSel); if(!s){ if(typeof toast==='function')toast('Sélectionnez un salarié.'); return; } var pa=document.getElementById('print-area'); if(pa) pa.innerHTML=contratHTML(s); if(typeof toast==='function')toast('Fenêtre d\'impression → « Enregistrer en PDF »'); setTimeout(function(){ try{window.print();}catch(e){} },150); };
   /* Génération du contrat en PDF — uniquement si toutes les conditions sont remplies. */
@@ -23897,8 +23908,8 @@ ${lignes}
         +salOpenList(window.__admCtrSel,'admCtrSelect')+'</div>'; }
     var pp=salPer(s);
     var jopts=function(cur){ var o=''; for(var i=1;i<=28;i++){ o+='<option value="'+i+'"'+(String(cur)===String(i)?' selected':'')+'>'+i+'</option>'; } return o; };
-    var form='<div class="adm-ctr-side">'
-      +'<div style="margin-bottom:8px"><button class="btn btn-ghost btn-sm" onclick="admCtrSelect(\'\')">‹ Changer de salarié</button></div>'
+    var form='<div class="adm-ctr-side ctr-grid">'
+      +'<div class="ctr-full" style="margin-bottom:2px"><button class="btn btn-ghost btn-sm" onclick="admCtrSelect(\'\')">‹ Changer de salarié</button></div>'
       +'<div class="adm-soc-gh">Contrat</div>'
       +ctrFieldRow(s.id,'Type de contrat','typeContrat','sel:CDI=CDI|CDD=CDD|APP=Apprentissage|PRO=Professionnalisation|STG=Stage',s.typeContrat)
       +ctrFieldRow(s.id,'Date de commencement','dateEntree','date',s.dateEntree)
@@ -23925,12 +23936,12 @@ ${lignes}
       +ctrFieldRow(s.id,'Durée hebdomadaire (heures)','dureeHebdo','number',s.dureeHebdo||35)
       +ctrFieldRow(s.id,'Horaires de travail (si différent)','horaires','text',s.horaires)
       +ctrFieldRow(s.id,'Lieu de travail','lieuTravail','text',s.lieuTravail)
-      +'<div id="adm-ctr-gen">'+ctrGenBlockHTML(s)+'</div>'
-      +'<div class="adm-soc-gh">Dépôt du contrat signé &amp; tamponné</div>'+contratSection(s)
+      +'<div id="adm-ctr-gen" class="ctr-full">'+ctrGenBlockHTML(s)+'</div>'
+      +'<div class="adm-soc-gh">Dépôt du contrat signé &amp; tamponné</div>'
+      +'<div class="ctr-full">'+contratSection(s)+'</div>'
       +'</div>';
-    return '<div class="card"><h2>Contrat de travail — '+esc(nom(s))+'</h2><div class="sub">Complétez le formulaire à gauche : l\'aperçu A4 du contrat se met à jour <b>en direct</b> à droite. Le contrat ne peut être <b>généré en PDF</b> que lorsque <b>toutes les conditions</b> sont remplies ; il apparaît alors dans la liste des salariés.</div>'
-      +'<div class="adm-ctr-wrap">'+form+'<div class="adm-ctr-prev"><div id="adm-ctr-preview"></div></div></div>'
-      +'<div id="adm-ctr-pager" class="adm-ctr-pager"></div></div>';
+    return '<div class="card"><h2>Contrat de travail — '+esc(nom(s))+'</h2><div class="sub">Complétez les éléments du contrat, puis cliquez <b>« Aperçu du contrat »</b> pour le visualiser. Le contrat ne peut être <b>généré en PDF</b> que lorsque <b>toutes les conditions</b> sont remplies ; il apparaît alors dans la liste des salariés.</div>'
+      +'<div class="adm-ctr-formwrap">'+form+'</div></div>';
   }
 
   function admPaieModule(){ var tab=window.__admPaieTab||'sal';
@@ -23976,6 +23987,14 @@ ${lignes}
     +'.bp-prev-wrap{background:#e9edf3;border:1px solid rgba(120,180,255,.2);border-radius:12px;padding:10px;overflow:hidden;display:flex;justify-content:center;align-items:flex-start}'
     +'.bp-prev-wrap .bp-a4{box-shadow:0 6px 22px rgba(0,0,0,.3)}'
     +'.adm-ctr-wrap{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:16px;margin-top:12px;align-items:start}'
+    /* Onglet Contrat sans aperçu : formulaire seul, en grille, centré. */
+    +'.adm-ctr-formwrap{max-width:980px;margin:12px auto 0}'
+    +'.adm-ctr-side.ctr-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;align-items:start}'
+    +'.adm-ctr-side.ctr-grid .fld{margin-bottom:0}'
+    +'.adm-ctr-side.ctr-grid .ctr-full,.adm-ctr-side.ctr-grid .adm-soc-gh{grid-column:1/-1}'
+    +'@media(max-width:640px){.adm-ctr-side.ctr-grid{grid-template-columns:1fr}}'
+    +'.ctr-apercu-scroll{max-height:74vh;overflow:auto;background:#e9edf3;border-radius:10px;padding:14px;display:flex;justify-content:center}'
+    +'.ctr-apercu-scroll .doc-page{box-shadow:0 6px 22px rgba(0,0,0,.3)}'
     +'.adm-ctr-side .fld{margin-bottom:8px}.adm-ctr-side .fld label{display:block;font-size:11.5px;opacity:.72;margin-bottom:3px}'
     +'.ctr-gen-warn{margin-top:12px;background:rgba(255,120,110,.12);border:1px solid rgba(255,120,110,.4);border-radius:9px;padding:9px 11px;font-size:12.5px;color:#ffb4ad}'
     +'.ctr-gen-ok{margin-top:12px;background:rgba(80,200,140,.12);border:1px solid rgba(80,200,140,.4);border-radius:9px;padding:9px 11px;font-size:12.5px;color:#7fdba0}'
