@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v437';
+    b.textContent='YADA · v438';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -23460,8 +23460,8 @@ ${lignes}
     var cotisSal=R2(totRetSalDed+csgNonDed);
     /* Cotisations PATRONALES (Mt patronal) */
     var pat={maladie:R2(brut*0.0700),complSante:R2(brut*0.0600),atmp:R2(brut*0.0070),
-      retPlaf:R2(brut*0.0855),retDeplaf:R2(brut*0.0190),retCompl:R2(brut*0.0601),
-      famille:R2(brut*0.0525),chomage:R2(brut*0.0405),ags:R2(brut*0.0025),autres:R2(brut*0.0097)};
+      retPlaf:R2(brut*0.0855),retDeplaf:R2(brut*0.0211),retCompl:R2(brut*0.0601),
+      famille:R2(brut*0.0525),chomage:R2(brut*0.0400),ags:R2(brut*0.0025),autres:R2(brut*0.00965)};
     var smicM=PAIE_SMIC*heures, C=0; if(brut>0){ C=(0.3194/0.6)*((1.6*smicM/brut)-1); if(C<0)C=0; if(C>0.3194)C=0.3194; }
     var alleg=R2(-brut*C);
     var totPat=R2(pat.maladie+pat.complSante+pat.atmp+pat.retPlaf+pat.retDeplaf+pat.retCompl+pat.famille+pat.chomage+pat.ags+pat.autres+alleg);
@@ -23538,85 +23538,112 @@ ${lignes}
   window.admDsnRefuser=function(){ var e=envoi(); if(!e)return; var dt=(typeof todayStr==='function')?todayStr():new Date().toISOString().slice(0,10); e.refuse=true; e.statut='Refusée'; e.flux.push({etape:'Refusée',date:dt}); saveR(); };
   window.admDsnReset=function(){ var p=P(),k=periode(); delete p.dsn.envois[k]; saveR(); };
 
-  /* ---- Fiche de paie (bulletin de salaire — reproduction du modèle fourni) ---- */
+  /* ---- Fiche de paie (bulletin de salaire — reproduction FIDÈLE du modèle, positionnée au point PDF) ---- */
   function civM(s){ return s.sexe==='F'?'Mme':'M.'; }
+  var BPK=0.352778; /* mm par point PDF (A4 595×842 pt = 210×297 mm) */
   function bulletinHTML(s,perArg){ var per=perArg||periode(); var c=paieDetail(s,per), so=soc();
     var f2=function(n){ return (Number(n)||0).toFixed(2); };
-    var y=+per.slice(0,4), mo=+per.slice(5,7); var pad=function(n){ return (n<10?'0':'')+n; };
-    var last=28; try{ last=new Date(y,mo,0).getDate(); }catch(e){}
-    var du='01/'+pad(mo)+'/'+y, au=pad(last)+'/'+pad(mo)+'/'+y, payLe=pad(last)+'/'+pad(mo)+'/'+String(y).slice(2);
+    var yy=+per.slice(0,4), mo=+per.slice(5,7); var pad=function(n){ return (n<10?'0':'')+n; };
+    var last=28; try{ last=new Date(yy,mo,0).getDate(); }catch(e){}
+    var du='01/'+pad(mo)+'/'+yy, au=pad(last)+'/'+pad(mo)+'/'+yy, payLe=pad(last)+'/'+pad(mo)+'/'+String(yy).slice(2);
     var nomC=civM(s)+' '+((s.nom||'').toUpperCase())+' '+(s.prenom||'');
-    /* cumuls (périodes ≤ per) */
-    var cum={brut:0,netImpo:0,net:0}; perAvecSalaire(s).filter(function(k){return k<=per;}).forEach(function(k){ var d=paieDetail(s,k); cum.brut=R2(cum.brut+d.brut); cum.netImpo=R2(cum.netImpo+d.netImpo); cum.net=R2(cum.net+d.netAPayer); });
-    var grp=function(t){ return '<tr class="bp-grp"><td colspan="5">'+esc(t)+'</td></tr>'; };
-    var L=function(lbl,base,txsal,mtsal,mtpat,cls){ return '<tr'+(cls?(' class="'+cls+'"'):'')+'><td>'+lbl+'</td><td class="r">'+(base||'')+'</td><td class="r">'+(txsal||'')+'</td><td class="r">'+(mtsal||'')+'</td><td class="r">'+(mtpat||'')+'</td></tr>'; };
+    var cum={brut:0,net:0}; perAvecSalaire(s).filter(function(k){return k<=per;}).forEach(function(k){ var d=paieDetail(s,k); cum.brut=R2(cum.brut+d.brut); cum.net=R2(cum.net+d.netAPayer); });
+    /* helpers de positionnement (coordonnées PDF, origine bas-gauche) */
+    var mx=function(x){ return (x*BPK).toFixed(2); };
+    var myTop=function(y,sz){ return ((842-y)*BPK - sz*BPK*0.80).toFixed(2); };
+    var T=function(x,y,sz,txt,bold){ return '<div class="bpx-t'+(bold?' bpx-b':'')+'" style="left:'+mx(x)+'mm;top:'+myTop(y,sz)+'mm;font-size:'+sz+'pt">'+txt+'</div>'; };
+    var TR=function(edge,y,sz,txt,bold){ return '<div class="bpx-t bpx-r'+(bold?' bpx-b':'')+'" style="right:'+((595-edge)*BPK).toFixed(2)+'mm;top:'+myTop(y,sz)+'mm;font-size:'+sz+'pt">'+txt+'</div>'; };
+    var HL=function(x1,y,x2){ return '<div class="bpx-l" style="left:'+mx(x1)+'mm;top:'+((842-y)*BPK).toFixed(2)+'mm;width:'+((x2-x1)*BPK).toFixed(2)+'mm;height:.25mm"></div>'; };
+    var VL=function(x,y1,y2){ return '<div class="bpx-l" style="left:'+mx(x)+'mm;top:'+((842-y1)*BPK).toFixed(2)+'mm;width:.25mm;height:'+((y1-y2)*BPK).toFixed(2)+'mm"></div>'; };
+    var GR=function(x,ytop,w,h){ return '<div class="bpx-g" style="left:'+mx(x)+'mm;top:'+((842-ytop)*BPK).toFixed(2)+'mm;width:'+(w*BPK).toFixed(2)+'mm;height:'+(h*BPK).toFixed(2)+'mm"></div>'; };
+    /* colonnes (bords droits) */
+    var Eb=258,Et=327,Ems=435,Emp=507;
+    var H=[];
+    /* traits & cadres */
+    H.push(HL(14,841,590),HL(14,16,590),VL(14,841,16),VL(590,841,16));
+    H.push(HL(14,751,590),VL(344,841,751));
+    H.push(VL(302,751,681),HL(302,681,554),VL(554,751,681));
+    H.push(GR(14,626,495,15),HL(14,611,509),HL(14,626,509));
+    H.push(VL(191,626,190),VL(260,626,190),VL(329,626,190),VL(437,626,190),VL(509,626,190),HL(14,190,590));
+    H.push(HL(509,547,590),HL(509,387,590),VL(509,547,190),HL(509,286,590),HL(509,208,590));
+    H.push(HL(14,179,590),HL(14,170,590),HL(14,155,590),HL(14,91,590),HL(14,48,590),VL(440,155,48));
+    /* en-tête société / période */
+    H.push(T(350,815,13,'BULLETIN DE SALAIRE',true));
+    H.push(T(29,809,8,'Société '+esc(so.nom||'—'),true),T(29,798,8,esc(so.adresse||''),true),T(29,776,8,esc(so.cp||''),true),T(65,776,8,esc(so.ville||''),true));
+    H.push(T(29,759,8,'Siret :',true),T(56,759,8,esc(so.siret||'—'),true),T(143,759,8,'Code NAF:',true),T(188,759,8,esc(so.codeAPE||'—'),true));
+    H.push(T(356,786,8,'Période :'),T(395,786,8,esc(perLabel(per)),true),T(356,772,8,'Paiement le :'),T(410,772,8,esc(payLe),true));
+    H.push(T(356,757,8,'Du :'),T(383,757,8,esc(du),true),T(458,757,8,'Au :'),T(485,757,8,esc(au),true));
+    /* salarié + congés */
+    H.push(T(310,732,9,esc(nomC),true),T(310,720,9,esc(s.adresse||''),true),T(310,690,9,esc((s.cp||'')+' '+(s.ville||'')),true));
+    H.push(T(95,740,8,'CP N-1'),T(150,740,8,'CP N'),T(26,728,8,'Acquis :'),T(26,717,8,'Total pris :'),T(26,705,8,'Solde :'));
+    H.push(TR(140,728,8,f2(num(s.cpAcqN1))),TR(195,728,8,f2(num(s.cpAcqN))),TR(140,717,8,f2(num(s.cpPrisN1))),TR(195,717,8,f2(num(s.cpPrisN))),TR(140,705,8,f2(num(s.cpAcqN1)-num(s.cpPrisN1))),TR(195,705,8,f2(num(s.cpAcqN)-num(s.cpPrisN))));
+    H.push(T(29,681,8,'Matricule :'),T(80,681,8,esc(s.matricule||'—')),T(158,681,8,'N° Sécu. : '+esc(s.nir||'—')));
+    H.push(T(29,656,8,'Entré(e) le :'),T(80,656,8,esc(frd(s.dateEntree))),T(29,644,8,'Emploi :'),T(80,644,8,esc(s.poste||'—')));
+    H.push(T(29,633,8,'Statut :'),T(80,633,8,esc(s.statutCadre==='C'?'Cadre':'Non cadre')),T(206,633,8,'Coeff:'),T(296,633,8,esc(s.coeff||'')));
+    /* en-têtes de colonnes */
+    H.push(T(83,614,9,'Rubriques',true),T(210,614,9,'Base',true),T(263,614,9,'Taux salarial',true),T(344,614,9,'Montant salarial',true),T(446,614,9,'Mt patronal',true));
+    /* rubriques */
     var b=f2(c.brut), bcsg=f2(c.baseCSG);
-    var body=''
-      +L('SALAIRE DE BASE', f2(c.heures), f2(c.tauxH), '<b>'+f2(c.brut)+'</b>','', 'bp-sal')
-      +L('<b>SALAIRE BRUT</b>','','','<b>'+f2(c.brut)+'</b>','','bp-brut')
-      +grp('Q100  SANTÉ')
-      +L('Sécurité Sociale - Maladie Maternité Invalidité Décès', b,'','', f2(c.pat.maladie))
-      +L('Complémentaire santé', b,'','', f2(c.pat.complSante))
-      +grp('Q200  ACCIDENT DU TRAVAIL')
-      +L('Accident du travail - Maladie professionnelle', b,'','', f2(c.pat.atmp))
-      +grp('Q300  RETRAITE')
-      +L('Sécurité Sociale plafonnée', b,'6.9000', f2(c.retPlafS), f2(c.pat.retPlaf))
-      +L('Sécurité Sociale déplafonnée', b,'0.4000', f2(c.retDeplafS), f2(c.pat.retDeplaf))
-      +L('Complémentaire Tranche 1', b,'4.0100', f2(c.retComplS), f2(c.pat.retCompl))
-      +grp('Q400  FAMILLE')
-      +L('Famille', b,'','', f2(c.pat.famille))
-      +grp('Q500  ASSURANCE CHÔMAGE')
-      +L('Chômage', b,'','', f2(c.pat.chomage))
-      +L('AGS', b,'','', f2(c.pat.ags))
-      +grp('Q600  AUTRES CONTRIBUTIONS DUES PAR L\'EMPLOYEUR')
-      +L('Autres contributions dues par l\'employeur', b,'','', f2(c.pat.autres))
-      +grp('Q800  CSG / CRDS')
-      +L('CSG déductible à l\'IR', bcsg,'6.8000', f2(c.csgDed),'')
-      +grp('Q802  EXONÉRATIONS, ÉCRÊTEMENTS ET ALLÉGEMENTS DE COTISATIONS')
-      +L('Allègement général de cotisations', '','', '', f2(c.alleg))
-      +L('<b>TOTAL DES RETENUES</b>','','','<b>'+f2(c.totRetSalDed)+'</b>','<b>'+f2(c.totPat)+'</b>','bp-tot')
-      +L('<b>NET IMPOSABLE</b>','','','<b>'+f2(c.netImpo)+'</b>','','bp-netimpo')
-      +grp('Q801  CSG / CRDS NON DÉDUCTIBLE')
-      +L('CSG / CRDS non déductible à l\'IR', bcsg,'2.9000', f2(c.csgNonDed),'');
-    var congL=function(a,b2,c2){ return '<div class="bp-cp-row"><span>'+esc(a)+'</span><span>'+esc(b2)+'</span><span>'+esc(c2)+'</span></div>'; };
-    return '<div class="doc-page bp-page">'
-      +'<div class="bp-head">'
-        +'<div class="bp-emp"><div class="bp-emp-nom">Société '+esc(so.nom||'—')+'</div><div>'+esc(so.adresse||'')+'</div><div>'+esc((so.cp||'')+' '+(so.ville||''))+'</div><div>Siret : '+esc(so.siret||'—')+'</div><div>Code NAF : '+esc(so.codeAPE||'—')+'</div></div>'
-        +'<div class="bp-per"><div class="bp-titre">BULLETIN DE SALAIRE</div>'
-          +'<div class="bp-per-l"><span>Période :</span><b>'+esc(perLabel(per))+'</b></div>'
-          +'<div class="bp-per-l"><span>Paiement le :</span><b>'+esc(payLe)+'</b></div>'
-          +'<div class="bp-per-l"><span>Du :</span>'+esc(du)+'<span style="margin-left:10px">Au :</span>'+esc(au)+'</div></div>'
-      +'</div>'
-      +'<div class="bp-head2">'
-        +'<div class="bp-sal"><b>'+esc(nomC)+'</b><div>'+esc(s.adresse||'')+'</div><div>'+esc((s.cp||'')+' '+(s.ville||''))+'</div>'
-          +'<div>Matricule : '+esc(s.matricule||'—')+'</div><div>N° Sécu. : '+esc(s.nir||'—')+'</div>'
-          +'<div>Entré(e) le : '+esc(frd(s.dateEntree))+'</div><div>Emploi : '+esc(s.poste||'—')+'</div>'
-          +'<div>Statut : '+esc(s.statutCadre==='C'?'Cadre':'Non cadre')+(s.conventionNom?(' · Convention : '+esc(s.conventionNom)):'')+'</div></div>'
-        +'<div class="bp-cp"><div class="bp-cp-h"><span></span><span>CP N-1</span><span>CP N</span></div>'
-          +congL('Acquis :', f2(num(s.cpAcqN1)), f2(num(s.cpAcqN)))
-          +congL('Pris :', f2(num(s.cpPrisN1)), f2(num(s.cpPrisN)))
-          +congL('Solde :', f2(num(s.cpAcqN1)-num(s.cpPrisN1)), f2(num(s.cpAcqN)-num(s.cpPrisN)))+'</div>'
-      +'</div>'
-      +'<table class="bp-t"><thead><tr><th>Rubriques</th><th class="r">Base</th><th class="r">Taux salarial</th><th class="r">Montant salarial</th><th class="r">Mt patronal</th></tr></thead><tbody>'+body+'</tbody></table>'
-      +'<div class="bp-net">'
-        +'<div class="bp-net-l"><span>NET À PAYER AVANT IMPÔT SUR LE REVENU</span><b>'+f2(c.netAvImpot)+' €</b></div>'
-        +'<div class="bp-net-l"><span>Impôt sur le revenu prélevé à la source (base '+f2(c.netImpo)+' · taux '+f2(c.pasTaux)+' %)</span><b>'+f2(c.pas)+' €</b></div>'
-        +'<div class="bp-net-l bp-net-final"><span>NET À PAYER AU SALARIÉ</span><b>'+f2(c.netAPayer)+' €</b></div>'
-        +'<div class="bp-net-l"><span>MONTANT NET SOCIAL</span><b>'+f2(c.netSocial)+' €</b></div>'
-        +'<div class="bp-net-l"><span>Coût total employeur</span><b>'+f2(c.cout)+' €</b></div>'
-      +'</div>'
-      +'<div class="bp-cum"><b>CUMULS annuels</b> — Brut : '+f2(cum.brut)+' € · Net imposable : '+f2(cum.netImpo)+' € · Net payé : '+f2(cum.net)+' €</div>'
-      +'<div class="bp-foot">'
-        +'<div>SMIC Horaire : '+f2(PAIE_SMIC)+' €   ·   Paiement par '+esc(s.modePaiement||'Virement')+'</div>'
-        +(s.conventionNom?('<div>Convention collective : '+esc(s.conventionNom)+'</div>'):'')
-        +'<div style="margin-top:5px">Dans votre intérêt et pour vous aider à faire valoir vos droits, conservez ce bulletin de paie sans limitation de durée.</div>'
-        +'<div>Pour plus d\'informations sur le bulletin de paie clarifié : www.service-public.fr</div>'
-        +'<div style="margin-top:5px;opacity:.7;font-size:10px">Taux de cotisations représentatifs (modèle simplifié) — à fiabiliser selon la convention collective et les organismes.</div>'
-      +'</div>'
-      +'</div>'; }
+    var grpH=function(y,q,t){ return T(29,y,7,q,true)+T(50,y,7,t,true); };
+    var line=function(y,lbl,base,taux,mtsal,mtpat,bold){ var o=T(50,y,8,esc(lbl),bold); if(base)o+=TR(Eb,y,8,base,bold); if(taux)o+=TR(Et,y,8,taux,bold); if(mtsal)o+=TR(Ems,y,8,mtsal,bold); if(mtpat)o+=TR(Emp,y,8,mtpat,bold); return o; };
+    H.push(line(598,'SALAIRE DE BASE', f2(c.heures), f2(c.tauxH), f2(c.brut),'',true));
+    H.push(line(557,'SALAIRE BRUT','','', f2(c.brut),'',true));
+    H.push(grpH(547,'Q100','SANTÉ'));
+    H.push(line(536,'Sécu.Soc-Mal.Mater.Inval.Déc.', b,'','', f2(c.pat.maladie)));
+    H.push(line(526,'Complémentaire santé', b,'','', f2(c.pat.complSante)));
+    H.push(grpH(516,'Q200','AT-MP'));
+    H.push(line(505,'Acc. du trav. - Mal. prof.', b,'','', f2(c.pat.atmp)));
+    H.push(grpH(495,'Q300','RETRAITE'));
+    H.push(line(485,'Sécu.Soc Plafonnée', b,'6.9000', f2(c.retPlafS), f2(c.pat.retPlaf)));
+    H.push(line(474,'Sécu.Soc Déplafonnée', b,'0.4000', f2(c.retDeplafS), f2(c.pat.retDeplaf)));
+    H.push(line(464,'Complémentaire Tranche 1', b,'4.0100', f2(c.retComplS), f2(c.pat.retCompl)));
+    H.push(grpH(454,'Q400','FAMILLE'));
+    H.push(line(444,'Famille', b,'','', f2(c.pat.famille)));
+    H.push(grpH(433,'Q500','ASSURANCE CHÔMAGE'));
+    H.push(line(423,'Chômage', b,'','', f2(c.pat.chomage)));
+    H.push(line(413,'AGS', b,'','', f2(c.pat.ags)));
+    H.push(grpH(402,'Q600','AUTRES CONTRIB. DUES PAR EMPL.'));
+    H.push(line(392,'Autres contrib. dues par empl.', b,'','', f2(c.pat.autres)));
+    H.push(grpH(382,'Q800','CSG déductible à l\'IR'));
+    H.push(line(372,'CSG déductible à l\'IR', bcsg,'6.8000', f2(c.csgDed),''));
+    H.push(grpH(361,'Q802','EXO., ECRET. ET ALLEG. COTIS'));
+    H.push(line(351,'EXO., ECRET. ET ALLEG. COTIS','','', f2(c.alleg), f2(c.alleg)));
+    H.push(line(341,'TOTAL DES RETENUES','','', f2(c.totRetSalDed), f2(c.totPat),true));
+    H.push(line(279,'NET IMPOSABLE','','', f2(c.netImpo),'',true));
+    H.push(grpH(269,'Q801','CSG/CRDS non déductible à l\'IR'));
+    H.push(line(258,'CSG/CRDS non déductible à l\'IR', bcsg,'2.9000', f2(c.csgNonDed),''));
+    /* colonne droite : HEURES / CUMULS */
+    H.push(T(530,533,9,'HEURES',true),T(512,520,7,'Heures période'),TR(586,510,8,f2(c.heures)),T(512,494,7,'Cumul heures'));
+    H.push(T(527,372,9,'CUMULS',true),
+      T(512,358,7,'Brut'),TR(586,348,8,f2(cum.brut)),
+      T(512,330,7,'Net imposable'),TR(586,320,8,f2(c.netImpo)),
+      T(512,302,7,'Net payé'),TR(586,292,8,f2(cum.net)),
+      T(512,274,7,'Allègement'),TR(586,264,8,f2(c.alleg)),
+      T(512,246,7,'Cotis. employeur'),TR(586,236,8,f2(c.totPat)));
+    H.push(T(512,602,7,'SMIC Horaire :'),TR(586,592,8,f2(PAIE_SMIC)),T(512,574,7,'Plafond Sécu :'),TR(586,564,8,'2403.00'));
+    /* bas : nets */
+    H.push(T(26,181,8,'MONTANT NET SOCIAL',true),TR(507,181,8,f2(c.netSocial)));
+    H.push(T(26,171,8,'NET A PAYER AVANT IMPOT SUR LE REVENU',true),TR(507,171,8,f2(c.netAvImpot)));
+    H.push(T(17,160,7,'Montant net imposable : '+f2(c.netImpo)+' €   ·   Impôt prélevé à la source ('+f2(c.pasTaux)+' %) : '+f2(c.pas)+' €'));
+    H.push(T(26,138,8,'Coût total employeur',true),TR(507,138,8,f2(c.cout)));
+    H.push(T(446,82,9,'NET A PAYER AU SALARIE',true),TR(560,66,10,f2(c.netAPayer)+' €',true));
+    H.push(T(20,100,8,esc(nomC)+' — Paiement par '+esc(s.modePaiement||'Virement')));
+    /* pied */
+    H.push(T(89,19,7,'Dans votre intérêt et pour vous aider à faire valoir vos droits, conservez ce bulletin de paie sans limitation de durée.'));
+    H.push(T(143,28,7,'Pour plus d\'informations sur le bulletin de paie clarifié : www.service-public.fr'));
+    if(s.conventionNom) H.push(T(20,38,7,'Convention collective : '+esc(s.conventionNom)));
+    return '<div class="bp-a4">'+H.join('')+'</div>'; }
   window.admPaieBulletin=function(id,per){ var s=stById(id); if(!s)return; var html=bulletinHTML(s,per);
-    if(typeof openModal==='function'){ try{ var mc=document.getElementById('modal-c'); if(mc){ document.getElementById('modal').classList.add('show'); mc.innerHTML='<div class="modal-h"><b>Bulletin de paie — '+esc(nom(s))+(per?(' · '+esc(perLabel(per))):'')+'</b><button class="btn btn-ghost btn-sm" onclick="closeModal()">Fermer</button></div><div class="modal-b">'+html+'<div style="margin-top:10px"><button class="btn btn-pri btn-sm" onclick="admPaieImprimer(\''+esc(id)+'\',\''+esc(per||'')+'\')">Imprimer / PDF</button></div></div>'; return; } }catch(e){} }
+    if(typeof openModal==='function'){ try{ var mc=document.getElementById('modal-c'); if(mc){ document.getElementById('modal').classList.add('show');
+      mc.innerHTML='<div class="modal-h"><b>Bulletin de paie — '+esc(nom(s))+(per?(' · '+esc(perLabel(per))):'')+'</b><button class="btn btn-ghost btn-sm" onclick="closeModal()">Fermer</button></div>'
+        +'<div class="modal-b"><div class="bp-prev-wrap"><div style="transform:scale(.86);transform-origin:top center">'+html+'</div></div>'
+        +'<div style="margin-top:10px"><button class="btn btn-pri btn-sm" onclick="admPaieImprimer(\''+esc(id)+'\',\''+esc(per||'')+'\')">Imprimer / PDF</button></div></div>'; return; } }catch(e){} }
     admPaieImprimer(id,per); };
+  /* Aperçu du bulletin en direct pendant la saisie (onglet Salariés & paie). */
+  window.admPaieLiveRender=function(){ var s=stById(window.__admPaieSel); var host=document.getElementById('adm-paie-live'); var wrap=document.getElementById('adm-paie-live-wrap'); if(!host||!wrap||!s) return;
+    var availW=(wrap.clientWidth||700)-24; var scale=availW/794; if(scale>1)scale=1;
+    host.style.height=(1123*scale)+'px'; host.style.width=(794*scale)+'px';
+    host.innerHTML='<div style="transform:scale('+scale+');transform-origin:top left;width:794px">'+bulletinHTML(s,periode())+'</div>'; };
   window.admPaieImprimer=function(id,per){ var s=stById(id); if(!s)return; var pa=document.getElementById('print-area'); if(pa){ pa.innerHTML=bulletinHTML(s,per||undefined); } if(typeof toast==='function')toast('Fenêtre d\'impression → « Enregistrer en PDF »'); setTimeout(function(){ try{window.print();}catch(e){} },150); };
 
   /* ---- Rendu du module ---- */
@@ -23640,6 +23667,8 @@ ${lignes}
         +'</div>'
         +'<div class="grid g4" style="margin-top:10px">'+kpi('Brut',EUR(c.brut))+kpi('Net imposable',EUR(c.netImpo))+kpi('Net à payer',EUR(c.netAPayer))+kpi('Coût employeur',EUR(c.cout))+'</div>'
         +'<div style="margin-top:12px"><button class="btn btn-pri btn-sm" onclick="admPaieBulletin(\''+esc(s.id)+'\')">Générer la fiche de paie</button></div>'
+        +'<div class="adm-soc-gh">Aperçu de la fiche de paie (mis à jour en direct)</div>'
+        +'<div class="bp-prev-wrap" id="adm-paie-live-wrap"><div id="adm-paie-live"></div></div>'
         +'<div class="adm-soc-gh">Contrat de travail</div>'+contratSection(s)
       +'</div>'; } }
     var ctrLbl=function(s){ return s.contratStatut==='admis'?'<span style="color:#7fdba0">admis ✓</span>':(s.contratStatut==='deposee'?'<span style="color:#ffd08a">à vérifier</span>':'<span style="opacity:.55">—</span>'); };
@@ -23869,7 +23898,10 @@ ${lignes}
     window.admModuleContent=function(){ if(window.admModule==='paie'){ try{ return admPaieModule(); }catch(e){ return '<div class="card">Erreur module Paie</div>'; } } return _amc.apply(this,arguments); }; }
 
   /* Rendu de l'aperçu paginé A4 après injection du DOM (onglet Contrat) + resize. */
-  function admCtrTick(){ try{ if(window.sessionRole==='admin' && window.admShow && window.admModule==='paie' && window.__admPaieTab==='contrat' && window.__admCtrSel && document.getElementById('adm-ctr-preview')){ admCtrRenderPreview(); } }catch(e){} }
+  function admCtrTick(){ try{ if(window.sessionRole==='admin' && window.admShow && window.admModule==='paie'){
+      if(window.__admPaieTab==='contrat' && window.__admCtrSel && document.getElementById('adm-ctr-preview')) admCtrRenderPreview();
+      if((!window.__admPaieTab||window.__admPaieTab==='sal') && window.__admPaieSel && document.getElementById('adm-paie-live')) window.admPaieLiveRender();
+    } }catch(e){} }
   if(typeof window.render==='function' && !window.__admCtrRenderGuard){ window.__admCtrRenderGuard=true; var _r=window.render;
     window.render=function(){ var x=_r.apply(this,arguments); try{ requestAnimationFrame(admCtrTick); }catch(e){ setTimeout(admCtrTick,0); } return x; }; }
   try{ window.addEventListener('resize', function(){ clearTimeout(window.__admCtrRz); window.__admCtrRz=setTimeout(admCtrTick,150); }); }catch(e){}
@@ -23886,22 +23918,14 @@ ${lignes}
     +'.adm-dsn-step.done{opacity:1}.adm-dsn-step.cur{font-weight:700}'
     +'.adm-dsn-dot{width:11px;height:11px;border-radius:50%;background:#3a5170;flex:0 0 auto}'
     +'.adm-dsn-step.done .adm-dsn-dot{background:#2f9bff}'
-    +'.bp-page{font-size:12px;line-height:1.4;color:#161616}'
-    +'.bp-head{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;border-bottom:2px solid #2f6fe8;padding-bottom:8px}'
-    +'.bp-emp-nom{font-weight:800;font-size:14px}.bp-titre{font-weight:800;font-size:15px;text-align:right;color:#0b2a52}'
-    +'.bp-per{min-width:210px}.bp-per-l{display:flex;justify-content:space-between;gap:10px;font-size:11.5px}.bp-per-l span{opacity:.7}'
-    +'.bp-head2{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-top:8px;border-bottom:1px solid #ccc;padding-bottom:8px}'
-    +'.bp-sal{font-size:11.5px;max-width:60%}.bp-sal b{font-size:13px}'
-    +'.bp-cp{font-size:11px;min-width:180px}.bp-cp-h,.bp-cp-row{display:grid;grid-template-columns:1fr 60px 60px;gap:4px}.bp-cp-h{font-weight:700;border-bottom:1px solid #ccc;text-align:right}.bp-cp-h span:first-child,.bp-cp-row span:first-child{text-align:left}.bp-cp-row span{text-align:right}'
-    +'.bp-page .bp-t{width:100%;border-collapse:collapse;margin-top:8px}'
-    +'.bp-page .bp-t th{background:#eef2f8;border:1px solid #cbd6e6;padding:5px 7px;font-size:11px;text-align:left}.bp-page .bp-t th.r{text-align:right}'
-    +'.bp-page .bp-t td{border-bottom:1px solid #eee;padding:4px 7px;font-size:11.5px}.bp-page .bp-t .r{text-align:right}'
-    +'.bp-page .bp-t .bp-grp td{background:#f2f5fb;font-weight:800;font-size:10.5px;letter-spacing:.4px;border-top:1px solid #cbd6e6;color:#0b2a52}'
-    +'.bp-page .bp-t .bp-brut td,.bp-page .bp-t .bp-tot td,.bp-page .bp-t .bp-netimpo td{background:#f6f8fc;border-top:1px solid #cbd6e6}'
-    +'.bp-net{margin-top:12px}.bp-net-l{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px dotted #ddd;font-size:12.5px}'
-    +'.bp-net-final{font-size:15px;font-weight:800;border-bottom:2px solid #2f6fe8;color:#0b2a52}'
-    +'.bp-cum{margin-top:10px;font-size:11px;background:#f2f5fb;border:1px solid #dbe4f2;border-radius:6px;padding:6px 9px}'
-    +'.bp-foot{margin-top:10px;font-size:10.5px;color:#333;border-top:1px solid #ccc;padding-top:6px}'
+    /* Bulletin de paie reproduit au point PDF (A4 absolu). */
+    +'.bp-a4{position:relative;width:210mm;height:297mm;background:#fff;color:#111;font-family:Arial,Helvetica,sans-serif;overflow:hidden}'
+    +'.bp-a4 .bpx-t{position:absolute;white-space:nowrap;line-height:1;color:#111 !important;background:none !important;margin:0;padding:0;border:0}'
+    +'.bp-a4 .bpx-b{font-weight:700}.bp-a4 .bpx-r{text-align:right}'
+    +'.bp-a4 .bpx-l{position:absolute;background:#000 !important}'
+    +'.bp-a4 .bpx-g{position:absolute;background:#cfcfcf !important}'
+    +'.bp-prev-wrap{background:#e9edf3;border:1px solid rgba(120,180,255,.2);border-radius:12px;padding:10px;overflow:hidden;display:flex;justify-content:center;align-items:flex-start}'
+    +'.bp-prev-wrap .bp-a4{box-shadow:0 6px 22px rgba(0,0,0,.3)}'
     +'.adm-ctr-wrap{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:16px;margin-top:12px;align-items:start}'
     +'.adm-ctr-side .fld{margin-bottom:8px}.adm-ctr-side .fld label{display:block;font-size:11.5px;opacity:.72;margin-bottom:3px}'
     /* Aperçu : hauteur = barre latérale (posée en JS), overflow caché, page A4 centrée en haut. */
