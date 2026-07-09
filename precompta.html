@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v438';
+    b.textContent='YADA · v439';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -23778,40 +23778,43 @@ ${lignes}
     if(key==='typeContrat'){ saveR(); return; } /* affiche/masque les champs CDD */
     saveOnly(); admCtrRefresh(); };
   /* Blocs du contrat (reproduction fidèle du modèle ; chaque bloc reste insécable pour la pagination A4). */
-  function contratBlocks(s){ var so=soc(); var C=civ(s); var N=nomP(s); var b=num(salPer(s).brut); var net=ctrNet(s);
-    var typeLib=CONTRAT_TYPES[s.typeContrat]||'à durée indéterminée';
-    var titre='CONTRAT DE TRAVAIL '+(typeLib.toUpperCase());
-    var statut=(s.statutCadre==='C')?'Cadre':'Non cadre';
-    var essai=num(s.essaiJours)||0; var hebdo=num(s.dureeHebdo)||35;
-    var payDe=s.payDe||'1', payA=s.payA||'5';
-    var conv=s.conventionNom||'……'; var metier=s.poste||'……';
-    var lieu=s.lieuTravail||((so.adresse||'')+' '+(so.cp||'')+' '+(so.ville||'')).trim()||'……';
+  function contratBlocks(s){ var so=soc(); var b=num(salPer(s).brut);
     var isCDD=(s.typeContrat==='CDD');
-    var duree=isCDD ? ('à compter du <b>'+esc(frd(s.dateEntree))+'</b> jusqu\'au <b>'+esc(frd(s.dateSortie))+'</b> pour une durée déterminée') : ('à compter du <b>'+esc(frd(s.dateEntree))+'</b> pour une durée '+esc(typeLib));
+    var titre='CONTRAT DE TRAVAIL '+(isCDD?'A DUREE DETERMINEE':'A DUREE INDETERMINEE');
+    var NS=civ(s)+' '+(s.prenom||'……')+' '+((s.nom||'……').toUpperCase()); /* «Titre» «Prénom» «Nom» */
+    var statutPC=(s.statutCadre==='C'?'Cadre':'Non cadre')+(s.coeff?(' - Coeff. '+esc(s.coeff)):'');
+    var essai=num(s.essaiJours)||0; var hebdo=num(s.dureeHebdo)||35;
+    var conv=s.conventionNom||'……'; var metier=s.poste||'……';
+    var urssaf=so.urssafRegion||'URSSAF'; var lieu=s.lieuTravail||((so.adresse||'')+' '+(so.cp||'')+' '+(so.ville||'')).trim()||'……';
+    var neLe=frd(s.dateNaissance)+' à '+(s.lieuNaissance||'……')+(s.paysNaissance?(' en '+s.paysNaissance):'');
+    var salLettre=(s.salaireLettres?('('+s.salaireLettres+') '):'')+EUR(b);
+    var horaires=s.horaires?(' Les horaires de travail sont '+esc(s.horaires)+'.'):'';
+    var perConges=s.periodeConges||'du 1er juin au 31 mai';
+    var duree=isCDD ? ('à compter du '+esc(frd(s.dateEntree))+' jusqu\'au '+esc(frd(s.dateSortie))+' pour une durée déterminée') : ('à compter du '+esc(frd(s.dateEntree))+' pour une durée indéterminée');
     var art=function(t,c){ return '<div class="ctr-blk"><h3>'+t+'</h3><div>'+c+'</div></div>'; };
     var P=function(c){ return '<div class="ctr-blk"><p>'+c+'</p></div>'; };
     var B=[];
-    B.push('<div class="ctr-blk"><div class="ctr-titre">'+esc(titre)+(isCDD?'<sup>(1)</sup>':'')+'</div></div>');
+    B.push('<div class="ctr-blk"><div class="ctr-titre">'+esc(titre)+(isCDD?' <sup>(1)</sup>':'')+'</div></div>');
     B.push(P('Entre les soussignés :'));
-    B.push(P('<b>La société '+esc(so.nom||'……')+'</b><br>Dont le siège social est à '+esc((so.adresse||'……')+' – '+(so.cp||'')+' '+(so.ville||''))+'<br>Immatriculée au RCS de '+esc(so.rcs||'……')+', numéro SIRET '+esc(so.siret||'……')+', code APE '+esc(so.codeAPE||'……')+',<br>Agissant par l\'intermédiaire de son représentant légal '+esc(so.dirigeant||'……')+'.<br><i>L\'employeur, d\'une part</i>'));
+    B.push(P('La société '+esc(so.nom||'……')+'<br>Dont le siège social est à '+esc((so.adresse||'……')+' - '+(so.cp||'')+' '+(so.ville||''))+'<br>Immatriculée au RCS de '+esc(so.rcs||'……')+' Cedex, numéro SIRET '+esc(so.siret||'……')+', code APE '+esc(so.codeAPE||'……')+', Cotisant à '+esc(urssaf)+(so.nUrssaf?(' sous le numéro '+esc(so.nUrssaf)):'')+'<br>Agissant par l\'intermédiaire de son représentant légal '+esc(so.dirigeant||'……')+' – Gérant(e).<br>L\'employeur, d\'une part'));
     B.push(P('Et'));
-    B.push(P('<b>'+esc(C+' '+N)+'</b>,<br>Demeurant à '+esc((s.adresse||'……')+' – '+(s.cp||'')+' '+(s.ville||''))+'<br>Né(e) le '+esc(frd(s.dateNaissance))+' à '+esc(s.lieuNaissance||'……')+(s.paysNaissance?(' en '+esc(s.paysNaissance)):'')+', de nationalité '+esc(s.nationalite||'……')+'<br>Immatriculé(e) à la Sécurité Sociale sous le numéro '+esc(s.nir||'……')+'<br><i>Le salarié, d\'autre part</i>'));
+    B.push(P(esc(NS)+',<br>Demeurant à '+esc((s.adresse||'……')+', '+(s.cp||'')+' '+(s.ville||''))+'<br>Né le '+esc(neLe)+', de nationalité '+esc(s.nationalite||'……')+'<br>Immatriculé à la Sécurité Sociale sous le numéro '+esc(s.nir||'……')+'<br>Le salarié, d\'autre part'));
     B.push(P('Il a été convenu ce qui suit :'));
-    B.push(art('Article 1 – Engagement','La société '+esc(so.nom||'……')+' engage '+esc(C+' '+N)+' en qualité de <b>'+esc(metier)+'</b> - '+esc(statut)+' - '+duree+', sous réserve des résultats de la visite médicale d\'embauche devant intervenir avant l\'expiration de la période d\'essai.<br>'+esc(C+' '+N)+' déclare accepter sans réserve cet engagement, aux conditions définies ci-après.<br>Il pourra être mis fin aux présentes à tout moment par l\'une ou l\'autre des parties, à charge de respecter les règles légales et conventionnelles liées à la résiliation du contrat de travail.<br>La déclaration nominative préalable à l\'embauche a été remise à l\'URSSAF.'));
-    B.push(art('Article 2 – Objet du contrat',esc(C+' '+N)+' exercera les fonctions suivantes : <b>'+esc(metier)+'</b>.<br>Ces fonctions sont susceptibles d\'évolution.<br>Ce contrat est soumis aux dispositions de la convention collective de <b>'+esc(conv)+'</b>.'));
-    B.push(art('Article 3 – Période d\'essai','L\'engagement de '+esc(C+' '+N)+' deviendra définitif à l\'issue d\'une période d\'essai fixée à <b>'+esc(essai)+' jour'+(essai>1?'s':'')+'</b>.<br>Pendant cette période, chacune des parties pourra, à tout moment, mettre fin au présent contrat, sans qu\'aucune indemnité ni préavis ne soient dus.'));
-    B.push(art('Article 4 – Obligations professionnelles',esc(C+' '+N)+' s\'engage à travailler exclusivement pour le compte de l\'employeur et s\'interdit de s\'intéresser directement ou indirectement à toute affaire susceptible de concurrencer par son activité celle de l\'employeur.<br>De plus, '+esc(C+' '+N)+' s\'engage à observer une discrétion professionnelle absolue pour tout ce qui concerne les faits ou informations dont il aura connaissance dans l\'exercice ou à l\'occasion de ses fonctions.<br>'+esc(C+' '+N)+' s\'engage à observer les horaires de travail qui seront fixés par l\'employeur et à se conformer aux directives et instructions émanant de la direction.<br>Tout manquement à ces obligations au cours du présent contrat serait constitutif d\'une faute grave pouvant justifier un licenciement.'));
-    B.push(art('Article 5 – Lieu de travail','Le lieu de travail est fixé à <b>'+esc(lieu)+'</b>.<br>Toutefois, '+esc(C+' '+N)+' s\'engage expressément à accepter tout déplacement ponctuel entrant dans le cadre de l\'exercice de ses fonctions et pour lesquels les frais professionnels engagés seront remboursés sur justificatifs selon les barèmes en vigueur dans la société.<br>En outre, '+esc(C+' '+N)+' s\'engage à accepter toute mutation géographique à l\'intérieur du territoire national.'));
-    B.push(art('Article 6 – Horaires de travail','La durée hebdomadaire de travail est de <b>'+esc(hebdo)+' heures</b>.<br>Ces horaires pourront toutefois être modifiés en raison des nécessités de service, ce que '+esc(C+' '+N)+' déclare accepter par avance expressément.'));
-    B.push(art('Article 7 – Rémunération','En contrepartie de l\'accomplissement de ses fonctions, '+esc(C+' '+N)+' percevra un salaire mensuel <b>brut de '+esc(EUR(b))+'</b> (soit un net indicatif de '+esc(EUR(net))+'), payable entre le <b>'+esc(payDe)+'</b> et le <b>'+esc(payA)+'</b> du mois.'));
-    B.push(art('Article 8 – Congés payés',esc(C+' '+N)+' bénéficiera de droits à congés payés prévus par les articles L 223-1 et suivants du Code du Travail et par la convention collective applicable dans l\'entreprise, soit 30 jours ouvrables par période du 1er juin au 31 mai suivant.<br>La période de prise de congés payés sera fixée chaque année en tenant compte des nécessités de service.'));
-    B.push(art('Article 9 – Absence et indisponibilité','En cas d\'absence pour maladie ou accident, '+esc(C+' '+N)+' devra immédiatement en aviser l\'employeur et en justifier par la production d\'un certificat médical dans les 48 heures.'));
-    B.push(art('Article 10 – Rupture du contrat de travail','Chaque partie peut mettre fin au contrat de travail, conformément aux dispositions légales et conventionnelles applicables à l\'entreprise.<br>À l\'issue de la période d\'essai, dans le cas de résiliation à l\'initiative du salarié ou d\'un licenciement pour motif autre qu\'une faute grave, la durée de préavis sera conforme aux dispositions de la convention collective.<br>Durant le préavis, le salarié sera autorisé à s\'absenter pour rechercher un emploi conformément aux dispositions de la convention collective.<br>En outre, il est expressément convenu qu\'aucun préavis ne sera dû à '+esc(C+' '+N)+' en cas de rupture de contrat motivée pour faute grave ou lourde ou pour force majeure.'));
-    B.push(art('Article 11 – Clause de non-concurrence','À l\'issue du contrat de travail, le salarié ne pourra travailler pour les sociétés qui donnent des travaux en direct ou en sous-traitance.<br>Pour toutes les dispositions non prévues par les présentes, les parties déclarent se référer à la convention collective et au règlement intérieur applicable dans la société.'));
+    B.push(art('Article 1 – Engagement','La société '+esc(so.nom||'……')+' engage '+esc(NS)+' en qualité de '+esc(metier)+' '+statutPC+' '+duree+', sous réserve des résultats de la visite médicale d\'embauche devant intervenir avant l\'expiration de la période d\'essai.<br>'+esc(NS)+' déclare accepter sans réserve cet engagement, aux conditions définies ci-après.<br>Il pourra être mis fin aux présentes à tout moment par l\'une ou l\'autre des parties, à charge de respecter les règles légales et conventionnelles liées à la résiliation du contrat de travail.<br>La déclaration nominative préalable à l\'embauche a été remise à l\''+esc(urssaf)+'.'));
+    B.push(art('Article 2 – Objet du contrat',esc(NS)+' exercera les fonctions suivantes : '+esc(metier)+'.<br>Ces fonctions sont susceptibles d\'évolution.<br>Ce contrat est soumis aux dispositions de la convention collective - '+esc(conv)+'.'));
+    B.push(art('Article 3 – Période d\'essai','L\'engagement de '+esc(NS)+' deviendra définitif à l\'issue d\'une période d\'essai fixée à '+esc(essai)+' '+(isCDD?('jour'+(essai>1?'s':'')):'semaines')+' et la période d\'essai peut être prolongée.<br>Pendant cette période, chacune des parties pourra, à tout moment, mettre fin au présent contrat, sans qu\'aucune indemnité ni préavis ne soient dus.'));
+    B.push(art('Article 4 – Obligations professionnelles',esc(NS)+' s\'engage à travailler exclusivement pour le compte de l\'employeur et s\'interdit de s\'intéresser directement ou indirectement à toute affaire susceptible de concurrencer par son activité celle de l\'employeur.<br>De plus, '+esc(NS)+' s\'engage à observer une discrétion professionnelle absolue pour tout ce qui concerne les faits ou informations dont il aura connaissance dans l\'exercice ou à l\'occasion de ses fonctions.<br>'+esc(NS)+' s\'engage à observer les horaires de travail qui seront fixés par l\'employeur et à se conformer aux directives et instructions émanant de la direction.<br>Tout manquement à ces obligations au cours du présent contrat serait constitutif d\'une faute grave pouvant justifier un licenciement.'));
+    B.push(art('Article 5 – Lieu de travail','Le lieu de travail est fixé à '+esc(lieu)+' dans les locaux.<br>Toutefois, '+esc(NS)+' s\'engage expressément à accepter tout déplacement ponctuel entrant dans le cadre de l\'exercice de ses fonctions et pour lesquels les frais professionnels engagés seront remboursés sur justificatifs selon les barèmes en vigueur dans la société.<br>En outre, '+esc(NS)+' s\'engage à accepter toute mutation géographique à l\'intérieur du territoire national.'));
+    B.push(art('Article 6 - Horaires de travail','La durée hebdomadaire de travail est de '+esc(hebdo)+' heures.'+horaires+'<br>Ces horaires pourront toutefois être modifiés en raison des nécessités de service, ce que '+esc(NS)+' déclare accepter par avance expressément.'));
+    B.push(art('Article 7 – Rémunération','En contrepartie de l\'accomplissement de ses fonctions, '+esc(NS)+' percevra un salaire mensuel brut de '+esc(salLettre)+' payable le 1er jour du mois.'));
+    B.push(art('Article 8 – Congés payés',esc(NS)+' bénéficiera de droits à congés payés prévus par les articles L 223-1 et suivants du Code du Travail et par la convention collective applicable dans l\'entreprise - '+esc(conv)+' -, soit 30 jours ouvrables par période '+esc(perConges)+' suivant.<br>La période de prise de congés payés sera fixée chaque année en tenant compte des nécessités de service.'));
+    B.push(art('Article 9 - Absence et indisponibilité','En cas d\'absence pour maladie ou accident, '+esc(NS)+' devra immédiatement en aviser l\'employeur et en justifier par la production d\'un certificat médical dans les 48 heures.'));
+    B.push(art('Article 10 – Rupture du contrat de travail','Chaque partie peut mettre fin au contrat de travail, conformément aux dispositions légales et conventionnelles applicables à l\'entreprise.<br>A l\'issue de la période d\'essai et, dans le cas de résiliation à l\'initiative du salarié ou d\'un licenciement pour motif autre qu\'une faute grave, la durée de préavis sera conforme aux dispositions de la convention collective, soit 2 mois.<br>Durant le préavis, le salarié sera autorisé à s\'absenter pour rechercher un emploi conformément aux dispositions de la convention collective.<br>En outre, il est expressément convenu qu\'aucun préavis ne sera du à '+esc(NS)+' en cas de rupture de contrat motivée pour faute grave ou lourde ou pour force majeure.'));
+    B.push(art('Article 11 – Clause de non concurrence','A l\'issue du contrat de travail le salarié ne pourra travailler pour les sociétés qui donnent des travaux en direct ou en sous-traitance.<br>Pour toutes les dispositions non prévues par les présentes, les parties déclarent se référer à la convention collective et au règlement intérieur applicable dans la société.'));
     B.push('<div class="ctr-blk"><p style="margin-top:10px">Fait en deux exemplaires à '+esc(so.ville||'……')+', le '+esc(frd(s.dateEntree))+',</p>'
-      +'<p style="opacity:.85">(Signatures précédées de la mention manuscrite « Lu et Approuvé. Bon pour accord »)</p>'
-      +'<div class="ctr-sign"><div>Tampon + signature<br>L\'employeur<br><b>'+esc(so.nom||'')+'</b></div><div>Tampon + signature<br>Le salarié<br><b>'+esc(N)+'</b></div></div>'
-      +((isCDD&&s.motifCDD)?('<p style="margin-top:12px;font-size:11px;opacity:.8">(1) '+esc(s.motifCDD)+'</p>'):'')+'</div>');
+      +((isCDD&&s.motifCDD)?('<p style="font-size:11px">(1) '+esc(s.motifCDD)+'</p>'):'')
+      +'<p style="opacity:.85">(signatures précédées de la mention manuscrite « Lu et Approuvé. Bon pour accord »)</p>'
+      +'<div class="ctr-sign"><div>Tampon + signature<br>L\'employeur<br><b>'+esc(so.nom||'')+'</b></div><div>Tampon + signature<br>'+esc(NS)+'</div></div></div>');
     return B; }
   function contratHTML(s){ return '<div class="doc-page ctr-page">'+contratBlocks(s).join('')+'</div>'; }
   /* Aperçu paginé A4 : hauteur = barre latérale, page toujours au format A4, bouton page suivante. */
@@ -23859,7 +23862,8 @@ ${lignes}
       +(s.typeContrat==='CDD'?(ctrFieldRow(s.id,'Date de fin (CDD)','dateSortie','date',s.dateSortie)+ctrFieldRow(s.id,'Motif du CDD','motifCDD','text',s.motifCDD)):'')
       +ctrFieldRow(s.id,'Métier / poste proposé','poste','text',s.poste)
       +ctrFieldRow(s.id,'Statut','statutCadre','sel:C=Cadre|NC=Non cadre',s.statutCadre)
-      +ctrFieldRow(s.id,'Période d\'essai (jours)','essaiJours','number',s.essaiJours)
+      +ctrFieldRow(s.id,'Position / Coefficient','coeff','text',s.coeff)
+      +ctrFieldRow(s.id,'Période d\'essai ('+(s.typeContrat==='CDD'?'jours':'semaines')+')','essaiJours','number',s.essaiJours)
       +ctrFieldRow(s.id,'Convention collective','conventionNom','text',s.conventionNom)
       +'<div class="adm-soc-gh">Salarié</div>'
       +ctrFieldRow(s.id,'Nom','nom','text',s.nom)
@@ -23875,7 +23879,7 @@ ${lignes}
       +ctrFieldRow(s.id,'Salaire brut mensuel','brut','number',num(pp.brut)||'')
       +'<div class="fld"><label>Salaire net (calculé automatiquement)</label><input class="adm-paie-in" id="adm-ctr-net" type="text" readonly value="'+esc(ctrNet(s))+'"></div>'
       +ctrFieldRow(s.id,'Durée hebdomadaire (heures)','dureeHebdo','number',s.dureeHebdo||35)
-      +'<div class="fld"><label>Jours de paiement (du … au … du mois)</label><div style="display:flex;gap:6px;align-items:center"><select class="adm-paie-in" onchange="admCtrField(\''+esc(s.id)+'\',\'payDe\',this.value)">'+jopts(s.payDe||1)+'</select><span>au</span><select class="adm-paie-in" onchange="admCtrField(\''+esc(s.id)+'\',\'payA\',this.value)">'+jopts(s.payA||5)+'</select></div></div>'
+      +ctrFieldRow(s.id,'Horaires de travail (si différent)','horaires','text',s.horaires)
       +ctrFieldRow(s.id,'Lieu de travail','lieuTravail','text',s.lieuTravail)
       +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn btn-pri btn-sm" onclick="admCtrTelecharger()">Télécharger (.doc)</button><button class="btn btn-ghost btn-sm" onclick="admCtrImprimer()">Imprimer / PDF</button></div>'
       +'</div>';
@@ -23932,10 +23936,11 @@ ${lignes}
     +'.adm-ctr-prev{background:#e9edf3;border:1px solid rgba(120,180,255,.2);border-radius:12px;padding:10px;overflow:hidden;display:flex;justify-content:center;align-items:flex-start}'
     +'.adm-ctr-prev #adm-ctr-preview{width:100%}'
     /* Page A4 (fixe) — le PDF reste toujours au format A4 (210×297 mm), mise à l\'échelle par transform. */
-    +'.ctr-a4{background:#fff;color:#161616;box-sizing:border-box;box-shadow:0 6px 22px rgba(0,0,0,.3);font:12.5px/1.55 "Segoe UI",system-ui,Arial,sans-serif}'
-    +'.ctr-a4 .ctr-titre{text-align:center;font-weight:800;font-size:17px;line-height:1.3;text-transform:uppercase;margin-bottom:6px}'
-    +'.ctr-a4 .ctr-blk{margin:0 0 9px}.ctr-a4 h3{font-size:13px;margin:6px 0 3px;color:#0b1d33}.ctr-a4 p{margin:0 0 6px}'
-    +'.ctr-a4 .ctr-sign{display:flex;justify-content:space-between;gap:24px;margin-top:26px}'
+    +'.ctr-a4{background:#fff;color:#111;box-sizing:border-box;box-shadow:0 6px 22px rgba(0,0,0,.3);font:11.5pt/1.4 "Times New Roman",Georgia,serif;text-align:justify}'
+    +'.ctr-a4 .ctr-titre{text-align:center;font-weight:700;font-size:15pt;line-height:1.25;text-transform:uppercase;margin-bottom:14px;text-decoration:underline}'
+    +'.ctr-a4 .ctr-blk{margin:0 0 7px}.ctr-a4 h3{font-size:11.5pt;font-weight:700;margin:8px 0 2px;color:#111;text-align:left}.ctr-a4 p{margin:0 0 5px}'
+    +'.ctr-a4 sup{font-size:8pt}'
+    +'.ctr-a4 .ctr-sign{display:flex;justify-content:space-between;gap:24px;margin-top:34px;text-align:left}'
     +'.adm-ctr-pager{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:10px}'
     /* Liste de salariés ouverte & défilable. */
     +'.adm-sal-list{margin-top:10px;max-height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:7px;padding-right:4px}'
