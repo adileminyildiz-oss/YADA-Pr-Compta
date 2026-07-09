@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Message de déconnexion « Fin de session » redessiné (soigné) — v452
+## 🟢 Dernière mise à jour — « Retour aux dossiers » depuis un dossier → Liste des dossiers — v453
+**Quoi :** après avoir **sélectionné un dossier** (HUB / rubrique / dossier sélectionné), le bouton **« ← Retour aux dossiers »** ramène désormais à la **Liste des dossiers** (au lieu de la page d'accueil « Espace dossiers », comportement de la v448). On revient donc à la liste depuis laquelle on a choisi le dossier.
+
+**Comment :** les 3 boutons `ds-back-btn` (`ecranHub`/`ecranRubrique`/`ecranSelUnique`) appellent `dsOuvrirListe()` (au lieu de `dsAccueil()`) → `dsScreen()` affiche `ecranListe`. `sw.js` yada-v45, badge v453, `version.json` 453.
+
+**Validé :** `node --check` (207 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (HUB → clic « Retour aux dossiers » → `dsListe=true`, écran « Liste des dossiers » ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v453**.
+
+---
+
+## 🟢 MAJ précédente — Message de déconnexion « Fin de session » redessiné (soigné) — v452
 **Quoi :** le **message de déconnexion** (« Fin de session ») est **redessiné** : modale centrée avec **icône ronde à dégradé bleu**, titre net, message clair (« enregistrer vos modifications avant de vous déconnecter ? »), note discrète (données conservées + heure), et **deux boutons soignés** — **Annuler** (contour) et **💾 Enregistrer & quitter** (bouton bleu à dégradé + halo). Design cohérent avec l'identité YADA (bleu nuit / bleu Crystal).
 
 **Comment :** `secDeconnexion` (fin de session) réécrit avec une structure `.seclo` (`.seclo-ic`/`.seclo-t`/`.seclo-sub`/`.seclo-note`/`.seclo-actions`) + `<style id="sec-logout-mod">` (icône ronde dégradée + anneau, boutons arrondis, bouton principal dégradé bleu). `sw.js` yada-v44, badge v452, `version.json` 452.
