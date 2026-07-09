@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Éditeur d'écritures : bande claire (barre de lettrage) corrigée + en-têtes de colonnes rendus visibles — v454
+## 🟢 Dernière mise à jour — Éditeur d'écritures : en-tête de colonnes OPAQUE au défilement (fin de la transparence pendant le balayage) — v455
+**Quoi :** dans la **Consultation des comptes → édition d'un journal** (éditeur `.ec-sage`, tous dossiers), la **ligne d'en-tête des colonnes** (Date, Jnl, Pièce, Compte, Libellé, Débit, Crédit, Solde, L) — collante en haut du tableau — apparaissait **transparente pendant le défilement** (« balayage ») : les **écritures qui défilent passaient PAR-DESSUS l'en-tête** (l'en-tête `thead th` était collant mais en `z-index:auto`, donc les lignes du tableau, postérieures dans le DOM, se peignaient au-dessus). Désormais l'en-tête reste **opaque** et les écritures passent **derrière**.
+
+**Comment — `yada-addon215` (édition) :** ajout de `position:sticky !important;top:0 !important;**z-index:6 !important**` sur `.ec-sage .ec-table thead th` (le fond bleu nuit `#10243a` + libellés clairs de la v454 sont conservés). `sw.js` yada-v47, badge v455, `version.json` 455.
+
+**Validé :** `node --check` (208 scripts, 0 erreur) + Playwright (25 écritures dans l'éditeur, défilement `scrollTop=220` → en-tête `z-index=6`, plus aucune écriture visible par-dessus la ligne d'en-tête — capture avant/après) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v455**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur d'écritures : bande claire (barre de lettrage) corrigée + en-têtes de colonnes rendus visibles — v454
 **Quoi :** dans la **Consultation des comptes → édition d'un journal** (éditeur `.ec-sage`), correctif de couleurs (valable pour **tous les dossiers**) : (1) la **barre de lettrage** (`.ec-letbar`) n'apparaît plus en **bleu très clair/blanc** — elle passe en **bleu nuit** (comme la barre de filtre) ; (2) les **libellés des colonnes** (Date, Jnl, Pièce, Compte, Libellé, Débit, Crédit, Solde, L) étaient **peu/pas visibles** → rendus **bien visibles** (texte clair `#dceaff` sur fond bleu nuit, gras, liseré bleu).
 
 **Comment — `yada-addon215` (CSS, injecté en dernier) :** `.ec-sage .ec-letbar` (fond `#0c1a2a` + libellé/boutons/hint clairs) ; `.ec-sage .ec-table thead th` (fond `#10243a`, `color`/`-webkit-text-fill-color:#dceaff`, `font-weight:700`, bord bleu). `sw.js` yada-v46, badge v454, `version.json` 454.

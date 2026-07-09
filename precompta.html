@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v454';
+    b.textContent='YADA · v455';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -24206,9 +24206,11 @@ ${lignes}
 })();
 </script>
 <script id="yada-addon215">
-/* v454 — Éditeur d'écritures (Consultation → édition d'un journal, tous dossiers) :
+/* v454/v455 — Éditeur d'écritures (Consultation → édition d'un journal, tous dossiers) :
    correctif de couleur — plus de bande claire/blanche (barre de lettrage) et en-têtes
-   de colonnes rendus bien visibles (texte clair sur fond bleu nuit). */
+   de colonnes rendus bien visibles (texte clair sur fond bleu nuit).
+   v455 : l'en-tête de colonnes (collant) reste OPAQUE au défilement — z-index élevé
+   pour que les écritures passent DERRIÈRE et non par-dessus (plus de transparence). */
 (function(){
   try{ var st=document.createElement('style'); st.id='ec-fix-colors-mod'; st.textContent=
     /* barre de lettrage : fond bleu nuit (au lieu du bleu très clair #eef4fb) */
@@ -24218,9 +24220,12 @@ ${lignes}
     +'.ec-sage .ec-letbar .ec-lbtn:hover{background:#1d3e5e !important}'
     +'.ec-sage .ec-letbar .ec-lhint{color:#9fb6d0 !important;-webkit-text-fill-color:#9fb6d0 !important}'
     +'.ec-sage .ec-letbar *{color:#cfe0f5}'
-    /* en-têtes de colonnes : fond bleu nuit + libellés bien visibles (texte clair) */
+    /* en-têtes de colonnes : fond bleu nuit + libellés bien visibles (texte clair) ;
+       z-index élevé → la ligne d'en-tête reste OPAQUE au défilement (plus de bleed-through
+       des écritures qui passaient PAR-DESSUS l'en-tête collant, z-index:auto). */
     +'.ec-sage .ec-table thead th{background:#10243a !important;color:#dceaff !important;-webkit-text-fill-color:#dceaff !important;'
-    +'border-right:1px solid #1c3a57 !important;border-bottom:2px solid #1e90ff !important;font-weight:700 !important;opacity:1 !important}'
+    +'border-right:1px solid #1c3a57 !important;border-bottom:2px solid #1e90ff !important;font-weight:700 !important;opacity:1 !important;'
+    +'position:sticky !important;top:0 !important;z-index:6 !important}'
     /* filet : aucune cellule d\'en-tête claire */
     +'.ec-sage .ec-tablewrap thead{background:#10243a !important}';
     document.head.appendChild(st); }catch(e){}
