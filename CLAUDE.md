@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Éditeur d'écritures : en-tête de colonnes OPAQUE au défilement (fin de la transparence pendant le balayage) — v455
+## 🟢 Dernière mise à jour — Éditeur d'écritures : en-tête de colonnes plein NOIR + contours noirs (aucune transparence, on ne voit plus l'arrière) — v456
+**Quoi :** dans la **Consultation des comptes → édition d'un journal** (éditeur `.ec-sage`, tous dossiers), la **ligne d'en-tête** (barre de lettrage `.ec-letbar` + libellés de colonnes Date, Jnl, Pièce, Compte, Libellé, Débit, Crédit, Solde, L) reçoit un **fond plein quasi-noir** + des **contours noirs** → **aucune transparence** : on ne voit plus l'arrière (fenêtre en lecture seule / écritures) à travers l'en-tête. Complète la v455 (l'en-tête restait déjà opaque au défilement via `z-index`).
+
+**Comment — `yada-addon215` (édition) :** `.ec-sage .ec-letbar` fond `#080b10` + `border-top/bottom:1px #000` + `box-shadow:0 1px 0 #000` ; `.ec-sage .ec-table thead th` fond `#0a0f16` + bords noirs (`border-top/right:1px #000`, `border-bottom:2px #000`) + `box-shadow:inset 0 0 0 1px rgba(0,0,0,.7),0 2px 0 #000` (contours) + `z-index:6` conservé ; fond noir plein sur `thead`/`thead tr` (aucun interstice ne laisse voir l'arrière). Libellés clairs `#dceaff` conservés. `sw.js` yada-v48, badge v456, `version.json` 456.
+
+**Validé :** `node --check` (208 scripts, 0 erreur) + Playwright (fenêtre éditeur au-dessus de la lecture seule, défilement → en-tête plein quasi-noir avec bord noir, plus aucune écriture ni fenêtre arrière visible à travers) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v456**.
+
+---
+
+## 🟢 MAJ précédente — Éditeur d'écritures : en-tête de colonnes OPAQUE au défilement (fin de la transparence pendant le balayage) — v455
 **Quoi :** dans la **Consultation des comptes → édition d'un journal** (éditeur `.ec-sage`, tous dossiers), la **ligne d'en-tête des colonnes** (Date, Jnl, Pièce, Compte, Libellé, Débit, Crédit, Solde, L) — collante en haut du tableau — apparaissait **transparente pendant le défilement** (« balayage ») : les **écritures qui défilent passaient PAR-DESSUS l'en-tête** (l'en-tête `thead th` était collant mais en `z-index:auto`, donc les lignes du tableau, postérieures dans le DOM, se peignaient au-dessus). Désormais l'en-tête reste **opaque** et les écritures passent **derrière**.
 
 **Comment — `yada-addon215` (édition) :** ajout de `position:sticky !important;top:0 !important;**z-index:6 !important**` sur `.ec-sage .ec-table thead th` (le fond bleu nuit `#10243a` + libellés clairs de la v454 sont conservés). `sw.js` yada-v47, badge v455, `version.json` 455.
