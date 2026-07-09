@@ -36,7 +36,23 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Dépôt du contrat signé déplacé dans l'onglet Contrat (retiré de Salariés & paie) — v443
+## 🟢 Dernière mise à jour — Cartes repliables (Admin « Collaborateurs & accès » + Espace Client) + Tiers client + Contrat : aperçu corrigé & boutons — v444
+**Quoi :** lot d'améliorations UI Admin + Espace Client + Paie.
+1. **Aperçu du contrat CORRIGÉ (page blanche)** — sur les fenêtres larges, l'aperçu A4 du contrat restait **blanc**. `admCtrRenderPreview()` réécrit : échelle **ajustée à la largeur, jamais agrandie (≤ 1)**, conteneur **défilable**, filet anti-page-vide (`pageBlocks`) + `try/catch` sur `contratBlocks`. L'A4 (794×1123) s'affiche désormais avec son texte.
+2. **Onglet Contrat — boutons** : bouton **« Enregistrer »** ajouté à droite de **« Générer le contrat (PDF) »** ; bouton de dépôt en **bleu** renommé **« Contrat signé »** ; boutons **centrés** (`.ctr-gen-actions`).
+3. **Onglet « Salariés & paie » → « Salariés »** : au clic sur un salarié, **plus de lien fiche de paie** (fiches gérées uniquement dans l'onglet Fiches de paie) ; affiche **informations salarié + montants (Salaire brut, Net à payer, Coût total employeur)** ; bouton **« Générer la fiche de paie » remplacé par « Enregistrer »**.
+4. **Espace Admin — Collaborateurs & accès : cartes repliables** (fermées par défaut, clic pour ouvrir) + **liste des dossiers compacte / minimaliste**.
+5. **Espace Admin — entrée** : bouton **« 🛡 Espace Admin » placé AVANT « Liste Dossier »**, même dimension (`btn btn-gold`).
+6. **Espace Client — cartes repliables** : toutes les cartes **fermées** par défaut (clic pour ouvrir), sauf **« Déposer une facture »** qui reste ouverte/accessible ; module **Fournisseurs** : **« Suivi & détail » au-dessus du « Dépôt »**.
+7. **Espace Client — module Tiers** rendu accessible (ajout à `CLIENT_PAGES` + onglet « 👥 Tiers » dans la barre mobile) + **design/cadrage/effets** client (cadres arrondis, survol léger, en-têtes de colonnes discrets).
+
+**Comment :** `yada-addon212` (100% additif) — `admFoldAll`/`admFoldOne` (wrap `admCollabPanel` en `<details>`, état via `admFoldToggle`) + CSS dossiers compacts ; `cliFoldPass` (client : chaque `.card` à `<h2>` repliée sauf dépôt, état `__cliOpen`) greffé sur `render`. Éditions : `admCtrRenderPreview` (robuste), `ctrGenBlockHTML` + `admCtrEnregistrer`, `contratSection` (bouton bleu « Contrat signé », centré), `tabSalaries` (renommage, KPIs, `admPaieEnregistrer`, retrait des liens fiche), `admPaieModule` (`tb('sal','Salariés')`), `pageAchatsClient` (colonnes inversées), `CLIENT_PAGES`+`rebuildTabbar` (Tiers), override du bouton d'entrée Admin. `sw.js` yada-v36, badge v444, `version.json` 444.
+
+**Validé :** `node --check` (205 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (aperçu contrat : A4 794×1123 visible + titre ; boutons Générer+Enregistrer centrés, dépôt bleu « Contrat signé » ; Salariés : renommé, KPIs Brut/Net/Coût, Enregistrer, plus de lien fiche ; entrée Admin avant Liste Dossier même classe ; Admin collab : 4 `<details>` fermées + dossiers compacts ; client : 3 cartes repliées, dépôt ouvert, autres fermées, « Suivi & détail » au-dessus de « Dépôt », onglet Tiers ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v444**.
+
+---
+
+## 🟢 MAJ précédente — Dépôt du contrat signé déplacé dans l'onglet Contrat (retiré de Salariés & paie) — v443
 **Quoi :** dans le module Paie (Espace Admin), le **dépôt du contrat signé & tamponné** (section « Déposer le contrat signé & tamponné » → statut Non déposé / Déposé — à vérifier / « Vérifier & admettre ») n'apparaît plus dans l'onglet **Salariés & paie** : il est désormais **uniquement dans l'onglet Contrat** (sous le formulaire, après le bloc de génération PDF). L'onglet Salariés & paie ne conserve donc que les informations de paie et le bouton « Générer la fiche de paie ».
 
 **Comment — `yada-addon211` :** `contratSection(s)` retiré de `tabSalaries` ; ajouté dans `tabContrat` (bandeau « Dépôt du contrat signé & tamponné » après `#adm-ctr-gen`). `sw.js` `yada-v36`, badge v443, `version.json` 443.
