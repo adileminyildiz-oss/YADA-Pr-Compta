@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Contrat : aperçu en direct + génération PDF conditionnée (toutes les conditions remplies) + visible dans la liste ; fiche de paie = même bulletin (bouton = aperçu du bas), affichée une fois le mois saisi — v441
+## 🟢 Dernière mise à jour — Salariés & paie : aperçu de la fiche de paie (en direct) retiré — v442
+**Quoi :** dans l'onglet **Salariés & paie** (module Paie, Espace Admin), l'**aperçu de la fiche de paie en direct** (bloc « Aperçu de la fiche de paie (mis à jour en direct) » sous les champs de rémunération) est **retiré**. Le bouton **« Générer la fiche de paie »** reste et ouvre toujours le bulletin dans une page (modale).
+
+**Comment — `yada-addon211` :** suppression du libellé `.adm-soc-gh` « Aperçu de la fiche de paie » et du conteneur `#adm-paie-live-wrap`/`#adm-paie-live` dans `tabSalaries`. `admPaieLiveRender()` (et son hook de rendu) restent définis mais **sans effet** (garde `#adm-paie-live` absent → no-op). `sw.js` `yada-v35`, badge v442, `version.json` 442.
+
+**Validé :** `node --check` (204 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (onglet Salariés & paie : `#adm-paie-live-wrap`/`#adm-paie-live` absents, libellé « Aperçu de la fiche de paie » retiré, bouton « Générer la fiche de paie » présent → ouvre la modale « Fiche de paie — … » ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v442**.
+
+---
+
+## 🟢 MAJ précédente — Contrat : aperçu en direct + génération PDF conditionnée (toutes les conditions remplies) + visible dans la liste ; fiche de paie = même bulletin (bouton = aperçu du bas), affichée une fois le mois saisi — v441
 **Quoi :** module Paie (Espace Admin).
 1. **Aperçu du contrat en direct + mise à jour en direct** — l'onglet **Contrat** affiche le contrat A4 à droite et le **met à jour en direct** à chaque modification du formulaire (déjà en place, fiabilisé v440).
 2. **Génération du contrat uniquement en PDF, sous conditions** — le bouton **« Générer le contrat (PDF) »** n'est actif que lorsque **toutes les conditions du contrat sont remplies** (salarié : nom, prénom, adresse, CP, ville, date & lieu & pays de naissance, nationalité, **N° de sécurité sociale** ; contrat : type, date de début, poste, statut, coefficient, période d'essai, convention, durée hebdo, **salaire brut** ; CDD : date de fin + motif ; société employeur : dénomination, adresse, CP, ville, SIRET). Tant qu'il manque un élément, un **bandeau rouge liste les manques** et le bouton est **désactivé** ; une fois tout rempli, bandeau vert + bouton actif. Le **téléchargement .doc est retiré** (PDF uniquement). Champ **N° de sécurité sociale** ajouté au formulaire du contrat.
