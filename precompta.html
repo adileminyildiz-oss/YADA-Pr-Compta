@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v446';
+    b.textContent='YADA · v447';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21778,7 +21778,7 @@ ${lignes}
       +'<div class="login-title">Dossier sélectionné</div>'
       +'<div class="login-sub">Cliquez sur le dossier pour l\'ouvrir.</div>'
       +'<div class="dossier-grid ds-grid-solo">'+carte+'</div>'
-      +actions('<button class="btn btn-ghost" onclick="dsOuvrirListe()">Changer de dossier</button>')+'</div>';
+      +actions('<button class="btn btn-ghost ds-back-btn" onclick="dsOuvrirListe()"><span class="ds-back-arrow">←</span> Retour aux dossiers</button>')+'</div>';
   }
   function socRow(lbl,val){ if(!val) return ''; return '<div class="ds-soc-row"><span>'+esc(lbl)+'</span><b>'+esc(val)+'</b></div>'; }
   function socItem(lbl,val,full){ return '<div class="dsc-item'+(full?' full':'')+'"><span class="dsc-l">'+esc(lbl)+'</span><span class="dsc-v">'+esc(val||'—')+'</span></div>'; }
@@ -21799,7 +21799,7 @@ ${lignes}
       +'<div class="login-title">'+esc(i.nom)+'</div>'
       +'<div class="login-sub">Dossier — choisissez une rubrique.</div>'
       +'<div class="ds-hub-grid"><div class="ds-hub-main">'+soc+'</div><div class="ds-hub-side">'+tiles+'</div></div>'
-      +'<div class="login-actions"><button class="btn btn-ghost" onclick="dsOuvrirListe()">Changer de dossier</button></div>'
+      +'<div class="login-actions"><button class="btn btn-ghost ds-back-btn" onclick="dsOuvrirListe()"><span class="ds-back-arrow">←</span> Retour aux dossiers</button></div>'
       +'</div>';
   }
   function ecranRubrique(key){ var R=RUBRIQUES[key]; if(!R) return ecranHub(window.dsSel);
@@ -21811,7 +21811,7 @@ ${lignes}
       +'<div class="login-sub">'+esc(i.nom)+' — '+esc(R.desc)+'</div>'
       +'<div class="ds-rub-grid">'+tiles+'</div>'
       +'<div class="login-actions"><button class="btn btn-ghost" onclick="dsRetourHub()">← Retour au dossier</button>'
-      +'<button class="btn btn-ghost" onclick="dsOuvrirListe()">Changer de dossier</button></div>'
+      +'<button class="btn btn-ghost ds-back-btn" onclick="dsOuvrirListe()"><span class="ds-back-arrow">←</span> Retour aux dossiers</button></div>'
       +'</div>';
   }
   function dsScreen(){
@@ -23392,7 +23392,13 @@ ${lignes}
            bouton Espace Admin À CÔTÉ d'« Importer des données (JSON) », admin seulement. */
         else if(window.sessionRole==='admin' && h.indexOf('Importer des données (JSON)</button>')>=0 && h.indexOf('id="adm-enter-inline"')<0){
           var abtn='<button id="adm-enter-inline" class="btn btn-gold" onclick="admShowToggle(true)">🛡 Espace Admin</button>';
-          h=h.replace('Importer des données (JSON)</button>','Importer des données (JSON)</button>'+abtn);
+          var dbtn2='<button id="adm-logout-inline" class="btn btn-ghost" onclick="admDoLogout()" title="Fermer la session et revenir à la connexion">Déconnexion</button>';
+          h=h.replace('Importer des données (JSON)</button>','Importer des données (JSON)</button>'+abtn+dbtn2);
+        }
+        /* Écran « Liste des dossiers » NON-admin : Déconnexion à côté d'Importer. */
+        else if(h.indexOf('Importer des données (JSON)</button>')>=0 && h.indexOf('id="adm-logout-inline"')<0){
+          var dbtn3='<button id="adm-logout-inline" class="btn btn-ghost" onclick="admDoLogout()" title="Fermer la session et revenir à la connexion">Déconnexion</button>';
+          h=h.replace('Importer des données (JSON)</button>','Importer des données (JSON)</button>'+dbtn3);
         }
       }catch(e){}
       return h;
@@ -24149,6 +24155,34 @@ ${lignes}
     +'border-radius:8px !important;padding:8px 10px !important;cursor:pointer;transition:filter .15s}'
     +'aside .side-foot .sf-logout-below:hover{filter:brightness(1.12)}'
     +'aside .side-foot .sf-logout-below:active{transform:translateY(1px)}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon214">
+/* v447 — Animations du parcours d'entrée : bouton « Retour aux dossiers » (flèche animée)
+   + animation d'appui lors du clic sur un dossier (avant navigation). */
+(function(){
+  /* Clic sur un dossier → petite animation de sélection puis navigation. */
+  document.addEventListener('click', function(ev){
+    var t=ev.target; if(!t||!t.closest) return;
+    var r=t.closest('.ds-row[data-id]'); if(!r || r.__dsAnim) return;
+    r.__dsAnim=1; ev.preventDefault(); ev.stopImmediatePropagation();
+    r.classList.add('ds-row-picked');
+    var id=r.getAttribute('data-id');
+    setTimeout(function(){ try{ if(typeof window.dsSelectionner==='function') window.dsSelectionner(id); }catch(e){ r.__dsAnim=0; r.classList.remove('ds-row-picked'); } }, 240);
+  }, true);
+  try{ var st=document.createElement('style'); st.id='ds-anim-mod'; st.textContent=
+    /* Bouton « Retour aux dossiers » : flèche qui glisse au survol + appui */
+    '.ds-back-btn{transition:transform .16s ease,box-shadow .16s ease,background .16s ease}'
+    +'.ds-back-btn .ds-back-arrow{display:inline-block;transition:transform .22s cubic-bezier(.34,1.56,.64,1)}'
+    +'.ds-back-btn:hover{transform:translateX(-2px)}'
+    +'.ds-back-btn:hover .ds-back-arrow{transform:translateX(-5px)}'
+    +'.ds-back-btn:active{transform:scale(.97)}'
+    /* Dossier : effet d\'appui + animation de sélection */
+    +'.ds-row{transition:transform .14s ease,box-shadow .18s ease,background .16s ease}'
+    +'.ds-row:active{transform:scale(.985)}'
+    +'@keyframes dsPick{0%{transform:scale(1)}38%{transform:scale(1.02)}100%{transform:scale(.99)}}'
+    +'.ds-row-picked{animation:dsPick .24s ease forwards;background:rgba(30,144,255,.26) !important;border-color:#1e90ff !important;box-shadow:0 0 0 2px rgba(30,144,255,.85),0 14px 40px rgba(30,144,255,.55) !important}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
