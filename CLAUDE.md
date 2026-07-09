@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — « Retour aux dossiers » depuis un dossier → Liste des dossiers — v453
+## 🟢 Dernière mise à jour — Éditeur d'écritures : bande claire (barre de lettrage) corrigée + en-têtes de colonnes rendus visibles — v454
+**Quoi :** dans la **Consultation des comptes → édition d'un journal** (éditeur `.ec-sage`), correctif de couleurs (valable pour **tous les dossiers**) : (1) la **barre de lettrage** (`.ec-letbar`) n'apparaît plus en **bleu très clair/blanc** — elle passe en **bleu nuit** (comme la barre de filtre) ; (2) les **libellés des colonnes** (Date, Jnl, Pièce, Compte, Libellé, Débit, Crédit, Solde, L) étaient **peu/pas visibles** → rendus **bien visibles** (texte clair `#dceaff` sur fond bleu nuit, gras, liseré bleu).
+
+**Comment — `yada-addon215` (CSS, injecté en dernier) :** `.ec-sage .ec-letbar` (fond `#0c1a2a` + libellé/boutons/hint clairs) ; `.ec-sage .ec-table thead th` (fond `#10243a`, `color`/`-webkit-text-fill-color:#dceaff`, `font-weight:700`, bord bleu). `sw.js` yada-v46, badge v454, `version.json` 454.
+
+**Validé :** `node --check` (208 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (`.ec-letbar` = `rgb(12,26,42)` bleu nuit ; en-tête th `color=rgb(220,234,255)` clair, fond `rgb(16,36,58)` ; bouton lettrage sombre) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v454**.
+
+---
+
+## 🟢 MAJ précédente — « Retour aux dossiers » depuis un dossier → Liste des dossiers — v453
 **Quoi :** après avoir **sélectionné un dossier** (HUB / rubrique / dossier sélectionné), le bouton **« ← Retour aux dossiers »** ramène désormais à la **Liste des dossiers** (au lieu de la page d'accueil « Espace dossiers », comportement de la v448). On revient donc à la liste depuis laquelle on a choisi le dossier.
 
 **Comment :** les 3 boutons `ds-back-btn` (`ecranHub`/`ecranRubrique`/`ecranSelUnique`) appellent `dsOuvrirListe()` (au lieu de `dsAccueil()`) → `dsScreen()` affiche `ecranListe`. `sw.js` yada-v45, badge v453, `version.json` 453.

@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v453';
+    b.textContent='YADA · v454';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -24202,6 +24202,27 @@ ${lignes}
     +'.ds-row:active{transform:scale(.985)}'
     +'@keyframes dsPick{0%{transform:scale(1)}38%{transform:scale(1.02)}100%{transform:scale(.99)}}'
     +'.ds-row-picked{animation:dsPick .24s ease forwards;background:rgba(30,144,255,.26) !important;border-color:#1e90ff !important;box-shadow:0 0 0 2px rgba(30,144,255,.85),0 14px 40px rgba(30,144,255,.55) !important}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon215">
+/* v454 — Éditeur d'écritures (Consultation → édition d'un journal, tous dossiers) :
+   correctif de couleur — plus de bande claire/blanche (barre de lettrage) et en-têtes
+   de colonnes rendus bien visibles (texte clair sur fond bleu nuit). */
+(function(){
+  try{ var st=document.createElement('style'); st.id='ec-fix-colors-mod'; st.textContent=
+    /* barre de lettrage : fond bleu nuit (au lieu du bleu très clair #eef4fb) */
+    '.ec-sage .ec-letbar{background:#0c1a2a !important;border-bottom:1px solid #16212e !important}'
+    +'.ec-sage .ec-letbar .ec-llbl{color:#cfe0f5 !important;-webkit-text-fill-color:#cfe0f5 !important}'
+    +'.ec-sage .ec-letbar .ec-lbtn{background:#16304a !important;border:1px solid #2a557e !important;color:#eaf2ff !important;-webkit-text-fill-color:#eaf2ff !important}'
+    +'.ec-sage .ec-letbar .ec-lbtn:hover{background:#1d3e5e !important}'
+    +'.ec-sage .ec-letbar .ec-lhint{color:#9fb6d0 !important;-webkit-text-fill-color:#9fb6d0 !important}'
+    +'.ec-sage .ec-letbar *{color:#cfe0f5}'
+    /* en-têtes de colonnes : fond bleu nuit + libellés bien visibles (texte clair) */
+    +'.ec-sage .ec-table thead th{background:#10243a !important;color:#dceaff !important;-webkit-text-fill-color:#dceaff !important;'
+    +'border-right:1px solid #1c3a57 !important;border-bottom:2px solid #1e90ff !important;font-weight:700 !important;opacity:1 !important}'
+    /* filet : aucune cellule d\'en-tête claire */
+    +'.ec-sage .ec-tablewrap thead{background:#10243a !important}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
