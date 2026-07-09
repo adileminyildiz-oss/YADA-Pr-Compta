@@ -36,7 +36,19 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Onglet Contrat repensé : plus d'aperçu en direct → formulaire seul (grille) + bouton « 👁 Aperçu du contrat » (fenêtre) — v446
+## 🟢 Dernière mise à jour — Parcours d'entrée : « Changer de dossier » → « ← Retour aux dossiers » (flèche animée) + animation au clic d'un dossier + Déconnexion sur la Liste des dossiers — v447
+**Quoi :**
+1. **Bouton renommé + animé** — dans le HUB (et les vues rubrique / dossier sélectionné), le bouton **« Changer de dossier »** devient **« ← Retour aux dossiers »** avec une **flèche animée** (glisse au survol, appui `scale`).
+2. **Animation au clic d'un dossier** — cliquer une ligne de dossier (Liste des dossiers) joue une **animation de sélection** (léger zoom + halo bleu) avant de naviguer vers le HUB.
+3. **Déconnexion sur la Liste des dossiers** — un bouton **« Déconnexion »** est ajouté dans la barre d'actions de l'écran **« Liste des dossiers »** (à côté d'« Espace Admin » / « Importer »), en plus de l'écran d'accueil.
+
+**Comment :** libellés `ds-back-btn` + `<span class="ds-back-arrow">←</span>` dans `ecranHub`/`ecranRubrique`/`ecranSelUnique` ; **`yada-addon214`** (`<style id="ds-anim-mod">` : `.ds-back-btn` flèche animée, `@keyframes dsPick` + `.ds-row-picked` ; écouteur `click` capture sur `.ds-row[data-id]` → classe d'animation puis `dsSelectionner(id)` après 240 ms). Injection Déconnexion (`#adm-logout-inline` → `admDoLogout`) dans la branche « Liste des dossiers » de l'override `ecranSelectionDossier` (addon210). `sw.js` yada-v39, badge v447, `version.json` 447.
+
+**Validé :** `node --check` (207 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (Liste : Espace Admin + **Déconnexion** présents ; clic d'un dossier → `.ds-row-picked` appliqué puis navigation HUB (`dsHub=true`) ; HUB : bouton **« Retour aux dossiers »** + `.ds-back-btn` ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v447**.
+
+---
+
+## 🟢 MAJ précédente — Onglet Contrat repensé : plus d'aperçu en direct → formulaire seul (grille) + bouton « 👁 Aperçu du contrat » (fenêtre) — v446
 **Quoi :** refonte de l'onglet **Contrat** (module Paie). L'**aperçu A4 en direct** (colonne de droite) est **supprimé** : l'onglet n'affiche plus que les **éléments à remplir** (formulaire, présenté en **grille** centrée, plus lisible). Un bouton **« 👁 Aperçu du contrat »** (à côté de Générer / Enregistrer) ouvre le **contrat dans une fenêtre (modale)** à la demande (contrat A4 complet, défilable, + bouton Imprimer / PDF). Résout aussi le problème d'aperçu (page A4 coupée / blanche) en le remplaçant par une vue à la demande.
 
 **Comment — `yada-addon211` :** `tabContrat` réécrit (retrait de `.adm-ctr-wrap`/`.adm-ctr-prev`/`#adm-ctr-preview`/`#adm-ctr-pager` ; formulaire `.adm-ctr-side.ctr-grid` en 2 colonnes, en-têtes & actions & dépôt en `ctr-full` pleine largeur, `.adm-ctr-formwrap` centré `max-width:980px`) ; bouton **Aperçu** ajouté dans `ctrGenBlockHTML` ; `admCtrApercu()` (modale `#modal`/`#modal-c` = `contratHTML(s)` dans `.ctr-apercu-scroll` + Imprimer). `admCtrRenderPreview`/`admCtrTick` deviennent inertes (garde sur `#adm-ctr-preview` absent → no-op). `sw.js` yada-v38, badge v446, `version.json` 446.
