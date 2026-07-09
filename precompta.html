@@ -10819,7 +10819,7 @@ ${lignes}
 (function(){
   if(typeof render!=='function') return;
   window.sessionRole=window.sessionRole||'cabinet'; window.selClientMode=window.selClientMode||false;
-  window.CLIENT_PAGES=['facturation','achats']; /* client : uniquement génération factures vente + achat */
+  window.CLIENT_PAGES=['facturation','achats','tiers']; /* client : génération factures vente + achat + Tiers */
   window.CLIENT_HOME='facturation';
   function clientAllowed(p){ return window.CLIENT_PAGES.indexOf(p)>=0; }
   window.choisirDossierClient=function(id){ if(typeof choisirDossier==='function') choisirDossier(id); window.sessionRole='client'; current=window.CLIENT_HOME; render(); };
@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v443';
+    b.textContent='YADA · v444';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -11450,8 +11450,8 @@ ${lignes}
     var out=head('Mes factures fournisseurs','Déposez vos factures fournisseurs, retrouvez les dernières reçues et leur détail : HT, TVA, TTC et statut.');
     var left=depotFacturesCard('achat','Déposer une facture fournisseur','Glissez-déposez les factures reçues de vos fournisseurs (PDF/photo) : votre cabinet les récupère pour comptabilisation.');
     var right=achatsClientRecentes()+achatsClientDetail();
-    out+='<div class="cli-2col"><div class="cli-col"><div class="cli-col-h">Dépôt</div>'+left+'</div>'
-       +'<div class="cli-col"><div class="cli-col-h">Suivi & détail</div>'+right+'</div></div>';
+    out+='<div class="cli-2col"><div class="cli-col"><div class="cli-col-h">Suivi & détail</div>'+right+'</div>'
+       +'<div class="cli-col"><div class="cli-col-h">Dépôt</div>'+left+'</div></div>';
     return out;
   };
 
@@ -14854,7 +14854,8 @@ ${lignes}
     if(!el){ if(!document.body) return; el=document.createElement('div'); el.id='m-tabbar'; document.body.appendChild(el); }
     el.innerHTML = mtab('client','🏠','Accueil')
       + mtab('facturation','✚','Créer','mtab-fab')
-      + mtab('achats','📥','Déposer');
+      + mtab('achats','📥','Déposer')
+      + mtab('tiers','👥','Tiers');
   }
   if(typeof render==='function'){
     var _r=render; render=function(){ var x=_r.apply(this,arguments); try{ rebuildTabbar(); }catch(e){} return x; };
@@ -23371,11 +23372,10 @@ ${lignes}
             var dbtn='<button id="adm-logout-btn" class="btn btn-ghost" onclick="admDoLogout()" title="Fermer la session et revenir à la connexion">Déconnexion</button>';
             h=h.replace('Importer des données (JSON)</button>','Importer des données (JSON)</button>'+dbtn);
           }
-          /* Bouton Espace Admin SOUS la rangée (donc sous « Liste Dossier »), admin seulement. */
-          if(window.sessionRole==='admin' && h.indexOf('id="adm-enter-row"')<0){
-            var arow='<div id="adm-enter-row" class="adm-enter-row"><button class="btn btn-gold" onclick="admShowToggle(true)">🛡 Espace Admin</button></div>';
-            if(h.indexOf('Déconnexion</button></div>')>=0) h=h.replace('Déconnexion</button></div>','Déconnexion</button></div>'+arow);
-            else if(h.indexOf('Importer des données (JSON)</button></div>')>=0) h=h.replace('Importer des données (JSON)</button></div>','Importer des données (JSON)</button></div>'+arow);
+          /* Bouton Espace Admin AVANT « Liste Dossier », même dimension (btn btn-gold), admin seulement. */
+          if(window.sessionRole==='admin' && h.indexOf('id="adm-enter-btn"')<0){
+            var abtn0='<button id="adm-enter-btn" class="btn btn-gold" onclick="admShowToggle(true)">🛡 Espace Admin</button>';
+            h=h.replace('<button class="btn btn-gold" onclick="dsOuvrirListe()">Liste Dossier</button>', abtn0+'<button class="btn btn-gold" onclick="dsOuvrirListe()">Liste Dossier</button>');
           }
         }
         /* Écran « Liste des dossiers » (Importer présent, mais pas le bouton Liste Dossier) :
@@ -23482,6 +23482,7 @@ ${lignes}
   window.admPaieTab=function(t){ window.__admPaieTab=t; saveR(); };
   window.admPaieSetPeriode=function(v){ window.__admPaiePer=v||periode(); saveR(); };
   window.admPaieSel=function(id){ window.__admPaieSel=id; saveR(); };
+  window.admPaieEnregistrer=function(id){ var s=stById(id); if(!s)return; try{ if(typeof save==='function') save(); }catch(e){} if(typeof toast==='function') toast('Informations du salarié enregistrées ✓'); };
   window.admPaieField=function(id,key,v){ var s=stById(id); if(!s)return; s[key]=v; saveOnly(); };
   window.admPaiePer=function(id,key,v){ var s=stById(id); if(!s)return; var pp=salPer(s); pp[key]=v;
     if(key==='brut'){ s.salaireBrut=num(v); s.salaireNet=R2(num(v)*0.78); } saveR(); };
@@ -23672,8 +23673,9 @@ ${lignes}
           +'<div class="fld"><label>Heures travaillées</label><input type="number" step="0.01" min="0" value="'+(num(pp.heures)||'')+'" onchange="admPaiePer(\''+esc(s.id)+'\',\'heures\',this.value)"></div>'
           +'<div class="fld"><label>Taux PAS (%)</label><input type="number" step="0.01" min="0" value="'+(num(pp.pasTaux)||'')+'" onchange="admPaiePer(\''+esc(s.id)+'\',\'pasTaux\',this.value)"></div>'
         +'</div>'
-        +'<div class="grid g4" style="margin-top:10px">'+kpi('Brut',EUR(c.brut))+kpi('Net imposable',EUR(c.netImpo))+kpi('Net à payer',EUR(c.netAPayer))+kpi('Coût employeur',EUR(c.cout))+'</div>'
-        +'<div style="margin-top:12px"><button class="btn btn-pri btn-sm" onclick="admPaieBulletin(\''+esc(s.id)+'\')">Générer la fiche de paie</button></div>'
+        +'<div class="adm-soc-gh">Montants perçus par le salarié</div>'
+        +'<div class="grid g4" style="margin-top:2px">'+kpi('Salaire brut',EUR(c.brut))+kpi('Salaire net à payer',EUR(c.netAPayer))+kpi('Coût total employeur',EUR(c.cout))+'</div>'
+        +'<div style="margin-top:12px"><button class="btn btn-pri btn-sm" onclick="admPaieEnregistrer(\''+esc(s.id)+'\')">Enregistrer</button></div>'
       +'</div>'; } }
     var ctrLbl=function(s){ return s.contratStatut==='admis'?'<span style="color:#7fdba0">admis ✓</span>':(s.contratStatut==='deposee'?'<span style="color:#ffd08a">à vérifier</span>':'<span style="opacity:.55">—</span>'); };
     var rows=st.map(function(s){ var c=paieCalc(s), miss=salMiss(s); var ok=miss.length===0;
@@ -23681,7 +23683,7 @@ ${lignes}
         +'<td>'+esc(s.typeContrat||'—')+'</td><td class="r num">'+EUR(c.brut)+'</td><td class="r num">'+EUR(c.netAPayer)+'</td>'
         +'<td>'+(s.contratGenere?('<a href="#" onclick="admCtrImprimer(\''+esc(s.id)+'\');return false" style="color:#5ab0ff">📄 Contrat PDF</a><div class="mini" style="opacity:.6">Généré le '+esc(frd(s.contratGenereDate)||'')+'</div>'):'<span style="opacity:.5">non généré</span>')+(s.contratSigne?('<div class="mini">Signé : <a href="#" onclick="admContratVoir(\''+esc(s.id)+'\');return false" style="color:#7fdba0">'+esc(ctrLbl(s))+'</a></div>'):'')+'</td>'
         +'<td>'+(ok?'<span style="color:#7fdba0">✓ complet</span>':'<span style="color:#ffb4ad" title="'+esc(miss.join(', '))+'">⚠ à compléter</span>')+'</td>'
-        +'<td class="r"><button class="btn btn-ghost btn-sm" onclick="admPaieSel(\''+esc(s.id)+'\')">Compléter / Modifier</button> <button class="btn btn-ghost btn-sm" onclick="admPaieBulletin(\''+esc(s.id)+'\')">Fiche de paie</button></td></tr>';
+        +'<td class="r"><button class="btn btn-ghost btn-sm" onclick="admPaieSel(\''+esc(s.id)+'\')">Compléter / Modifier</button></td></tr>';
     }).join('') || '<tr><td colspan="7" class="adm-empty">Aucun salarié — enregistrez-les dans « Collaborateurs & accès ».</td></tr>';
     return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h2 style="margin:0">Salariés — informations de paie</h2><div>Période : '+perSelect()+'</div></div>'
       +'<div class="sub">La responsable de paie remplit ici les informations de paie de tous les salariés (identité, contrat, rémunération), dépose le contrat signé &amp; tamponné et l\'admet — critères nécessaires à une DSN valide.</div>'
@@ -23693,10 +23695,10 @@ ${lignes}
   function contratSection(s){ var st=s.contratStatut||'';
     var dep = s.contratSigne? ('<div class="mini" style="margin-top:4px">Contrat signé déposé : <a href="#" onclick="admContratVoir(\''+esc(s.id)+'\');return false" style="color:#5ab0ff">'+esc(s.contratSigne.nom||'contrat')+'</a></div>') : '';
     var actions='';
-    if(st!=='admis') actions+='<label class="btn btn-ghost btn-sm" style="cursor:pointer;margin:0">Déposer le contrat signé &amp; tamponné<input type="file" accept="application/pdf,image/*" style="display:none" onchange="admContratDepose(\''+esc(s.id)+'\',this)"></label>';
+    if(st!=='admis') actions+='<label class="btn btn-pri btn-sm" style="cursor:pointer;margin:0">Contrat signé<input type="file" accept="application/pdf,image/*" style="display:none" onchange="admContratDepose(\''+esc(s.id)+'\',this)"></label>';
     if(st==='deposee') actions+=' <button class="btn btn-pri btn-sm" onclick="admContratAdmettre(\''+esc(s.id)+'\')">Vérifier &amp; admettre</button>';
-    return '<div class="sub">Statut : <b>'+contratStatutLbl(s)+'</b></div>'+dep
-      +'<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+actions
+    return '<div class="sub" style="text-align:center">Statut : <b>'+contratStatutLbl(s)+'</b></div>'+dep
+      +'<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center">'+actions
       +(st==='admis'?'<span class="mini" style="color:#7fdba0">Contrat admis — la fiche de paie est disponible dans l\'onglet « Fiches de paie ».</span>':'')+'</div>'; }
   window.admContratDepose=function(id,input){ var s=stById(id); if(!s||!input||!input.files||!input.files[0])return; var f=input.files[0]; var rd=new FileReader();
     rd.onload=function(){ s.contratSigne={nom:f.name,data:rd.result}; s.contratStatut='deposee'; saveR(); if(typeof toast==='function')toast('Contrat signé déposé — à vérifier.'); }; rd.readAsDataURL(f); };
@@ -23828,8 +23830,9 @@ ${lignes}
   window.admCtrRefresh=function(){ admCtrRenderPreview(); };
   function admCtrRenderPreview(){ var s=stById(window.__admCtrSel); var host=document.getElementById('adm-ctr-preview'); if(!host||!s) return;
     var side=document.querySelector('.adm-ctr-side'); var prev=document.querySelector('.adm-ctr-prev');
-    var sideH=(side&&side.offsetHeight>120)?side.offsetHeight:760; if(prev) prev.style.height=sideH+'px';
-    var blocks=contratBlocks(s); var contentH=CTR_A4H-2*CTR_PAD, contentW=CTR_A4W-2*CTR_PAD;
+    var blocks; try{ blocks=contratBlocks(s); }catch(e){ blocks=null; }
+    if(!blocks || !blocks.length){ host.innerHTML='<div style="padding:24px;color:#2a3550;font:14px system-ui,sans-serif">Aperçu du contrat indisponible.</div>'; return; }
+    var contentH=CTR_A4H-2*CTR_PAD, contentW=CTR_A4W-2*CTR_PAD;
     var meas=document.createElement('div'); meas.className='ctr-a4'; meas.style.cssText='position:absolute;left:-9999px;top:0;width:'+contentW+'px;visibility:hidden;padding:0'; document.body.appendChild(meas);
     var pages=[[]], curH=0;
     for(var i=0;i<blocks.length;i++){ meas.innerHTML=blocks[i]; var h=meas.offsetHeight+8;
@@ -23837,11 +23840,16 @@ ${lignes}
       pages[pages.length-1].push(blocks[i]); curH+=h; }
     try{ document.body.removeChild(meas); }catch(e){}
     var np=pages.length; var pg=Math.min(Math.max(window.__admCtrPage||0,0),np-1); window.__admCtrPage=pg;
-    var availW=(prev&&prev.clientWidth>60?prev.clientWidth:520)-8;
-    var scale=Math.min(sideH/CTR_A4H, availW/CTR_A4W); if(!(scale>0.15)) scale=0.6;
-    host.innerHTML='<div style="height:'+(CTR_A4H*scale)+'px;width:'+(CTR_A4W*scale)+'px;margin:0 auto"><div class="ctr-a4" style="width:'+CTR_A4W+'px;min-height:'+CTR_A4H+'px;padding:'+CTR_PAD+'px;transform:scale('+scale+');transform-origin:top left">'+pages[pg].join('')+'</div></div>';
+    var pageBlocks=(pages[pg]&&pages[pg].length)?pages[pg]:blocks; /* filet : jamais de page vide */
+    /* Échelle : ajuster à la LARGEUR disponible, jamais agrandir (≤ 1) ; conteneur défilable. */
+    var availW=(prev&&prev.clientWidth>60?prev.clientWidth:560)-24;
+    var scale=availW/CTR_A4W; if(!(scale>0.15)) scale=0.6; if(scale>1) scale=1;
+    if(prev){ var sideH=(side&&side.offsetHeight>200)?side.offsetHeight:640;
+      prev.style.height=Math.min(sideH, Math.round((window.innerHeight||900)*0.82))+'px';
+      prev.style.overflowY='auto'; prev.style.overflowX='hidden'; prev.style.alignItems='flex-start'; }
+    host.innerHTML='<div style="height:'+Math.round(CTR_A4H*scale)+'px;width:'+Math.round(CTR_A4W*scale)+'px;margin:0 auto"><div class="ctr-a4" style="width:'+CTR_A4W+'px;min-height:'+CTR_A4H+'px;padding:'+CTR_PAD+'px;transform:scale('+scale+');transform-origin:top left">'+pageBlocks.join('')+'</div></div>';
     var pager=document.getElementById('adm-ctr-pager');
-    if(pager){ pager.innerHTML = (np>1) ? ('<button class="btn btn-ghost btn-sm" '+(pg<=0?'disabled':'')+' onclick="admCtrPage(-1)">‹ Page précédente</button><span class="mini" style="opacity:.75">Page '+(pg+1)+' / '+np+'</span><button class="btn btn-ghost btn-sm" '+(pg>=np-1?'disabled':'')+' onclick="admCtrPage(1)">Page suivante ›</button>') : '<span class="mini" style="opacity:.6">Page 1 / 1</span>'; }
+    if(pager){ pager.innerHTML = (np>1) ? ('<button class="btn btn-ghost btn-sm" '+(pg<=0?'disabled':'')+' onclick="admCtrPage(-1)">‹ Page précédente</button><span class="mini" style="opacity:.75">Page '+(pg+1)+' / '+np+'</span><button class="btn btn-ghost btn-sm" '+(pg>=np-1?'disabled':'')+' onclick="admCtrPage(1)">Page suivante ›</button>') : '<span class="mini" style="opacity:.6">Page 1 / '+np+'</span>'; }
   }
   /* Conditions requises pour générer le contrat (toutes doivent être remplies). */
   function ctrManques(s){ var so=soc(); var m=[];
@@ -23855,11 +23863,13 @@ ${lignes}
     soc4.forEach(function(f){ var v=so[f[0]]; if(v==null||String(v).trim()==='') m.push(f[1]); });
     return m; }
   function ctrGenBlockHTML(s){ var m=ctrManques(s);
+    var enr='<button class="btn btn-ghost btn-sm" onclick="admCtrEnregistrer()">Enregistrer</button>';
     if(m.length) return '<div class="ctr-gen-warn">⚠ Complétez toutes les conditions du contrat avant de le générer.<div class="mini" style="margin-top:4px;opacity:.85">Manquant : '+esc(m.join(', '))+'</div></div>'
-      +'<div style="margin-top:10px"><button class="btn btn-pri btn-sm" disabled style="opacity:.55;cursor:not-allowed">Générer le contrat (PDF)</button></div>';
+      +'<div class="ctr-gen-actions"><button class="btn btn-pri btn-sm" disabled style="opacity:.55;cursor:not-allowed">Générer le contrat (PDF)</button>'+enr+'</div>';
     return '<div class="ctr-gen-ok">✓ Toutes les conditions sont remplies — le contrat peut être généré.</div>'
-      +'<div style="margin-top:10px"><button class="btn btn-pri btn-sm" onclick="admCtrGenerer()">Générer le contrat (PDF)</button>'
-      +(s.contratGenere?' <span class="mini" style="color:#7fdba0;margin-left:8px">Généré le '+esc(frd(s.contratGenereDate)||'')+' — visible dans la liste des salariés.</span>':'')+'</div>'; }
+      +'<div class="ctr-gen-actions"><button class="btn btn-pri btn-sm" onclick="admCtrGenerer()">Générer le contrat (PDF)</button>'+enr+'</div>'
+      +(s.contratGenere?'<div class="mini" style="color:#7fdba0;text-align:center;margin-top:6px">Généré le '+esc(frd(s.contratGenereDate)||'')+' — visible dans la liste des salariés.</div>':''); }
+  window.admCtrEnregistrer=function(){ var s=stById(window.__admCtrSel); if(!s){ if(typeof toast==='function')toast('Sélectionnez un salarié.'); return; } try{ if(typeof save==='function') save(); }catch(e){} if(typeof toast==='function') toast('Contrat enregistré ✓'); };
   window.admCtrImprimer=function(id){ var s=stById(id||window.__admCtrSel); if(!s){ if(typeof toast==='function')toast('Sélectionnez un salarié.'); return; } var pa=document.getElementById('print-area'); if(pa) pa.innerHTML=contratHTML(s); if(typeof toast==='function')toast('Fenêtre d\'impression → « Enregistrer en PDF »'); setTimeout(function(){ try{window.print();}catch(e){} },150); };
   /* Génération du contrat en PDF — uniquement si toutes les conditions sont remplies. */
   window.admCtrGenerer=function(){ var s=stById(window.__admCtrSel); if(!s){ if(typeof toast==='function')toast('Sélectionnez un salarié.'); return; }
@@ -23917,7 +23927,7 @@ ${lignes}
     var tb=function(id,lbl){ return '<button class="adm-paie-tab'+(tab===id?' on':'')+'" onclick="admPaieTab(\''+id+'\')">'+lbl+'</button>'; };
     var body = tab==='contrat'?tabContrat() : tab==='bul'?tabBulletins() : tab==='dsn'?tabDSN() : tabSalaries();
     return '<div class="login-title">Paie</div><div class="login-sub">Gestion de la paie des salariés, contrats, DSN et fiches de paie.</div>'
-      +'<div class="adm-paie-tabs">'+tb('sal','Salariés & paie')+tb('contrat','Contrat')+tb('bul','Fiches de paie')+tb('dsn','DSN')+'</div>'
+      +'<div class="adm-paie-tabs">'+tb('sal','Salariés')+tb('contrat','Contrat')+tb('bul','Fiches de paie')+tb('dsn','DSN')+'</div>'
       +body;
   }
   window.__admPaieModule=admPaieModule;
@@ -23959,6 +23969,7 @@ ${lignes}
     +'.adm-ctr-side .fld{margin-bottom:8px}.adm-ctr-side .fld label{display:block;font-size:11.5px;opacity:.72;margin-bottom:3px}'
     +'.ctr-gen-warn{margin-top:12px;background:rgba(255,120,110,.12);border:1px solid rgba(255,120,110,.4);border-radius:9px;padding:9px 11px;font-size:12.5px;color:#ffb4ad}'
     +'.ctr-gen-ok{margin-top:12px;background:rgba(80,200,140,.12);border:1px solid rgba(80,200,140,.4);border-radius:9px;padding:9px 11px;font-size:12.5px;color:#7fdba0}'
+    +'.ctr-gen-actions{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:10px}'
     /* Aperçu : hauteur = barre latérale (posée en JS), overflow caché, page A4 centrée en haut. */
     +'.adm-ctr-prev{background:#e9edf3;border:1px solid rgba(120,180,255,.2);border-radius:12px;padding:10px;overflow:hidden;display:flex;justify-content:center;align-items:flex-start}'
     +'.adm-ctr-prev #adm-ctr-preview{width:100%}'
@@ -23982,6 +23993,99 @@ ${lignes}
     +'.adm-fiche-mois{display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:rgba(30,144,255,.08);border:1px solid rgba(30,144,255,.3);color:inherit;border-radius:11px;padding:10px 14px;cursor:pointer;font-size:13.5px;font-weight:600;transition:background .15s,border-color .15s}'
     +'.adm-fiche-mois:hover{background:rgba(30,144,255,.18);border-color:#1e90ff}'
     +'.adm-fiche-mois .mini{font-weight:500;opacity:.7;font-size:11px}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon212">
+/* v444 — Cartes repliables : Espace Admin « Collaborateurs & accès » (fermées) + liste des dossiers compacte,
+   et Espace Client (toutes les cartes fermées sauf « Déposer une facture ») + design/cadrage/effets client. */
+(function(){
+  /* ---------- 1) Espace Admin : Collaborateurs & accès — cartes repliables (fermées par défaut) ---------- */
+  window.__admFoldOpen = window.__admFoldOpen || {};
+  window.admFoldToggle = function(id, open){ try{ window.__admFoldOpen[id] = !!open; }catch(e){} };
+  function admFoldOne(card){
+    var m = card.match(/^\s*<div class="([^"]*)"(?:\s+id="([^"]*)")?\s*>([\s\S]*)<\/div>\s*$/);
+    if(!m) return card;
+    var cls=m[1], id=m[2]||'', inner=m[3];
+    var hm = inner.match(/^([\s\S]*?<\/h2>)([\s\S]*)$/);
+    if(!hm) return card;
+    var open = (id && window.__admFoldOpen[id]) ? ' open' : '';
+    var idAttr = id ? (' id="'+id+'"') : '';
+    var tog = id ? (' ontoggle="admFoldToggle(\''+id+'\',this.open)"') : '';
+    return '<details class="'+cls+' adm-fold"'+idAttr+open+tog+'><summary class="adm-fold-sum">'+hm[1]+'<span class="adm-fold-c">▸</span></summary><div class="adm-fold-b">'+hm[2]+'</div></details>';
+  }
+  function admFoldAll(html){
+    if(typeof html!=='string' || html.indexOf('<div class="card')<0) return html;
+    return html.split(/(?=<div class="card)/).filter(Boolean).map(admFoldOne).join('');
+  }
+  if(typeof window.admCollabPanel==='function'){ var _acp=window.admCollabPanel;
+    window.admCollabPanel=function(){ try{ return admFoldAll(_acp.apply(this,arguments)); }catch(e){ return _acp.apply(this,arguments); } }; }
+
+  /* ---------- 2) Espace Client : toutes les cartes fermées (clic pour ouvrir), sauf « Déposer une facture » ---------- */
+  window.__cliOpen = window.__cliOpen || {};
+  function cliIsDepot(card, h2txt){
+    if(/Déposer une facture/i.test(h2txt)) return true;
+    try{ if(card.querySelector('input[type=file]')) return true; }catch(e){}
+    return /fdep-|factDrop|factDepotAdd|ondrop/.test(card.innerHTML||'');
+  }
+  function cliFoldPass(){
+    if((window.sessionRole||'')!=='client') return;
+    var main=document.getElementById('main'); if(!main) return;
+    var cards=main.querySelectorAll('.card');
+    for(var i=0;i<cards.length;i++){ (function(card){
+      if(card.getAttribute('data-clifold')) return;
+      var h2=null, ch=card.children;
+      for(var k=0;k<ch.length;k++){ if(ch[k].tagName==='H2'){ h2=ch[k]; break; } }
+      if(!h2) return;
+      card.setAttribute('data-clifold','1');
+      card.classList.add('cli-fold');
+      var txt=(h2.textContent||'').trim(); var key=txt.slice(0,60);
+      var openState = cliIsDepot(card, txt) ? true : (window.__cliOpen[key]===true);
+      if(!openState) card.classList.add('cli-collapsed');
+      if(!h2.querySelector('.cli-caret')){ var c=document.createElement('span'); c.className='cli-caret'; c.textContent='▸'; h2.appendChild(c); }
+      h2.style.cursor='pointer';
+      h2.addEventListener('click', function(){ var collapsed=card.classList.toggle('cli-collapsed'); window.__cliOpen[key]=!collapsed; });
+    })(cards[i]); }
+  }
+  if(typeof window.render==='function' && !window.__cliFoldGuard){ window.__cliFoldGuard=true; var _r=window.render;
+    window.render=function(){ var x=_r.apply(this,arguments); try{ requestAnimationFrame(cliFoldPass); }catch(e){ setTimeout(cliFoldPass,0); } setTimeout(cliFoldPass,60); return x; }; }
+
+  /* ---------- 3) Styles ---------- */
+  try{ var st=document.createElement('style'); st.id='fold-client-mod'; st.textContent=
+    /* Admin — cartes repliables */
+    '.adm-fold>.adm-fold-sum{list-style:none;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}'
+    +'.adm-fold>.adm-fold-sum::-webkit-details-marker{display:none}'
+    +'.adm-fold>.adm-fold-sum h2{margin:0;flex:1}'
+    +'.adm-fold>.adm-fold-sum .adm-fold-c{font-size:13px;opacity:.6;transition:transform .15s;flex:0 0 auto}'
+    +'.adm-fold[open]>.adm-fold-sum .adm-fold-c{transform:rotate(90deg)}'
+    +'.adm-fold-b{margin-top:10px}'
+    /* Admin — Dossiers & attribution : compact / minimaliste */
+    +'.adm-fold .adm-doss-list{gap:5px;margin-top:8px}'
+    +'.adm-fold .adm-doss-card{border-radius:8px;background:none;transition:border-color .12s}'
+    +'.adm-fold .adm-doss-card:hover{border-color:rgba(30,144,255,.32);box-shadow:none}'
+    +'.adm-fold .adm-doss-head{padding:6px 10px;background:none;border-bottom:none;gap:9px}'
+    +'.adm-fold .adm-doss-av{width:24px;height:24px;border-radius:6px;font-size:12px}'
+    +'.adm-fold .adm-doss-id b{font-size:13px}'
+    +'.adm-fold .adm-doss-forme{font-size:9.5px}'
+    +'.adm-fold .adm-doss-badge{padding:2px 8px;font-size:10.5px}'
+    +'.adm-fold .adm-doss-body{padding:0 10px 8px 43px}'
+    +'.adm-fold .adm-doss-lbl{margin-bottom:5px;font-size:9.5px}'
+    +'.adm-fold .adm-uchips{gap:5px}'
+    +'.adm-fold .adm-uchip{padding:3px 9px;font-size:11.5px;border-radius:14px;gap:6px}'
+    +'.adm-fold .adm-uchip-dot{width:7px;height:7px}'
+    +'.adm-fold .adm-trace{padding:2px 8px;font-size:11px}'
+    /* Client — cartes repliables */
+    +'body[data-role="client"] .card.cli-fold>h2{display:flex;align-items:center;gap:9px;user-select:none;margin-bottom:0}'
+    +'body[data-role="client"] .card.cli-fold:not(.cli-collapsed)>h2{margin-bottom:12px}'
+    +'body[data-role="client"] .card.cli-fold>h2 .cli-caret{margin-left:auto;font-size:13px;opacity:.55;transition:transform .18s;flex:0 0 auto}'
+    +'body[data-role="client"] .card.cli-fold:not(.cli-collapsed)>h2 .cli-caret{transform:rotate(90deg)}'
+    +'body[data-role="client"] .card.cli-collapsed>*:not(h2){display:none !important}'
+    /* Client — design / cadrage / minimalisme / effets (Client, Fournisseur, Tiers) */
+    +'body[data-role="client"] .cli-col-h{font-size:11px;text-transform:uppercase;letter-spacing:.8px;opacity:.55;margin:0 0 10px 2px;font-weight:700}'
+    +'body[data-role="client"] .card.cli-fold{border-radius:16px;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease !important}'
+    +'body[data-role="client"] .card.cli-fold:hover{transform:translateY(-1px) !important;box-shadow:0 10px 30px rgba(0,0,0,.22) !important;border-color:rgba(30,144,255,.30) !important}'
+    +'body[data-role="client"] .card.cli-fold:active{transform:scale(.996) !important}'
+    +'body[data-role="client"] .card.cli-fold>h2{font-size:15px;letter-spacing:.2px}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
