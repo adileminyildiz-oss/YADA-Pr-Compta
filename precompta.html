@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v433';
+    b.textContent='YADA · v434';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -23620,11 +23620,110 @@ ${lignes}
         +'<div class="mini" style="opacity:.65;margin-top:10px">Le fichier DSN produit est représentatif de la norme NEODeS (blocs S10/S20/S21). À fiabiliser (contrôle DSN-val) avant transmission réelle via Net-Entreprises / API DSN.</div></div>';
   }
 
+  /* ---- Onglet CONTRAT : composition d'un contrat de travail (formulaire à gauche + contrat A4 à droite) ---- */
+  function frd(iso){ if(!iso)return '……'; var a=String(iso).split('-'); return a.length===3?(a[2]+'/'+a[1]+'/'+a[0]):iso; }
+  function civ(s){ return s.sexe==='F'?'Madame':(s.sexe==='H'?'Monsieur':'M./Mme'); }
+  function nomP(s){ return ((s.nom||'').toUpperCase()+' '+(s.prenom||'')).trim()||'……'; }
+  function ctrNet(s){ var b=num(salPer(s).brut); return R2(b*0.78); }
+  var CONTRAT_TYPES={CDI:'à durée indéterminée',CDD:'à durée déterminée',APP:'d\'apprentissage',PRO:'de professionnalisation',STG:'de stage'};
+  window.admCtrSelect=function(id){ window.__admCtrSel=id; saveR(); };
+  window.admCtrField=function(id,key,v){ var s=stById(id); if(!s)return;
+    if(key==='brut'){ var pp=salPer(s); pp.brut=num(v); s.salaireBrut=num(v); s.salaireNet=R2(num(v)*0.78);
+      var ne=document.getElementById('adm-ctr-net'); if(ne) ne.value=s.salaireNet; }
+    else { s[key]=v; }
+    saveOnly(); admCtrRefresh(); };
+  window.admCtrRefresh=function(){ var s=stById(window.__admCtrSel); var el=document.getElementById('adm-ctr-preview'); if(el&&s) el.innerHTML=contratHTML(s); };
+  function contratHTML(s){ var so=soc(); var C=civ(s); var N=nomP(s); var b=num(salPer(s).brut); var net=ctrNet(s);
+    var typeLib=CONTRAT_TYPES[s.typeContrat]||'à durée indéterminée';
+    var titre='CONTRAT DE TRAVAIL '+(typeLib.toUpperCase());
+    var statut=(s.statutCadre==='C')?'Cadre':'Non cadre';
+    var essai=num(s.essaiJours)||0; var hebdo=num(s.dureeHebdo)||35;
+    var payDe=s.payDe||'1', payA=s.payA||'5';
+    var conv=s.conventionNom||'……';
+    var metier=s.poste||'……';
+    var lieu=s.lieuTravail||((so.adresse||'')+' '+(so.cp||'')+' '+(so.ville||'')).trim()||'……';
+    var art=function(t,c){ return '<h3 style="font-size:13px;margin:14px 0 4px">'+t+'</h3><div>'+c+'</div>'; };
+    return '<div class="doc-page ctr-page">'
+      +'<div style="text-align:center;font-weight:800;font-size:16px;line-height:1.3">'+esc(titre)+'</div>'
+      +'<p style="margin-top:14px">Entre les soussignés :</p>'
+      +'<p><b>La société '+esc(so.nom||'……')+'</b><br>Dont le siège social est à '+esc((so.adresse||'……')+' – '+(so.cp||'')+' '+(so.ville||''))+'<br>'
+        +'Immatriculée au RCS de '+esc(so.rcs||'……')+', numéro SIRET '+esc(so.siret||'……')+', code APE '+esc(so.codeAPE||'……')+'<br>'
+        +'Agissant par l\'intermédiaire de son représentant légal '+esc(so.dirigeant||'……')+'.<br><i>L\'employeur, d\'une part</i></p>'
+      +'<p>Et</p>'
+      +'<p><b>'+esc(C+' '+N)+'</b>,<br>Demeurant à '+esc((s.adresse||'……')+' – '+(s.cp||'')+' '+(s.ville||''))+'<br>'
+        +'Né(e) le '+esc(frd(s.dateNaissance))+' à '+esc(s.lieuNaissance||'……')+(s.paysNaissance?(' ('+esc(s.paysNaissance)+')'):'')+', de nationalité '+esc(s.nationalite||'……')+'<br>'
+        +'Immatriculé(e) à la Sécurité Sociale sous le numéro '+esc(s.nir||'……')+'<br><i>Le salarié, d\'autre part</i></p>'
+      +'<p>Il a été convenu ce qui suit :</p>'
+      +art('Article 1 – Engagement','La société '+esc(so.nom||'……')+' engage '+esc(C+' '+N)+' en qualité de <b>'+esc(metier)+'</b> – '+esc(statut)+' – à compter du <b>'+esc(frd(s.dateEntree))+'</b> pour une durée '+esc(typeLib)+', sous réserve des résultats de la visite médicale d\'embauche devant intervenir avant l\'expiration de la période d\'essai. La déclaration préalable à l\'embauche a été effectuée auprès de l\'URSSAF.')
+      +art('Article 2 – Objet du contrat',esc(C+' '+N)+' exercera les fonctions de <b>'+esc(metier)+'</b>. Ces fonctions sont susceptibles d\'évolution. Ce contrat est soumis aux dispositions de la convention collective de <b>'+esc(conv)+'</b>.')
+      +art('Article 3 – Période d\'essai','L\'engagement de '+esc(C+' '+N)+' deviendra définitif à l\'issue d\'une période d\'essai fixée à <b>'+esc(essai)+' jour'+(essai>1?'s':'')+'</b>. Pendant cette période, chacune des parties pourra à tout moment mettre fin au présent contrat, sans indemnité ni préavis.')
+      +art('Article 4 – Obligations professionnelles',esc(C+' '+N)+' s\'engage à travailler exclusivement pour le compte de l\'employeur, à observer une discrétion professionnelle absolue et à se conformer aux directives de la direction.')
+      +art('Article 5 – Lieu de travail','Le lieu de travail est fixé à <b>'+esc(lieu)+'</b>. '+esc(C+' '+N)+' s\'engage à accepter tout déplacement ponctuel entrant dans le cadre de ses fonctions.')
+      +art('Article 6 – Horaires de travail','La durée hebdomadaire de travail est de <b>'+esc(hebdo)+' heures</b>. Ces horaires pourront être modifiés en raison des nécessités de service.')
+      +art('Article 7 – Rémunération','En contrepartie de l\'accomplissement de ses fonctions, '+esc(C+' '+N)+' percevra un salaire mensuel <b>brut de '+esc(EUR(b))+'</b> (soit un net indicatif de '+esc(EUR(net))+'), payable entre le <b>'+esc(payDe)+'</b> et le <b>'+esc(payA)+'</b> du mois.')
+      +art('Article 8 – Congés payés',esc(C+' '+N)+' bénéficiera des droits à congés payés prévus par le Code du Travail et la convention collective applicable, soit 30 jours ouvrables par période du 1er juin au 31 mai suivant.')
+      +art('Article 9 – Absence et indisponibilité','En cas d\'absence pour maladie ou accident, '+esc(C+' '+N)+' devra en aviser immédiatement l\'employeur et le justifier par un certificat médical dans les 48 heures.')
+      +art('Article 10 – Rupture du contrat','Chaque partie peut mettre fin au contrat conformément aux dispositions légales et conventionnelles applicables, le préavis étant conforme à la convention collective.')
+      +art('Article 11 – Dispositions diverses','Pour toutes les dispositions non prévues aux présentes, les parties se réfèrent à la convention collective et au règlement intérieur applicables dans la société.')
+      +'<p style="margin-top:16px">Fait en deux exemplaires à '+esc(so.ville||'……')+', le '+esc(frd(s.dateEntree))+'.</p>'
+      +'<p style="opacity:.8">(Signatures précédées de la mention manuscrite « Lu et approuvé. Bon pour accord »)</p>'
+      +'<div style="display:flex;justify-content:space-between;margin-top:24px"><div>L\'employeur<br>'+esc(so.nom||'')+'</div><div>Le salarié<br>'+esc(N)+'</div></div>'
+      +'</div>'; }
+  window.admCtrImprimer=function(){ var s=stById(window.__admCtrSel); if(!s){ if(typeof toast==='function')toast('Sélectionnez un salarié.'); return; } var pa=document.getElementById('print-area'); if(pa) pa.innerHTML=contratHTML(s); if(typeof toast==='function')toast('Fenêtre d\'impression → « Enregistrer en PDF »'); setTimeout(function(){ try{window.print();}catch(e){} },150); };
+  window.admCtrTelecharger=function(){ var s=stById(window.__admCtrSel); if(!s){ if(typeof toast==='function')toast('Sélectionnez un salarié.'); return; }
+    var doc='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Contrat</title></head><body style="font-family:Calibri,Arial,sans-serif;font-size:12pt;line-height:1.45">'+contratHTML(s)+'</body></html>';
+    try{ var b=new Blob(['﻿'+doc],{type:'application/msword'}); var u=URL.createObjectURL(b); var a=document.createElement('a'); a.href=u; a.download='Contrat-'+((s.nom||'salarie')+'-'+(s.prenom||'')).replace(/\s+/g,'_')+'.doc'; document.body.appendChild(a); a.click(); setTimeout(function(){ try{URL.revokeObjectURL(u);a.remove();}catch(e){} },120); }catch(e){}
+    if(typeof toast==='function')toast('Contrat téléchargé (.doc).'); };
+
+  function ctrFieldRow(id,lbl,key,ty,val){ var v=(val!=null?val:'');
+    if(String(ty).indexOf('sel:')===0){ var opts=ty.slice(4).split('|').map(function(o){ var kv=o.split('='); return '<option value="'+esc(kv[0])+'"'+(String(v)===kv[0]?' selected':'')+'>'+esc(kv[1])+'</option>'; }).join('');
+      return '<div class="fld"><label>'+esc(lbl)+'</label><select class="adm-paie-in" onchange="admCtrField(\''+esc(id)+'\',\''+esc(key)+'\',this.value)"><option value="">—</option>'+opts+'</select></div>'; }
+    return '<div class="fld"><label>'+esc(lbl)+'</label><input class="adm-paie-in" type="'+ty+'" value="'+esc(v)+'" oninput="admCtrField(\''+esc(id)+'\',\''+esc(key)+'\',this.value)"></div>'; }
+  function tabContrat(){ var st=staff();
+    var picker='<select class="adm-paie-in" style="max-width:280px" onchange="admCtrSelect(this.value)"><option value="">— Choisir un salarié —</option>'
+      +st.map(function(s){ return '<option value="'+esc(s.id)+'"'+(window.__admCtrSel===s.id?' selected':'')+'>'+esc(nom(s))+'</option>'; }).join('')+'</select>';
+    var s=stById(window.__admCtrSel);
+    if(!s){ return '<div class="card"><h2>Contrat de travail</h2><div class="sub">Composez le contrat d\'un salarié : formulaire à gauche, aperçu du contrat à droite (téléchargeable et imprimable).</div>'
+        +'<div style="margin-top:8px">'+picker+'</div>'
+        +(st.length?'<div class="adm-empty" style="margin-top:10px">Sélectionnez un salarié pour composer son contrat.</div>':'<div class="adm-empty" style="margin-top:10px">Aucun salarié — enregistrez-les dans « Collaborateurs & accès ».</div>')+'</div>'; }
+    var pp=salPer(s);
+    var jopts=function(cur){ var o=''; for(var i=1;i<=28;i++){ o+='<option value="'+i+'"'+(String(cur)===String(i)?' selected':'')+'>'+i+'</option>'; } return o; };
+    var form='<div class="adm-ctr-side">'
+      +'<div style="margin-bottom:8px">'+picker+'</div>'
+      +'<div class="adm-soc-gh">Contrat</div>'
+      +ctrFieldRow(s.id,'Type de contrat','typeContrat','sel:CDI=CDI|CDD=CDD|APP=Apprentissage|PRO=Professionnalisation|STG=Stage',s.typeContrat)
+      +ctrFieldRow(s.id,'Date de commencement','dateEntree','date',s.dateEntree)
+      +ctrFieldRow(s.id,'Métier / poste proposé','poste','text',s.poste)
+      +ctrFieldRow(s.id,'Statut','statutCadre','sel:C=Cadre|NC=Non cadre',s.statutCadre)
+      +ctrFieldRow(s.id,'Période d\'essai (jours)','essaiJours','number',s.essaiJours)
+      +ctrFieldRow(s.id,'Convention collective','conventionNom','text',s.conventionNom)
+      +'<div class="adm-soc-gh">Salarié</div>'
+      +ctrFieldRow(s.id,'Nom','nom','text',s.nom)
+      +ctrFieldRow(s.id,'Prénom','prenom','text',s.prenom)
+      +ctrFieldRow(s.id,'Adresse','adresse','text',s.adresse)
+      +ctrFieldRow(s.id,'Code postal','cp','text',s.cp)
+      +ctrFieldRow(s.id,'Ville','ville','text',s.ville)
+      +ctrFieldRow(s.id,'Date de naissance','dateNaissance','date',s.dateNaissance)
+      +ctrFieldRow(s.id,'Ville de naissance','lieuNaissance','text',s.lieuNaissance)
+      +ctrFieldRow(s.id,'Pays de naissance','paysNaissance','text',s.paysNaissance)
+      +ctrFieldRow(s.id,'Nationalité','nationalite','text',s.nationalite)
+      +'<div class="adm-soc-gh">Rémunération & temps de travail</div>'
+      +ctrFieldRow(s.id,'Salaire brut mensuel','brut','number',num(pp.brut)||'')
+      +'<div class="fld"><label>Salaire net (calculé automatiquement)</label><input class="adm-paie-in" id="adm-ctr-net" type="text" readonly value="'+esc(ctrNet(s))+'"></div>'
+      +ctrFieldRow(s.id,'Durée hebdomadaire (heures)','dureeHebdo','number',s.dureeHebdo||35)
+      +'<div class="fld"><label>Jours de paiement (du … au … du mois)</label><div style="display:flex;gap:6px;align-items:center"><select class="adm-paie-in" onchange="admCtrField(\''+esc(s.id)+'\',\'payDe\',this.value)">'+jopts(s.payDe||1)+'</select><span>au</span><select class="adm-paie-in" onchange="admCtrField(\''+esc(s.id)+'\',\'payA\',this.value)">'+jopts(s.payA||5)+'</select></div></div>'
+      +ctrFieldRow(s.id,'Lieu de travail','lieuTravail','text',s.lieuTravail)
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn btn-pri btn-sm" onclick="admCtrTelecharger()">Télécharger (.doc)</button><button class="btn btn-ghost btn-sm" onclick="admCtrImprimer()">Imprimer / PDF</button></div>'
+      +'</div>';
+    return '<div class="card"><h2>Contrat de travail — '+esc(nom(s))+'</h2><div class="sub">Complétez le formulaire à gauche : l\'aperçu du contrat se met à jour à droite. Il est ensuite téléchargeable (.doc) et imprimable (PDF).</div>'
+      +'<div class="adm-ctr-wrap">'+form+'<div class="adm-ctr-prev"><div id="adm-ctr-preview">'+contratHTML(s)+'</div></div></div></div>';
+  }
+
   function admPaieModule(){ var tab=window.__admPaieTab||'sal';
     var tb=function(id,lbl){ return '<button class="adm-paie-tab'+(tab===id?' on':'')+'" onclick="admPaieTab(\''+id+'\')">'+lbl+'</button>'; };
-    var body = tab==='bul'?tabBulletins() : tab==='dsn'?tabDSN() : tabSalaries();
-    return '<div class="login-title">Paie</div><div class="login-sub">Gestion de la paie des salariés, DSN et fiches de paie.</div>'
-      +'<div class="adm-paie-tabs">'+tb('sal','Salariés & paie')+tb('bul','Fiches de paie')+tb('dsn','DSN')+'</div>'
+    var body = tab==='contrat'?tabContrat() : tab==='bul'?tabBulletins() : tab==='dsn'?tabDSN() : tabSalaries();
+    return '<div class="login-title">Paie</div><div class="login-sub">Gestion de la paie des salariés, contrats, DSN et fiches de paie.</div>'
+      +'<div class="adm-paie-tabs">'+tb('sal','Salariés & paie')+tb('contrat','Contrat')+tb('bul','Fiches de paie')+tb('dsn','DSN')+'</div>'
       +body;
   }
   window.__admPaieModule=admPaieModule;
@@ -23645,7 +23744,13 @@ ${lignes}
     +'.adm-dsn-step.done{opacity:1}.adm-dsn-step.cur{font-weight:700}'
     +'.adm-dsn-dot{width:11px;height:11px;border-radius:50%;background:#3a5170;flex:0 0 auto}'
     +'.adm-dsn-step.done .adm-dsn-dot{background:#2f9bff}'
-    +'.bp-page .bp-t{width:100%;border-collapse:collapse;margin-top:8px}.bp-page .bp-t th,.bp-page .bp-t td{border:1px solid #d5d5d5;padding:6px 8px;font-size:12.5px}.bp-page .bp-t .r{text-align:right}';
+    +'.bp-page .bp-t{width:100%;border-collapse:collapse;margin-top:8px}.bp-page .bp-t th,.bp-page .bp-t td{border:1px solid #d5d5d5;padding:6px 8px;font-size:12.5px}.bp-page .bp-t .r{text-align:right}'
+    +'.adm-ctr-wrap{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:16px;margin-top:12px;align-items:start}'
+    +'.adm-ctr-side .fld{margin-bottom:8px}.adm-ctr-side .fld label{display:block;font-size:11.5px;opacity:.72;margin-bottom:3px}'
+    +'.adm-ctr-prev{background:#e9edf3;border:1px solid rgba(120,180,255,.2);border-radius:12px;padding:14px;max-height:78vh;overflow:auto}'
+    +'.adm-ctr-prev .ctr-page{background:#fff;color:#161616;max-width:none;margin:0 auto;padding:26px 30px;font-size:12.5px;line-height:1.5;box-shadow:0 4px 18px rgba(0,0,0,.25)}'
+    +'.adm-ctr-prev .ctr-page h3{color:#0b1d33}'
+    +'@media(max-width:900px){.adm-ctr-wrap{grid-template-columns:1fr}}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>
