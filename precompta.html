@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v449';
+    b.textContent='YADA · v450';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -22661,10 +22661,8 @@ ${lignes}
         +'<span class="adm-cred">Identifiant : <code>'+esc(s.email||'')+'</code> · '+pw+'</span>'
         +'<span class="adm-staff-sub">'+n+' dossier'+(n>1?'s':'')+' en responsabilité'+(s.actif===false?' · inactif':'')+'</span>'+dtags+'</div>'
         +'<div class="adm-staff-act">'
-        +'<button class="btn btn-ghost btn-sm" onclick="admStaffEdit(\''+s.id+'\')">Modifier</button>'
         +'<button class="btn btn-ghost btn-sm" onclick="admStaffResetPwd(\''+s.id+'\')">Mot de passe</button>'
         +'<button class="btn btn-ghost btn-sm" onclick="admStaffActif(\''+s.id+'\')">'+(s.actif===false?'Activer':'Désactiver')+'</button>'
-        +'<button class="btn btn-ghost btn-sm adm-danger" onclick="admStaffDel(\''+s.id+'\')">Supprimer</button>'
         +'</div></div>'+edit+'</div>';
     }).join('')||'<div class="adm-empty">Aucun collaborateur enregistré pour le moment.</div>';
     var collab='<div class="card adm-collab" id="adm-sec-users"><h2><span class="adm-badge">🛡 ADMIN</span> Utilisateurs du cabinet (salariés)</h2>'
@@ -23096,7 +23094,9 @@ ${lignes}
   function doLogout(){ try{ if(typeof window.admDoLogout==='function') return window.admDoLogout(); if(typeof window.secDeconnexion==='function') return window.secDeconnexion(); if(typeof window.secVerrouiller==='function') return window.secVerrouiller(); }catch(e){} }
   function ensureBtn(){ var b=document.getElementById('yada-logout'); if(!b){ b=document.createElement('button'); b.id='yada-logout'; b.type='button';
     b.textContent='Déconnexion'; b.onclick=doLogout; document.body.appendChild(b); } return b; }
-  function upd(){ try{ var b=ensureBtn(); b.style.display=(loggedIn() && !autreLogout())?'inline-flex':'none'; }catch(e){} }
+  /* Bouton flottant : réservé à l'Espace Client (qui n'a pas d'écran accueil/liste) ;
+     ailleurs la Déconnexion n'est visible que sur l'accueil, la liste des dossiers et les pages de dossier. */
+  function upd(){ try{ var b=ensureBtn(); var client=(window.sessionRole==='client'); b.style.display=(client && loggedIn() && !autreLogout())?'inline-flex':'none'; }catch(e){} }
   if(typeof window.render==='function'){ var _r=window.render; window.render=function(){ var x=_r.apply(this,arguments); upd(); setTimeout(upd,0); return x; }; }
   setInterval(upd, 600);
   document.addEventListener('DOMContentLoaded', upd);
@@ -24138,18 +24138,9 @@ ${lignes}
   function doLogout(){ try{ if(typeof window.secDeconnexion==='function') return window.secDeconnexion(); if(typeof window.secVerrouiller==='function') return window.secVerrouiller(); }catch(e){} }
   function sideVisible(foot){ try{ if(!foot) return false; if(foot.offsetParent===null) return false; var r=foot.getBoundingClientRect(); return r.width>0 && r.height>0; }catch(e){ return false; } }
   function place(){
-    var foot=document.querySelector('.side-foot');
-    var tog=foot?foot.querySelector('.sf-toggle'):null;
-    if(foot && tog && sideVisible(foot)){
-      var b=document.getElementById('yada-logout-below');
-      if(!b){ b=document.createElement('button'); b.id='yada-logout-below'; b.type='button'; b.className='sf-logout-below'; b.textContent='Déconnexion'; b.onclick=doLogout; }
-      /* toujours en enfant direct de .side-foot, immédiatement après le bouton Outils (jamais happé dans le menu) */
-      if(b.parentNode!==foot || tog.nextSibling!==b){ foot.insertBefore(b, tog.nextSibling); }
-      document.body.classList.add('has-side-logout');
-    } else {
-      var ex=document.getElementById('yada-logout-below'); if(ex&&ex.parentNode) ex.parentNode.removeChild(ex);
-      document.body.classList.remove('has-side-logout');
-    }
+    /* Déconnexion retirée des modules (barre latérale Cabinet) : plus de bouton sous « Outils ». */
+    var ex=document.getElementById('yada-logout-below'); if(ex&&ex.parentNode) ex.parentNode.removeChild(ex);
+    document.body.classList.remove('has-side-logout');
   }
   if(typeof window.render==='function' && !window.__logoutBelowGuard){ window.__logoutBelowGuard=true; var _r=window.render;
     window.render=function(){ var x=_r.apply(this,arguments); try{ place(); }catch(e){} try{ setTimeout(place,60); }catch(e){} return x; }; }
