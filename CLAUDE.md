@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Salariés & paie : aperçu de la fiche de paie (en direct) retiré — v442
+## 🟢 Dernière mise à jour — Dépôt du contrat signé déplacé dans l'onglet Contrat (retiré de Salariés & paie) — v443
+**Quoi :** dans le module Paie (Espace Admin), le **dépôt du contrat signé & tamponné** (section « Déposer le contrat signé & tamponné » → statut Non déposé / Déposé — à vérifier / « Vérifier & admettre ») n'apparaît plus dans l'onglet **Salariés & paie** : il est désormais **uniquement dans l'onglet Contrat** (sous le formulaire, après le bloc de génération PDF). L'onglet Salariés & paie ne conserve donc que les informations de paie et le bouton « Générer la fiche de paie ».
+
+**Comment — `yada-addon211` :** `contratSection(s)` retiré de `tabSalaries` ; ajouté dans `tabContrat` (bandeau « Dépôt du contrat signé & tamponné » après `#adm-ctr-gen`). `sw.js` `yada-v36`, badge v443, `version.json` 443.
+
+**Validé :** `node --check` (204 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (Salariés & paie : « Déposer/Dépôt du contrat signé » **absent** ; Contrat : section de dépôt **présente** + `input[type=file]` `admContratDepose` ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v443**.
+
+---
+
+## 🟢 MAJ précédente — Salariés & paie : aperçu de la fiche de paie (en direct) retiré — v442
 **Quoi :** dans l'onglet **Salariés & paie** (module Paie, Espace Admin), l'**aperçu de la fiche de paie en direct** (bloc « Aperçu de la fiche de paie (mis à jour en direct) » sous les champs de rémunération) est **retiré**. Le bouton **« Générer la fiche de paie »** reste et ouvre toujours le bulletin dans une page (modale).
 
 **Comment — `yada-addon211` :** suppression du libellé `.adm-soc-gh` « Aperçu de la fiche de paie » et du conteneur `#adm-paie-live-wrap`/`#adm-paie-live` dans `tabSalaries`. `admPaieLiveRender()` (et son hook de rendu) restent définis mais **sans effet** (garde `#adm-paie-live` absent → no-op). `sw.js` `yada-v35`, badge v442, `version.json` 442.
