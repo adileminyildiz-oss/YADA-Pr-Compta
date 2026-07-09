@@ -36,7 +36,27 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Déconnexion : bouton déplacé à côté de « ← Retour aux dossiers » (plus flottant) sur les pages de dossier — v449
+## 🟢 Dernière mise à jour — Puce « Connecté : … » retirée de partout + (v450) boutons Modifier/Supprimer & Déconnexion des modules retirés — v451
+**Quoi :** la petite note flottante **« Connecté : \<nom\> »** (haut-droite) est **retirée de partout**. (Inclut aussi les changements v450 ci-dessous : boutons « Modifier »/« Supprimer » des utilisateurs Admin retirés, et Déconnexion retirée de l'intérieur des modules — visible uniquement sur les pages de navigation des dossiers + Espace Client.)
+
+**Comment :** `yada-addon209` : `updChip()` masque et **supprime** l'élément `#yada-user` (plus jamais affiché). `sw.js` yada-v43, badge v451, `version.json` 451.
+
+**Validé :** `node --check` (207 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (aucune puce `#yada-user`, aucun texte « Connecté : » ; boutons utilisateur = [Mot de passe, Désactiver] ; Déconnexion modules = 0, accueil/Liste/HUB/Client = 1 ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v451**.
+
+---
+
+## 🟢 MAJ précédente — Admin : boutons « Modifier » & « Supprimer » retirés des utilisateurs + Déconnexion retirée des modules (uniquement sur les pages de dossiers) — v450
+**Quoi :**
+1. **Espace Admin — Collaborateurs & accès** : les boutons **« Modifier »** et **« Supprimer »** sont retirés de chaque utilisateur (il reste **Mot de passe** et **Activer/Désactiver**).
+2. **Déconnexion retirée des modules** : le bouton **Déconnexion** n'apparaît plus **à l'intérieur des modules** (barre latérale Cabinet, modules Espace Admin). Il reste visible sur les **pages de navigation des dossiers** — **accueil (« Espace dossiers »), Liste des dossiers, et page d'un dossier (HUB)** — et sur l'**Espace Client** (bouton flottant, car le client n'a pas d'écran accueil/liste).
+
+**Comment :** retrait des boutons `admStaffEdit`/`admStaffDel` dans la liste des utilisateurs (`admCollabPanel`) ; `yada-addon206` : bouton flottant `#yada-logout` réservé à `sessionRole==='client'` ; `yada-addon213` : `place()` ne pose plus le bouton latéral (`#yada-logout-below`) ni la classe `has-side-logout` (retirés) ; les boutons en ligne restent sur accueil (`#adm-logout-btn`), Liste (`#adm-logout-inline`) et HUB/rubrique/sélection (`.ds-logout-btn`). `sw.js` yada-v42, badge v450, `version.json` 450.
+
+**Validé :** `node --check` (207 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (Collaborateurs : boutons utilisateur = [Mot de passe, Désactiver] ; Déconnexion visible = accueil 1 / Liste 1 / HUB 1 / Client 1, et **modules = 0** : panneau Admin 0, module Cabinet 0 ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v450**.
+
+---
+
+## 🟢 MAJ précédente — Déconnexion : bouton déplacé à côté de « ← Retour aux dossiers » (plus flottant) sur les pages de dossier — v449
 **Quoi :** sur les pages du parcours dossier (HUB, rubrique, dossier sélectionné), le bouton **« Déconnexion »** n'est plus **flottant** (haut-droite) : il est placé **à côté du bouton « ← Retour aux dossiers »** (dans la barre d'actions). Le bouton flottant se masque automatiquement sur ces écrans (un seul bouton visible).
 
 **Comment :** ajout de `<button class="btn btn-ghost ds-logout-btn" onclick="admDoLogout()">Déconnexion</button>` après « Retour aux dossiers » dans `ecranHub`/`ecranRubrique`/`ecranSelUnique` ; `yada-addon206` `autreLogout()` détecte aussi `.ds-logout-btn` visible → le bouton flottant `#yada-logout` est masqué sur ces pages (pas de doublon). `sw.js` yada-v41, badge v449, `version.json` 449.
