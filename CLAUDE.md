@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Admin : dossiers alphabétiques + barres de recherche (dossiers & salariés) + « Société exploitante » déplacée dans Paramétrage ; Déconnexion sous « Outils » (bouton flottant retiré) — v445
+## 🟢 Dernière mise à jour — Onglet Contrat repensé : plus d'aperçu en direct → formulaire seul (grille) + bouton « 👁 Aperçu du contrat » (fenêtre) — v446
+**Quoi :** refonte de l'onglet **Contrat** (module Paie). L'**aperçu A4 en direct** (colonne de droite) est **supprimé** : l'onglet n'affiche plus que les **éléments à remplir** (formulaire, présenté en **grille** centrée, plus lisible). Un bouton **« 👁 Aperçu du contrat »** (à côté de Générer / Enregistrer) ouvre le **contrat dans une fenêtre (modale)** à la demande (contrat A4 complet, défilable, + bouton Imprimer / PDF). Résout aussi le problème d'aperçu (page A4 coupée / blanche) en le remplaçant par une vue à la demande.
+
+**Comment — `yada-addon211` :** `tabContrat` réécrit (retrait de `.adm-ctr-wrap`/`.adm-ctr-prev`/`#adm-ctr-preview`/`#adm-ctr-pager` ; formulaire `.adm-ctr-side.ctr-grid` en 2 colonnes, en-têtes & actions & dépôt en `ctr-full` pleine largeur, `.adm-ctr-formwrap` centré `max-width:980px`) ; bouton **Aperçu** ajouté dans `ctrGenBlockHTML` ; `admCtrApercu()` (modale `#modal`/`#modal-c` = `contratHTML(s)` dans `.ctr-apercu-scroll` + Imprimer). `admCtrRenderPreview`/`admCtrTick` deviennent inertes (garde sur `#adm-ctr-preview` absent → no-op). `sw.js` yada-v38, badge v446, `version.json` 446.
+
+**Validé :** `node --check` (206 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (onglet Contrat : `#adm-ctr-preview` & `.adm-ctr-wrap` **absents**, formulaire en grille, boutons « Aperçu du contrat » + « Générer le contrat » présents ; clic Aperçu → modale ouverte avec le contrat A4 (« CONTRAT DE TRAVAIL … », 5231 car.) + Imprimer ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v446**.
+
+---
+
+## 🟢 MAJ précédente — Admin : dossiers alphabétiques + barres de recherche (dossiers & salariés) + « Société exploitante » déplacée dans Paramétrage ; Déconnexion sous « Outils » (bouton flottant retiré) — v445
 **Quoi :**
 1. **Collaborateurs & accès** — la **liste des dossiers** (Dossiers & attribution) est en **ordre alphabétique** (français, accents/casse ignorés) ; **barre de recherche des dossiers** (filtre live) ; **barre de recherche des salariés** (nom / e-mail, filtre live). Les cartes restent repliables (v444).
 2. **« Société exploitante » déplacée dans le module Paramétrage** — la carte (23 champs + « Enregistrer la société ») est **retirée de Collaborateurs & accès** et rendue dans **Paramétrage** (via `admSocCardHTML()`).
