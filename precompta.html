@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v444';
+    b.textContent='YADA · v445';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -22630,6 +22630,22 @@ ${lignes}
   ];
   window.__admSocFields=SOC_FIELDS;
 
+  /* Carte « Société exploitante » (déplacée dans le module Paramétrage). */
+  window.admSocCardHTML=function(){ var cab=db.cabinet||{}; var soc=cab.societe||{};
+    var socBody=SOC_FIELDS.map(function(g){
+      var flds=g[1].map(function(f){ var id=f[0], lbl=f[1], key=f[2], type=f[3]||'text', wide=f[4];
+        var dv=(soc[key]!=null&&soc[key]!=='')?soc[key]:(key==='nom'?(cab.cabinetNom||''):(key==='dirigeant'?(cab.collaborateur||''):(key==='pays'?'France':'')));
+        return '<div class="fld'+(wide?' fld-wide':'')+'"><label>'+lbl+'</label><input id="'+id+'" type="'+type+'" value="'+esc(dv)+'"></div>'; }).join('');
+      return '<div class="adm-soc-group"><div class="adm-soc-gh">'+g[0]+'</div><div class="adm-grid">'+flds+'</div></div>'; }).join('');
+    return '<div class="card adm-soc" id="adm-sec-soc"><h2>🏢 Société exploitante (le cabinet)</h2>'
+      +'<div class="sub">Toutes les données de la société qui occupe le logiciel (le cabinet). L\'Admin supervise cette société et dispose d\'un accès global au portefeuille.</div>'
+      +socBody
+      +'<div style="margin-top:12px"><button class="btn btn-pri btn-sm" onclick="admSocSave()">Enregistrer la société</button></div></div>'; };
+  /* Recherche live : salariés / dossiers (filtrage DOM sans perte de focus). */
+  window.admStaffSearch=function(q){ q=(q||'').toLowerCase().trim(); var l=document.getElementById('adm-staff-list'); if(!l)return;
+    l.querySelectorAll('.adm-staff').forEach(function(r){ var m=!q||((r.getAttribute('data-q')||'').indexOf(q)>=0); r.style.display=m?'':'none'; }); };
+  window.admDossSearch=function(q){ q=(q||'').toLowerCase().trim(); var l=document.getElementById('adm-doss-list'); if(!l)return;
+    l.querySelectorAll('.adm-doss-card').forEach(function(r){ var m=!q||((r.getAttribute('data-nom')||'').indexOf(q)>=0); r.style.display=m?'':'none'; }); };
   window.admCollabPanel=function(){
     if(window.sessionRole!=='admin') return ''; ensureStaff();
     var cab=db.cabinet||{}; var soc=cab.societe||{}; var doss=(cab.dossiers||[]);
@@ -22639,7 +22655,7 @@ ${lignes}
         ? 'Mot de passe : <code class="adm-pw" data-pw="'+esc(s.pwdClair)+'">••••••••</code> <button type="button" class="adm-pw-toggle" onclick="admPwToggle(this)">Afficher</button>'
         : 'Mot de passe : <code class="adm-pw">(défini à la création)</code>';
       var dtags=(n? '<div class="adm-staff-doss">'+(s.dossiers||[]).map(function(did){ return '<span class="adm-dtag">'+esc(dNom(did))+'</span>'; }).join('')+'</div>' : '');
-      return '<div class="adm-staff'+(s.actif===false?' off':'')+'">'
+      return '<div class="adm-staff'+(s.actif===false?' off':'')+'" data-q="'+esc(([s.prenom,s.nom,s.email].filter(Boolean).join(' ')||'').toLowerCase())+'">'
         +'<div class="adm-staff-h"><span class="adm-av">'+esc(((s.prenom||s.nom||'?')[0]||'?').toUpperCase())+'</span>'
         +'<div class="adm-staff-id"><b>'+esc([s.prenom,s.nom].filter(Boolean).join(' ')||'Collaborateur')+'</b>'
         +'<span class="adm-cred">Identifiant : <code>'+esc(s.email||'')+'</code> · '+pw+'</span>'
@@ -22653,7 +22669,8 @@ ${lignes}
     }).join('')||'<div class="adm-empty">Aucun collaborateur enregistré pour le moment.</div>';
     var collab='<div class="card adm-collab" id="adm-sec-users"><h2><span class="adm-badge">🛡 ADMIN</span> Utilisateurs du cabinet (salariés)</h2>'
       +'<div class="sub">Chaque salarié a un <b>identifiant</b> (adresse e-mail + mot de passe) pour accéder à son espace via l\'<b>Espace Cabinet</b>. Il ne traite que ses <b>dossiers attribués</b> (voir le tableau des dossiers plus bas). Bouton <b>✎ Modifier</b> pour changer ses paramètres. L\'Admin conserve un <b>accès global</b>.</div>'
-      +'<div class="adm-staff-list">'+rows+'</div></div>';
+      +'<input class="adm-search" type="search" placeholder="🔎 Rechercher un salarié (nom, e-mail)…" oninput="admStaffSearch(this.value)">'
+      +'<div class="adm-staff-list" id="adm-staff-list">'+rows+'</div></div>';
     var add='<div class="card adm-add" id="adm-sec-add"><h2>➕ Enregistrer un utilisateur (salarié)</h2>'
       +'<div class="sub">Créez un accès (identifiant + mot de passe) pour un salarié. Le mot de passe est stocké <b>chiffré</b> (empreinte SHA-256 salée), jamais en clair. Les dossiers s\'attribuent ensuite dans le tableau ci-dessous.</div>'
       +'<div class="adm-grid">'
@@ -22663,16 +22680,7 @@ ${lignes}
       +'<div class="fld"><label>Mot de passe</label><input id="adm-new-pwd" type="password"></div>'
       +'</div>'
       +'<div style="margin-top:10px"><button class="btn btn-pri btn-sm" onclick="admStaffAdd()">Créer l\'utilisateur</button></div></div>';
-    var socBody=SOC_FIELDS.map(function(g){
-      var flds=g[1].map(function(f){ var id=f[0], lbl=f[1], key=f[2], type=f[3]||'text', wide=f[4];
-        var dv=(soc[key]!=null&&soc[key]!=='')?soc[key]:(key==='nom'?(cab.cabinetNom||''):(key==='dirigeant'?(cab.collaborateur||''):(key==='pays'?'France':'')));
-        return '<div class="fld'+(wide?' fld-wide':'')+'"><label>'+lbl+'</label><input id="'+id+'" type="'+type+'" value="'+esc(dv)+'"></div>'; }).join('');
-      return '<div class="adm-soc-group"><div class="adm-soc-gh">'+g[0]+'</div><div class="adm-grid">'+flds+'</div></div>'; }).join('');
-    var socCard='<div class="card adm-soc" id="adm-sec-soc"><h2>🏢 Société exploitante (le cabinet)</h2>'
-      +'<div class="sub">Toutes les données de la société qui occupe le logiciel (le cabinet). L\'Admin supervise cette société et dispose d\'un accès global au portefeuille.</div>'
-      +socBody
-      +'<div style="margin-top:12px"><button class="btn btn-pri btn-sm" onclick="admSocSave()">Enregistrer la société</button></div></div>';
-    return socCard+collab+add+(window.admDossiersPanel?window.admDossiersPanel():'');
+    return collab+add+(window.admDossiersPanel?window.admDossiersPanel():'');
   };
 
   window.admAssignToggle=function(id){ window.admAssign=(window.admAssign===id?null:id); if(typeof render==='function') render(); };
@@ -22810,7 +22818,8 @@ ${lignes}
      un seul y travaille à la fois, les autres peuvent entrer pour vérifier). */
   window.admDossiersPanel=function(){ if(window.sessionRole!=='admin') return ''; ens();
     if(normalize() && typeof save==='function') save();
-    var ds=doss(); var act=staff().filter(function(s){return s.actif!==false;});
+    var ds=doss().slice().sort(function(a,b){ return String(a.nom||a.id||'').localeCompare(String(b.nom||b.id||''),'fr',{sensitivity:'base',numeric:true}); }); /* ordre alphabétique */
+    var act=staff().filter(function(s){return s.actif!==false;});
     var av=function(nm){ return esc(((nm||'?')[0]||'?').toUpperCase()); };
     var cards=ds.map(function(d){
       var chips=act.length? act.map(function(s){ var on=Array.isArray(s.dossiers)&&s.dossiers.indexOf(d.id)>=0; var nm=[s.prenom,s.nom].filter(Boolean).join(' ')||s.email;
@@ -22819,7 +22828,7 @@ ${lignes}
       var resp=(d.responsables||[]).filter(Boolean);
       var trace=resp.length? resp.map(function(e){ return '<span class="adm-trace">'+esc(e)+'</span>'; }).join('') : '<span class="adm-empty">non tracé</span>';
       var n=resp.length;
-      return '<div class="adm-doss-card">'
+      return '<div class="adm-doss-card" data-nom="'+esc(String(d.nom||d.id||'').toLowerCase())+'">'
         +'<div class="adm-doss-head"><span class="adm-doss-av">'+av(d.nom||d.id)+'</span>'
           +'<div class="adm-doss-id"><b>'+esc(d.nom||d.id)+'</b>'+(d.forme?('<span class="adm-doss-forme">'+esc(d.forme)+'</span>'):'')+'</div>'
           +'<span class="adm-doss-badge'+(n?' has':'')+'">'+n+' responsable'+(n>1?'s':'')+'</span></div>'
@@ -22831,7 +22840,8 @@ ${lignes}
     }).join('')||'<div class="adm-empty" style="padding:16px 4px">Aucun dossier au portefeuille — créez ou importez des dossiers.</div>';
     return '<div class="card adm-doss-panel" id="adm-sec-doss"><h2>Dossiers &amp; attribution — utilisateurs par dossier</h2>'
       +'<div class="sub">Cliquez le ou les <b>salariés responsables</b> de chaque dossier (plusieurs possibles). Chaque dossier est <b>tracé par les adresses e-mail</b> sélectionnées. <b>Un seul travaille à la fois</b> : le second peut entrer pour <b>vérifier</b> le travail — un <b>voyant rouge</b> indique qu\'il est occupé, <b>vert</b> qu\'il est libre. L\'Admin garde l\'accès à tous les dossiers.</div>'
-      +'<div class="adm-doss-list">'+cards+'</div></div>';
+      +'<input class="adm-search" type="search" placeholder="🔎 Rechercher un dossier…" oninput="admDossSearch(this.value)">'
+      +'<div class="adm-doss-list" id="adm-doss-list">'+cards+'</div></div>';
   };
   /* Révéler / masquer un mot de passe dans la liste des utilisateurs. */
   window.admPwToggle=function(btn){ try{ var code=btn.previousElementSibling; if(!code) return;
@@ -22867,7 +22877,9 @@ ${lignes}
 
   /* Styles */
   try{ var st=document.createElement('style'); st.id='adm-doss-mod'; st.textContent=
-    '.adm-doss-list{display:flex;flex-direction:column;gap:12px;margin-top:12px}'
+    '.adm-search{width:100%;box-sizing:border-box;margin-top:10px;padding:9px 12px;border-radius:10px;border:1px solid rgba(120,180,255,.3);background:rgba(10,18,32,.4);color:inherit;font:inherit;font-size:13px}'
+    +'.adm-search:focus{outline:none;border-color:#1e90ff;box-shadow:0 0 0 3px rgba(30,144,255,.18)}'
+    +'.adm-doss-list{display:flex;flex-direction:column;gap:12px;margin-top:12px}'
     +'.adm-doss-card{border:1px solid rgba(120,180,255,.2);border-radius:14px;background:linear-gradient(180deg,rgba(120,180,255,.06),rgba(120,180,255,.02));overflow:hidden;transition:border-color .12s,box-shadow .12s}'
     +'.adm-doss-card:hover{border-color:rgba(30,144,255,.4);box-shadow:0 6px 20px rgba(0,0,0,.22)}'
     +'.adm-doss-head{display:flex;align-items:center;gap:12px;padding:12px 14px;background:linear-gradient(135deg,rgba(47,111,232,.16),rgba(28,195,155,.08));border-bottom:1px solid rgba(120,180,255,.16)}'
@@ -23142,9 +23154,7 @@ ${lignes}
       +'<div class="card"><h2>Sécurité & connexion</h2>'
         +'<div class="sub">Verrouillage automatique par inactivité (s\'applique à tous les espaces).</div>'
         +'<div class="adm-grid"><div class="fld"><label>Verrouillage auto (inactivité)</label><select onchange="secSetDelay(this.value)">'+opts+'</select></div></div></div>'
-      +'<div class="card"><h2>Société exploitante</h2>'
-        +'<div class="sub">Toutes les données de la société (dénomination, SIREN/SIRET, adresse, dirigeant, coordonnées bancaires…) se règlent dans le module <b>Collaborateurs & accès</b>.</div>'
-        +'<button class="btn btn-ghost btn-sm" onclick="admSetModule(\'collab\')">Ouvrir « Collaborateurs & accès »</button></div>'
+      +(window.admSocCardHTML?window.admSocCardHTML():'')
       +'<div class="card"><h2>Synchronisation</h2>'
         +'<div class="sub">La synchronisation multi-appareils (occupation des dossiers en temps réel comprise) se configure dans le <b>Paramétrage</b> de l\'Espace Cabinet.</div></div>';
   }
@@ -24086,6 +24096,40 @@ ${lignes}
     +'body[data-role="client"] .card.cli-fold:hover{transform:translateY(-1px) !important;box-shadow:0 10px 30px rgba(0,0,0,.22) !important;border-color:rgba(30,144,255,.30) !important}'
     +'body[data-role="client"] .card.cli-fold:active{transform:scale(.996) !important}'
     +'body[data-role="client"] .card.cli-fold>h2{font-size:15px;letter-spacing:.2px}';
+    document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon213">
+/* v445 — Bouton « Déconnexion » placé JUSTE SOUS le bouton « Outils » (barre latérale) ;
+   le bouton de déconnexion FLOTTANT (haut-droite) est masqué là où le bouton latéral existe. */
+(function(){
+  function doLogout(){ try{ if(typeof window.secDeconnexion==='function') return window.secDeconnexion(); if(typeof window.secVerrouiller==='function') return window.secVerrouiller(); }catch(e){} }
+  function place(){
+    var foot=document.querySelector('.side-foot');
+    var tog=foot?foot.querySelector('.sf-toggle'):null;
+    if(foot && tog){
+      var b=document.getElementById('yada-logout-below');
+      if(!b){ b=document.createElement('button'); b.id='yada-logout-below'; b.type='button'; b.className='sf-logout-below'; b.textContent='Déconnexion'; b.onclick=doLogout; }
+      /* toujours en enfant direct de .side-foot, immédiatement après le bouton Outils (jamais happé dans le menu) */
+      if(b.parentNode!==foot || tog.nextSibling!==b){ foot.insertBefore(b, tog.nextSibling); }
+      document.body.classList.add('has-side-logout');
+    } else {
+      var ex=document.getElementById('yada-logout-below'); if(ex&&ex.parentNode) ex.parentNode.removeChild(ex);
+      document.body.classList.remove('has-side-logout');
+    }
+  }
+  if(typeof window.render==='function' && !window.__logoutBelowGuard){ window.__logoutBelowGuard=true; var _r=window.render;
+    window.render=function(){ var x=_r.apply(this,arguments); try{ place(); }catch(e){} try{ setTimeout(place,60); }catch(e){} return x; }; }
+  try{ place(); }catch(e){}
+  try{ var iv=setInterval(place,700); }catch(e){}
+  try{ var st=document.createElement('style'); st.id='logout-below-mod'; st.textContent=
+    /* le bouton flottant est supprimé partout où la barre latérale (avec Outils) est présente */
+    'body.has-side-logout #yada-logout{display:none !important}'
+    +'aside .side-foot .sf-logout-below{order:99;width:100% !important;box-sizing:border-box !important;margin-top:5px;font:inherit;font-size:11px;font-weight:700;'
+    +'background:linear-gradient(135deg,rgba(224,52,44,.92),rgba(176,26,22,.92)) !important;color:#fff !important;border:1px solid rgba(255,120,110,.55) !important;'
+    +'border-radius:8px !important;padding:8px 10px !important;cursor:pointer;transition:filter .15s}'
+    +'aside .side-foot .sf-logout-below:hover{filter:brightness(1.12)}'
+    +'aside .side-foot .sf-logout-below:active{transform:translateY(1px)}';
     document.head.appendChild(st); }catch(e){}
 })();
 </script>

@@ -36,7 +36,19 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Cartes repliables (Admin « Collaborateurs & accès » + Espace Client) + Tiers client + Contrat : aperçu corrigé & boutons — v444
+## 🟢 Dernière mise à jour — Admin : dossiers alphabétiques + barres de recherche (dossiers & salariés) + « Société exploitante » déplacée dans Paramétrage ; Déconnexion sous « Outils » (bouton flottant retiré) — v445
+**Quoi :**
+1. **Collaborateurs & accès** — la **liste des dossiers** (Dossiers & attribution) est en **ordre alphabétique** (français, accents/casse ignorés) ; **barre de recherche des dossiers** (filtre live) ; **barre de recherche des salariés** (nom / e-mail, filtre live). Les cartes restent repliables (v444).
+2. **« Société exploitante » déplacée dans le module Paramétrage** — la carte (23 champs + « Enregistrer la société ») est **retirée de Collaborateurs & accès** et rendue dans **Paramétrage** (via `admSocCardHTML()`).
+3. **Déconnexion sous « Outils »** — un bouton **« Déconnexion »** (rouge) est placé **juste sous le bouton « Outils »** de la barre latérale ; l'ancien **bouton de déconnexion flottant** (haut-droite `#yada-logout`) est **masqué** là où la barre latérale (avec Outils) est présente (l'accès Déconnexion reste garanti : latéral en Cabinet, flottant ailleurs).
+
+**Comment :** `admDossiersPanel` (tri `localeCompare('fr')` + `data-nom` + `<input class="adm-search" oninput="admDossSearch">`) ; carte salariés (`data-q` + `admStaffSearch`) ; `admSocCardHTML()` (extraite, appelée dans `modParametrage`, retirée d'`admCollabPanel`). **`yada-addon213`** : `place()` insère `#yada-logout-below` juste après `.sf-toggle` (greffé `render` + intervalle 700 ms, jamais happé dans le menu Outils), classe `has-side-logout` sur `<body>` → CSS masque `#yada-logout`. `sw.js` yada-v37, badge v445, `version.json` 445.
+
+**Validé :** `node --check` (206 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (collab : carte Société absente, barres de recherche salariés+dossiers présentes, dossiers triés alpha [alpha, mango, zebre], filtres OK ; Paramétrage : carte Société + « Enregistrer la société » ; Cabinet : « Déconnexion » juste après le bouton Outils, bouton flottant masqué ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v445**.
+
+---
+
+## 🟢 MAJ précédente — Cartes repliables (Admin « Collaborateurs & accès » + Espace Client) + Tiers client + Contrat : aperçu corrigé & boutons — v444
 **Quoi :** lot d'améliorations UI Admin + Espace Client + Paie.
 1. **Aperçu du contrat CORRIGÉ (page blanche)** — sur les fenêtres larges, l'aperçu A4 du contrat restait **blanc**. `admCtrRenderPreview()` réécrit : échelle **ajustée à la largeur, jamais agrandie (≤ 1)**, conteneur **défilable**, filet anti-page-vide (`pageBlocks`) + `try/catch` sur `contratBlocks`. L'A4 (794×1123) s'affiche désormais avec son texte.
 2. **Onglet Contrat — boutons** : bouton **« Enregistrer »** ajouté à droite de **« Générer le contrat (PDF) »** ; bouton de dépôt en **bleu** renommé **« Contrat signé »** ; boutons **centrés** (`.ctr-gen-actions`).
