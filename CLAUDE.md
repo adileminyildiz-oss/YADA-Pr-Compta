@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Admin : boutons « Modifier » & « Supprimer » retirés des utilisateurs + Déconnexion retirée des modules (uniquement sur les pages de dossiers) — v450
+## 🟢 Dernière mise à jour — Puce « Connecté : … » retirée de partout + (v450) boutons Modifier/Supprimer & Déconnexion des modules retirés — v451
+**Quoi :** la petite note flottante **« Connecté : \<nom\> »** (haut-droite) est **retirée de partout**. (Inclut aussi les changements v450 ci-dessous : boutons « Modifier »/« Supprimer » des utilisateurs Admin retirés, et Déconnexion retirée de l'intérieur des modules — visible uniquement sur les pages de navigation des dossiers + Espace Client.)
+
+**Comment :** `yada-addon209` : `updChip()` masque et **supprime** l'élément `#yada-user` (plus jamais affiché). `sw.js` yada-v43, badge v451, `version.json` 451.
+
+**Validé :** `node --check` (207 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (aucune puce `#yada-user`, aucun texte « Connecté : » ; boutons utilisateur = [Mot de passe, Désactiver] ; Déconnexion modules = 0, accueil/Liste/HUB/Client = 1 ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v451**.
+
+---
+
+## 🟢 MAJ précédente — Admin : boutons « Modifier » & « Supprimer » retirés des utilisateurs + Déconnexion retirée des modules (uniquement sur les pages de dossiers) — v450
 **Quoi :**
 1. **Espace Admin — Collaborateurs & accès** : les boutons **« Modifier »** et **« Supprimer »** sont retirés de chaque utilisateur (il reste **Mot de passe** et **Activer/Désactiver**).
 2. **Déconnexion retirée des modules** : le bouton **Déconnexion** n'apparaît plus **à l'intérieur des modules** (barre latérale Cabinet, modules Espace Admin). Il reste visible sur les **pages de navigation des dossiers** — **accueil (« Espace dossiers »), Liste des dossiers, et page d'un dossier (HUB)** — et sur l'**Espace Client** (bouton flottant, car le client n'a pas d'écran accueil/liste).

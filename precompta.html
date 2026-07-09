@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v450';
+    b.textContent='YADA · v451';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -23269,7 +23269,8 @@ ${lignes}
 
   /* Puce « Connecté : <nom> » sous le bouton Déconnexion. */
   function ensureChip(){ var c=document.getElementById('yada-user'); if(!c){ c=document.createElement('div'); c.id='yada-user'; document.body.appendChild(c); } return c; }
-  function updChip(){ try{ var c=ensureChip(); if(loggedIn()){ c.textContent='Connecté : '+window.yadaCurrentUserName(); c.style.display='block'; } else c.style.display='none'; }catch(e){} }
+  /* Puce « Connecté : … » retirée partout (demande utilisateur). */
+  function updChip(){ try{ var c=document.getElementById('yada-user'); if(c){ c.style.display='none'; if(c.parentNode) c.parentNode.removeChild(c); } }catch(e){} }
 
   /* Signature des éditions (documents .doc-page). */
   function frToday(){ try{ if(typeof frDate==='function' && typeof todayStr==='function') return frDate(todayStr()); var d=new Date(); var z=function(n){return (n<10?'0':'')+n;}; return z(d.getDate())+'/'+z(d.getMonth()+1)+'/'+d.getFullYear(); }catch(e){ return ''; } }
