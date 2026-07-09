@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v436';
+    b.textContent='YADA · v437';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -23443,10 +23443,34 @@ ${lignes}
   function perLabel(k){ try{ var m=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre']; var a=k.split('-'); return m[(+a[1])-1]+' '+a[0]; }catch(e){ return k; } }
   function salPerOf(s,k){ s.paie=s.paie||{}; if(!s.paie[k]) s.paie[k]={brut:num(s.salaireBrut)||0,primes:0,heures:151.67,pasTaux:0}; return s.paie[k]; }
   function salPer(s){ return salPerOf(s,periode()); }
-  function paieCalcOf(s,k){ var pp=salPerOf(s,k); var base=num(pp.brut), primes=num(pp.primes); var brut=R2(base+primes);
-    var cotisSal=R2(brut*0.22), cotisPat=R2(brut*0.42); var netImpo=R2(brut-cotisSal);
-    var pasTaux=num(pp.pasTaux)/100; var pas=R2(netImpo*pasTaux); var netAPayer=R2(netImpo-pas); var cout=R2(brut+cotisPat);
-    return {base:base,primes:primes,brut:brut,cotisSal:cotisSal,cotisPat:cotisPat,netImpo:netImpo,pas:pas,netAPayer:netAPayer,cout:cout,heures:num(pp.heures)}; }
+  /* Détail des cotisations (rubriques du bulletin de paie clarifié — taux représentatifs). */
+  var PAIE_SMIC=12.31, PAIE_HMOIS=151.67;
+  function paieDetail(s,k){ var pp=salPerOf(s,k); var base=num(pp.brut), primes=num(pp.primes); var brut=R2(base+primes);
+    var heures=num(pp.heures)||PAIE_HMOIS; var tauxH=heures>0?R2(brut/heures):0; var baseCSG=R2(brut*0.9825);
+    /* Cotisations SALARIALES déductibles */
+    var retPlafS=R2(brut*0.0690), retDeplafS=R2(brut*0.0040), retComplS=R2(brut*0.0401);
+    var csgDed=R2(baseCSG*0.0680);
+    var totRetSalDed=R2(retPlafS+retDeplafS+retComplS+csgDed);
+    var csgNonDed=R2(baseCSG*0.0290);
+    var netImpo=R2(brut-totRetSalDed);
+    var netAvImpot=R2(brut-totRetSalDed-csgNonDed);
+    var pasTaux=num(pp.pasTaux)/100; var pas=R2(netImpo*pasTaux);
+    var netAPayer=R2(netAvImpot-pas);
+    var netSocial=netAvImpot;
+    var cotisSal=R2(totRetSalDed+csgNonDed);
+    /* Cotisations PATRONALES (Mt patronal) */
+    var pat={maladie:R2(brut*0.0700),complSante:R2(brut*0.0600),atmp:R2(brut*0.0070),
+      retPlaf:R2(brut*0.0855),retDeplaf:R2(brut*0.0190),retCompl:R2(brut*0.0601),
+      famille:R2(brut*0.0525),chomage:R2(brut*0.0405),ags:R2(brut*0.0025),autres:R2(brut*0.0097)};
+    var smicM=PAIE_SMIC*heures, C=0; if(brut>0){ C=(0.3194/0.6)*((1.6*smicM/brut)-1); if(C<0)C=0; if(C>0.3194)C=0.3194; }
+    var alleg=R2(-brut*C);
+    var totPat=R2(pat.maladie+pat.complSante+pat.atmp+pat.retPlaf+pat.retDeplaf+pat.retCompl+pat.famille+pat.chomage+pat.ags+pat.autres+alleg);
+    var cout=R2(brut+totPat);
+    return {base:base,primes:primes,brut:brut,heures:heures,tauxH:tauxH,baseCSG:baseCSG,
+      retPlafS:retPlafS,retDeplafS:retDeplafS,retComplS:retComplS,csgDed:csgDed,totRetSalDed:totRetSalDed,csgNonDed:csgNonDed,
+      cotisSal:cotisSal,netImpo:netImpo,netAvImpot:netAvImpot,pas:pas,pasTaux:num(pp.pasTaux),netAPayer:netAPayer,netSocial:netSocial,
+      pat:pat,alleg:alleg,cotisPat:totPat,totPat:totPat,cout:cout}; }
+  function paieCalcOf(s,k){ return paieDetail(s,k); }
   function paieCalc(s){ return paieCalcOf(s,periode()); }
   /* Périodes où un salaire a été perçu (brut > 0), triées décroissant. */
   function perAvecSalaire(s){ s.paie=s.paie||{}; return Object.keys(s.paie).filter(function(k){ return num(s.paie[k].brut)>0; }).sort().reverse(); }
@@ -23514,30 +23538,81 @@ ${lignes}
   window.admDsnRefuser=function(){ var e=envoi(); if(!e)return; var dt=(typeof todayStr==='function')?todayStr():new Date().toISOString().slice(0,10); e.refuse=true; e.statut='Refusée'; e.flux.push({etape:'Refusée',date:dt}); saveR(); };
   window.admDsnReset=function(){ var p=P(),k=periode(); delete p.dsn.envois[k]; saveR(); };
 
-  /* ---- Fiche de paie (bulletin) ---- */
-  function bulletinHTML(s,perArg){ var per=perArg||periode(); var c=paieCalcOf(s,per), so=soc();
-    var row=function(lbl,base,tsal,psal,tpat,ppat){ return '<tr><td>'+lbl+'</td><td class="r">'+(base||'')+'</td><td class="r">'+(tsal||'')+'</td><td class="r">'+(psal||'')+'</td><td class="r">'+(tpat||'')+'</td><td class="r">'+(ppat||'')+'</td></tr>'; };
+  /* ---- Fiche de paie (bulletin de salaire — reproduction du modèle fourni) ---- */
+  function civM(s){ return s.sexe==='F'?'Mme':'M.'; }
+  function bulletinHTML(s,perArg){ var per=perArg||periode(); var c=paieDetail(s,per), so=soc();
+    var f2=function(n){ return (Number(n)||0).toFixed(2); };
+    var y=+per.slice(0,4), mo=+per.slice(5,7); var pad=function(n){ return (n<10?'0':'')+n; };
+    var last=28; try{ last=new Date(y,mo,0).getDate(); }catch(e){}
+    var du='01/'+pad(mo)+'/'+y, au=pad(last)+'/'+pad(mo)+'/'+y, payLe=pad(last)+'/'+pad(mo)+'/'+String(y).slice(2);
+    var nomC=civM(s)+' '+((s.nom||'').toUpperCase())+' '+(s.prenom||'');
+    /* cumuls (périodes ≤ per) */
+    var cum={brut:0,netImpo:0,net:0}; perAvecSalaire(s).filter(function(k){return k<=per;}).forEach(function(k){ var d=paieDetail(s,k); cum.brut=R2(cum.brut+d.brut); cum.netImpo=R2(cum.netImpo+d.netImpo); cum.net=R2(cum.net+d.netAPayer); });
+    var grp=function(t){ return '<tr class="bp-grp"><td colspan="5">'+esc(t)+'</td></tr>'; };
+    var L=function(lbl,base,txsal,mtsal,mtpat,cls){ return '<tr'+(cls?(' class="'+cls+'"'):'')+'><td>'+lbl+'</td><td class="r">'+(base||'')+'</td><td class="r">'+(txsal||'')+'</td><td class="r">'+(mtsal||'')+'</td><td class="r">'+(mtpat||'')+'</td></tr>'; };
+    var b=f2(c.brut), bcsg=f2(c.baseCSG);
+    var body=''
+      +L('SALAIRE DE BASE', f2(c.heures), f2(c.tauxH), '<b>'+f2(c.brut)+'</b>','', 'bp-sal')
+      +L('<b>SALAIRE BRUT</b>','','','<b>'+f2(c.brut)+'</b>','','bp-brut')
+      +grp('Q100  SANTÉ')
+      +L('Sécurité Sociale - Maladie Maternité Invalidité Décès', b,'','', f2(c.pat.maladie))
+      +L('Complémentaire santé', b,'','', f2(c.pat.complSante))
+      +grp('Q200  ACCIDENT DU TRAVAIL')
+      +L('Accident du travail - Maladie professionnelle', b,'','', f2(c.pat.atmp))
+      +grp('Q300  RETRAITE')
+      +L('Sécurité Sociale plafonnée', b,'6.9000', f2(c.retPlafS), f2(c.pat.retPlaf))
+      +L('Sécurité Sociale déplafonnée', b,'0.4000', f2(c.retDeplafS), f2(c.pat.retDeplaf))
+      +L('Complémentaire Tranche 1', b,'4.0100', f2(c.retComplS), f2(c.pat.retCompl))
+      +grp('Q400  FAMILLE')
+      +L('Famille', b,'','', f2(c.pat.famille))
+      +grp('Q500  ASSURANCE CHÔMAGE')
+      +L('Chômage', b,'','', f2(c.pat.chomage))
+      +L('AGS', b,'','', f2(c.pat.ags))
+      +grp('Q600  AUTRES CONTRIBUTIONS DUES PAR L\'EMPLOYEUR')
+      +L('Autres contributions dues par l\'employeur', b,'','', f2(c.pat.autres))
+      +grp('Q800  CSG / CRDS')
+      +L('CSG déductible à l\'IR', bcsg,'6.8000', f2(c.csgDed),'')
+      +grp('Q802  EXONÉRATIONS, ÉCRÊTEMENTS ET ALLÉGEMENTS DE COTISATIONS')
+      +L('Allègement général de cotisations', '','', '', f2(c.alleg))
+      +L('<b>TOTAL DES RETENUES</b>','','','<b>'+f2(c.totRetSalDed)+'</b>','<b>'+f2(c.totPat)+'</b>','bp-tot')
+      +L('<b>NET IMPOSABLE</b>','','','<b>'+f2(c.netImpo)+'</b>','','bp-netimpo')
+      +grp('Q801  CSG / CRDS NON DÉDUCTIBLE')
+      +L('CSG / CRDS non déductible à l\'IR', bcsg,'2.9000', f2(c.csgNonDed),'');
+    var congL=function(a,b2,c2){ return '<div class="bp-cp-row"><span>'+esc(a)+'</span><span>'+esc(b2)+'</span><span>'+esc(c2)+'</span></div>'; };
     return '<div class="doc-page bp-page">'
-      +'<div style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap">'
-        +'<div><div style="font-size:16px;font-weight:800">'+esc(so.nom||'—')+'</div><div>'+esc(so.adresse||'')+'</div><div>'+esc((so.cp||'')+' '+(so.ville||''))+'</div><div>SIRET '+esc(so.siret||'—')+' · APE '+esc(so.codeAPE||'—')+'</div></div>'
-        +'<div style="text-align:right"><div style="font-size:15px;font-weight:800">BULLETIN DE PAIE</div><div>Période : '+esc(perLabel(per))+'</div><div>Paiement le '+esc((typeof frDate==='function'&&s.paie&&s.paie[per]?'':''))+'</div></div>'
-      +'</div><hr>'
-      +'<div style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap">'
-        +'<div><b>'+esc(nom(s))+'</b><div>'+esc(s.adresse||'')+'</div><div>'+esc((s.cp||'')+' '+(s.ville||''))+'</div><div>N° SS : '+esc(s.nir||'—')+'</div></div>'
-        +'<div style="text-align:right"><div>Emploi (PCS-ESE) : '+esc(s.pcsEse||'—')+'</div><div>Statut : '+esc(s.statutCadre==='C'?'Cadre':'Non cadre')+'</div><div>Contrat : '+esc(s.typeContrat||'—')+'</div><div>Entrée : '+esc(s.dateEntree||'—')+'</div></div>'
-      +'</div><hr>'
-      +'<table class="bp-t"><thead><tr><th>Rubrique</th><th class="r">Base</th><th class="r">Taux sal.</th><th class="r">Part sal.</th><th class="r">Taux pat.</th><th class="r">Part pat.</th></tr></thead><tbody>'
-        +row('Salaire de base', EUR(c.base),'','','','')
-        +(c.primes?row('Primes / éléments variables', EUR(c.primes),'','','',''):'')
-        +row('<b>Salaire brut</b>','','','<b>'+EUR(c.brut)+'</b>','','')
-        +row('Cotisations salariales', EUR(c.brut),'22,00 %', EUR(c.cotisSal),'','')
-        +row('Cotisations patronales', EUR(c.brut),'','','42,00 %', EUR(c.cotisPat))
-        +row('<b>Net imposable</b>','','','<b>'+EUR(c.netImpo)+'</b>','','')
-        +row('Prélèvement à la source', EUR(c.netImpo),(num(salPerOf(s,per).pasTaux)).toFixed(2)+' %', EUR(c.pas),'','')
-      +'</tbody></table>'
-      +'<div style="display:flex;justify-content:space-between;margin-top:12px;font-weight:800;font-size:15px"><span>NET À PAYER</span><span>'+EUR(c.netAPayer)+'</span></div>'
-      +'<div style="display:flex;justify-content:space-between;margin-top:6px;opacity:.8"><span>Coût total employeur</span><span>'+EUR(c.cout)+'</span></div>'
-      +'<div style="margin-top:10px;font-size:11px;opacity:.7">Bulletin établi sur la base des informations de paie saisies. Taux de cotisations indicatifs (modèle simplifié) — à fiabiliser selon la convention collective et les organismes.</div>'
+      +'<div class="bp-head">'
+        +'<div class="bp-emp"><div class="bp-emp-nom">Société '+esc(so.nom||'—')+'</div><div>'+esc(so.adresse||'')+'</div><div>'+esc((so.cp||'')+' '+(so.ville||''))+'</div><div>Siret : '+esc(so.siret||'—')+'</div><div>Code NAF : '+esc(so.codeAPE||'—')+'</div></div>'
+        +'<div class="bp-per"><div class="bp-titre">BULLETIN DE SALAIRE</div>'
+          +'<div class="bp-per-l"><span>Période :</span><b>'+esc(perLabel(per))+'</b></div>'
+          +'<div class="bp-per-l"><span>Paiement le :</span><b>'+esc(payLe)+'</b></div>'
+          +'<div class="bp-per-l"><span>Du :</span>'+esc(du)+'<span style="margin-left:10px">Au :</span>'+esc(au)+'</div></div>'
+      +'</div>'
+      +'<div class="bp-head2">'
+        +'<div class="bp-sal"><b>'+esc(nomC)+'</b><div>'+esc(s.adresse||'')+'</div><div>'+esc((s.cp||'')+' '+(s.ville||''))+'</div>'
+          +'<div>Matricule : '+esc(s.matricule||'—')+'</div><div>N° Sécu. : '+esc(s.nir||'—')+'</div>'
+          +'<div>Entré(e) le : '+esc(frd(s.dateEntree))+'</div><div>Emploi : '+esc(s.poste||'—')+'</div>'
+          +'<div>Statut : '+esc(s.statutCadre==='C'?'Cadre':'Non cadre')+(s.conventionNom?(' · Convention : '+esc(s.conventionNom)):'')+'</div></div>'
+        +'<div class="bp-cp"><div class="bp-cp-h"><span></span><span>CP N-1</span><span>CP N</span></div>'
+          +congL('Acquis :', f2(num(s.cpAcqN1)), f2(num(s.cpAcqN)))
+          +congL('Pris :', f2(num(s.cpPrisN1)), f2(num(s.cpPrisN)))
+          +congL('Solde :', f2(num(s.cpAcqN1)-num(s.cpPrisN1)), f2(num(s.cpAcqN)-num(s.cpPrisN)))+'</div>'
+      +'</div>'
+      +'<table class="bp-t"><thead><tr><th>Rubriques</th><th class="r">Base</th><th class="r">Taux salarial</th><th class="r">Montant salarial</th><th class="r">Mt patronal</th></tr></thead><tbody>'+body+'</tbody></table>'
+      +'<div class="bp-net">'
+        +'<div class="bp-net-l"><span>NET À PAYER AVANT IMPÔT SUR LE REVENU</span><b>'+f2(c.netAvImpot)+' €</b></div>'
+        +'<div class="bp-net-l"><span>Impôt sur le revenu prélevé à la source (base '+f2(c.netImpo)+' · taux '+f2(c.pasTaux)+' %)</span><b>'+f2(c.pas)+' €</b></div>'
+        +'<div class="bp-net-l bp-net-final"><span>NET À PAYER AU SALARIÉ</span><b>'+f2(c.netAPayer)+' €</b></div>'
+        +'<div class="bp-net-l"><span>MONTANT NET SOCIAL</span><b>'+f2(c.netSocial)+' €</b></div>'
+        +'<div class="bp-net-l"><span>Coût total employeur</span><b>'+f2(c.cout)+' €</b></div>'
+      +'</div>'
+      +'<div class="bp-cum"><b>CUMULS annuels</b> — Brut : '+f2(cum.brut)+' € · Net imposable : '+f2(cum.netImpo)+' € · Net payé : '+f2(cum.net)+' €</div>'
+      +'<div class="bp-foot">'
+        +'<div>SMIC Horaire : '+f2(PAIE_SMIC)+' €   ·   Paiement par '+esc(s.modePaiement||'Virement')+'</div>'
+        +(s.conventionNom?('<div>Convention collective : '+esc(s.conventionNom)+'</div>'):'')
+        +'<div style="margin-top:5px">Dans votre intérêt et pour vous aider à faire valoir vos droits, conservez ce bulletin de paie sans limitation de durée.</div>'
+        +'<div>Pour plus d\'informations sur le bulletin de paie clarifié : www.service-public.fr</div>'
+        +'<div style="margin-top:5px;opacity:.7;font-size:10px">Taux de cotisations représentatifs (modèle simplifié) — à fiabiliser selon la convention collective et les organismes.</div>'
+      +'</div>'
       +'</div>'; }
   window.admPaieBulletin=function(id,per){ var s=stById(id); if(!s)return; var html=bulletinHTML(s,per);
     if(typeof openModal==='function'){ try{ var mc=document.getElementById('modal-c'); if(mc){ document.getElementById('modal').classList.add('show'); mc.innerHTML='<div class="modal-h"><b>Bulletin de paie — '+esc(nom(s))+(per?(' · '+esc(perLabel(per))):'')+'</b><button class="btn btn-ghost btn-sm" onclick="closeModal()">Fermer</button></div><div class="modal-b">'+html+'<div style="margin-top:10px"><button class="btn btn-pri btn-sm" onclick="admPaieImprimer(\''+esc(id)+'\',\''+esc(per||'')+'\')">Imprimer / PDF</button></div></div>'; return; } }catch(e){} }
@@ -23811,7 +23886,22 @@ ${lignes}
     +'.adm-dsn-step.done{opacity:1}.adm-dsn-step.cur{font-weight:700}'
     +'.adm-dsn-dot{width:11px;height:11px;border-radius:50%;background:#3a5170;flex:0 0 auto}'
     +'.adm-dsn-step.done .adm-dsn-dot{background:#2f9bff}'
-    +'.bp-page .bp-t{width:100%;border-collapse:collapse;margin-top:8px}.bp-page .bp-t th,.bp-page .bp-t td{border:1px solid #d5d5d5;padding:6px 8px;font-size:12.5px}.bp-page .bp-t .r{text-align:right}'
+    +'.bp-page{font-size:12px;line-height:1.4;color:#161616}'
+    +'.bp-head{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;border-bottom:2px solid #2f6fe8;padding-bottom:8px}'
+    +'.bp-emp-nom{font-weight:800;font-size:14px}.bp-titre{font-weight:800;font-size:15px;text-align:right;color:#0b2a52}'
+    +'.bp-per{min-width:210px}.bp-per-l{display:flex;justify-content:space-between;gap:10px;font-size:11.5px}.bp-per-l span{opacity:.7}'
+    +'.bp-head2{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-top:8px;border-bottom:1px solid #ccc;padding-bottom:8px}'
+    +'.bp-sal{font-size:11.5px;max-width:60%}.bp-sal b{font-size:13px}'
+    +'.bp-cp{font-size:11px;min-width:180px}.bp-cp-h,.bp-cp-row{display:grid;grid-template-columns:1fr 60px 60px;gap:4px}.bp-cp-h{font-weight:700;border-bottom:1px solid #ccc;text-align:right}.bp-cp-h span:first-child,.bp-cp-row span:first-child{text-align:left}.bp-cp-row span{text-align:right}'
+    +'.bp-page .bp-t{width:100%;border-collapse:collapse;margin-top:8px}'
+    +'.bp-page .bp-t th{background:#eef2f8;border:1px solid #cbd6e6;padding:5px 7px;font-size:11px;text-align:left}.bp-page .bp-t th.r{text-align:right}'
+    +'.bp-page .bp-t td{border-bottom:1px solid #eee;padding:4px 7px;font-size:11.5px}.bp-page .bp-t .r{text-align:right}'
+    +'.bp-page .bp-t .bp-grp td{background:#f2f5fb;font-weight:800;font-size:10.5px;letter-spacing:.4px;border-top:1px solid #cbd6e6;color:#0b2a52}'
+    +'.bp-page .bp-t .bp-brut td,.bp-page .bp-t .bp-tot td,.bp-page .bp-t .bp-netimpo td{background:#f6f8fc;border-top:1px solid #cbd6e6}'
+    +'.bp-net{margin-top:12px}.bp-net-l{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px dotted #ddd;font-size:12.5px}'
+    +'.bp-net-final{font-size:15px;font-weight:800;border-bottom:2px solid #2f6fe8;color:#0b2a52}'
+    +'.bp-cum{margin-top:10px;font-size:11px;background:#f2f5fb;border:1px solid #dbe4f2;border-radius:6px;padding:6px 9px}'
+    +'.bp-foot{margin-top:10px;font-size:10.5px;color:#333;border-top:1px solid #ccc;padding-top:6px}'
     +'.adm-ctr-wrap{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:16px;margin-top:12px;align-items:start}'
     +'.adm-ctr-side .fld{margin-bottom:8px}.adm-ctr-side .fld label{display:block;font-size:11.5px;opacity:.72;margin-bottom:3px}'
     /* Aperçu : hauteur = barre latérale (posée en JS), overflow caché, page A4 centrée en haut. */
