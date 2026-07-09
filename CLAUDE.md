@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Contrat : aperçu A4 fidèle & paginé (hauteur = barre latérale, bouton page suivante) + listes de salariés ouvertes & défilables — v436
+## 🟢 Dernière mise à jour — Fiche de paie : reproduction fidèle du bulletin de salaire (modèle ALR CONSEIL) à chaque génération — v437
+**Quoi :** la **génération d'une fiche de paie** produit désormais un **bulletin de salaire reproduisant fidèlement le modèle fourni** (bulletin clarifié) : en-tête **société** (dénomination, adresse, Siret, Code NAF) + **période** (Période, Paiement le, Du/Au) ; bloc **salarié** (M./Mme NOM Prénom, adresse, matricule, N° Sécu, entrée, emploi, statut, convention) + **congés CP N-1/CP N** ; **tableau des rubriques** (Rubriques · Base · Taux salarial · Montant salarial · Mt patronal) groupé **Q100 SANTÉ · Q200 AT · Q300 RETRAITE · Q400 FAMILLE · Q500 CHÔMAGE · Q600 AUTRES · Q800 CSG déductible · allègement · Q801 CSG non déductible** ; **TOTAL DES RETENUES**, **NET IMPOSABLE**, **NET À PAYER AVANT IMPÔT**, **impôt (PAS)**, **NET À PAYER AU SALARIÉ**, **MONTANT NET SOCIAL**, **coût employeur** ; **cumuls annuels** + **pied** (SMIC horaire, mode de paiement, convention, mentions légales service-public.fr). Valable pour l'aperçu (modale) **et** l'impression / PDF.
+
+**Comment — `yada-addon211` :** `paieDetail(s,per)` (taux **calibrés sur le modèle** : retraite 6,90 % + 0,40 % + 4,01 % salariales, CSG déductible 6,80 % sur 98,25 %, CSG/CRDS non déd. 2,90 %, patronales santé/AT/retraite/famille/chômage/AGS/autres + **allègement général type Fillon**) → net imposable & net à payer **identiques au modèle** (brut 1020,88 → net imposable **837,22 €**, net à payer **808,13 €**) ; `paieCalcOf` délègue à `paieDetail` (KPI/DSN cohérents) ; `bulletinHTML(s,per)` réécrit (`.bp-head/.bp-head2/.bp-t/.bp-net/.bp-cum/.bp-foot`). `<style>` mis à jour.
+
+**Validé :** `node --check` (204 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (bulletin ALR CONSEIL : titre, société+Siret+NAF, salarié+N°Sécu+emploi, rubriques SANTÉ/RETRAITE 6.9000·4.0100/CHÔMAGE+AGS/CSG 6.8000/allègement, **net imposable 837,22 · net à payer 808,13**, net social, pied service-public.fr ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v437**.
+
+---
+
+## 🟢 MAJ précédente — Contrat : aperçu A4 fidèle & paginé (hauteur = barre latérale, bouton page suivante) + listes de salariés ouvertes & défilables — v436
 **Quoi :** refonte de l'aperçu du contrat dans le module Paie.
 1. **Reproduction fidèle du modèle** — le contrat reprend la **disposition et le texte** du modèle (11 articles complets) ; les **informations variables** (société, salarié, poste, dates, salaire, convention, lieu, jours de paiement…) sont **retirées** puis **remplacées via la barre latérale** (formulaire à gauche).
 2. **Aperçu A4 paginé** — l'aperçu est **toujours au format A4 (210×297 mm)** ; si le contrat dépasse une page, un **bouton « Page suivante ›/‹ Page précédente »** (avec « Page X / N ») permet de naviguer.
