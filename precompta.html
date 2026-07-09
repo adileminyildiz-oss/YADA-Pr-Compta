@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v451';
+    b.textContent='YADA · v452';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -13121,17 +13121,36 @@ ${lignes}
    reste silencieuse). */
 (function(){
   function lock(){ if(typeof window.secVerrouiller==='function') window.secVerrouiller(); }
+  try{ if(!document.getElementById('sec-logout-mod')){ var st=document.createElement('style'); st.id='sec-logout-mod'; st.textContent=
+    '#modal-c .seclo{text-align:center;padding:8px 6px 2px;max-width:440px;margin:0 auto}'
+    +'.seclo-ic{width:66px;height:66px;margin:2px auto 16px;border-radius:50%;display:flex;align-items:center;justify-content:center;'
+    +'font-size:30px;color:#fff;background:linear-gradient(135deg,#2f9bff,#0a64d6);'
+    +'box-shadow:0 12px 32px rgba(30,144,255,.45),inset 0 1px 0 rgba(255,255,255,.28);position:relative}'
+    +'.seclo-ic::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px solid rgba(30,144,255,.35)}'
+    +'.seclo-t{margin:0 0 10px;font-size:21px;font-weight:800;letter-spacing:.2px}'
+    +'.seclo-sub{font-size:14px;opacity:.92;line-height:1.55;margin:0 auto 8px;max-width:370px}'
+    +'.seclo-note{font-size:12px;opacity:.6;margin:0 auto 20px;max-width:350px;line-height:1.5}'
+    +'.seclo-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}'
+    +'.seclo-actions .btn{min-width:150px;padding:12px 18px;border-radius:12px;font-weight:700;font-size:14px}'
+    +'.seclo-quit{background:linear-gradient(135deg,#2f9bff,#0a64d6) !important;border:0 !important;color:#fff !important;box-shadow:0 8px 24px rgba(30,144,255,.42)}'
+    +'.seclo-quit:hover{filter:brightness(1.08);box-shadow:0 10px 28px rgba(30,144,255,.55)}'
+    +'.seclo-quit:active{transform:translateY(1px)}'
+    +'.seclo-cancel{opacity:.85}.seclo-cancel:hover{opacity:1}';
+    document.head.appendChild(st); } }catch(e){}
   window.secDeconnexion=function(){
     var mc=document.getElementById('modal-c'), md=document.getElementById('modal');
     if(!mc||!md){ try{ if(typeof save==='function') save(); }catch(e){} lock(); return; }
     var heure=''; try{ var d=new Date(); var z=function(n){return (n<10?'0':'')+n;}; heure=z(d.getHours())+':'+z(d.getMinutes()); }catch(e){}
-    mc.innerHTML='<h2 style="margin-top:0">Fin de session</h2>'
-      +'<div class="sub">Vous êtes sur le point de quitter la session. Souhaitez-vous <b>enregistrer vos modifications</b> avant de vous déconnecter ?</div>'
-      +'<div class="hint" style="margin-top:6px">Vos données sont conservées sur cet appareil. Cliquez sur « Enregistrer et quitter » pour valider la sauvegarde'+(heure?(' ('+heure+')'):'')+'.</div>'
-      +'<div class="right" style="gap:8px;margin-top:16px">'
-        +'<button class="btn btn-ghost" onclick="closeModal()">Annuler</button>'
-        +'<button class="btn btn-pri" id="sec-save-quit">💾 Enregistrer et quitter</button>'
-      +'</div>';
+    mc.innerHTML='<div class="seclo">'
+      +'<div class="seclo-ic">⎋</div>'
+      +'<h2 class="seclo-t">Fin de session</h2>'
+      +'<div class="seclo-sub">Souhaitez-vous <b>enregistrer vos modifications</b> avant de vous déconnecter&nbsp;?</div>'
+      +'<div class="seclo-note">Vos données restent conservées sur cet appareil'+(heure?(' · '+heure):'')+'.</div>'
+      +'<div class="seclo-actions">'
+        +'<button class="btn btn-ghost seclo-cancel" onclick="closeModal()">Annuler</button>'
+        +'<button class="btn btn-pri seclo-quit" id="sec-save-quit">💾 Enregistrer &amp; quitter</button>'
+      +'</div>'
+    +'</div>';
     md.classList.add('show');
     var bq=document.getElementById('sec-save-quit');
     if(bq) bq.onclick=function(){

@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Puce « Connecté : … » retirée de partout + (v450) boutons Modifier/Supprimer & Déconnexion des modules retirés — v451
+## 🟢 Dernière mise à jour — Message de déconnexion « Fin de session » redessiné (soigné) — v452
+**Quoi :** le **message de déconnexion** (« Fin de session ») est **redessiné** : modale centrée avec **icône ronde à dégradé bleu**, titre net, message clair (« enregistrer vos modifications avant de vous déconnecter ? »), note discrète (données conservées + heure), et **deux boutons soignés** — **Annuler** (contour) et **💾 Enregistrer & quitter** (bouton bleu à dégradé + halo). Design cohérent avec l'identité YADA (bleu nuit / bleu Crystal).
+
+**Comment :** `secDeconnexion` (fin de session) réécrit avec une structure `.seclo` (`.seclo-ic`/`.seclo-t`/`.seclo-sub`/`.seclo-note`/`.seclo-actions`) + `<style id="sec-logout-mod">` (icône ronde dégradée + anneau, boutons arrondis, bouton principal dégradé bleu). `sw.js` yada-v44, badge v452, `version.json` 452.
+
+**Validé :** `node --check` (207 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright + **capture** (modale « Fin de session » : icône dégradée, titre, message, boutons Annuler + « Enregistrer & quitter » bleu ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v452**.
+
+---
+
+## 🟢 MAJ précédente — Puce « Connecté : … » retirée de partout + (v450) boutons Modifier/Supprimer & Déconnexion des modules retirés — v451
 **Quoi :** la petite note flottante **« Connecté : \<nom\> »** (haut-droite) est **retirée de partout**. (Inclut aussi les changements v450 ci-dessous : boutons « Modifier »/« Supprimer » des utilisateurs Admin retirés, et Déconnexion retirée de l'intérieur des modules — visible uniquement sur les pages de navigation des dossiers + Espace Client.)
 
 **Comment :** `yada-addon209` : `updChip()` masque et **supprime** l'élément `#yada-user` (plus jamais affiché). `sw.js` yada-v43, badge v451, `version.json` 451.
