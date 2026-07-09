@@ -36,7 +36,20 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Module Paie : contrat CDD + dépôt du contrat signé → admission → fiches de paie par mois (liste salariés · PDF · coût complet) — v435
+## 🟢 Dernière mise à jour — Contrat : aperçu A4 fidèle & paginé (hauteur = barre latérale, bouton page suivante) + listes de salariés ouvertes & défilables — v436
+**Quoi :** refonte de l'aperçu du contrat dans le module Paie.
+1. **Reproduction fidèle du modèle** — le contrat reprend la **disposition et le texte** du modèle (11 articles complets) ; les **informations variables** (société, salarié, poste, dates, salaire, convention, lieu, jours de paiement…) sont **retirées** puis **remplacées via la barre latérale** (formulaire à gauche).
+2. **Aperçu A4 paginé** — l'aperçu est **toujours au format A4 (210×297 mm)** ; si le contrat dépasse une page, un **bouton « Page suivante ›/‹ Page précédente »** (avec « Page X / N ») permet de naviguer.
+3. **Hauteur = barre latérale** — la zone d'aperçu prend **exactement la hauteur du formulaire** (barre latérale), l'A4 étant **mis à l'échelle** (transform) pour tenir sans jamais perdre le ratio A4.
+4. **Listes de salariés ouvertes & défilables** — la sélection d'un salarié (onglet Contrat et onglet Fiches de paie, avant le bilan) se fait via une **liste ouverte défilable** (avatars + nom + contrat) au lieu d'un menu déroulant.
+
+**Comment — `yada-addon211` (éditions) :** `contratBlocks(s)` (blocs insécables, texte fidèle au modèle) ; `contratHTML(s)` = doc complet (impression/.doc) ; `admCtrRenderPreview()` mesure les blocs (page hors-écran `.ctr-a4` à `794×1123`), les **répartit en pages A4** (`contentH`), affiche la page active (`window.__admCtrPage`) mise à l'échelle `min(sideH/A4H, availW/A4W)` dans `.adm-ctr-prev` (hauteur = `.adm-ctr-side`), et remplit `#adm-ctr-pager` (‹/›) ; re-render via hook `render` (rAF) + `resize`. `salOpenList(sel,fn)` (`.adm-sal-list` défilable → `admCtrSelect`/`admFicheSel`). `<style>` `.ctr-a4`, `.adm-ctr-prev`, `.adm-sal-list/.adm-sal-row`.
+
+**Validé :** `node --check` (204 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (liste ouverte 2 salariés ; aperçu A4 présent `794×1123` ; **hauteur aperçu = barre latérale (1516=1516)** ; pager « Page 1 / 3 » → page 2 OK ; onglet Fiches : liste ouverte ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v436**.
+
+---
+
+## 🟢 MAJ précédente — Module Paie : contrat CDD + dépôt du contrat signé → admission → fiches de paie par mois (liste salariés · PDF · coût complet) — v435
 **Quoi :** flux complet contrat → paie dans le module Paie.
 1. **Contrat CDD** — l'onglet Contrat propose aussi le **CDD** (d'après le modèle fourni) : champs **Date de fin** et **Motif du CDD** (affichés quand le type = CDD) ; l'article 1 devient « à compter du … **jusqu'au** … pour une durée déterminée » + **note de bas de page (1) motif**. Le CDI reste inchangé.
 2. **Salariés & paie — dépôt & admission du contrat** — sur la fiche d'un salarié : **dépôt du contrat signé & tamponné** (fichier PDF/image, consultable), statut **Non déposé → Déposé (à vérifier) → Admis ✓**. Le bouton **« Vérifier & admettre »** valide le contrat et **crée automatiquement une fiche de paie** pour le mois de début (rémunération reprise). Colonne « Contrat signé » dans la liste.
