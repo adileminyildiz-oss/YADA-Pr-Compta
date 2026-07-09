@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Contrat CDI/CDD : reproduction FIDÈLE du modèle Word (texte mot-à-mot, champs de fusion, mise en page document) — v439
+## 🟢 Dernière mise à jour — Aperçu du contrat toujours visible (cache purgé + rendu robuste) + fiche de paie générée visible dans l'onglet « Fiches de paie » — v440
+**Quoi :** deux correctifs du module Paie (Espace Admin).
+1. **Aperçu du contrat blanc → toujours affiché.** Sur certains appareils, l'aperçu A4 du contrat (onglet **Contrat**) apparaissait **entièrement blanc**. (a) **Cache purgé** (service worker `yada-v32 → yada-v33`) pour supprimer tout ancien contrat en cache et servir la dernière version. (b) **Rendu robuste** : `admCtrRenderPreview()` ne s'effondre plus quand la mise en page n'est pas encore prête (garde-fous `sideH>120`, `availW>60`, `scale>0.15` sinon repli `0.6`) et le rendu est **re-déclenché après mise en page** (rAF + `setTimeout` 60 ms / 220 ms) → l'A4 s'affiche même au 1er rendu / changement d'onglet.
+2. **Fiche de paie générée dans « Salariés & paie » → visible dans « Fiches de paie ».** Générer une fiche via **« Générer la fiche de paie »** enregistre désormais la **période** sur le salarié (`s.fiches[période]`), et l'onglet **Fiches de paie** liste **toutes** les périodes ayant un salaire **OU** une fiche générée → le bulletin apparaît immédiatement (bouton mois/année, PDF téléchargeable).
+
+**Comment — `yada-addon211` :** `perAvecSalaire(s)` = union des périodes `brut>0` **et** de `s.fiches` ; `admPaieBulletin(id,per)` marque `s.fiches[per||periode()]=true` + `save()` ; hooks de rendu du contrat renforcés (double `setTimeout` post-`render`) ; minima de mesure dans `admCtrRenderPreview`. `sw.js` `CACHE='yada-v33'` ; badge `#yada-ver` → v440 ; `version.json` → 440.
+
+**Validé :** `node --check` (204 scripts, 0 erreur) + brace CSS (2010/2010) + Playwright (aperçu contrat : `#adm-ctr-preview` rempli — A4 + texte « CONTRAT DE TRAVAIL A DUREE INDETERMINEE » ; génération d'une fiche en oct. 2024 → `s.fiches['2024-10']` → onglet Fiches de paie affiche le bouton « octobre 2024 » ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v440**.
+
+---
+
+## 🟢 MAJ précédente — Contrat CDI/CDD : reproduction FIDÈLE du modèle Word (texte mot-à-mot, champs de fusion, mise en page document) — v439
 **Quoi :** le **contrat de travail (CDI et CDD)** reproduit désormais **exactement le modèle Word de publipostage** : **texte mot-à-mot** et **emplacements des champs de fusion** repris tels quels (société : dénomination, adresse, RCS Cedex, SIRET, code APE, URSSAF région + n°, représentant « – Gérant(e) » ; salarié : « Titre Prénom NOM », adresse, « Né le … à … en … », nationalité, N° SS ; article 1 « en qualité de <métier> <statut/coeff> à compter du … [jusqu'au …] », article 2 « convention collective - <nom> », article 3 période d'essai en **semaines** (CDI) / **jours** (CDD) « et peut être prolongée », article 6 durée + **horaires**, article 7 « salaire mensuel brut de … payable le 1er jour du mois », article 8 congés « - <convention> -, 30 jours ouvrables … », article 10 « soit 2 mois », article 11 « Clause de non concurrence », « Fait à … le … », **note (1) motif CDD**, bloc « Tampon + signature »). **Mise en page type document** (police serif Times, texte **justifié**, titre centré souligné, en-têtes d'articles en gras). Aperçu A4 en direct + pagination + téléchargement (.doc) & impression conservés.
 
 **Comment — `yada-addon211` :** `contratBlocks(s)` réécrit d'après le publipostage Word (`Titre Prénom Nom`, `Statut/Coeff`, `URSSAF_Région`/`N_Urssaf`, `Horaires`, `Motif_CDD`…) ; nouveaux champs du formulaire (Position/Coefficient `coeff`, Horaires `horaires`) ; `.ctr-a4` restylé en document (`font:Times`, `text-align:justify`, titre souligné). CDD → titre « A DUREE DETERMINEE (1) » + article 1 « jusqu'au » + note motif.

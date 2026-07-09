@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v439';
+    b.textContent='YADA · v440';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -23472,8 +23472,11 @@ ${lignes}
       pat:pat,alleg:alleg,cotisPat:totPat,totPat:totPat,cout:cout}; }
   function paieCalcOf(s,k){ return paieDetail(s,k); }
   function paieCalc(s){ return paieCalcOf(s,periode()); }
-  /* Périodes où un salaire a été perçu (brut > 0), triées décroissant. */
-  function perAvecSalaire(s){ s.paie=s.paie||{}; return Object.keys(s.paie).filter(function(k){ return num(s.paie[k].brut)>0; }).sort().reverse(); }
+  /* Périodes où un salaire a été perçu (brut > 0) OU une fiche a été générée, triées décroissant. */
+  function perAvecSalaire(s){ s.paie=s.paie||{}; s.fiches=s.fiches||{}; var set={};
+    Object.keys(s.paie).forEach(function(k){ if(num(s.paie[k].brut)>0) set[k]=1; });
+    Object.keys(s.fiches).forEach(function(k){ set[k]=1; });
+    return Object.keys(set).sort().reverse(); }
   function nom(s){ return [s.prenom,s.nom].filter(Boolean).join(' ')||s.email||'(sans nom)'; }
 
   window.admPaieTab=function(t){ window.__admPaieTab=t; saveR(); };
@@ -23633,7 +23636,7 @@ ${lignes}
     H.push(T(143,28,7,'Pour plus d\'informations sur le bulletin de paie clarifié : www.service-public.fr'));
     if(s.conventionNom) H.push(T(20,38,7,'Convention collective : '+esc(s.conventionNom)));
     return '<div class="bp-a4">'+H.join('')+'</div>'; }
-  window.admPaieBulletin=function(id,per){ var s=stById(id); if(!s)return; var html=bulletinHTML(s,per);
+  window.admPaieBulletin=function(id,per){ var s=stById(id); if(!s)return; var perFiche=per||periode(); if(perFiche){ s.fiches=s.fiches||{}; if(!s.fiches[perFiche]){ s.fiches[perFiche]=true; try{save();}catch(e){} } } var html=bulletinHTML(s,per);
     if(typeof openModal==='function'){ try{ var mc=document.getElementById('modal-c'); if(mc){ document.getElementById('modal').classList.add('show');
       mc.innerHTML='<div class="modal-h"><b>Bulletin de paie — '+esc(nom(s))+(per?(' · '+esc(perLabel(per))):'')+'</b><button class="btn btn-ghost btn-sm" onclick="closeModal()">Fermer</button></div>'
         +'<div class="modal-b"><div class="bp-prev-wrap"><div style="transform:scale(.86);transform-origin:top center">'+html+'</div></div>'
@@ -23823,7 +23826,7 @@ ${lignes}
   window.admCtrRefresh=function(){ admCtrRenderPreview(); };
   function admCtrRenderPreview(){ var s=stById(window.__admCtrSel); var host=document.getElementById('adm-ctr-preview'); if(!host||!s) return;
     var side=document.querySelector('.adm-ctr-side'); var prev=document.querySelector('.adm-ctr-prev');
-    var sideH=(side&&side.offsetHeight)?side.offsetHeight:760; if(prev) prev.style.height=sideH+'px';
+    var sideH=(side&&side.offsetHeight>120)?side.offsetHeight:760; if(prev) prev.style.height=sideH+'px';
     var blocks=contratBlocks(s); var contentH=CTR_A4H-2*CTR_PAD, contentW=CTR_A4W-2*CTR_PAD;
     var meas=document.createElement('div'); meas.className='ctr-a4'; meas.style.cssText='position:absolute;left:-9999px;top:0;width:'+contentW+'px;visibility:hidden;padding:0'; document.body.appendChild(meas);
     var pages=[[]], curH=0;
@@ -23832,8 +23835,8 @@ ${lignes}
       pages[pages.length-1].push(blocks[i]); curH+=h; }
     try{ document.body.removeChild(meas); }catch(e){}
     var np=pages.length; var pg=Math.min(Math.max(window.__admCtrPage||0,0),np-1); window.__admCtrPage=pg;
-    var availW=(prev&&prev.clientWidth?prev.clientWidth:520)-8;
-    var scale=Math.min(sideH/CTR_A4H, availW/CTR_A4W); if(!(scale>0)) scale=0.6;
+    var availW=(prev&&prev.clientWidth>60?prev.clientWidth:520)-8;
+    var scale=Math.min(sideH/CTR_A4H, availW/CTR_A4W); if(!(scale>0.15)) scale=0.6;
     host.innerHTML='<div style="height:'+(CTR_A4H*scale)+'px;width:'+(CTR_A4W*scale)+'px;margin:0 auto"><div class="ctr-a4" style="width:'+CTR_A4W+'px;min-height:'+CTR_A4H+'px;padding:'+CTR_PAD+'px;transform:scale('+scale+');transform-origin:top left">'+pages[pg].join('')+'</div></div>';
     var pager=document.getElementById('adm-ctr-pager');
     if(pager){ pager.innerHTML = (np>1) ? ('<button class="btn btn-ghost btn-sm" '+(pg<=0?'disabled':'')+' onclick="admCtrPage(-1)">‹ Page précédente</button><span class="mini" style="opacity:.75">Page '+(pg+1)+' / '+np+'</span><button class="btn btn-ghost btn-sm" '+(pg>=np-1?'disabled':'')+' onclick="admCtrPage(1)">Page suivante ›</button>') : '<span class="mini" style="opacity:.6">Page 1 / 1</span>'; }
@@ -23907,7 +23910,7 @@ ${lignes}
       if((!window.__admPaieTab||window.__admPaieTab==='sal') && window.__admPaieSel && document.getElementById('adm-paie-live')) window.admPaieLiveRender();
     } }catch(e){} }
   if(typeof window.render==='function' && !window.__admCtrRenderGuard){ window.__admCtrRenderGuard=true; var _r=window.render;
-    window.render=function(){ var x=_r.apply(this,arguments); try{ requestAnimationFrame(admCtrTick); }catch(e){ setTimeout(admCtrTick,0); } return x; }; }
+    window.render=function(){ var x=_r.apply(this,arguments); try{ requestAnimationFrame(admCtrTick); }catch(e){ setTimeout(admCtrTick,0); } /* filet : re-tick après mise en page (aperçu contrat parfois vide au 1er rendu) */ setTimeout(admCtrTick,60); setTimeout(admCtrTick,220); return x; }; }
   try{ window.addEventListener('resize', function(){ clearTimeout(window.__admCtrRz); window.__admCtrRz=setTimeout(admCtrTick,150); }); }catch(e){}
 
   try{ var st=document.createElement('style'); st.id='adm-paie-full-mod'; st.textContent=
