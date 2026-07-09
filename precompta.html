@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v441';
+    b.textContent='YADA · v443';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -23674,9 +23674,6 @@ ${lignes}
         +'</div>'
         +'<div class="grid g4" style="margin-top:10px">'+kpi('Brut',EUR(c.brut))+kpi('Net imposable',EUR(c.netImpo))+kpi('Net à payer',EUR(c.netAPayer))+kpi('Coût employeur',EUR(c.cout))+'</div>'
         +'<div style="margin-top:12px"><button class="btn btn-pri btn-sm" onclick="admPaieBulletin(\''+esc(s.id)+'\')">Générer la fiche de paie</button></div>'
-        +'<div class="adm-soc-gh">Aperçu de la fiche de paie (mis à jour en direct)</div>'
-        +'<div class="bp-prev-wrap" id="adm-paie-live-wrap"><div id="adm-paie-live"></div></div>'
-        +'<div class="adm-soc-gh">Contrat de travail</div>'+contratSection(s)
       +'</div>'; } }
     var ctrLbl=function(s){ return s.contratStatut==='admis'?'<span style="color:#7fdba0">admis ✓</span>':(s.contratStatut==='deposee'?'<span style="color:#ffd08a">à vérifier</span>':'<span style="opacity:.55">—</span>'); };
     var rows=st.map(function(s){ var c=paieCalc(s), miss=salMiss(s); var ok=miss.length===0;
@@ -23909,6 +23906,7 @@ ${lignes}
       +ctrFieldRow(s.id,'Horaires de travail (si différent)','horaires','text',s.horaires)
       +ctrFieldRow(s.id,'Lieu de travail','lieuTravail','text',s.lieuTravail)
       +'<div id="adm-ctr-gen">'+ctrGenBlockHTML(s)+'</div>'
+      +'<div class="adm-soc-gh">Dépôt du contrat signé &amp; tamponné</div>'+contratSection(s)
       +'</div>';
     return '<div class="card"><h2>Contrat de travail — '+esc(nom(s))+'</h2><div class="sub">Complétez le formulaire à gauche : l\'aperçu A4 du contrat se met à jour <b>en direct</b> à droite. Le contrat ne peut être <b>généré en PDF</b> que lorsque <b>toutes les conditions</b> sont remplies ; il apparaît alors dans la liste des salariés.</div>'
       +'<div class="adm-ctr-wrap">'+form+'<div class="adm-ctr-prev"><div id="adm-ctr-preview"></div></div></div>'
