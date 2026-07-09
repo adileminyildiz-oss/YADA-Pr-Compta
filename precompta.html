@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v440';
+    b.textContent='YADA · v441';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -23636,12 +23636,16 @@ ${lignes}
     H.push(T(143,28,7,'Pour plus d\'informations sur le bulletin de paie clarifié : www.service-public.fr'));
     if(s.conventionNom) H.push(T(20,38,7,'Convention collective : '+esc(s.conventionNom)));
     return '<div class="bp-a4">'+H.join('')+'</div>'; }
-  window.admPaieBulletin=function(id,per){ var s=stById(id); if(!s)return; var perFiche=per||periode(); if(perFiche){ s.fiches=s.fiches||{}; if(!s.fiches[perFiche]){ s.fiches[perFiche]=true; try{save();}catch(e){} } } var html=bulletinHTML(s,per);
-    if(typeof openModal==='function'){ try{ var mc=document.getElementById('modal-c'); if(mc){ document.getElementById('modal').classList.add('show');
-      mc.innerHTML='<div class="modal-h"><b>Bulletin de paie — '+esc(nom(s))+(per?(' · '+esc(perLabel(per))):'')+'</b><button class="btn btn-ghost btn-sm" onclick="closeModal()">Fermer</button></div>'
+  window.admPaieBulletin=function(id,per){ var s=stById(id); if(!s)return; var perFiche=per||periode();
+    /* la fiche n'apparaît dans l'onglet « Fiches de paie » qu'une fois le mois saisi (brut > 0) */
+    if(perFiche && num(salPerOf(s,perFiche).brut)>0){ s.fiches=s.fiches||{}; if(!s.fiches[perFiche]){ s.fiches[perFiche]=true; try{save();}catch(e){} } }
+    /* le bulletin ouvert = exactement celui de l'aperçu en bas de page (même période) */
+    var html=bulletinHTML(s,perFiche);
+    { try{ var mc=document.getElementById('modal-c'); var mo=document.getElementById('modal'); if(mc&&mo){ mo.classList.add('show');
+      mc.innerHTML='<div class="modal-h"><b>Fiche de paie — '+esc(nom(s))+(perFiche?(' · '+esc(perLabel(perFiche))):'')+'</b><button class="btn btn-ghost btn-sm" onclick="closeModal()">Fermer</button></div>'
         +'<div class="modal-b"><div class="bp-prev-wrap"><div style="transform:scale(.86);transform-origin:top center">'+html+'</div></div>'
-        +'<div style="margin-top:10px"><button class="btn btn-pri btn-sm" onclick="admPaieImprimer(\''+esc(id)+'\',\''+esc(per||'')+'\')">Imprimer / PDF</button></div></div>'; return; } }catch(e){} }
-    admPaieImprimer(id,per); };
+        +'<div style="margin-top:10px"><button class="btn btn-pri btn-sm" onclick="admPaieImprimer(\''+esc(id)+'\',\''+esc(perFiche||'')+'\')">Imprimer / PDF</button></div></div>'; return; } }catch(e){} }
+    admPaieImprimer(id,perFiche); };
   /* Aperçu du bulletin en direct pendant la saisie (onglet Salariés & paie). */
   window.admPaieLiveRender=function(){ var s=stById(window.__admPaieSel); var host=document.getElementById('adm-paie-live'); var wrap=document.getElementById('adm-paie-live-wrap'); if(!host||!wrap||!s) return;
     var availW=(wrap.clientWidth||700)-24; var scale=availW/794; if(scale>1)scale=1;
@@ -23678,7 +23682,7 @@ ${lignes}
     var rows=st.map(function(s){ var c=paieCalc(s), miss=salMiss(s); var ok=miss.length===0;
       return '<tr><td><b>'+esc(nom(s))+'</b><div class="mini" style="opacity:.6">'+esc(s.email||'')+'</div></td>'
         +'<td>'+esc(s.typeContrat||'—')+'</td><td class="r num">'+EUR(c.brut)+'</td><td class="r num">'+EUR(c.netAPayer)+'</td>'
-        +'<td>'+ctrLbl(s)+'</td>'
+        +'<td>'+(s.contratGenere?('<a href="#" onclick="admCtrImprimer(\''+esc(s.id)+'\');return false" style="color:#5ab0ff">📄 Contrat PDF</a><div class="mini" style="opacity:.6">Généré le '+esc(frd(s.contratGenereDate)||'')+'</div>'):'<span style="opacity:.5">non généré</span>')+(s.contratSigne?('<div class="mini">Signé : <a href="#" onclick="admContratVoir(\''+esc(s.id)+'\');return false" style="color:#7fdba0">'+esc(ctrLbl(s))+'</a></div>'):'')+'</td>'
         +'<td>'+(ok?'<span style="color:#7fdba0">✓ complet</span>':'<span style="color:#ffb4ad" title="'+esc(miss.join(', '))+'">⚠ à compléter</span>')+'</td>'
         +'<td class="r"><button class="btn btn-ghost btn-sm" onclick="admPaieSel(\''+esc(s.id)+'\')">Compléter / Modifier</button> <button class="btn btn-ghost btn-sm" onclick="admPaieBulletin(\''+esc(s.id)+'\')">Fiche de paie</button></td></tr>';
     }).join('') || '<tr><td colspan="7" class="adm-empty">Aucun salarié — enregistrez-les dans « Collaborateurs & accès ».</td></tr>';
@@ -23779,7 +23783,8 @@ ${lignes}
       var ne=document.getElementById('adm-ctr-net'); if(ne) ne.value=s.salaireNet; }
     else { s[key]=v; }
     if(key==='typeContrat'){ saveR(); return; } /* affiche/masque les champs CDD */
-    saveOnly(); admCtrRefresh(); };
+    saveOnly(); admCtrRefresh();
+    try{ var g=document.getElementById('adm-ctr-gen'); if(g) g.innerHTML=ctrGenBlockHTML(s); }catch(e){} };
   /* Blocs du contrat (reproduction fidèle du modèle ; chaque bloc reste insécable pour la pagination A4). */
   function contratBlocks(s){ var so=soc(); var b=num(salPer(s).brut);
     var isCDD=(s.typeContrat==='CDD');
@@ -23841,11 +23846,29 @@ ${lignes}
     var pager=document.getElementById('adm-ctr-pager');
     if(pager){ pager.innerHTML = (np>1) ? ('<button class="btn btn-ghost btn-sm" '+(pg<=0?'disabled':'')+' onclick="admCtrPage(-1)">‹ Page précédente</button><span class="mini" style="opacity:.75">Page '+(pg+1)+' / '+np+'</span><button class="btn btn-ghost btn-sm" '+(pg>=np-1?'disabled':'')+' onclick="admCtrPage(1)">Page suivante ›</button>') : '<span class="mini" style="opacity:.6">Page 1 / 1</span>'; }
   }
-  window.admCtrImprimer=function(){ var s=stById(window.__admCtrSel); if(!s){ if(typeof toast==='function')toast('Sélectionnez un salarié.'); return; } var pa=document.getElementById('print-area'); if(pa) pa.innerHTML=contratHTML(s); if(typeof toast==='function')toast('Fenêtre d\'impression → « Enregistrer en PDF »'); setTimeout(function(){ try{window.print();}catch(e){} },150); };
-  window.admCtrTelecharger=function(){ var s=stById(window.__admCtrSel); if(!s){ if(typeof toast==='function')toast('Sélectionnez un salarié.'); return; }
-    var doc='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Contrat</title></head><body style="font-family:Calibri,Arial,sans-serif;font-size:12pt;line-height:1.45">'+contratHTML(s)+'</body></html>';
-    try{ var b=new Blob(['﻿'+doc],{type:'application/msword'}); var u=URL.createObjectURL(b); var a=document.createElement('a'); a.href=u; a.download='Contrat-'+((s.nom||'salarie')+'-'+(s.prenom||'')).replace(/\s+/g,'_')+'.doc'; document.body.appendChild(a); a.click(); setTimeout(function(){ try{URL.revokeObjectURL(u);a.remove();}catch(e){} },120); }catch(e){}
-    if(typeof toast==='function')toast('Contrat téléchargé (.doc).'); };
+  /* Conditions requises pour générer le contrat (toutes doivent être remplies). */
+  function ctrManques(s){ var so=soc(); var m=[];
+    var req=[['typeContrat','Type de contrat'],['dateEntree','Date de commencement'],['poste','Métier / poste'],['statutCadre','Statut (cadre / non cadre)'],['coeff','Position / Coefficient'],['essaiJours','Période d\'essai'],['conventionNom','Convention collective'],
+      ['nom','Nom du salarié'],['prenom','Prénom du salarié'],['adresse','Adresse'],['cp','Code postal'],['ville','Ville'],['dateNaissance','Date de naissance'],['lieuNaissance','Ville de naissance'],['paysNaissance','Pays de naissance'],['nationalite','Nationalité'],['nir','N° de sécurité sociale'],['dureeHebdo','Durée hebdomadaire']];
+    req.forEach(function(f){ var v=s[f[0]]; if(v==null||String(v).trim()==='') m.push(f[1]); });
+    if(!(num(salPer(s).brut)>0)) m.push('Salaire brut mensuel');
+    if(s.typeContrat==='CDD'){ if(!s.dateSortie) m.push('Date de fin (CDD)'); if(!s.motifCDD||!String(s.motifCDD).trim()) m.push('Motif du CDD'); }
+    /* Société employeur */
+    var soc4=[['nom','Société : dénomination'],['adresse','Société : adresse'],['cp','Société : code postal'],['ville','Société : ville'],['siret','Société : SIRET']];
+    soc4.forEach(function(f){ var v=so[f[0]]; if(v==null||String(v).trim()==='') m.push(f[1]); });
+    return m; }
+  function ctrGenBlockHTML(s){ var m=ctrManques(s);
+    if(m.length) return '<div class="ctr-gen-warn">⚠ Complétez toutes les conditions du contrat avant de le générer.<div class="mini" style="margin-top:4px;opacity:.85">Manquant : '+esc(m.join(', '))+'</div></div>'
+      +'<div style="margin-top:10px"><button class="btn btn-pri btn-sm" disabled style="opacity:.55;cursor:not-allowed">Générer le contrat (PDF)</button></div>';
+    return '<div class="ctr-gen-ok">✓ Toutes les conditions sont remplies — le contrat peut être généré.</div>'
+      +'<div style="margin-top:10px"><button class="btn btn-pri btn-sm" onclick="admCtrGenerer()">Générer le contrat (PDF)</button>'
+      +(s.contratGenere?' <span class="mini" style="color:#7fdba0;margin-left:8px">Généré le '+esc(frd(s.contratGenereDate)||'')+' — visible dans la liste des salariés.</span>':'')+'</div>'; }
+  window.admCtrImprimer=function(id){ var s=stById(id||window.__admCtrSel); if(!s){ if(typeof toast==='function')toast('Sélectionnez un salarié.'); return; } var pa=document.getElementById('print-area'); if(pa) pa.innerHTML=contratHTML(s); if(typeof toast==='function')toast('Fenêtre d\'impression → « Enregistrer en PDF »'); setTimeout(function(){ try{window.print();}catch(e){} },150); };
+  /* Génération du contrat en PDF — uniquement si toutes les conditions sont remplies. */
+  window.admCtrGenerer=function(){ var s=stById(window.__admCtrSel); if(!s){ if(typeof toast==='function')toast('Sélectionnez un salarié.'); return; }
+    var m=ctrManques(s); if(m.length){ if(typeof toast==='function')toast('Complétez toutes les conditions du contrat : '+m.slice(0,4).join(', ')+(m.length>4?('… (+'+(m.length-4)+')'):'')); admCtrRefresh(); return; }
+    s.contratGenere=true; s.contratGenereDate=todayStr(); saveOnly();
+    admCtrImprimer(s.id); if(typeof toast==='function')toast('Contrat généré (PDF) — visible dans la liste des salariés.'); };
 
   function ctrFieldRow(id,lbl,key,ty,val){ var v=(val!=null?val:'');
     if(String(ty).indexOf('sel:')===0){ var opts=ty.slice(4).split('|').map(function(o){ var kv=o.split('='); return '<option value="'+esc(kv[0])+'"'+(String(v)===kv[0]?' selected':'')+'>'+esc(kv[1])+'</option>'; }).join('');
@@ -23878,15 +23901,16 @@ ${lignes}
       +ctrFieldRow(s.id,'Ville de naissance','lieuNaissance','text',s.lieuNaissance)
       +ctrFieldRow(s.id,'Pays de naissance','paysNaissance','text',s.paysNaissance)
       +ctrFieldRow(s.id,'Nationalité','nationalite','text',s.nationalite)
+      +ctrFieldRow(s.id,'N° de sécurité sociale','nir','text',s.nir)
       +'<div class="adm-soc-gh">Rémunération & temps de travail</div>'
       +ctrFieldRow(s.id,'Salaire brut mensuel','brut','number',num(pp.brut)||'')
       +'<div class="fld"><label>Salaire net (calculé automatiquement)</label><input class="adm-paie-in" id="adm-ctr-net" type="text" readonly value="'+esc(ctrNet(s))+'"></div>'
       +ctrFieldRow(s.id,'Durée hebdomadaire (heures)','dureeHebdo','number',s.dureeHebdo||35)
       +ctrFieldRow(s.id,'Horaires de travail (si différent)','horaires','text',s.horaires)
       +ctrFieldRow(s.id,'Lieu de travail','lieuTravail','text',s.lieuTravail)
-      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn btn-pri btn-sm" onclick="admCtrTelecharger()">Télécharger (.doc)</button><button class="btn btn-ghost btn-sm" onclick="admCtrImprimer()">Imprimer / PDF</button></div>'
+      +'<div id="adm-ctr-gen">'+ctrGenBlockHTML(s)+'</div>'
       +'</div>';
-    return '<div class="card"><h2>Contrat de travail — '+esc(nom(s))+'</h2><div class="sub">Complétez le formulaire à gauche : l\'aperçu A4 du contrat se met à jour à droite (même hauteur que le formulaire, format A4 conservé). Téléchargeable (.doc) et imprimable (PDF).</div>'
+    return '<div class="card"><h2>Contrat de travail — '+esc(nom(s))+'</h2><div class="sub">Complétez le formulaire à gauche : l\'aperçu A4 du contrat se met à jour <b>en direct</b> à droite. Le contrat ne peut être <b>généré en PDF</b> que lorsque <b>toutes les conditions</b> sont remplies ; il apparaît alors dans la liste des salariés.</div>'
       +'<div class="adm-ctr-wrap">'+form+'<div class="adm-ctr-prev"><div id="adm-ctr-preview"></div></div></div>'
       +'<div id="adm-ctr-pager" class="adm-ctr-pager"></div></div>';
   }
@@ -23935,6 +23959,8 @@ ${lignes}
     +'.bp-prev-wrap .bp-a4{box-shadow:0 6px 22px rgba(0,0,0,.3)}'
     +'.adm-ctr-wrap{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:16px;margin-top:12px;align-items:start}'
     +'.adm-ctr-side .fld{margin-bottom:8px}.adm-ctr-side .fld label{display:block;font-size:11.5px;opacity:.72;margin-bottom:3px}'
+    +'.ctr-gen-warn{margin-top:12px;background:rgba(255,120,110,.12);border:1px solid rgba(255,120,110,.4);border-radius:9px;padding:9px 11px;font-size:12.5px;color:#ffb4ad}'
+    +'.ctr-gen-ok{margin-top:12px;background:rgba(80,200,140,.12);border:1px solid rgba(80,200,140,.4);border-radius:9px;padding:9px 11px;font-size:12.5px;color:#7fdba0}'
     /* Aperçu : hauteur = barre latérale (posée en JS), overflow caché, page A4 centrée en haut. */
     +'.adm-ctr-prev{background:#e9edf3;border:1px solid rgba(120,180,255,.2);border-radius:12px;padding:10px;overflow:hidden;display:flex;justify-content:center;align-items:flex-start}'
     +'.adm-ctr-prev #adm-ctr-preview{width:100%}'
