@@ -10973,7 +10973,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v457';
+    b.textContent='YADA · v458';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -24240,6 +24240,193 @@ ${lignes}
     +'.ec-sage .ec-tablewrap thead{background:#0a0f16 !important}'
     +'.ec-sage .ec-table thead tr{background:#0a0f16 !important}';
     document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon216">
+/* v458 — Module Pilotages : carte fermée « ÉTAT D'AVANCEMENT ».
+   Reproduit la grille du tableau Excel « Affectation dossiers » : une ligne par
+   dossier ATTRIBUÉ (dénominations reprises du logiciel), colonnes d'attributs
+   (COL. · Activité · Bilan N-1 · AGO N-1 · Régime TVA · DEXT · SAGE) puis 8 TÂCHES
+   × 12 mois (J→D) à COCHER directement dans le logiciel — toutes les cases vides
+   au départ. Une colonne « À jour » indique jusqu'où chaque dossier est à jour
+   (mois consécutifs cochés sur toutes les tâches). 100% additif, cabinet uniquement. */
+(function(){
+  if(window.__eaAvancement) return; window.__eaAvancement=true;
+  var TASKS=[
+    {k:'tva', lbl:'TVA (CA3/CA12)'},
+    {k:'ofx', lbl:'Relevés OFX / Regate'},
+    {k:'ha',  lbl:'Saisie HA'},
+    {k:'vt',  lbl:'Saisie VT'},
+    {k:'bq',  lbl:'Saisie BQ'},
+    {k:'rap', lbl:'Rappro. BQ'},
+    {k:'od',  lbl:'OD paie / charges soc.'},
+    {k:'inv', lbl:"Analyse — écritures d'inventaire"}
+  ];
+  var MOIS=['J','F','M','A','M','J','J','A','S','O','N','D'];
+  var MOISL=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];}); }
+  function store(){ try{ db.parametres=db.parametres||{}; db.parametres.etatAvancement=db.parametres.etatAvancement||{}; return db.parametres.etatAvancement; }catch(e){ return {}; } }
+  function rec(id){ var s=store(); if(!s[id]) s[id]={tasks:{},attrs:{}}; if(!s[id].tasks) s[id].tasks={}; if(!s[id].attrs) s[id].attrs={}; return s[id]; }
+  function dossiersAttribues(){
+    var c=(db&&db.cabinet)||{dossiers:[]};
+    var arr=(window.staffFilterDossiers?window.staffFilterDossiers(c.dossiers||[]):(c.dossiers||[]));
+    return (arr||[]).slice().sort(function(a,b){ return String(a.nom||'').localeCompare(String(b.nom||''),'fr',{sensitivity:'base',numeric:true}); });
+  }
+  /* jusqu'où le dossier est à jour = plus petit nombre de mois consécutifs cochés
+     (depuis janvier) parmi les 8 tâches. */
+  function progress(id){
+    var r=store()[id]||{tasks:{}};
+    var runs=TASKS.map(function(t){ var mm=(r.tasks&&r.tasks[t.k])||{}; var run=0; for(var i=0;i<12;i++){ if(mm[i]) run++; else break; } return run; });
+    var minRun=runs.length?Math.min.apply(null,runs):0;
+    var cur; try{ cur=(new Date()).getMonth(); }catch(e){ cur=11; }
+    var cls,html;
+    if(minRun===0){ cls='ea-none'; html='Non commencé'; }
+    else if(minRun>=12){ cls='ea-ok'; html='À jour ✓ (année)'; }
+    else if(minRun>=cur+1){ cls='ea-ok'; html='À jour ✓'; }
+    else { cls='ea-late'; html='Jusqu’à '+MOISL[minRun-1]; }
+    return {minRun:minRun,cls:cls,html:html};
+  }
+  function stCell(id){ var p=progress(id); return '<td class="ea-st '+p.cls+'" id="ea-st-'+esc(id)+'">'+p.html+'</td>'; }
+
+  function eaCard(){
+    var ds=dossiersAttribues();
+    /* en-tête : groupes (8 tâches × 12 mois) */
+    var grpH='', moisH='';
+    TASKS.forEach(function(t){
+      grpH+='<th class="ea-grp" colspan="12">'+esc(t.lbl)+'</th>';
+      for(var i=0;i<12;i++){ moisH+='<th class="ea-mois'+(i===0?' ea-g0':'')+'">'+MOIS[i]+'</th>'; }
+    });
+    var fixH='<th rowspan="2" class="ea-fix">DOSSIER</th>'
+      +'<th rowspan="2">COL.</th><th rowspan="2">ACTIVITÉ</th><th rowspan="2">BILAN N-1</th><th rowspan="2">AGO N-1</th><th rowspan="2">RÉGIME</th><th rowspan="2">DEXT</th><th rowspan="2">SAGE</th><th rowspan="2" class="ea-sth">À JOUR</th>';
+    var thead='<thead>'
+      +'<tr>'+fixH+grpH+'</tr>'
+      +'<tr>'+moisH+'</tr></thead>';
+
+    var rows='';
+    if(!ds.length){
+      rows='<tr><td class="ea-fix">—</td><td colspan="'+(8+8*12)+'" style="text-align:center;color:#9fb6d0;padding:14px">Aucun dossier attribué. Les dossiers attribués s’affichent ici automatiquement.</td></tr>';
+    }
+    ds.forEach(function(d){
+      var id=d.id, r=rec(id), a=r.attrs||{};
+      var reg=a.regime||'';
+      var regSel='<select class="ea-attr ea-sel" data-d="'+esc(id)+'" data-k="regime">'
+        +'<option value=""'+(reg?'':' selected')+'>—</option>'
+        +'<option value="CA3"'+(reg==='CA3'?' selected':'')+'>CA3</option>'
+        +'<option value="CA12"'+(reg==='CA12'?' selected':'')+'>CA12</option></select>';
+      var tr='<tr>'
+        +'<td class="ea-fix" title="'+esc(d.nom)+'"><b>'+esc(d.nom||'—')+'</b></td>'
+        +'<td><input class="ea-attr ea-txt ea-col" data-d="'+esc(id)+'" data-k="col" value="'+esc(a.col||'')+'" maxlength="4" placeholder="—"></td>'
+        +'<td><input class="ea-attr ea-txt" data-d="'+esc(id)+'" data-k="activite" value="'+esc(a.activite!=null?a.activite:(d.activite||''))+'" placeholder="—"></td>'
+        +'<td class="ea-cc"><input type="checkbox" class="ea-attr ea-chk" data-d="'+esc(id)+'" data-k="bilanN1"'+(a.bilanN1?' checked':'')+'></td>'
+        +'<td><input class="ea-attr ea-txt ea-yr" data-d="'+esc(id)+'" data-k="agoN1" value="'+esc(a.agoN1||'')+'" maxlength="4" placeholder="—"></td>'
+        +'<td>'+regSel+'</td>'
+        +'<td class="ea-cc"><input type="checkbox" class="ea-attr ea-chk" data-d="'+esc(id)+'" data-k="dext"'+(a.dext?' checked':'')+'></td>'
+        +'<td class="ea-cc"><input type="checkbox" class="ea-attr ea-chk" data-d="'+esc(id)+'" data-k="sage"'+(a.sage?' checked':'')+'></td>'
+        +stCell(id);
+      TASKS.forEach(function(t){
+        var mm=(r.tasks&&r.tasks[t.k])||{};
+        for(var i=0;i<12;i++){
+          var on=!!mm[i];
+          tr+='<td class="ea-c'+(on?' on':'')+(i===0?' ea-g0':'')+'" data-d="'+esc(id)+'" data-t="'+t.k+'" data-m="'+i+'"></td>';
+        }
+      });
+      tr+='</tr>';
+      rows+=tr;
+    });
+
+    var nOk=ds.filter(function(d){ return progress(d.id).cls==='ea-ok'; }).length;
+    return '<details class="card ea-card">'
+      +'<summary><h2 style="display:inline">📋 ÉTAT D’AVANCEMENT</h2>'
+      +'<span class="ea-badge">'+nOk+' / '+ds.length+' à jour</span>'
+      +'<span class="ea-hint">Cliquer pour ouvrir</span></summary>'
+      +'<div class="sub" style="margin:8px 0 10px">Cochez chaque mois traité par tâche. La colonne <b>À jour</b> indique jusqu’où le dossier est à jour (mois consécutifs cochés sur <i>toutes</i> les tâches). Les dossiers attribués sont repris du logiciel ; toutes les cases sont vides au départ.</div>'
+      +'<div class="ea-actions"><button class="btn btn-ghost" onclick="eaReset()">↺ Tout décocher</button>'
+      +'<span class="ea-leg"><i class="ea-lg-ok"></i> à jour <i class="ea-lg-late"></i> en retard <i class="ea-lg-none"></i> non commencé</span></div>'
+      +'<div class="ea-scroll"><table class="ea-tbl">'+thead+'<tbody>'+rows+'</tbody></table></div>'
+      +'</details>';
+  }
+  window.eaCard=eaCard;
+
+  window.eaReset=function(){
+    var go=function(){
+      var s=store(); dossiersAttribues().forEach(function(d){ if(s[d.id]){ s[d.id].tasks={}; if(s[d.id].attrs){ s[d.id].attrs.bilanN1=false; s[d.id].attrs.dext=false; s[d.id].attrs.sage=false; } } });
+      try{ if(typeof save==='function') save(); }catch(e){}
+      /* rafraîchir sans replier la carte */
+      document.querySelectorAll('.ea-tbl .ea-c.on').forEach(function(c){ c.classList.remove('on'); });
+      document.querySelectorAll('.ea-tbl input.ea-chk').forEach(function(i){ i.checked=false; });
+      document.querySelectorAll('.ea-tbl .ea-st').forEach(function(st){ var id=st.id.replace('ea-st-',''); var p=progress(id); st.className='ea-st '+p.cls; st.innerHTML=p.html; });
+    };
+    if(typeof yadaConfirm==='function') yadaConfirm('Décocher toutes les cases de l’état d’avancement ?', go, {danger:true, ok:'Tout décocher'});
+    else if(confirm('Décocher toutes les cases ?')) go();
+  };
+
+  /* clic sur une case tâche/mois → bascule + sauvegarde + maj du statut (sans re-render) */
+  document.addEventListener('click', function(e){
+    var c=e.target && e.target.closest ? e.target.closest('.ea-c') : null; if(!c) return;
+    var id=c.getAttribute('data-d'), t=c.getAttribute('data-t'), m=+c.getAttribute('data-m');
+    var r=rec(id); r.tasks[t]=r.tasks[t]||{}; r.tasks[t][m]=!r.tasks[t][m];
+    try{ if(typeof save==='function') save(); }catch(err){}
+    c.classList.toggle('on', !!r.tasks[t][m]);
+    var st=document.getElementById('ea-st-'+id); if(st){ var p=progress(id); st.className='ea-st '+p.cls; st.innerHTML=p.html; }
+    var badge=document.querySelector('.ea-card .ea-badge'); if(badge){ var ds=dossiersAttribues(); var nOk=ds.filter(function(d){ return progress(d.id).cls==='ea-ok'; }).length; badge.textContent=nOk+' / '+ds.length+' à jour'; }
+  }, true);
+  /* saisie des attributs (COL / activité / bilan / AGO / régime / DEXT / SAGE) */
+  document.addEventListener('change', function(e){
+    var el=e.target; if(!el||!el.classList||!el.classList.contains('ea-attr')) return;
+    var id=el.getAttribute('data-d'), k=el.getAttribute('data-k');
+    var v=(el.type==='checkbox')?el.checked:el.value;
+    var r=rec(id); r.attrs[k]=v; try{ if(typeof save==='function') save(); }catch(err){}
+  }, true);
+
+  /* greffe la carte en tête du module Pilotages (cabinet uniquement) */
+  if(typeof window.pagePilotage==='function'){
+    var _pp=window.pagePilotage;
+    window.pagePilotage=function(){
+      var h=_pp.apply(this,arguments);
+      try{ if((window.sessionRole||'cabinet')==='client') return h; }catch(e){}
+      try{
+        var card=eaCard();
+        /* insérer juste après l'en-tête de page, avant la 1ʳᵉ carte */
+        if(h.indexOf('<div class="card"')>=0) return h.replace('<div class="card"', card+'<div class="card"');
+        return h+card;
+      }catch(e){ return h; }
+    };
+  }
+
+  var css=''
+    +'.ea-card>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:12px;flex-wrap:wrap}'
+    +'.ea-card>summary::-webkit-details-marker{display:none}'
+    +'.ea-card>summary::before{content:"▸";color:#5ab0ff;font-size:14px;transition:transform .15s}'
+    +'.ea-card[open]>summary::before{content:"▾"}'
+    +'.ea-badge{background:#0d2740;border:1px solid #1e90ff;color:#cfe0ff;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700}'
+    +'.ea-hint{color:#9fb6d0;font-size:12px;margin-left:auto}'
+    +'.ea-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 10px}'
+    +'.ea-leg{display:flex;align-items:center;gap:8px;color:#9fb6d0;font-size:11.5px}'
+    +'.ea-leg i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle;margin-right:2px}'
+    +'.ea-lg-ok{background:#1e7a3a}.ea-lg-late{background:#b9821f}.ea-lg-none{background:#3a4657}'
+    +'.ea-scroll{overflow:auto;max-height:72vh;border:1px solid rgba(130,185,255,.18);border-radius:10px;background:#0a1626}'
+    +'.ea-tbl{border-collapse:separate;border-spacing:0;font-size:11px;white-space:nowrap;color:#dbe9ff}'
+    +'.ea-tbl th,.ea-tbl td{border-right:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06);padding:3px 5px}'
+    +'.ea-tbl thead th{position:sticky;top:0;background:#10233b;color:#dbe9ff;z-index:3;font-weight:700;text-align:center}'
+    +'.ea-tbl thead tr:nth-child(2) th{top:26px}'
+    +'.ea-grp{background:#12294a !important;border-left:2px solid #1e90ff !important;font-size:10.5px;padding:4px 6px !important}'
+    +'.ea-mois{color:#9fb6d0;width:17px;min-width:17px}'
+    +'.ea-g0{border-left:2px solid #1e90ff !important}'
+    +'.ea-fix{position:sticky;left:0;background:#0d1c30;z-index:4;text-align:left;min-width:150px;max-width:190px;overflow:hidden;text-overflow:ellipsis}'
+    +'.ea-tbl thead .ea-fix{z-index:6;background:#10233b}'
+    +'.ea-tbl thead .ea-sth{min-width:110px}'
+    +'.ea-c{width:17px;min-width:17px;height:18px;text-align:center;cursor:pointer;background:#0c1b2e}'
+    +'.ea-c:hover{background:#173453}'
+    +'.ea-c.on{background:#1e7a3a}'
+    +'.ea-c.on::after{content:"✓";color:#eafff0;font-size:11px;font-weight:700}'
+    +'.ea-cc{text-align:center}'
+    +'.ea-chk{width:15px;height:15px;accent-color:#1e90ff;cursor:pointer}'
+    +'.ea-txt{width:96px;background:#0b1524;border:1px solid #24405d;color:#eaf2ff;border-radius:5px;padding:2px 5px;font-size:11px}'
+    +'.ea-col{width:46px;text-align:center}.ea-yr{width:52px;text-align:center}'
+    +'.ea-sel{background:#0b1524;border:1px solid #24405d;color:#eaf2ff;border-radius:5px;padding:2px 4px;font-size:11px}'
+    +'.ea-st{font-weight:700;text-align:center;font-size:11px}'
+    +'.ea-st.ea-ok{color:#54d98c}.ea-st.ea-late{color:#f0b34b}.ea-st.ea-none{color:#8fa2b8}';
+  try{ var s=document.createElement('style'); s.id='ea-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
 })();
 </script>
 </body>
