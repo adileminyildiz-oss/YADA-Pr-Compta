@@ -36,7 +36,19 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Rapport déplacé dans l'Espace CABINET (barre latérale) ; consolidation conservée dans Pilotages (Admin) — v460
+## 🟢 Dernière mise à jour — Rapport : bouton sur la page d'ouverture Cabinet (hors dossier) + dossiers ATTRIBUÉS seulement + Admin (carte fermée + jour/heure de saisie) — v461
+**Quoi :** trois ajustements du module **Rapport**.
+1. **Bouton sur la page d'ouverture** — le bouton **« ✎ Rapport »** n'est plus dans la barre latérale d'un dossier : il est sur l'écran **« Espace dossiers »** (juste après « Déconnexion »). Il ouvre la page Rapport **hors dossier** (bouton « ← Retour aux dossiers »).
+2. **Dossiers attribués uniquement** — dans le rapport, la liste **« Dossier concerné »** ne propose que les **dossiers attribués à l'utilisateur connecté** (`staffFilterDossiers`) : un utilisateur ne voit jamais un dossier qui ne lui a pas été attribué (l'admin / compte principal conserve l'accès global).
+3. **Espace Admin — Pilotages** : le **tableau des rapports** passe dans une **carte FERMÉE** ; **au-dessus**, une carte **« 🕒 Suivi des saisies des rapports »** indique **quel jour et à quelle heure** chaque collaborateur a complété son rapport (dernière saisie) ; le détail (carte fermée) gagne une colonne **« Saisi le »** (jour + heure par rapport).
+
+**Comment :** `dsRapport` + `dsOuvrirRapport()` + `ecranRapport()` (routé dans `dsScreen`, addon189) ; bouton injecté après Déconnexion sur l'accueil (addon210) ; module `m-rapport` **retiré** de `MODULES` (addon164) ; `window.rapportCards()` exposé (addon217) ; `dossL()` = `staffFilterDossiers(db.cabinet.dossiers)` ; `rapportsPilotageCard()` réécrit (carte `🕒` visible + `<details.ra-details>` fermé + `frDT(ts)` jour/heure + colonne « Saisi le »). `sw.js` yada-v53, badge v461, `version.json` 461.
+
+**Validé :** `node --check` (210 scripts, 0 erreur) + Playwright (barre latérale sans Rapport ; accueil : bouton « ✎ Rapport » après Déconnexion ; page Rapport hors dossier ; **filtrage** : Sarah (attrib. d2) → seul ALR CONSEIL, Marc (d1) → seul ACTION BTP, admin → tous ; Admin Pilotages : carte « Suivi des saisies » visible (Sarah · 10/07/2026 à 17:42), tableau en carte fermée + colonne « Saisi le » ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v461**.
+
+---
+
+## 🟢 MAJ précédente — Rapport déplacé dans l'Espace CABINET (barre latérale) ; consolidation conservée dans Pilotages (Admin) — v460
 **Quoi :** le module **« ✎ Rapport »** (rapports journaliers des travaux effectués) passe de l'Espace **Admin** à l'Espace **CABINET** : il apparaît désormais comme **bouton dans la barre latérale** (section « Modules », 1ᵉʳ module), là où travaillent les collaborateurs. La **tuile « Rapport » est retirée du hub Admin**. La **consolidation reste dans le module Pilotages de l'Espace Admin** (carte « 📝 Rapports journaliers des collaborateurs » : KPI + synthèses par collaborateur / par dossier + détail) → l'admin garde la vue d'ensemble & le suivi.
 
 **Comment :** tuile `'rapport'` retirée de `MODS` (`admHubHTML`) ; `admRapportModule()` → **`raBuild()`** (builder partagé) + **`window.pageRapport()`** (page Cabinet `head('Rapport',…) + raBuild()`) ; entrée `rapport:(pageRapport…)` ajoutée au **dispatch `render()`** ; **module Cabinet** `{key:'m-rapport', nom:'Rapport', ico:'✎', page:'rapport'}` ajouté à `MODULES` (`yada-addon164`) ; le wrap `admModuleContent` ne dispatche plus `rapport` (garde l'injection `pilotages`). Données `db.parametres.rapports[]` et `rapportsPilotageCard()` inchangées. `sw.js` yada-v52, badge v460, `version.json` 460.
