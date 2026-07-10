@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Rapport : bouton sur la page d'ouverture Cabinet (hors dossier) + dossiers ATTRIBUÉS seulement + Admin (carte fermée + jour/heure de saisie) — v461
+## 🟢 Dernière mise à jour — Espace Client : carte fermée « Rapport mensuel » (à compléter chaque vendredi) + accès Admin à tous les rapports — v462
+**Quoi :** l'**Espace Client** reçoit une **carte FERMÉE « 📅 Rapport mensuel »** à **compléter chaque vendredi de la semaine** : une **ligne par vendredi du mois** (date), avec **travaux effectués** (texte) + **avancement**, enregistrés directement. Navigation par mois (‹ / ›), badge « N/M vendredis », le vendredi du jour est marqué **« aujourd'hui »**, les vendredis passés non remplis sont surlignés (à compléter). L'**Espace Admin accède aux rapports mensuels de TOUS les utilisateurs** (carte de consolidation en lecture) — via le **bouton « Rapport »** (page d'ouverture) **et** dans le module **Pilotages** de l'Espace Admin.
+
+**Comment — `yada-addon218` (100% additif) :** `rapportMensuelCard()` (carte `<details>` fermée : `fridays(mois)` = vendredis du mois, saisie par **délégation** `change` sur `.rm-in` → `rmSet(vendredi,champ,val)` dans **`db.parametres.rapportsMensuels[]`** `{authorKey,authorNom,vendredi,travaux,statut,ts}`, `save()`, sans re-render ; navigation `rmNav(±1)` avec état d'ouverture `rmOpen` conservé) ; `rapportMensuelAdminCard()` (consolidation lecture, tous utilisateurs, par mois) ; greffes : **`pageEspaceClient`** += carte (client), **`rapportCards`** += carte mensuelle (+ consolidation si `sessionRole==='admin'`), **`rapportsPilotageCard`** += consolidation. `<style id="rm-mod">`. `sw.js` yada-v54, badge v462, `version.json` 462.
+
+**Validé :** `node --check` (211 scripts, 0 erreur) + Playwright (Espace Client : carte fermée « Rapport mensuel » ; juillet 2026 → 5 vendredis (03/10/17/24/31), tag « aujourd'hui » sur le 10 ; saisie d'un vendredi → persistée (2026-07-10 · « Clôture des ventes » · Terminé · ts) ; Admin : consolidation `<details>` affiche la saisie ; bouton Rapport (admin) → carte mensuelle + consolidation de tous les utilisateurs ; capture conforme ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v462**.
+
+---
+
+## 🟢 MAJ précédente — Rapport : bouton sur la page d'ouverture Cabinet (hors dossier) + dossiers ATTRIBUÉS seulement + Admin (carte fermée + jour/heure de saisie) — v461
 **Quoi :** trois ajustements du module **Rapport**.
 1. **Bouton sur la page d'ouverture** — le bouton **« ✎ Rapport »** n'est plus dans la barre latérale d'un dossier : il est sur l'écran **« Espace dossiers »** (juste après « Déconnexion »). Il ouvre la page Rapport **hors dossier** (bouton « ← Retour aux dossiers »).
 2. **Dossiers attribués uniquement** — dans le rapport, la liste **« Dossier concerné »** ne propose que les **dossiers attribués à l'utilisateur connecté** (`staffFilterDossiers`) : un utilisateur ne voit jamais un dossier qui ne lui a pas été attribué (l'admin / compte principal conserve l'accès global).

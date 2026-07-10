@@ -10974,7 +10974,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v461';
+    b.textContent='YADA · v462';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -24629,6 +24629,137 @@ ${lignes}
     +'.ra-hint{color:#9fb6d0;font-size:12px;margin-left:auto}'
     +'@media(max-width:820px){.ra-form{grid-template-columns:1fr}.ra-two{grid-template-columns:1fr}}';
   try{ var s2=document.createElement('style'); s2.id='ra-mod'; s2.textContent=css; document.head.appendChild(s2); }catch(e){}
+})();
+</script>
+<script id="yada-addon218">
+/* v462 — RAPPORT MENSUEL (Espace Client) + accès Admin à tous les rapports.
+   Espace Client : carte FERMÉE « 📅 Rapport mensuel » à compléter chaque VENDREDI de la
+   semaine (une ligne par vendredi du mois : travaux + avancement, enregistrés).
+   L'Espace Admin accède aux rapports mensuels de TOUS les utilisateurs (carte de
+   consolidation), via le bouton « Rapport ». 100% additif. */
+(function(){
+  if(window.__rapportMensuel) return; window.__rapportMensuel=true;
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];}); }
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function isoOf(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+  function frD(iso){ if(!iso) return ''; var p=String(iso).split('-'); return p.length===3?(p[2]+'/'+p[1]+'/'+p[0]):iso; }
+  function frDT(ts){ if(!ts) return '—'; try{ var d=new Date(ts); return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear()+' à '+pad(d.getHours())+':'+pad(d.getMinutes()); }catch(e){ return '—'; } }
+  function curMonth(){ try{ var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1); }catch(e){ return '2026-01'; } }
+  function todayISO(){ try{ return isoOf(new Date()); }catch(e){ return ''; } }
+  function meNom(){ try{ if(typeof window.yadaCurrentUserName==='function') return window.yadaCurrentUserName(); }catch(e){} return 'Utilisateur'; }
+  function authKey(){ try{ return window.staffId?('s:'+window.staffId):('n:'+meNom()); }catch(e){ return 'n:'+meNom(); } }
+  var STATUTS=['En cours','Terminé','Bloqué','En attente'];
+
+  function store(){ try{ db.parametres=db.parametres||{}; if(!Array.isArray(db.parametres.rapportsMensuels)) db.parametres.rapportsMensuels=[]; return db.parametres.rapportsMensuels; }catch(e){ return []; } }
+  function getE(key,vend){ return store().find(function(r){ return r.authorKey===key && r.vendredi===vend; }); }
+  function fridays(mois){ try{ var y=+mois.slice(0,4), m=+mois.slice(5,7)-1, out=[], d=new Date(y,m,1); while(d.getMonth()===m){ if(d.getDay()===5) out.push(isoOf(d)); d.setDate(d.getDate()+1); } return out; }catch(e){ return []; } }
+  function moisLabel(mois){ try{ var M=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre']; return M[(+mois.slice(5,7))-1]+' '+mois.slice(0,4); }catch(e){ return mois; } }
+  function addMonth(mois,delta){ try{ var y=+mois.slice(0,4), m=+mois.slice(5,7)-1+delta; var d=new Date(y,m,1); return d.getFullYear()+'-'+pad(d.getMonth()+1); }catch(e){ return mois; } }
+
+  if(window.rmMois===undefined) window.rmMois=curMonth();
+  if(window.rmOpen===undefined) window.rmOpen=false;
+  window.rmNav=function(delta){ window.rmMois=addMonth(window.rmMois||curMonth(),delta); window.rmOpen=true; if(typeof render==='function') render(); };
+  window.rmToggleOpen=function(el){ try{ window.rmOpen=!!(el&&el.open); }catch(e){} };
+  window.rmSet=function(vend,field,val){
+    var key=authKey(), e=getE(key,vend);
+    if(!e){ e={ id:(typeof uid==='function'?uid():'m'+Date.now()), authorKey:key, authorNom:meNom(), vendredi:vend, travaux:'', statut:'En cours', ts:0 }; store().push(e); }
+    e[field]=val; e.authorNom=meNom();
+    e.ts=(function(){ try{return (new Date()).getTime();}catch(x){return 0;} })();
+    try{ if(typeof save==='function') save(); }catch(x){}
+    var st=document.getElementById('rm-st-'+vend); if(st){ var cls=(e.statut==='Terminé')?'ra-ok':(e.statut==='Bloqué')?'ra-ko':(e.statut==='En attente')?'ra-wait':'ra-cur'; }
+  };
+
+  /* Carte « Rapport mensuel » à compléter (utilisateur courant). */
+  window.rapportMensuelCard=function(){
+    var mois=window.rmMois||curMonth(), key=authKey(), fr=fridays(mois), tISO=todayISO();
+    var rows=fr.map(function(v){
+      var e=getE(key,v)||{}, done=!!(e.travaux&&e.travaux.trim());
+      var cls=done?'rm-done':((v<=tISO)?'rm-due':'rm-future');
+      var opts=STATUTS.map(function(s){ return '<option value="'+esc(s)+'"'+((e.statut||'En cours')===s?' selected':'')+'>'+esc(s)+'</option>'; }).join('');
+      return '<tr class="'+cls+'">'
+        +'<td class="rm-vd"><b>Vendredi</b><br>'+esc(frD(v))+(v===tISO?'<span class="rm-tag-due">aujourd’hui</span>':'')+'</td>'
+        +'<td><textarea class="rm-in" data-v="'+esc(v)+'" data-k="travaux" rows="2" placeholder="Travaux effectués cette semaine…">'+esc(e.travaux||'')+'</textarea></td>'
+        +'<td><select class="rm-in rm-sel" data-v="'+esc(v)+'" data-k="statut">'+opts+'</select></td>'
+        +'<td class="ra-when">'+esc(frDT(e.ts))+'</td></tr>';
+    }).join('') || '<tr><td colspan="4" class="adm-empty" style="text-align:center;color:#9fb6d0;padding:12px">Aucun vendredi ce mois-ci.</td></tr>';
+    var nDone=fr.filter(function(v){ var e=getE(key,v); return e&&e.travaux&&e.travaux.trim(); }).length;
+    return '<details class="card rm-card"'+(window.rmOpen?' open':'')+' ontoggle="rmToggleOpen(this)">'
+      +'<summary><h2 style="display:inline">📅 Rapport mensuel</h2>'
+      +'<span class="ra-cnt">'+nDone+' / '+fr.length+' vendredis</span>'
+      +'<span class="ra-hint">Cliquer pour ouvrir</span></summary>'
+      +'<div class="sub" style="margin-top:8px">À compléter <b>chaque vendredi</b> de la semaine. Renseignez les travaux effectués pour chaque vendredi du mois.</div>'
+      +'<div class="rm-nav"><button class="btn btn-ghost btn-sm" onclick="rmNav(-1)">‹ Mois précédent</button>'
+      +'<span class="rm-mois">'+esc(moisLabel(mois))+'</span>'
+      +'<button class="btn btn-ghost btn-sm" onclick="rmNav(1)">Mois suivant ›</button></div>'
+      +'<div class="rm-scroll"><table class="rm-tbl"><thead><tr><th>Vendredi</th><th>Travaux effectués</th><th>Avancement</th><th>Saisi le</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+      +'</details>';
+  };
+
+  /* Consolidation ADMIN : rapports mensuels de TOUS les utilisateurs (lecture). */
+  window.rapportMensuelAdminCard=function(){
+    var mois=window.rmMois||curMonth();
+    var list=store().filter(function(r){ return String(r.vendredi||'').slice(0,7)===mois && r.travaux && r.travaux.trim(); })
+      .slice().sort(function(a,b){ return String(a.authorNom||'').localeCompare(String(b.authorNom||''),'fr') || String(a.vendredi).localeCompare(String(b.vendredi)); });
+    var rows=list.map(function(r){
+      var stc=(r.statut==='Terminé')?'ra-ok':(r.statut==='Bloqué')?'ra-ko':(r.statut==='En attente')?'ra-wait':'ra-cur';
+      return '<tr><td><b>'+esc(r.authorNom||'—')+'</b></td><td>'+esc(frD(r.vendredi))+'</td><td class="ra-tx">'+esc(r.travaux||'')+'</td><td><span class="ra-tag '+stc+'">'+esc(r.statut||'En cours')+'</span></td><td class="ra-when">'+esc(frDT(r.ts))+'</td></tr>';
+    }).join('') || '<tr><td colspan="5" class="adm-empty" style="text-align:center;color:#9fb6d0;padding:12px">Aucun rapport mensuel pour '+esc(moisLabel(mois))+'.</td></tr>';
+    var nAuth=Object.keys(list.reduce(function(a,r){a[r.authorNom||'—']=1;return a;},{})).length;
+    return '<details class="card rm-card">'
+      +'<summary><h2 style="display:inline">📅 Rapports mensuels des utilisateurs</h2>'
+      +'<span class="ra-cnt">'+list.length+' saisie(s) · '+nAuth+' utilisateur(s)</span>'
+      +'<span class="ra-hint">Cliquer pour ouvrir</span></summary>'
+      +'<div class="sub" style="margin-top:8px">Rapports mensuels (par vendredi) de tous les utilisateurs — '+esc(moisLabel(mois))+'.</div>'
+      +'<div class="rm-nav"><button class="btn btn-ghost btn-sm" onclick="rmNav(-1)">‹ Mois précédent</button>'
+      +'<span class="rm-mois">'+esc(moisLabel(mois))+'</span>'
+      +'<button class="btn btn-ghost btn-sm" onclick="rmNav(1)">Mois suivant ›</button></div>'
+      +'<div class="rm-scroll"><table class="rm-tbl"><thead><tr><th>Utilisateur</th><th>Vendredi</th><th>Travaux effectués</th><th>Avancement</th><th>Saisi le</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+      +'</details>';
+  };
+
+  /* Saisie (change) sur les champs du rapport mensuel — délégation. */
+  document.addEventListener('change', function(e){
+    var el=e.target; if(!el||!el.classList||!el.classList.contains('rm-in')) return;
+    window.rmSet(el.getAttribute('data-v'), el.getAttribute('data-k'), el.value);
+  }, true);
+
+  /* Espace CLIENT : carte fermée « Rapport mensuel » (le client la complète). */
+  if(typeof window.pageEspaceClient==='function'){ var _pec=window.pageEspaceClient;
+    window.pageEspaceClient=function(){ var h=_pec.apply(this,arguments); try{ return h+rapportMensuelCard(); }catch(e){ return h; } }; }
+
+  /* Bouton « Rapport » (page d'ouverture) : rapport mensuel à compléter pour tous +
+     consolidation de TOUS les utilisateurs pour l'admin. */
+  if(typeof window.rapportCards==='function'){ var _rc=window.rapportCards;
+    window.rapportCards=function(){ var out=''; try{ out=_rc.apply(this,arguments)||''; }catch(e){}
+      try{ out+=rapportMensuelCard(); }catch(e){}
+      try{ if((window.sessionRole||'')==='admin') out+=rapportMensuelAdminCard(); }catch(e){}
+      return out; }; }
+  /* Espace Admin — Pilotages : accès aux rapports mensuels de tous les utilisateurs. */
+  if(typeof window.rapportsPilotageCard==='function'){ var _rp=window.rapportsPilotageCard;
+    window.rapportsPilotageCard=function(){ var out=''; try{ out=_rp.apply(this,arguments)||''; }catch(e){}
+      try{ out+=rapportMensuelAdminCard(); }catch(e){}
+      return out; }; }
+
+  var css=''
+    +'.rm-card>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:12px;flex-wrap:wrap}'
+    +'.rm-card>summary::-webkit-details-marker{display:none}'
+    +'.rm-card>summary::before{content:"▸";color:#5ab0ff;font-size:14px}'
+    +'.rm-card[open]>summary::before{content:"▾"}'
+    +'.rm-nav{display:flex;align-items:center;gap:14px;margin:10px 0}'
+    +'.rm-mois{font-weight:700;color:#dbe9ff;text-transform:capitalize}'
+    +'.rm-scroll{overflow:auto;max-height:60vh;border:1px solid rgba(130,185,255,.16);border-radius:10px}'
+    +'.rm-tbl{width:100%;border-collapse:collapse;font-size:12.5px}'
+    +'.rm-tbl th,.rm-tbl td{padding:7px 9px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;vertical-align:top}'
+    +'.rm-tbl thead th{position:sticky;top:0;background:#10233b;color:#dbe9ff;font-weight:700;z-index:2}'
+    +'.rm-vd{white-space:nowrap;color:#cfe0ff}'
+    +'.rm-tag-due{display:inline-block;margin-left:6px;background:#332616;color:#f0b34b;border:1px solid #7a5a1e;border-radius:999px;padding:1px 8px;font-size:10.5px;font-weight:700}'
+    +'.rm-in{width:100%;background:#0b1524;border:1px solid #24405d;color:#eaf2ff;border-radius:7px;padding:6px 8px;font-size:12.5px;font-family:inherit}'
+    +'.rm-tbl textarea.rm-in{resize:vertical;min-width:260px}'
+    +'.rm-sel{min-width:120px}'
+    +'.rm-tbl tr.rm-due td{background:rgba(240,179,75,.06)}'
+    +'.rm-tbl tr.rm-done td{background:rgba(30,122,58,.08)}'
+    +'.rm-tbl .ra-when{color:#5ab0ff;font-weight:600;white-space:nowrap}';
+  try{ var s=document.createElement('style'); s.id='rm-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
 })();
 </script>
 </body>
