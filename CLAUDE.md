@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Espace Client : carte fermée « Rapport mensuel » (à compléter chaque vendredi) + accès Admin à tous les rapports — v462
+## 🟢 Dernière mise à jour — Rapport : Admin = VISUALISATION seule (rapports émis) + Espace Client = éditer son rapport + remplir l'État d'avancement (son dossier) — v463
+**Quoi :** deux ajustements du module Rapport.
+1. **Espace Admin** — le bouton **« Rapport »** ne sert **plus à saisir** un rapport : il **visualise UNIQUEMENT** les rapports **émis par les autres utilisateurs** (consolidation **journalière** + **mensuelle**), sans aucun formulaire de saisie.
+2. **Espace Client** — le module Rapport permet d'**éditer son rapport** (carte « 📅 Rapport mensuel », éditable) **et** de **remplir le tableau « État d'avancement »** — restreint au **dossier du client** (son dossier actif uniquement, jamais les autres).
+
+**Comment — `yada-addon218` (éditions) :** `rapportCards()` sensible au rôle → `sessionRole==='admin'` renvoie **seulement** `rapportsPilotageCard()` (consolidation journalière + mensuelle, aucune saisie) ; sinon saisie journalière + `rapportMensuelCard()`. **`pageEspaceClient`** += `rapportMensuelCard()` **+ `eaCard()`** (État d'avancement). **`dossiersAttribues()` (addon216)** rendu client-aware : pour `sessionRole==='client'`, ne liste que le **dossier actif** (`db.activeId`) ; sinon `staffFilterDossiers`. `sw.js` yada-v55, badge v463, `version.json` 463.
+
+**Validé :** `node --check` (211 scripts, 0 erreur) + Playwright (admin : **aucun** formulaire de saisie, consolidations journalière + mensuelle présentes ; collaborateur : saisie journalière + mensuelle ; client : « Rapport mensuel » éditable (persisté) + « État d'avancement » **limité au dossier actif** (1 ligne), case cochée persistée ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v463**.
+
+---
+
+## 🟢 MAJ précédente — Espace Client : carte fermée « Rapport mensuel » (à compléter chaque vendredi) + accès Admin à tous les rapports — v462
 **Quoi :** l'**Espace Client** reçoit une **carte FERMÉE « 📅 Rapport mensuel »** à **compléter chaque vendredi de la semaine** : une **ligne par vendredi du mois** (date), avec **travaux effectués** (texte) + **avancement**, enregistrés directement. Navigation par mois (‹ / ›), badge « N/M vendredis », le vendredi du jour est marqué **« aujourd'hui »**, les vendredis passés non remplis sont surlignés (à compléter). L'**Espace Admin accède aux rapports mensuels de TOUS les utilisateurs** (carte de consolidation en lecture) — via le **bouton « Rapport »** (page d'ouverture) **et** dans le module **Pilotages** de l'Espace Admin.
 
 **Comment — `yada-addon218` (100% additif) :** `rapportMensuelCard()` (carte `<details>` fermée : `fridays(mois)` = vendredis du mois, saisie par **délégation** `change` sur `.rm-in` → `rmSet(vendredi,champ,val)` dans **`db.parametres.rapportsMensuels[]`** `{authorKey,authorNom,vendredi,travaux,statut,ts}`, `save()`, sans re-render ; navigation `rmNav(±1)` avec état d'ouverture `rmOpen` conservé) ; `rapportMensuelAdminCard()` (consolidation lecture, tous utilisateurs, par mois) ; greffes : **`pageEspaceClient`** += carte (client), **`rapportCards`** += carte mensuelle (+ consolidation si `sessionRole==='admin'`), **`rapportsPilotageCard`** += consolidation. `<style id="rm-mod">`. `sw.js` yada-v54, badge v462, `version.json` 462.
