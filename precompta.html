@@ -10974,7 +10974,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v462';
+    b.textContent='YADA · v463';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -24282,7 +24282,10 @@ ${lignes}
   function rec(id){ var s=store(); if(!s[id]) s[id]={tasks:{},attrs:{}}; if(!s[id].tasks) s[id].tasks={}; if(!s[id].attrs) s[id].attrs={}; return s[id]; }
   function dossiersAttribues(){
     var c=(db&&db.cabinet)||{dossiers:[]};
-    var arr=(window.staffFilterDossiers?window.staffFilterDossiers(c.dossiers||[]):(c.dossiers||[]));
+    var all=c.dossiers||[], arr;
+    /* Espace CLIENT : uniquement SON dossier (le dossier actif) ; sinon dossiers attribués. */
+    if((window.sessionRole||'')==='client'){ var cid=db.activeId; arr=all.filter(function(d){ return d.id===cid; }); if(!arr.length) arr=all; }
+    else { arr=(window.staffFilterDossiers?window.staffFilterDossiers(all):all); }
     return (arr||[]).slice().sort(function(a,b){ return String(a.nom||'').localeCompare(String(b.nom||''),'fr',{sensitivity:'base',numeric:true}); });
   }
   /* jusqu'où le dossier est à jour = plus petit nombre de mois consécutifs cochés
@@ -24723,16 +24726,26 @@ ${lignes}
     window.rmSet(el.getAttribute('data-v'), el.getAttribute('data-k'), el.value);
   }, true);
 
-  /* Espace CLIENT : carte fermée « Rapport mensuel » (le client la complète). */
+  /* Espace CLIENT : module Rapport = carte fermée « Rapport mensuel » (éditable) +
+     tableau « État d'avancement » (à remplir par le client, sur son propre dossier). */
   if(typeof window.pageEspaceClient==='function'){ var _pec=window.pageEspaceClient;
-    window.pageEspaceClient=function(){ var h=_pec.apply(this,arguments); try{ return h+rapportMensuelCard(); }catch(e){ return h; } }; }
+    window.pageEspaceClient=function(){ var h=_pec.apply(this,arguments);
+      try{ h+=rapportMensuelCard(); }catch(e){}
+      try{ if(typeof window.eaCard==='function') h+=window.eaCard(); }catch(e){}
+      return h; }; }
 
-  /* Bouton « Rapport » (page d'ouverture) : rapport mensuel à compléter pour tous +
-     consolidation de TOUS les utilisateurs pour l'admin. */
+  /* Bouton « Rapport » (page d'ouverture) :
+     - Espace ADMIN → VISUALISATION UNIQUEMENT des rapports émis par les autres utilisateurs
+       (aucun formulaire de saisie) : consolidation journalière + mensuelle.
+     - Autres utilisateurs → saisie du rapport journalier + rapport mensuel à compléter. */
   if(typeof window.rapportCards==='function'){ var _rc=window.rapportCards;
-    window.rapportCards=function(){ var out=''; try{ out=_rc.apply(this,arguments)||''; }catch(e){}
+    window.rapportCards=function(){
+      if((window.sessionRole||'')==='admin'){
+        var v=''; try{ if(typeof window.rapportsPilotageCard==='function') v+=window.rapportsPilotageCard(); }catch(e){}
+        return v||'<div class="card"><div class="sub">Aucun rapport émis pour l’instant.</div></div>';
+      }
+      var out=''; try{ out=_rc.apply(this,arguments)||''; }catch(e){}
       try{ out+=rapportMensuelCard(); }catch(e){}
-      try{ if((window.sessionRole||'')==='admin') out+=rapportMensuelAdminCard(); }catch(e){}
       return out; }; }
   /* Espace Admin — Pilotages : accès aux rapports mensuels de tous les utilisateurs. */
   if(typeof window.rapportsPilotageCard==='function'){ var _rp=window.rapportsPilotageCard;
