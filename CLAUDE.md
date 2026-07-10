@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Espace Admin : module « RAPPORT » (rapports journaliers) transmis au module Pilotages — v459
+## 🟢 Dernière mise à jour — Rapport déplacé dans l'Espace CABINET (barre latérale) ; consolidation conservée dans Pilotages (Admin) — v460
+**Quoi :** le module **« ✎ Rapport »** (rapports journaliers des travaux effectués) passe de l'Espace **Admin** à l'Espace **CABINET** : il apparaît désormais comme **bouton dans la barre latérale** (section « Modules », 1ᵉʳ module), là où travaillent les collaborateurs. La **tuile « Rapport » est retirée du hub Admin**. La **consolidation reste dans le module Pilotages de l'Espace Admin** (carte « 📝 Rapports journaliers des collaborateurs » : KPI + synthèses par collaborateur / par dossier + détail) → l'admin garde la vue d'ensemble & le suivi.
+
+**Comment :** tuile `'rapport'` retirée de `MODS` (`admHubHTML`) ; `admRapportModule()` → **`raBuild()`** (builder partagé) + **`window.pageRapport()`** (page Cabinet `head('Rapport',…) + raBuild()`) ; entrée `rapport:(pageRapport…)` ajoutée au **dispatch `render()`** ; **module Cabinet** `{key:'m-rapport', nom:'Rapport', ico:'✎', page:'rapport'}` ajouté à `MODULES` (`yada-addon164`) ; le wrap `admModuleContent` ne dispatche plus `rapport` (garde l'injection `pilotages`). Données `db.parametres.rapports[]` et `rapportsPilotageCard()` inchangées. `sw.js` yada-v52, badge v460, `version.json` 460.
+
+**Validé :** `node --check` (210 scripts, 0 erreur) + Playwright (barre latérale Cabinet : bouton « ✎ Rapport » présent ; page Rapport rendue (`head` « Rapport » + formulaire) ; saisie → rapport persisté (Sarah Durand · ALR CONSEIL · 3 h) ; **hub Admin : 5 tuiles, plus de tuile Rapport** ; **Pilotages Admin : carte de consolidation + rapport transmis** ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v460**.
+
+---
+
+## 🟢 MAJ précédente — Espace Admin : module « RAPPORT » (rapports journaliers) transmis au module Pilotages — v459
 **Quoi :** l'**Espace Admin** gagne, sur sa page principale (liste de modules), un module **« ▦ Rapport »** où l'utilisateur **complète des rapports journaliers sur les travaux effectués** (Date · Collaborateur · Dossier concerné · Temps passé · Avancement · Travaux effectués · Remarques). Chaque **rapport rendu est transmis automatiquement au module « Pilotages » de l'Espace Admin** : une carte **« 📝 Rapports journaliers des collaborateurs »** y donne une **vue d'ensemble & suivi** (KPI Rapports / Heures déclarées / Collaborateurs / Dossiers suivis + synthèses **par collaborateur** et **par dossier** + détail des rapports). Permet à l'admin de suivre l'avancement des dossiers et le travail des collaborateurs.
 
 **Comment :**

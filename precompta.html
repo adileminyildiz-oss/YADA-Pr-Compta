@@ -4176,6 +4176,7 @@ function render(){
   immos:pageImmos, fraiskm:pageFraisKm,
   pilotage:(typeof pagePilotage==='function'?pagePilotage:function(){return'<div class="mod-wrap"><div class="card"><h2>Pilotage</h2></div></div>';}),
   salarie:(typeof pageSalarie==='function'?pageSalarie:function(){return'<div class="mod-wrap"><div class="card"><h2>Salarié</h2></div></div>';}),
+  rapport:(typeof pageRapport==='function'?pageRapport:function(){return'<div class="mod-wrap"><div class="card"><h2>Rapport</h2></div></div>';}),
   dossier:pageDossier, parametrage:pageParametrage, plancomptable:pagePlanComptable, infosociete:pageInfoSociete, coffre:pageCoffre
 })[current]();
   // compta/compteaux et dash/societe fournissent déjà leur propre conteneur plein cadre ; les autres sont enveloppés
@@ -10973,7 +10974,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v459';
+    b.textContent='YADA · v460';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -19755,6 +19756,8 @@ ${lignes}
 
   var PILOTAGE=['dash','societe','client'];
   var MODULES=[
+    /* Rapport (rapports journaliers des travaux effectués) — Espace Cabinet. */
+    {key:'m-rapport', nom:'Rapport', ico:'✎', page:'rapport'},
     /* FEC déplacé vers Permanent ; Assistant IA retiré de la barre latérale (demande). */
     {key:'m-compta', nom:'Comptabilité', ico:'▦', subs:['compta','journal','editions','reglements','analytique','plancomptable','pilotage','salarie']},
     {key:'m-fourn', nom:'Fournisseurs', ico:'⎙', page:'achats'},
@@ -23351,7 +23354,6 @@ ${lignes}
   function admHubHTML(){
     var MODS=[
       ['collab','⊞','Collaborateurs & accès','Société exploitante · utilisateurs · dossiers & attribution'],
-      ['rapport','▦','Rapport','Rapports journaliers des travaux effectués par les collaborateurs'],
       ['paie','▥','Paie','Salaires des collaborateurs · brut / net · coût employeur'],
       ['parametrage','≣','Paramétrage','Verrouillage auto · renvois société / synchro'],
       ['documentation','▤','Documentation','Guide : utilisateurs · dossiers · occupation · alertes'],
@@ -24474,7 +24476,7 @@ ${lignes}
 
   function statutTag(s){ var c=(s==='Terminé')?'ra-ok':(s==='Bloqué')?'ra-ko':(s==='En attente')?'ra-wait':'ra-cur'; return '<span class="ra-tag '+c+'">'+esc(s||'En cours')+'</span>'; }
 
-  window.admRapportModule=function(){
+  function raBuild(){
     var st=staffL(), ds=dossL(), list=raps().slice().sort(function(a,b){ return String(b.date).localeCompare(String(a.date)) || ((b.ts||0)-(a.ts||0)); });
     var meId=(function(){ try{ return window.staffId||''; }catch(e){ return ''; } })();
     var collOpts=st.map(function(s){ return '<option value="'+esc(s.id)+'"'+(s.id===meId?' selected':'')+'>'+esc(nom(s))+'</option>'; }).join('');
@@ -24512,7 +24514,14 @@ ${lignes}
       +'<div class="sub">'+list.length+' rapport(s). Tous les rapports sont transmis au module <b>Pilotages</b> (vue d’ensemble & suivi).</div>'
       +'<div class="ra-scroll"><table class="ra-tbl"><thead><tr><th>Date</th><th>Collaborateur</th><th>Dossier</th><th>Travaux effectués</th><th class="r">Temps</th><th>Avancement</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
 
-    return '<div class="login-title">Rapport</div><div class="login-sub">Rapports journaliers des travaux effectués — transmis au module Pilotages pour le suivi.</div>'+form+listCard;
+    return form+listCard;
+  }
+
+  /* Page Rapport dans l'Espace CABINET (barre latérale) : saisie des rapports journaliers. */
+  window.pageRapport=function(){
+    var sub='Rapports journaliers des travaux effectués — transmis au module Pilotages (Espace Admin) pour le suivi.';
+    var h=(typeof head==='function')?head('Rapport',sub):'<div class="page-head"><h1>Rapport</h1></div>';
+    try{ return h+raBuild(); }catch(e){ return h+'<div class="card">Erreur module Rapport</div>'; }
   };
 
   /* Carte de transmission dans le module Pilotages de l'Espace Admin */
@@ -24552,7 +24561,6 @@ ${lignes}
     var _amc=window.admModuleContent;
     window.admModuleContent=function(){
       var m=window.admModule;
-      if(m==='rapport'){ try{ return admRapportModule(); }catch(e){ return '<div class="card">Erreur module Rapport</div>'; } }
       var out=_amc.apply(this,arguments);
       if(m==='pilotages'){ try{ out+=rapportsPilotageCard(); }catch(e){} }
       return out;
