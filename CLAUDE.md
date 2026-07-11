@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Accueil : effet de clic bord→centre AUSSI sur ESPACE ADMIN & LISTE DOSSIER (boutons bleus) — v480
+## 🟢 Dernière mise à jour — Espace Admin : nouveaux pictogrammes des modules + tuiles bleu Crystal dégradé + effet au survol — v481
+**Quoi :** la liste des 5 modules de l'**Espace Admin** (hub) reçoit de **nouveaux pictogrammes** (icônes SVG filaires) et une **couleur bleu Crystal dégradé** avec un **effet au survol**. Icônes : **Collaborateurs & accès** = deux personnes · **Paie** = symbole **€** seul (taille réduite) · **Paramétrage** = **engrenage** (réglages) · **Documentation** = livre ouvert · **Pilotages** = **flèche montante**. Tuiles d'icône en **dégradé bleu Crystal** (`#5ab0ff → #1e90ff → #0a64d6`). **Effet au survol** : la tuile se soulève + halo bleu, l'icône s'agrandit légèrement et un **reflet balaie** l'icône (light-sweep).
+
+**Comment — édition de `admHubHTML` (addon210) :** nouvelle fonction `admHubIcon(key)` (SVG `stroke:currentColor` par module ; `<span class="adm-euro">€</span>` pour Paie) ; la tuile utilise `admHubIcon(m[0])` au lieu du glyphe. CSS : `.adm-hub-ic` → `background:linear-gradient(135deg,#5ab0ff,#1e90ff 55%,#0a64d6)`, `position:relative;overflow:hidden`, `.adm-hub-ic svg{26px}`, `.adm-euro{font:800 18px}` ; `::after` reflet (skew + `left:-70%→130%`) ; `.adm-hub-tile:hover .adm-hub-ic{transform:scale(1.07);box-shadow halo}` + tuile `translateY(-2px)` + ombre bleue. `sw.js` yada-v73, badge v481, `version.json` 481.
+
+**Validé :** `node --check` (216 scripts, 0 erreur) + Playwright (5 tuiles : 4 SVG + 1 € ; `.adm-hub-ic` fond = dégradé Crystal `#5ab0ff…` ; euro 18px ; 0 pageerror) + capture (Espace Admin : icônes personnes/€/engrenage/livre/flèche montante, tuiles bleu Crystal, effet de survol sur Pilotages) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v481**.
+
+---
+
+## 🟢 MAJ précédente — Accueil : effet de clic bord→centre AUSSI sur ESPACE ADMIN & LISTE DOSSIER (boutons bleus) — v480
 **Quoi :** les deux boutons bleus **ESPACE ADMIN** et **LISTE DOSSIER** reçoivent enfin l'**effet de clic « couleur du bord vers le centre »** (comme les autres boutons). Auparavant invisible car ils étaient déjà remplis par l'ombre interne : ils sont désormais **bleus via le FOND** (dégradé), ce qui **libère l'ombre interne** pour l'animation ; au **clic**, la **couleur claire du bord (`#86c5ff`)** converge du **bord vers le centre** (ombre interne 0 → 240px), puis se rétracte au relâchement. Soulignement blanc animé au survol conservé (v479).
 
 **Comment — `yada-addon223` (édition des règles ciblées) :** ces 2 boutons passent de `box-shadow:inset 0 0 0 240px #1e90ff` (remplissage permanent) à `background:linear-gradient(#1e90ff,#0a64d6) padding-box, …border-box` (bleu via le fond) + `box-shadow:inset 0 0 0 0 #86c5ff` (spread 0 au repos) ; règle `.yada-fill` dédiée → `inset 0 0 0 240px #86c5ff` (sweep bord→centre au clic, via l'écouteur `pointerdown` global). `sw.js` yada-v72, badge v480, `version.json` 480.
