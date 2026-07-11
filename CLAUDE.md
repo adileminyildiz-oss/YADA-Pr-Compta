@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Tous les boutons unifiés : contour bleu + MAJUSCULES + remplissage bleu extérieur→intérieur au clic — v477
+## 🟢 Dernière mise à jour — Accueil : ESPACE ADMIN & LISTE DOSSIER en bleu plein + soulignement BLANC — v478
+**Quoi :** sur la page d'accueil « Espace dossiers », les deux boutons **ESPACE ADMIN** et **LISTE DOSSIER** sont désormais **bleus (remplis)** avec un **soulignement blanc** permanent sous le libellé, pour les distinguer comme actions principales. Les autres boutons gardent le style contour bleu (v477).
+
+**Comment — `yada-addon223` (ajout au `<style id="btn-unify-mod">`) :** règles ciblées `#adm-enter-btn`, `#adm-enter-inline` (Espace Admin) et `.btn[onclick="dsOuvrirListe()"]` (Liste Dossier) → `color:#fff` + `box-shadow:inset 0 0 0 240px #1e90ff` (remplissage bleu) ; leur `::after` (soulignement) forcé à `transform:scaleX(1)` + `background:#fff` (ligne blanche permanente). `sw.js` yada-v70, badge v478, `version.json` 478.
+
+**Validé :** `node --check` (216 scripts, 0 erreur) + Playwright (les 2 boutons : `box-shadow` inset bleu (rempli), texte blanc, `::after` blanc affiché ; 0 pageerror) + capture (accueil : ESPACE ADMIN & LISTE DOSSIER bleus + ligne blanche, autres en contour) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v478**.
+
+---
+
+## 🟢 MAJ précédente — Tous les boutons unifiés : contour bleu + MAJUSCULES + remplissage bleu extérieur→intérieur au clic — v477
 **Quoi :** **tous les boutons du logiciel** (`.btn`) adoptent un **style unique** : pilule sombre à **CONTOUR BLEU** (dégradé `#5ab0ff→#1e90ff`), **libellé en MAJUSCULES**, **soulignement bleu** au survol, et — au **clic** — un **remplissage bleu de l'EXTÉRIEUR vers l'INTÉRIEUR** (les bords se colorent d'abord, la couleur converge vers le centre) puis retour au relâchement. Modèle issu du mélange n°15 (contour dégradé) + n°18 (souligné), contour passé en bleu, sans icône, actif sans soulignement.
 
 **Comment — `yada-addon223` (100% additif) :** `<style id="btn-unify-mod">` (injecté en dernier, sélecteur `html body[data-theme] .btn` pour primer sur les variantes de thème `.btn-pri`/`.btn-gold`) : `.btn` = `background:linear-gradient(#0c1f39,#0c1f39) padding-box, linear-gradient(120deg,#5ab0ff,#1e90ff) border-box`, `text-transform:uppercase`, `box-shadow:inset 0 0 0 0 #1e90ff` (transition .45s), `::after` soulignement bleu au survol ; classe **`.yada-fill`** = `box-shadow:inset 0 0 0 240px #1e90ff` (remplissage extérieur→intérieur). Écouteur **`pointerdown`** délégué au `document` → ajoute `.yada-fill` au press, la retire au relâchement (vaut pour tous les `.btn`, même ajoutés dynamiquement). **Non touchés** : boutons « danger » des confirmations (`.ya-btn.ya-danger`, restent rouges), navigation (`.nav-btn`), onglets, barres d'outils (autres classes) ; `display` jamais forcé (bouton masqué reste masqué). `sw.js` yada-v69, badge v477, `version.json` 477.
