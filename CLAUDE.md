@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — État d'avancement : ÉDITABLE + impression A3 (Cabinet) ; Admin = carte fermée « liste complète des dossiers » + bouton VERT de vérification — v469
+## 🟢 Dernière mise à jour — État d'avancement : bouton unique « 🖨 Imprimer » (nouvelle page + dialogue d'impression) + bouton « ⤢ Agrandir » (Cabinet & Admin) — v470
+**Quoi :** deux évolutions de la **modale de l'État d'avancement** (partagée par l'Espace **Cabinet** — depuis le Rapport — et l'Espace **Admin** — depuis la carte « État d'avancement des dossiers »).
+1. **Impression repensée** — les **deux boutons d'impression** (« 🖨 Imprimer A4 » / « 🖨 Imprimer A3 (analyse) ») sont **remplacés par un SEUL bouton « 🖨 Imprimer »**. Au clic, une **nouvelle page (fenêtre)** s'ouvre avec le **dialogue d'impression natif** (où l'utilisateur choisit **tous les paramètres** : format A4/A3, orientation, marges, échelle…).
+2. **Agrandir** — un bouton **« ⤢ Agrandir »** agrandit le tableau d'état d'avancement (modale à **96vw**, tableau en plus grande police/espacement) pour analyser sur tout l'espace disponible → **« ⤡ Réduire »** revient à la taille normale. Disponible dans **l'Espace Admin ET l'Espace Cabinet**.
+
+**Comment :** `addon217` — `raOuvrirEtat(id, editable)` (barre d'actions ← Fermer · ⤢ Agrandir · 🖨 Imprimer ; retire `ra-etat-full` à l'ouverture) ; `raEtatAgrandir()` (bascule la classe `ra-etat-full` sur `#modal` + libellé du bouton) ; `raImprimerEtat()` réécrit → `window.open('','_blank')` + `document.write` (HTML du tableau `eaDossierTableHTML(id,false)` + CSS d'impression inline + auto `window.print()`). CSS `ra-mod` : `#modal.ra-etat-full #modal-c{max-width:96vw}` + `.ra-etat-full .eap-tbl` (police 15px, padding 10/8). `sw.js` yada-v62, badge v470, `version.json` 470.
+
+**Validé :** `node --check` (213 scripts, 0 erreur) + Playwright (Cabinet éditable & Admin lecture : barre = [← Fermer, ⤢ Agrandir, 🖨 Imprimer], **aucun bouton A3/A4**, un seul bouton Imprimer ; ⤢ Agrandir → `#modal.ra-etat-full` + `#modal-c` à 96vw (1344px/1400) + libellé « ⤡ Réduire », re-clic → réduit ; `ra-etat-full` retiré à la réouverture ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v470**.
+
+---
+
+## 🟢 MAJ précédente — État d'avancement : ÉDITABLE + impression A3 (Cabinet) ; Admin = carte fermée « liste complète des dossiers » + bouton VERT de vérification — v469
 **Quoi :** deux évolutions de l'**État d'avancement**.
 1. **Espace Cabinet** — le tableau ouvert depuis le **Rapport** (clic sur un dossier) devient **ÉDITABLE** : on **coche/décoche** chaque case directement (mois × tâche), le statut se recalcule en direct, et on peut **imprimer en A3** (« 🖨 Imprimer A3 (analyse) » — pleine largeur pour analyser) **ou A4**.
 2. **Espace Admin (Pilotages)** — nouvelle **carte FERMÉE « 📋 État d'avancement des dossiers »** listant **TOUS les dossiers** (liste complète). Chaque dossier ouvre son **tableau** (lecture) ; un **BOUTON VERT « ● Vérifier l'enregistrement »** apparaît quand l'état d'avancement a été **enregistré/modifié depuis la dernière vérification** (badge « N à vérifier ») → clic = **« ✓ Vérifié »** ; « Non renseigné » si aucune donnée.
