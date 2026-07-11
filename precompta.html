@@ -10974,7 +10974,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v480';
+    b.textContent='YADA · v481';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -23395,6 +23395,15 @@ ${lignes}
   window.admShowToggle=function(v){ window.admShow=(v===undefined?!window.admShow:v);
     if(window.admShow) window.admModule=null; if(typeof render==='function') render(); };
 
+  function admHubIcon(k){
+    var A='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">';
+    if(k==='collab') return A+'<circle cx="9" cy="8" r="3"/><path d="M3.4 19a5.6 5.6 0 0 1 11.2 0"/><circle cx="17.5" cy="9" r="2.2"/><path d="M16 13.4A4.6 4.6 0 0 1 20.8 17.6"/></svg>';
+    if(k==='paie') return '<span class="adm-euro">€</span>';
+    if(k==='parametrage') return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-2.6-1.5l-.4-2.5h-4l-.4 2.5A7.6 7.6 0 0 0 7 6.5l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 3l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 2.6 1.5l.4 2.5h4l.4-2.5a7.6 7.6 0 0 0 2.6-1.5l2.4 1 2-3.4-2-1.6Z"/></svg>';
+    if(k==='documentation') return A+'<path d="M12 6.6C10.4 5.5 8.2 5.2 6 5.4 4.9 5.5 4 6.4 4 7.5V17c0 1 .9 1.7 1.9 1.6 2-.2 4.1 0 6.1 1.1 2-1.1 4.1-1.3 6.1-1.1 1 .1 1.9-.6 1.9-1.6V7.5c0-1.1-.9-2-2-2.1-2.2-.2-4.4.1-6 1.2Z"/><path d="M12 6.6V18.7"/></svg>';
+    if(k==='pilotages') return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6.5" y1="17.5" x2="17.5" y2="6.5"/><polyline points="9.5 6.5 17.5 6.5 17.5 14.5"/></svg>';
+    return '';
+  }
   function admHubHTML(){
     var MODS=[
       ['collab','⊞','Collaborateurs & accès','Société exploitante · utilisateurs · dossiers & attribution'],
@@ -23405,7 +23414,7 @@ ${lignes}
     ];
     var tiles=MODS.map(function(m){
       return '<button class="adm-hub-tile" onclick="admSetModule(\''+m[0]+'\')">'
-        +'<span class="adm-hub-ic">'+m[1]+'</span>'
+        +'<span class="adm-hub-ic">'+admHubIcon(m[0])+'</span>'
         +'<span class="adm-hub-tx"><b>'+esc(m[2])+'</b><small>'+esc(m[3])+'</small></span>'
         +'<span class="adm-hub-go">Ouvrir →</span></button>';
     }).join('');
@@ -23484,9 +23493,15 @@ ${lignes}
     '.adm-hub-wrap{max-width:640px}'
     +'.adm-hub-grid{display:flex;flex-direction:column;gap:12px;margin-top:18px}'
     +'.adm-hub-tile{display:flex;align-items:center;gap:14px;text-align:left;padding:16px 18px;border:1px solid rgba(30,144,255,.32);border-radius:14px;background:rgba(30,144,255,.07);cursor:pointer;color:inherit;transition:background .24s ease,border-color .24s ease,transform .24s cubic-bezier(.16,1,.3,1);transform:translateZ(0);backface-visibility:hidden}'
-    +'.adm-hub-tile:hover{background:rgba(30,144,255,.18);border-color:#1e90ff;transform:translateY(-1px) translateZ(0)}'
+    +'.adm-hub-tile:hover{background:rgba(30,144,255,.18);border-color:#1e90ff;transform:translateY(-2px) translateZ(0);box-shadow:0 10px 28px rgba(30,144,255,.28)}'
     +'.adm-hub-tile:active{transform:scale(.99) translateZ(0)}'
-    +'.adm-hub-ic{width:46px;height:46px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font:800 22px system-ui,sans-serif;border-radius:12px;background:linear-gradient(135deg,#2f6fe8,#1cc39b);color:#eaf2ff}'
+    /* tuile icône : bleu Crystal dégradé + effet (survol : agrandit, brille, halo) */
+    +'.adm-hub-ic{position:relative;overflow:hidden;width:46px;height:46px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;border-radius:12px;background:linear-gradient(135deg,#5ab0ff 0%,#1e90ff 55%,#0a64d6 100%);color:#fff;box-shadow:0 6px 16px rgba(30,144,255,.4), inset 0 1px 0 rgba(255,255,255,.32);transition:transform .28s cubic-bezier(.16,1,.3,1),box-shadow .28s}'
+    +'.adm-hub-ic svg{width:26px;height:26px;display:block}'
+    +'.adm-euro{font:800 18px system-ui,sans-serif;line-height:1;color:#fff}'
+    +'.adm-hub-ic::after{content:"";position:absolute;top:0;left:-70%;width:55%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-18deg);transition:left .55s ease;pointer-events:none}'
+    +'.adm-hub-tile:hover .adm-hub-ic{transform:scale(1.07);box-shadow:0 9px 22px rgba(30,144,255,.6), inset 0 1px 0 rgba(255,255,255,.4)}'
+    +'.adm-hub-tile:hover .adm-hub-ic::after{left:130%}'
     +'.adm-hub-tx{flex:1;min-width:0}.adm-hub-tx b{display:block;font-size:15.5px}.adm-hub-tx small{font-size:12px;opacity:.72}'
     +'.adm-hub-go{font-size:12.5px;opacity:.8;flex:0 0 auto}'
     +'@keyframes admHubIn{0%{opacity:0;filter:blur(12px);transform:translate3d(0,-16px,0) scale(.985)}60%{filter:blur(2px)}100%{opacity:1;filter:blur(0);transform:translate3d(0,0,0) scale(1)}}'
