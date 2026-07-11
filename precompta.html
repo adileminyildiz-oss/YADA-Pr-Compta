@@ -10974,7 +10974,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v474';
+    b.textContent='YADA · v475';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21305,9 +21305,11 @@ ${lignes}
     }).join('')||'<tr><td colspan="8" style="text-align:center;padding:12px">Aucun salarié</td></tr>';
     var sig=r.signature?'<img src="'+r.signature+'" alt="signature" style="max-height:70px;max-width:200px">':'';
     return '<div class="doc-page lp-doc">'
+      +'<div class="lp-head">'
       +'<div class="lp-title">LISTE DU PERSONNEL</div>'
       +'<div class="lp-att">Je soussigné(e) <b>'+esc(pres||'…………')+'</b>, agissant en qualité de <b>'+esc(qual||'…………')+'</b>, de la société <b>'+esc(den||'…………')+'</b>, située <b>'+esc(adr||'…………')+'</b>, immatriculée au R.C.S. de <b>'+esc(rcsVille||'…………')+'</b> sous le numéro <b>'+esc(num||'…………')+'</b>, certifie que les personnes ci-dessous mentionnées font partie du personnel de l’entreprise :</div>'
-      +'<table class="lp-t"><thead><tr><th>Nom</th><th>Prénom</th><th>N° DPAE</th><th>Date DUE</th><th>Date Embauche</th><th>Nature Pièce Identité</th><th>Date de validité</th><th>Numéro de Pièce d’Identité</th></tr></thead><tbody>'+rows+'</tbody></table>'
+      +'</div>'
+      +'<div class="lp-mid"><table class="lp-t"><thead><tr><th>Nom</th><th>Prénom</th><th>N° DPAE</th><th>Date DUE</th><th>Date Embauche</th><th>Nature Pièce Identité</th><th>Date de validité</th><th>Numéro de Pièce d’Identité</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
       +'<div class="lp-foot">'
       +'<div class="lp-fait">Fait à <b>'+esc(faitA||'…………')+'</b>, le <b>'+dateJ+'</b></div>'
       +'<div class="lp-sign"><div class="lp-sign-lbl">Nom du signataire (P.D.G., Gérant ou personne mandatée)</div>'
@@ -21326,9 +21328,11 @@ ${lignes}
       +'<label>Fait à<input id="eq-faita" value="'+esc(r.faitA||S.ville||'')+'" onchange="salEquipeSet(\'faitA\',this.value)"></label>'
       +'<label class="pil-up" style="align-self:end">🖊 Signature (image)<input type="file" accept="image/*" style="display:none" onchange="salSigUp(this)"></label>'
       +(r.signature?'<button class="btn btn-ghost btn-sm" style="align-self:end" onclick="salSigDel()">Retirer la signature</button>':'')
-      +'<button class="btn btn-pri btn-sm" style="align-self:end" onclick="salEquipeEnregistrer()">💾 Enregistrer</button>'
-      +'<button class="btn btn-ghost btn-sm" style="align-self:end" onclick="salEquipeImprimer()">🖨 Imprimer / PDF</button></div>'
-      +'<div class="sal-doc-wrap">'+salEquipeDoc()+'</div></div>';
+      +'</div>'
+      +'<div class="sal-doc-wrap">'+salEquipeDoc()+'</div>'
+      +'<div class="lp-actions"><button class="btn btn-pri btn-sm" onclick="salEquipeEnregistrer()">💾 Enregistrer</button>'
+      +'<button class="btn btn-ghost btn-sm" onclick="salEquipeImprimer()">🖨 Imprimer / PDF</button></div>'
+      +'</div>';
   }
   window.salEquipeDoc=salEquipeDoc;
   window.salEquipeSet=function(k,v){ RH()[k]=v; if(typeof save==='function')save(); if(typeof render==='function')render(); };
@@ -25221,19 +25225,28 @@ ${lignes}
 
   /* Style du document « Liste du personnel » (attestation + tableau 8 colonnes + signature). */
   var css=''
-    +'.lp-doc{padding:16mm 14mm}'
-    +'.lp-title{text-align:center;font-weight:800;font-size:20px;letter-spacing:1px;margin:0 0 18px;text-decoration:underline}'
-    +'.lp-att{font-size:13px;line-height:1.75;text-align:justify;margin-bottom:18px}'
-    +'.lp-t{width:100%;border-collapse:collapse;font-size:10.5px;margin-bottom:22px}'
-    +'.lp-t th,.lp-t td{border:1px solid #666;padding:5px 5px;text-align:center;vertical-align:middle}'
-    +'.lp-t thead th{background:#eee;font-weight:700}'
-    +'.lp-foot{margin-top:26px;font-size:13px}'
-    +'.lp-fait{margin-bottom:22px}'
-    +'.lp-sign{text-align:right;line-height:1.6}'
+    /* Document épuré, SANS cadrage (bord/ombre retirés), en pleine hauteur A4 :
+       en-tête en haut · tableau au milieu · pied (Fait à / signature) en bas. */
+    +'.lp-doc{padding:18mm 16mm;display:flex;flex-direction:column;border:none!important;box-shadow:none!important;background:#fff!important}'
+    +'.lp-head{flex:0 0 auto}'
+    +'.lp-title{text-align:center;font-weight:800;font-size:21px;letter-spacing:1px;margin:0 0 34px;text-decoration:underline}'  /* espace titre → texte */
+    +'.lp-att{font-size:13px;line-height:1.85;text-align:justify;margin:0}'
+    +'.lp-mid{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;padding:26px 0}'  /* tableau centré au milieu + espace texte → tableau */
+    +'.lp-t{width:100%;border-collapse:collapse;font-size:10px;table-layout:auto}'
+    +'.lp-t th,.lp-t td{border:1px solid #d3dae4;padding:6px 6px;text-align:center;vertical-align:middle;white-space:normal!important;word-break:normal;overflow-wrap:break-word}'
+    +'.lp-t thead th{background:#f4f7fb;font-weight:700;font-size:9.5px;line-height:1.25}'
+    +'.lp-foot{flex:0 0 auto;font-size:13px;margin-top:auto}'  /* pied ancré en bas de page */
+    +'.lp-fait{margin-bottom:26px}'
+    +'.lp-sign{text-align:right;line-height:1.7}'
     +'.lp-sign-lbl{font-size:12px;color:#333}'
     +'.lp-sign-name{font-weight:700;margin-top:4px}'
     +'.lp-sign-img{min-height:60px}'
-    +'.lp-cachet{font-size:12px;color:#333;margin-top:6px}';
+    +'.lp-cachet{font-size:12px;color:#333;margin-top:6px}'
+    /* Boutons d'action en bas, taille normale (petits, non étirés) */
+    +'.lp-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}'
+    +'.lp-actions .btn{flex:0 0 auto}'
+    /* Impression / PDF : pied ancré en bas de la page A4 */
+    +'@media print{.lp-doc{min-height:262mm}}';
   try{ var s=document.createElement('style'); s.id='lp-doc-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
 })();
 </script>
