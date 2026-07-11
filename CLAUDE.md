@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Espace Admin : nouveaux pictogrammes des modules + tuiles bleu Crystal dégradé + effet au survol — v481
+## 🟢 Dernière mise à jour — Liste des dossiers : effet au survol des lignes (soulèvement + halo, avatar reflet, flèche qui glisse) — v482
+**Quoi :** dans la **Liste des dossiers**, chaque **ligne** (`.ds-row`) reçoit un **effet au survol** : la ligne se **soulève** (`translateY(-2px)`) avec un **halo bleu** (ombre), l'**avatar s'agrandit** légèrement et un **reflet le balaie** (light-sweep), et la flèche **« Sélectionner → » glisse** vers la droite.
+
+**Comment — `yada-addon224` (100% CSS additif, `<style id="ds-row-fx-mod">`) :** `.ds-row` transition ; `html body .ds-row:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(30,144,255,.28)}` ; `.ds-av{position:relative;overflow:hidden}` + `::after` reflet (skew, `left:-70%→130%`) ; `.ds-row:hover .ds-av{transform:scale(1.08);box-shadow halo}` ; `.ds-open` (flèche) `translateX(4px)` au survol. Sélecteur préfixé `html body` pour primer sur les surcharges de thème. `sw.js` yada-v74, badge v482, `version.json` 482.
+
+**Validé :** `node --check` (217 scripts, 0 erreur) + Playwright (style `ds-row-fx-mod` présent ; `.ds-av` `overflow:hidden` (reflet) ; survol d'une ligne → soulèvement + halo visibles ; 0 pageerror) + capture (ligne survolée soulevée avec halo, avatar mis en avant) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v482**.
+
+---
+
+## 🟢 MAJ précédente — Espace Admin : nouveaux pictogrammes des modules + tuiles bleu Crystal dégradé + effet au survol — v481
 **Quoi :** la liste des 5 modules de l'**Espace Admin** (hub) reçoit de **nouveaux pictogrammes** (icônes SVG filaires) et une **couleur bleu Crystal dégradé** avec un **effet au survol**. Icônes : **Collaborateurs & accès** = deux personnes · **Paie** = symbole **€** seul (taille réduite) · **Paramétrage** = **engrenage** (réglages) · **Documentation** = livre ouvert · **Pilotages** = **flèche montante**. Tuiles d'icône en **dégradé bleu Crystal** (`#5ab0ff → #1e90ff → #0a64d6`). **Effet au survol** : la tuile se soulève + halo bleu, l'icône s'agrandit légèrement et un **reflet balaie** l'icône (light-sweep).
 
 **Comment — édition de `admHubHTML` (addon210) :** nouvelle fonction `admHubIcon(key)` (SVG `stroke:currentColor` par module ; `<span class="adm-euro">€</span>` pour Paie) ; la tuile utilise `admHubIcon(m[0])` au lieu du glyphe. CSS : `.adm-hub-ic` → `background:linear-gradient(135deg,#5ab0ff,#1e90ff 55%,#0a64d6)`, `position:relative;overflow:hidden`, `.adm-hub-ic svg{26px}`, `.adm-euro{font:800 18px}` ; `::after` reflet (skew + `left:-70%→130%`) ; `.adm-hub-tile:hover .adm-hub-ic{transform:scale(1.07);box-shadow halo}` + tuile `translateY(-2px)` + ombre bleue. `sw.js` yada-v73, badge v481, `version.json` 481.
