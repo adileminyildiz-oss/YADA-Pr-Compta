@@ -6221,16 +6221,17 @@ function pageCompta(){
   let rows='';
   if(sgTab==='generaux'){
     let list=sgGeneraux(sgPer);
+    /* v488 — les comptes de TIERS (Fournisseurs 401… / Clients 411…) ne sont plus listés
+       dans « Comptes Généraux » : ils figurent déjà dans les onglets Fournisseur / Client.
+       (Le compte collectif 401000000 / 411000000, non rattaché à un tiers, reste affiché.) */
+    const _tiersC9=new Set();
+    (db.tiers||[]).forEach(t=>{ if(t.type==='fournisseur'||t.type==='client'){ try{ _tiersC9.add(c9(sageCode(t))); }catch(e){} if(t.compteAux){ try{ _tiersC9.add(c9(t.compteAux)); }catch(e){} } } });
+    list=list.filter(a=>!_tiersC9.has(c9(a.code9)));
     if(cmpMode==='tous'){ const present=new Set(list.map(a=>a.code9)); (db.plan||[]).forEach(p=>{ const k=c9(p.code); if(!present.has(k)){ present.add(k); list.push({code:p.code, code9:k, classe:classeDe(p.code), lib:COMPTES[p.code]||p.lib||p.code, n:0, debit:0, credit:0, solde:0, sens:'S'}); } }); list.sort((a,b)=>a.code9<b.code9?-1:1); }
-    const byClass={};
-    list.forEach(a=>{(byClass[a.classe]=byClass[a.classe]||[]).push(a);});
-    Object.keys(byClass).sort().forEach(cl=>{
-      rows+=`<tr style="background:#eef1f4"><td colspan="4" style="font-weight:700;color:#0a5ec2">${cl}. ${CLASSES[cl]||''}</td></tr>`;
-      let cd=0,cc=0;
-      byClass[cl].forEach(a=>{ cd+=a.debit; cc+=a.credit;
-        rows+=`<tr class="sg-tier ${a.code9===sgRow?'on':''}" onclick="ouvrirCompteLecture('${a.code9}')" style="cursor:pointer" title="Cliquer : ouvrir le compte (lecture seule) — clic droit sur une ligne pour aller au journal"><td class="sg-tier-code">${a.code9}</td><td>${a.lib} (${a.n})</td><td class="sg-amt">${a.sens==='S'?'':sageNum(a.solde)}</td><td class="sg-sens">${a.sens}</td></tr>`; });
-      const s=r2(cd-cc);
-      rows+=`<tr style="font-weight:700;background:#f4f4f4"><td></td><td>Total ${cl}</td><td class="sg-amt">${Math.abs(s)<0.005?'':sageNum(Math.abs(s))}</td><td class="sg-sens">${Math.abs(s)<0.005?'S':(s>0?'D':'C')}</td></tr>`;
+    /* v488 — liste À PLAT : plus de titres de classe (« 1. Comptes de capitaux »…) ni de sous-totaux ;
+       les comptes sont listés directement (Compte / Libellé / Solde), triés par numéro. */
+    list.forEach(a=>{
+      rows+=`<tr class="sg-tier ${a.code9===sgRow?'on':''}" onclick="ouvrirCompteLecture('${a.code9}')" style="cursor:pointer" title="Cliquer : ouvrir le compte (lecture seule) — clic droit sur une ligne pour aller au journal"><td class="sg-tier-code">${a.code9}</td><td>${a.lib} (${a.n})</td><td class="sg-amt">${a.sens==='S'?'':sageNum(a.solde)}</td><td class="sg-sens">${a.sens}</td></tr>`;
     });
     if(!list.length) rows='<tr><td colspan="4" style="padding:22px;text-align:center;color:#9a9a9a">Aucun compte mouvementé sur la période</td></tr>';
   } else {
@@ -10974,7 +10975,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v487';
+    b.textContent='YADA · v488';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
