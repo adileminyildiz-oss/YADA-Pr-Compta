@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Accueil : soulignement blanc (ESPACE ADMIN & LISTE DOSSIER) animé au survol comme les autres boutons — v479
+## 🟢 Dernière mise à jour — Accueil : effet de clic bord→centre AUSSI sur ESPACE ADMIN & LISTE DOSSIER (boutons bleus) — v480
+**Quoi :** les deux boutons bleus **ESPACE ADMIN** et **LISTE DOSSIER** reçoivent enfin l'**effet de clic « couleur du bord vers le centre »** (comme les autres boutons). Auparavant invisible car ils étaient déjà remplis par l'ombre interne : ils sont désormais **bleus via le FOND** (dégradé), ce qui **libère l'ombre interne** pour l'animation ; au **clic**, la **couleur claire du bord (`#86c5ff`)** converge du **bord vers le centre** (ombre interne 0 → 240px), puis se rétracte au relâchement. Soulignement blanc animé au survol conservé (v479).
+
+**Comment — `yada-addon223` (édition des règles ciblées) :** ces 2 boutons passent de `box-shadow:inset 0 0 0 240px #1e90ff` (remplissage permanent) à `background:linear-gradient(#1e90ff,#0a64d6) padding-box, …border-box` (bleu via le fond) + `box-shadow:inset 0 0 0 0 #86c5ff` (spread 0 au repos) ; règle `.yada-fill` dédiée → `inset 0 0 0 240px #86c5ff` (sweep bord→centre au clic, via l'écouteur `pointerdown` global). `sw.js` yada-v72, badge v480, `version.json` 480.
+
+**Validé :** `node --check` (216 scripts, 0 erreur) + Playwright (repos : `box-shadow` inset spread **0** + fond dégradé bleu ; `pointerdown` → inset **240px** bleu clair (sweep bord→centre) ; `pointerup` → inset revenu à 0 ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v480**.
+
+---
+
+## 🟢 MAJ précédente — Accueil : soulignement blanc (ESPACE ADMIN & LISTE DOSSIER) animé au survol comme les autres boutons — v479
 **Quoi :** sur les deux boutons **ESPACE ADMIN** et **LISTE DOSSIER** (bleus pleins, v478), le **soulignement blanc** n'est plus figé (affiché en permanence) : il **apparaît/grandit au survol** (puis se rétracte), **comme sur les autres boutons**. Les boutons restent bleus pleins ; seule la barre blanche s'anime désormais.
 
 **Comment — `yada-addon223` (1 retrait) :** dans le `::after` ciblé de ces deux boutons, suppression du `transform:scaleX(1)!important` (affichage permanent) → il ne reste que `background:#fff` (ligne blanche). Le soulignement suit alors la règle générale (`.btn:hover::after{transform:scaleX(1)}`) : masqué au repos (`scaleX(0)`), révélé au survol. `sw.js` yada-v71, badge v479, `version.json` 479.
