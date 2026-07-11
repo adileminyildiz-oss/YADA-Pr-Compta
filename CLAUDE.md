@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Consultation : menu clic droit allégé + éditeur (icônes non-cliquables retirées, lignes d'écriture teintées) + grand-livre plein écran verrouillé — v487
+## 🟢 Dernière mise à jour — Consultation « Comptes Généraux » : comptes de tiers (Fournisseurs/Clients) retirés + titres de classe supprimés (liste à plat) — v488
+**Quoi :** deux ajustements de l'onglet **« Comptes Généraux »** de la Consultation des comptes.
+1. **Comptes de TIERS retirés** : les comptes **Fournisseurs (401…)** et **Clients (411…)** individuels **n'apparaissent plus** dans « Comptes Généraux » — ils figurent déjà dans les onglets **Fournisseurs divers** et **Clients divers**. Le **compte collectif** (401000000 / 411000000) et les autres comptes de classe 4 (TVA 445…, personnel 42…, 408…) **restent** affichés.
+2. **Titres de classe supprimés** : la liste ne montre plus les **en-têtes de classe** (« 1. Comptes de capitaux », « 4. Comptes de tiers »…) ni les **sous-totaux « Total X »** → **liste à plat** (Compte · Libellé · Solde), triée par numéro de compte.
+
+**Comment (2 éditions chirurgicales de `pageCompta`, branche `sgTab==='generaux'`) :** (1) filtre `list=list.filter(a=>!_tiersC9.has(c9(a.code9)))` où `_tiersC9` = ensemble des `c9(sageCode(t))`/`c9(t.compteAux)` des tiers fournisseurs/clients ; (2) remplacement de la boucle `byClass` (en-tête `${cl}. …` + `Total ${cl}`) par un simple `list.forEach` émettant les lignes de compte. Aucune autre vue impactée (`sgGeneraux`, export, onglets Fournisseur/Client, résultat inchangés). `sw.js` yada-v80, badge v488, `version.json` 488.
+
+**Validé :** `node --check` (221 scripts, 0 erreur) + Playwright couche données (`sgGeneraux` brut **contient** 401ALRC00/411HABI00 → après filtre **exclus** ; onglets `sgComptes('fourn'/'clients')` **les conservent** ; collectif/TVA non filtrés) + `.sg-app` rendu (navTab) + filet d'équilibre (achat 600=600 ✅). Badge → **v488**.
+
+---
+
+## 🟢 MAJ précédente — Consultation : menu clic droit allégé + éditeur (icônes non-cliquables retirées, lignes d'écriture teintées) + grand-livre plein écran verrouillé — v487
 **Quoi :** quatre finitions de la Consultation des comptes.
 1. **Menu clic droit du grand-livre (`#cl-ctx`) allégé** : au lieu d'un bloc plein à bord épais, un menu **translucide** (fond `rgba(13,26,45,.86)` + flou), **bord fin**, **bouton léger** avec **petite icône crayon** (SVG) → « Modifier l'écriture ».
 2. **Éditeur d'écritures (`.ec-sage`) — icônes non-cliquables retirées** : dans la barre de titre, les glyphes décoratifs **`─` (réduire)** et **`▢` (agrandir)**, sans action, sont **supprimés** ; seule la **croix ✕** (fonctionnelle, `ecFermer()`) reste.
