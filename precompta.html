@@ -10974,7 +10974,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v473';
+    b.textContent='YADA · v474';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21157,6 +21157,9 @@ ${lignes}
       +ipt('sf-embauche','Date d\'embauche',s.dateEmbauche,'date')
       +'<label>Type de contrat<select id="sf-contrat">'+CT.map(function(x){return '<option'+((s.contratType||'CDI')===x?' selected':'')+'>'+x+'</option>';}).join('')+'</select></label>'
       +ipt('sf-idnum','N° carte d\'identité / passeport',s.idNum)
+      +ipt('sf-dpae','N° DPAE',s.dpaeNum)+ipt('sf-due','Date DUE',s.dueDate,'date')
+      +'<label>Nature de la pièce d\'identité<select id="sf-pnature">'+['','Carte nationale d\'identité','Passeport','Titre de séjour'].map(function(x){return '<option'+((s.pieceNature||'')===x?' selected':'')+'>'+(x||'—')+'</option>';}).join('')+'</select></label>'
+      +ipt('sf-pval','Date de validité de la pièce',s.pieceValidite,'date')
       +ipt('sf-brut','Salaire brut (€)',s.brut,'number')+ipt('sf-net','Salaire net (€)',s.net,'number')
       +'</div>'
       +'<div style="margin-top:10px"><button class="btn btn-pri btn-sm" onclick="salSave(\''+id+'\')">💾 Enregistrer</button> <button class="btn btn-ghost btn-sm" onclick="salSel=null;render()">Fermer</button></div>';
@@ -21172,6 +21175,7 @@ ${lignes}
     s.email=g('sf-email'); s.tel=g('sf-tel'); s.poste=g('sf-poste'); s.secu=g('sf-secu');
     var st=document.getElementById('sf-statut'); s.statut=st?st.value:'Non cadre';
     s.dateEmbauche=g('sf-embauche'); var ct=document.getElementById('sf-contrat'); s.contratType=ct?ct.value:'CDI'; s.idNum=g('sf-idnum');
+    s.dpaeNum=g('sf-dpae'); s.dueDate=g('sf-due'); var pn=document.getElementById('sf-pnature'); s.pieceNature=pn?pn.value:''; s.pieceValidite=g('sf-pval');
     s.brut=+g('sf-brut')||0; s.net=+g('sf-net')|| (s.brut?r2(s.brut*0.78):0);
     s.docs=s.docs||{fichesPaie:[]}; s.docs.fichesPaie=s.docs.fichesPaie||[]; s.conges=s.conges||[]; s.absences=s.absences||[];
     if(!s.couleur) s.couleur=PALETTE[r.salaries.length%PALETTE.length];
@@ -21279,27 +21283,54 @@ ${lignes}
   /* ---------- sous-module ÉQUIPE (liste imprimable) ---------- */
   function salEquipeDoc(){
     var r=RH(); var S=db.societe||{};
-    var adr=[S.adresse,((S.cp||'')+' '+(S.ville||'')).trim()].filter(Boolean).join(' · ');
-    var rows=r.salaries.map(function(s){ return '<tr><td>'+jd(s.dateEmbauche)+'</td><td>'+esc((s.nom||'')+' '+(s.prenom||''))+'</td><td>'+esc(s.idNum||'')+'</td><td>'+esc(s.contratType||'')+'</td></tr>'; }).join('')||'<tr><td colspan="4" style="text-align:center;padding:12px">Aucun salarié</td></tr>';
+    var adr=[[S.rueNum,S.adresse].filter(Boolean).join(' '), ((S.cp||'')+' '+(S.ville||'')).trim()].filter(Boolean).join(', ');
+    var rcsVille=S.rcsVille||S.ville||'';
+    var num=S.siren||S.rcs||S.siret||'';
+    var pres=r.presidentNom||S.dirigeant||'';
+    var qual=r.presidentQualite||'Gérant';
+    var den=S.raison||S.dossierNom||'';
+    var faitA=r.faitA||S.ville||'';
+    var dateJ=jd(typeof todayStr==='function'?todayStr():'');
+    var rows=r.salaries.map(function(s){
+      return '<tr>'
+        +'<td>'+esc(s.nom||'')+'</td>'
+        +'<td>'+esc(s.prenom||'')+'</td>'
+        +'<td>'+esc(s.dpaeNum||'')+'</td>'
+        +'<td>'+jd(s.dueDate)+'</td>'
+        +'<td>'+jd(s.dateEmbauche)+'</td>'
+        +'<td>'+esc(s.pieceNature||'')+'</td>'
+        +'<td>'+jd(s.pieceValidite)+'</td>'
+        +'<td>'+esc(s.idNum||'')+'</td>'
+        +'</tr>';
+    }).join('')||'<tr><td colspan="8" style="text-align:center;padding:12px">Aucun salarié</td></tr>';
     var sig=r.signature?'<img src="'+r.signature+'" alt="signature" style="max-height:70px;max-width:200px">':'';
-    return '<div class="doc-page sal-doc-page"><div class="sal-doc-soc">'
-      +'<div class="sal-doc-den">'+esc(S.raison||S.dossierNom||'')+'</div>'
-      +'<div>SIRET : '+esc(S.siret||'')+'</div><div>'+esc(adr)+'</div><div>Code APE : '+esc(S.codeAPE||S.ape||'')+'</div>'
-      +'<div>Date : '+jd(typeof todayStr==='function'?todayStr():'')+'</div></div>'
-      +'<div class="sal-doc-title">LISTE SALARIÉS</div>'
-      +'<table class="sal-doc-t"><thead><tr><th>Date d\'embauche</th><th>Nom Prénom</th><th>N° carte d\'identité / passeport</th><th>Type de contrat</th></tr></thead><tbody>'+rows+'</tbody></table>'
-      +'<div class="sal-doc-stamp"><div class="sal-doc-pres">Le Président : <b>'+esc(r.presidentNom||S.dirigeant||'')+'</b></div><div class="sal-doc-sig">'+sig+'</div><div class="sal-doc-tampon">Cachet &amp; signature</div></div>'
+    return '<div class="doc-page lp-doc">'
+      +'<div class="lp-title">LISTE DU PERSONNEL</div>'
+      +'<div class="lp-att">Je soussigné(e) <b>'+esc(pres||'…………')+'</b>, agissant en qualité de <b>'+esc(qual||'…………')+'</b>, de la société <b>'+esc(den||'…………')+'</b>, située <b>'+esc(adr||'…………')+'</b>, immatriculée au R.C.S. de <b>'+esc(rcsVille||'…………')+'</b> sous le numéro <b>'+esc(num||'…………')+'</b>, certifie que les personnes ci-dessous mentionnées font partie du personnel de l’entreprise :</div>'
+      +'<table class="lp-t"><thead><tr><th>Nom</th><th>Prénom</th><th>N° DPAE</th><th>Date DUE</th><th>Date Embauche</th><th>Nature Pièce Identité</th><th>Date de validité</th><th>Numéro de Pièce d’Identité</th></tr></thead><tbody>'+rows+'</tbody></table>'
+      +'<div class="lp-foot">'
+      +'<div class="lp-fait">Fait à <b>'+esc(faitA||'…………')+'</b>, le <b>'+dateJ+'</b></div>'
+      +'<div class="lp-sign"><div class="lp-sign-lbl">Nom du signataire (P.D.G., Gérant ou personne mandatée)</div>'
+      +'<div class="lp-sign-name">'+esc(pres||'')+'</div>'
+      +'<div class="lp-sign-img">'+sig+'</div>'
+      +'<div class="lp-cachet">(Cachet de la société)</div></div>'
+      +'</div>'
       +'</div>';
   }
   function salEquipe(){
     var r=RH(); var S=db.societe||{};
-    return '<div class="card"><h2>📋 Équipe — liste des salariés (document)</h2><div class="sub">Génère la liste officielle avec l\'en-tête de la société, un tampon et la signature du président.</div>'
-      +'<div class="pil-grid5"><label>Nom &amp; prénom du président<input id="eq-pres" value="'+esc(r.presidentNom||S.dirigeant||'')+'" onchange="salEquipeSet(\'presidentNom\',this.value)"></label>'
+    return '<div class="card"><h2>📋 Équipe — Liste du personnel (document)</h2><div class="sub">Génère la <b>LISTE DU PERSONNEL</b> officielle : attestation du signataire + tableau des salariés + cachet / signature.</div>'
+      +'<div class="pil-grid5">'
+      +'<label>Nom &amp; prénom du signataire<input id="eq-pres" value="'+esc(r.presidentNom||S.dirigeant||'')+'" onchange="salEquipeSet(\'presidentNom\',this.value)"></label>'
+      +'<label>Qualité du signataire<input id="eq-qual" value="'+esc(r.presidentQualite||'Gérant')+'" onchange="salEquipeSet(\'presidentQualite\',this.value)"></label>'
+      +'<label>Fait à<input id="eq-faita" value="'+esc(r.faitA||S.ville||'')+'" onchange="salEquipeSet(\'faitA\',this.value)"></label>'
       +'<label class="pil-up" style="align-self:end">🖊 Signature (image)<input type="file" accept="image/*" style="display:none" onchange="salSigUp(this)"></label>'
       +(r.signature?'<button class="btn btn-ghost btn-sm" style="align-self:end" onclick="salSigDel()">Retirer la signature</button>':'')
-      +'<button class="btn btn-pri btn-sm" style="align-self:end" onclick="salEquipeImprimer()">🖨 Imprimer / PDF</button></div>'
+      +'<button class="btn btn-pri btn-sm" style="align-self:end" onclick="salEquipeEnregistrer()">💾 Enregistrer</button>'
+      +'<button class="btn btn-ghost btn-sm" style="align-self:end" onclick="salEquipeImprimer()">🖨 Imprimer / PDF</button></div>'
       +'<div class="sal-doc-wrap">'+salEquipeDoc()+'</div></div>';
   }
+  window.salEquipeDoc=salEquipeDoc;
   window.salEquipeSet=function(k,v){ RH()[k]=v; if(typeof save==='function')save(); if(typeof render==='function')render(); };
   window.salSigUp=function(input){ fileToData(input,function(d){ RH().signature=d.data; if(typeof save==='function')save(); if(typeof toast==='function')toast('Signature ajoutée'); if(typeof render==='function')render(); }); };
   window.salSigDel=function(){ RH().signature=null; if(typeof save==='function')save(); if(typeof render==='function')render(); };
@@ -25121,6 +25152,89 @@ ${lignes}
     /* libellé (icône + texte) parfaitement centré, sans décalage vertical */
     +'.btn>*{display:inline-flex;align-items:center}';
   try{ var s=document.createElement('style'); s.id='btn-center-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
+})();
+</script>
+<script id="yada-addon222">
+/* v474 — Équipe : « Liste du personnel » enregistrable → visible dans l'Espace Admin.
+   Le bouton « 💾 Enregistrer » (onglet Équipe du module Salarié) mémorise un
+   instantané du document ; l'Espace Admin (Pilotages) affiche toutes les listes
+   enregistrées (dossier, signataire, date, nb salariés) avec « 👁 Voir ». 100% additif. */
+(function(){
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];}); }
+  function pad(n){ return (n<10?'0':'')+n; }
+  function frDT(ts){ if(!ts) return '—'; try{ var d=new Date(ts); return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear()+' à '+pad(d.getHours())+':'+pad(d.getMinutes()); }catch(e){ return '—'; } }
+  function store(){ try{ db.parametres=db.parametres||{}; if(!Array.isArray(db.parametres.listesPersonnel)) db.parametres.listesPersonnel=[]; return db.parametres.listesPersonnel; }catch(e){ return []; } }
+
+  window.salEquipeEnregistrer=function(){
+    var html=(typeof window.salEquipeDoc==='function')?window.salEquipeDoc():'';
+    var S=(db&&db.societe)||{}; var r=(db&&db.parametres&&db.parametres.rh)||{salaries:[]};
+    var rec={ id:(typeof uid==='function'?uid():'lp'+Date.now()),
+      dossierId:(db&&db.activeId)||'', dossierNom:S.raison||S.dossierNom||((db&&db.activeId)||''),
+      signataire:r.presidentNom||S.dirigeant||'', qualite:r.presidentQualite||'Gérant',
+      faitA:r.faitA||S.ville||'', nbSalaries:((r.salaries||[]).length),
+      date:(typeof todayStr==='function'?todayStr():''),
+      ts:(function(){ try{return (new Date()).getTime();}catch(e){return 0;} })(), html:html };
+    store().push(rec);
+    try{ if(typeof save==='function') save(); }catch(e){}
+    if(typeof toast==='function') toast('Liste du personnel enregistrée ✓ — visible dans l’Espace Admin.');
+    if(typeof render==='function') render();
+  };
+  window.listePersonnelVoir=function(id){
+    var rec=store().find(function(x){return x.id===id;}); if(!rec) return;
+    var mo=document.getElementById('modal'), mc=document.getElementById('modal-c');
+    if(mo&&mc){
+      mc.innerHTML='<div class="ra-etat-actions"><button class="btn btn-ghost" onclick="closeModal()">← Fermer</button>'
+        +'<button class="btn btn-pri" onclick="listePersonnelImprimer(\''+esc(id)+'\')">🖨 Imprimer</button></div>'
+        +'<div class="ra-etat-scroll">'+(rec.html||'')+'</div>';
+      mo.classList.add('show');
+    }
+  };
+  window.listePersonnelImprimer=function(id){
+    var rec=store().find(function(x){return x.id===id;}); if(!rec) return;
+    var pa=document.getElementById('print-area'); if(!pa){ pa=document.createElement('div'); pa.id='print-area'; document.body.appendChild(pa); }
+    pa.innerHTML='<div class="doc">'+(rec.html||'')+'</div>'; try{ window.print(); }catch(e){}
+  };
+  window.listePersonnelSuppr=function(id){
+    var go=function(){ db.parametres.listesPersonnel=store().filter(function(x){return x.id!==id;}); try{ if(typeof save==='function') save(); }catch(e){} if(typeof render==='function') render(); };
+    if(typeof yadaConfirm==='function') yadaConfirm('Supprimer cette liste du personnel enregistrée ?', go, {danger:true, ok:'Supprimer'});
+    else go();
+  };
+  /* Carte Admin : toutes les listes du personnel enregistrées. */
+  window.listesPersonnelAdminCard=function(){
+    var list=store().slice().sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
+    var rows=list.map(function(r){
+      return '<tr><td><b>'+esc(r.dossierNom||'—')+'</b></td><td>'+esc(r.signataire||'—')+'</td><td>'+esc(r.qualite||'')+'</td><td style="text-align:center">'+(r.nbSalaries||0)+'</td><td class="ra-when">'+esc(frDT(r.ts))+'</td>'
+        +'<td><button class="btn btn-ghost btn-sm" onclick="listePersonnelVoir(\''+esc(r.id)+'\')">👁 Voir</button> <button class="btn btn-ghost btn-sm" onclick="listePersonnelSuppr(\''+esc(r.id)+'\')">🗑</button></td></tr>';
+    }).join('') || '<tr><td colspan="6" style="text-align:center;color:#9fb6d0;padding:12px">Aucune liste du personnel enregistrée.</td></tr>';
+    return '<details class="card lp-adm-card">'
+      +'<summary><h2 style="display:inline">📋 Listes du personnel enregistrées</h2>'
+      +'<span class="ra-cnt">'+list.length+' liste(s)</span>'
+      +'<span class="ra-hint">Cliquer pour ouvrir</span></summary>'
+      +'<div class="sub" style="margin-top:8px">Listes du personnel enregistrées depuis l’onglet Équipe (module Salarié).</div>'
+      +'<div class="ra-scroll"><table class="ra-tbl"><thead><tr><th>Dossier</th><th>Signataire</th><th>Qualité</th><th>Salariés</th><th>Enregistré le</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+      +'</details>';
+  };
+  /* Greffe : visible dans l'Espace Admin (Pilotages / bouton Rapport admin). */
+  if(typeof window.rapportsPilotageCard==='function'){ var _rp=window.rapportsPilotageCard;
+    window.rapportsPilotageCard=function(){ var out=''; try{ out=_rp.apply(this,arguments)||''; }catch(e){}
+      try{ out+=window.listesPersonnelAdminCard(); }catch(e){} return out; }; }
+
+  /* Style du document « Liste du personnel » (attestation + tableau 8 colonnes + signature). */
+  var css=''
+    +'.lp-doc{padding:16mm 14mm}'
+    +'.lp-title{text-align:center;font-weight:800;font-size:20px;letter-spacing:1px;margin:0 0 18px;text-decoration:underline}'
+    +'.lp-att{font-size:13px;line-height:1.75;text-align:justify;margin-bottom:18px}'
+    +'.lp-t{width:100%;border-collapse:collapse;font-size:10.5px;margin-bottom:22px}'
+    +'.lp-t th,.lp-t td{border:1px solid #666;padding:5px 5px;text-align:center;vertical-align:middle}'
+    +'.lp-t thead th{background:#eee;font-weight:700}'
+    +'.lp-foot{margin-top:26px;font-size:13px}'
+    +'.lp-fait{margin-bottom:22px}'
+    +'.lp-sign{text-align:right;line-height:1.6}'
+    +'.lp-sign-lbl{font-size:12px;color:#333}'
+    +'.lp-sign-name{font-weight:700;margin-top:4px}'
+    +'.lp-sign-img{min-height:60px}'
+    +'.lp-cachet{font-size:12px;color:#333;margin-top:6px}';
+  try{ var s=document.createElement('style'); s.id='lp-doc-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
 })();
 </script>
 </body>

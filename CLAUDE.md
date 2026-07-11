@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — État d'avancement : barre d'actions recentrée (boutons groupés au centre, plus collés aux bords) — v473
+## 🟢 Dernière mise à jour — Équipe (Salarié) : document « LISTE DU PERSONNEL » (attestation officielle) + bouton Enregistrer → visible dans l'Espace Admin — v474
+**Quoi :** deux évolutions de l'onglet **Équipe** (module **Salarié**, Ressources Humaines).
+1. **Nouveau document « LISTE DU PERSONNEL »** (d'après le modèle PDF fourni) remplaçant l'ancienne « LISTE SALARIÉS » : **titre souligné**, **attestation** « Je soussigné(e) \<signataire\>, agissant en qualité de \<qualité\>, de la société \<dénomination\>, située \<adresse\>, immatriculée au R.C.S. de \<ville\> sous le numéro \<SIREN\>, certifie que les personnes ci-dessous mentionnées font partie du personnel de l'entreprise : », **tableau à 8 colonnes** (Nom · Prénom · N° DPAE · Date DUE · Date Embauche · Nature Pièce Identité · Date de validité · Numéro de Pièce d'Identité), pied **« Fait à …, le … »** + bloc signature **« Nom du signataire (P.D.G., Gérant ou personne mandatée) »** + **« (Cachet de la société) »**. Champs salarié ajoutés à la fiche (**N° DPAE**, **Date DUE**, **Nature de la pièce d'identité**, **Date de validité de la pièce**) + champs du formulaire Équipe (**Qualité du signataire**, **Fait à**).
+2. **Bouton « 💾 Enregistrer »** : mémorise un **instantané** du document dans `db.parametres.listesPersonnel[]` → l'**Espace Admin** (Pilotages / bouton Rapport admin) affiche une carte **« 📋 Listes du personnel enregistrées »** (Dossier · Signataire · Qualité · nb Salariés · Enregistré le) avec **👁 Voir** (rouvre le document, imprimable) et 🗑.
+
+**Comment :** `addon183` — `salEquipeDoc()` réécrit (doc `.lp-doc` : attestation + table `.lp-t` 8 colonnes + pied signature), `salEquipe()` (champs Qualité/Fait à + bouton Enregistrer), fiche `salFiche`/`salSave` (+ `dpaeNum`/`dueDate`/`pieceNature`/`pieceValidite`), `window.salEquipeDoc` exposé. `addon222` — `salEquipeEnregistrer()` (snapshot → store), `listePersonnelVoir/Imprimer/Suppr`, `listesPersonnelAdminCard()` greffée sur `rapportsPilotageCard` (Admin), `<style id="lp-doc-mod">`. `sw.js` yada-v66, badge v474, `version.json` 474.
+
+**Validé :** `node --check` (215 scripts, 0 erreur) + Playwright (doc : titre « LISTE DU PERSONNEL », attestation R.C.S./qualité, société+SIREN, **8 colonnes**, salarié DPAE/Passeport/n° pièce, pied « Fait à » + signataire + cachet, plus d'ancien « LISTE SALARIÉS » ; Enregistrer → **1** entrée `{dossier,signataire,nb,html,ts}` ; Admin : carte « Listes du personnel enregistrées » + entrée + 👁 Voir, greffée sur `rapportsPilotageCard` ; Voir → modale avec le doc ; 0 pageerror) + capture (document conforme au modèle) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v474**.
+
+---
+
+## 🟢 MAJ précédente — État d'avancement : barre d'actions recentrée (boutons groupés au centre, plus collés aux bords) — v473
 **Quoi :** dans la **modale de l'État d'avancement** (Cabinet & Admin), les boutons **← Fermer · ⤢ Agrandir · 🖨 Imprimer** étaient **collés aux bords** de la fenêtre (Fermer tout à gauche, Imprimer tout à droite via `justify-content:space-between`). Ils sont désormais **groupés et centrés** au milieu de la barre, avec des **espaces équilibrés** de chaque côté (plus aucun bouton collé à la bordure).
 
 **Comment :** `addon217` — `.ra-etat-actions{justify-content:center;align-items:center;gap:12px;margin:0 0 14px;padding:14px 18px 0;flex-wrap:wrap}` (au lieu de `space-between`) + `.ra-etat-actions>div{display:flex;gap:12px;align-items:center}` (groupe Agrandir+Imprimer). `sw.js` yada-v65, badge v473, `version.json` 473.
