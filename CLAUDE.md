@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Équipe : document « Liste du personnel » épuré (sans cadrage, tableau centré, pied en bas de page) + boutons en bas, taille normale — v475
+## 🟢 Dernière mise à jour — Liste du personnel : tableau des salariés remonté (sous le texte, pied toujours en bas) — v476
+**Quoi :** dans le document **« LISTE DU PERSONNEL »** (onglet Équipe), le **tableau des salariés est remonté** : au lieu d'être centré au milieu de la page, il est désormais **juste sous le texte d'attestation** (haut de page), le **pied « Fait à … » + signataire + cachet restant ancré en bas de page**.
+
+**Comment :** `addon222` (`<style id="lp-doc-mod">`) — `.lp-mid{justify-content:center → flex-start;padding:26px 0 → 26px 0 0}` (le tableau s'aligne en haut de la zone médiane ; `.lp-foot{margin-top:auto}` garde le pied en bas). `sw.js` yada-v68, badge v476, `version.json` 476.
+
+**Validé :** `node --check` (215 scripts, 0 erreur) + Playwright/mesures (espace texte→tableau **26px** (au lieu de ~283), tableau à **231px** du haut — remonté sous le texte, **pied ancré en bas** à 68px du bas) + capture (tableau en haut, pied en bas) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v476**.
+
+---
+
+## 🟢 MAJ précédente — Équipe : document « Liste du personnel » épuré (sans cadrage, tableau centré, pied en bas de page) + boutons en bas, taille normale — v475
 **Quoi :** deux ajustements de l'onglet **Équipe** (module Salarié).
 1. **Document plus frais** — le document « LISTE DU PERSONNEL » est **rendu épuré, SANS cadrage** (bord/ombre du `.doc-page` retirés), en **pleine hauteur A4** : **en-tête en haut** (titre + attestation), **tableau des salariés centré au milieu de la page**, **pied « Fait à …, le … » + signataire + cachet ancré en bas de page**. **Espace** ajouté **entre le titre et le texte** (34px) et **entre le texte et le tableau** (tableau centré dans la zone médiane). Tableau **plus léger** (bords `#d3dae4`, en-tête bleu clair `#f4f7fb`) ; colonnes en **auto-layout** (dates/n° intacts sur une ligne, en-têtes multi-mots repliés proprement, valeurs longues repliées ; l'ensemble tient dans la page).
 2. **Boutons en bas, taille normale** — les boutons **💾 Enregistrer** / **🖨 Imprimer / PDF** ne sont plus **étirés en pleine largeur** en haut du formulaire : ils passent dans une **barre compacte centrée sous le document** (boutons `btn-sm`, ~120-140px au lieu de ~700px).
