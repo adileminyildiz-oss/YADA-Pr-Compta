@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Module Rapport : page défilable (fin du contenu coupé) — v465
+## 🟢 Dernière mise à jour — Espace Admin « Collaborateurs & accès » : vue deux colonnes (liste des salariés à gauche + fiche du compte au survol à droite) — v466
+**Quoi :** dans l'Espace **Admin → Collaborateurs & accès**, une carte **« Salariés — liste & informations »** présente **deux colonnes** : à **gauche**, la **liste de tous les salariés/utilisateurs** (avatar + nom + e-mail + voyant actif/inactif, avec recherche) ; à **droite**, au **survol** d'un salarié, les **informations de son compte** (identifiant e-mail, mot de passe masqué + « Afficher », statut Actif/Inactif, poste, salaire, nombre de dossiers + **dossiers attribués** en tags). Le premier salarié est affiché par défaut ; la fiche se met à jour au survol (et au focus clavier).
+
+**Comment — `yada-addon219` (100% additif, Espace Admin) :** `usrTwoColCard()` (grille `.usr-2col` = liste `#usr-list` + fiche `#usr-info`) greffée **en tête** de `admCollabPanel()` ; survol via **délégation** `mouseover`/`focusin` sur `.usr-row[data-id]` → `infoHTML(s)` (réutilise `admPwToggle` pour révéler le mot de passe) ; `usrSearch()` (filtre live). `<style id="usr-mod">` (responsive : 1 colonne < 820px). Le panneau de gestion existant (Mot de passe / Désactiver, dossiers & attribution) reste en dessous. `sw.js` yada-v58, badge v466, `version.json` 466.
+
+**Validé :** `node --check` (212 scripts, 0 erreur) + Playwright (2 salariés : liste à gauche, fiche par défaut = 1ᵉʳ ; **survol de Marc → fiche « Marc Leroy · Inactif · marc@cab.fr · mot de passe masqué + Afficher · poste Assistant · 2 dossiers (ACTION BTP, ALR CONSEIL) »**, ligne active surlignée ; capture conforme ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v466**.
+
+---
+
+## 🟢 MAJ précédente — Module Rapport : page défilable (fin du contenu coupé) — v465
 **Quoi :** la **page « Rapport »** (bouton « ✎ Rapport » de la page d'ouverture → saisie/visualisation) est désormais **défilable** : quand le contenu dépasse la hauteur de l'écran (formulaire + liste des rapports + rapport mensuel, ou consolidations Admin), on peut **défiler** pour tout atteindre. Auparavant, `html,body{overflow:hidden}` (app-shell) coupait le bas de la page dans le parcours d'entrée (écran non défilable).
 
 **Comment — 1 édition d'`ecranRapport` (addon189) :** le conteneur `.ds-rapport-wrap` reçoit `height:100dvh;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch` (conteneur de défilement propre, indépendant du `overflow:hidden` global). `sw.js` yada-v57, badge v465, `version.json` 465.
