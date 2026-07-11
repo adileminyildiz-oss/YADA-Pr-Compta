@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Boutons recentrés partout (libellé centré, espaces équilibrés) + Rapport mensuel = 1 objet + travaux par mois (fin de la liste des vendredis) — v472
+## 🟢 Dernière mise à jour — État d'avancement : barre d'actions recentrée (boutons groupés au centre, plus collés aux bords) — v473
+**Quoi :** dans la **modale de l'État d'avancement** (Cabinet & Admin), les boutons **← Fermer · ⤢ Agrandir · 🖨 Imprimer** étaient **collés aux bords** de la fenêtre (Fermer tout à gauche, Imprimer tout à droite via `justify-content:space-between`). Ils sont désormais **groupés et centrés** au milieu de la barre, avec des **espaces équilibrés** de chaque côté (plus aucun bouton collé à la bordure).
+
+**Comment :** `addon217` — `.ra-etat-actions{justify-content:center;align-items:center;gap:12px;margin:0 0 14px;padding:14px 18px 0;flex-wrap:wrap}` (au lieu de `space-between`) + `.ra-etat-actions>div{display:flex;gap:12px;align-items:center}` (groupe Agrandir+Imprimer). `sw.js` yada-v65, badge v473, `version.json` 473.
+
+**Validé :** `node --check` (214 scripts, 0 erreur) + Playwright (barre `justify-content:center` ; écart gauche = écart droit = **189px** (symétrique, au lieu de ~0) ; capture : [← Fermer · ⤢ Agrandir · 🖨 Imprimer] groupés & centrés ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v473**.
+
+---
+
+## 🟢 MAJ précédente — Boutons recentrés partout (libellé centré, espaces équilibrés) + Rapport mensuel = 1 objet + travaux par mois (fin de la liste des vendredis) — v472
 **Quoi :** deux évolutions.
 1. **Recentrage universel des boutons** — **chaque bouton du système** (`.btn`) a désormais son **libellé parfaitement centré** (horizontalement **et** verticalement), avec des **espaces équilibrés** en haut, en bas, à gauche et à droite. Le centrage flex n'était appliqué qu'en mobile (≤820px) ; il est étendu à **tout le système (desktop compris)** — les libellés (ex. « ← Fermer ») ne sont plus collés en haut du bouton.
 2. **Rapport mensuel simplifié** — la carte **« 📅 Rapport mensuel »** ne génère **plus une liste de tous les vendredis** du mois : elle présente **un seul rapport par mois** — **Objet du rapport du mois** (liste éditable des 11 propositions ou saisie libre) + **Travaux effectués** + **Avancement**. Navigation par mois (‹ / ›) conservée ; consolidation Admin alignée (colonne **Objet**, un rapport par utilisateur/mois).
