@@ -10974,7 +10974,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v483';
+    b.textContent='YADA · v484';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -25404,6 +25404,118 @@ ${lignes}
     +'.tiers-menu .tm-danger{color:#ff9c9c}'
     +'.tiers-menu .tm-danger:hover{background:rgba(225,52,44,.24);color:#ffd7d7}';
   try{ var s=document.createElement('style'); s.id='tiers-menu-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
+})();
+</script>
+
+<script id="yada-addon226">
+/* v484 — Barre latérale du CABINET : design « Néon » + nouvelles icônes filaires.
+   Contour néon Crystal sur l'entrée active, icône qui s'illumine au survol ;
+   chaque module reçoit une icône SVG adaptée (calculatrice, colis, facture,
+   réseau, fronton, fiche+€, %, banque, …). 100% additif : wrap de buildNav
+   (pose les <svg> dans les .ico) + CSS néon prioritaire (scopé #nav). */
+(function(){
+  /* ---------- jeu d'icônes filaires (symboles réutilisables) ---------- */
+  var SYM = {
+    dash:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+    soc:'<path d="M4 21V6a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v15"/><path d="M12 10h7a1 1 0 0 1 1 1v10"/><path d="M2.5 21h19"/><path d="M7 8.5h2M7 12h2M7 15.5h2M15.5 13.5h1.5M15.5 17h1.5"/>',
+    user:'<circle cx="12" cy="8" r="3.4"/><path d="M5 20a7 7 0 0 1 14 0"/>',
+    param:'<circle cx="12" cy="12" r="3"/><path d="M12 2.6v2.4M12 19v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7M2.6 12H5M19 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/>',
+    compta:'<rect x="5" y="2.6" width="14" height="18.8" rx="2.2"/><rect x="8" y="5.4" width="8" height="3.4" rx="1"/><path d="M8.6 12.4h.01M12 12.4h.01M15.4 12.4h.01M8.6 15.4h.01M12 15.4h.01M15.4 15.4v3M8.6 18.4h.01M12 18.4h.01"/>',
+    four:'<path d="M21 8.5 12 3 3 8.5v7L12 21l9-5.5v-7Z"/><path d="M3 8.5 12 14l9-5.5"/><path d="M12 14v7"/><path d="M7.5 5.75 16.5 11.2"/>',
+    cli:'<path d="M6 2.6h9l3 3v13.4a1.4 1.4 0 0 1-2 1.25l-1.6-.9-1.7.95-1.7-.95-1.7.95-1.6-.9A1.4 1.4 0 0 1 6 19.1Z"/><path d="M9 8h6M9 11.5h6M9 15h3.5"/>',
+    tiers:'<circle cx="12" cy="5" r="2.3"/><circle cx="5" cy="18" r="2.3"/><circle cx="19" cy="18" r="2.3"/><path d="M10.6 6.9 6.4 15.9M13.4 6.9l4.2 9M7.3 18h9.4"/>',
+    immo:'<path d="M3.5 9 12 4l8.5 5"/><path d="M4.5 9.4h15"/><path d="M6 10.2v7M10 10.2v7M14 10.2v7M18 10.2v7"/><path d="M3.5 20.4h17"/>',
+    paie:'<rect x="4.5" y="2.6" width="15" height="18.8" rx="2.2"/><path d="M8 6.5h5"/><path d="M14.8 11.2a2.7 2.7 0 1 0 0 5.2"/><path d="M7.7 12.7h4M7.7 14.9h4"/>',
+    tva:'<path d="M6 18 18 6"/><circle cx="7.5" cy="7.5" r="2.1"/><circle cx="16.5" cy="16.5" r="2.1"/>',
+    banque:'<path d="M3.5 8.5 12 3.5l8.5 5"/><path d="M5 8.7h14"/><path d="M6.5 9.4v7.6M12 9.4v7.6M17.5 9.4v7.6"/><path d="M4 17.4h16"/><path d="M3 20.4h18"/>',
+    journal:'<path d="M12 5.5C10.5 4.3 8 3.8 4.8 4.2A1 1 0 0 0 4 5.2v11.4a1 1 0 0 0 1.1 1c2.9-.35 5.2.1 6.9 1.3 1.7-1.2 4-1.65 6.9-1.3a1 1 0 0 0 1.1-1V5.2a1 1 0 0 0-.8-1C16 3.8 13.5 4.3 12 5.5Z"/><path d="M12 5.5v12.5"/>',
+    editions:'<path d="M7 8.5V3.5h10v5"/><rect x="4.5" y="8.5" width="15" height="7.5" rx="1.5"/><path d="M7 16.5v4h10v-4"/><path d="M16.5 11.5h.01"/>',
+    reglements:'<circle cx="12" cy="12" r="8.2"/><path d="M14.5 9.4a3.4 3.4 0 1 0 0 5.2"/><path d="M8.6 11h4M8.6 13h4"/>',
+    analytique:'<path d="M4 20h16"/><rect x="5.5" y="11" width="3" height="7" rx=".6"/><rect x="10.5" y="7" width="3" height="11" rx=".6"/><rect x="15.5" y="13" width="3" height="5" rx=".6"/>',
+    plan:'<path d="M8 6.5h11M8 12h11M8 17.5h11"/><path d="M4.5 6.5h.01M4.5 12h.01M4.5 17.5h.01"/>',
+    pilotage:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".9" fill="currentColor" stroke="none"/>',
+    fraiskm:'<path d="M3.5 15.5v-2.2l2-4.3a2 2 0 0 1 1.8-1.2h9.4a2 2 0 0 1 1.8 1.2l2 4.3v2.2"/><path d="M3.5 13.3h17"/><circle cx="7.5" cy="16.2" r="1.7"/><circle cx="16.5" cy="16.2" r="1.7"/>',
+    rappro:'<path d="M9 15l6-6"/><path d="M10.5 6.5 12 5a3.5 3.5 0 0 1 5 5l-1.5 1.5"/><path d="M13.5 17.5 12 19a3.5 3.5 0 0 1-5-5l1.5-1.5"/>',
+    coffre:'<rect x="4" y="4.5" width="16" height="15" rx="2"/><circle cx="11.5" cy="12" r="3.2"/><path d="M11.5 12h3.3"/><path d="M7 4.5v15"/>',
+    fec:'<path d="M4 8h9"/><path d="M10 5 13 8l-3 3"/><path d="M20 16h-9"/><path d="M14 13l-3 3 3 3"/>',
+    ia:'<path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18 15l.6 1.6 1.6.6-1.6.6L18 20l-.6-1.6L15.8 17.8l1.6-.6z"/>'
+  };
+  function svg(k){ return '<svg class="nav-neon-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+SYM[k]+'</svg>'; }
+
+  /* ---------- mapping libellé → icône (ordonné, 1er match) ---------- */
+  function norm(s){ return (s||'').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+  var RULES=[
+    [/rapprochement/,'rappro'],
+    [/saisie journal banque|banque|releve/,'banque'],
+    [/tableau de bord/,'dash'],
+    [/espace client/,'user'],
+    [/comptabilite|centre de controle|consultation|analyse/,'compta'],
+    [/journal/,'journal'],
+    [/edition/,'editions'],
+    [/reglement/,'reglements'],
+    [/analytique/,'analytique'],
+    [/plan comptable/,'plan'],
+    [/assistant ia|(^| )ia( |$)/,'ia'],
+    [/pilotage/,'pilotage'],
+    [/salarie/,'paie'],
+    [/immobil/,'immo'],
+    [/frais km|carburant/,'fraiskm'],
+    [/charge|paie/,'paie'],
+    [/fourniss/,'four'],
+    [/client/,'cli'],
+    [/tiers/,'tiers'],
+    [/tva/,'tva'],
+    [/import|export|\bfec\b/,'fec'],
+    [/information/,'soc'],
+    [/societe|portefeuille|dossier/,'soc'],
+    [/coffre/,'coffre'],
+    [/parametr/,'param']
+  ];
+  function keyFor(label){ var s=norm(label); for(var i=0;i<RULES.length;i++){ if(RULES[i][0].test(s)) return RULES[i][1]; } return null; }
+
+  /* ---------- pose les icônes SVG dans la barre latérale ---------- */
+  function decorate(){
+    if(window.sessionRole==='client') return; /* nav client = tabbar mobile, non concernée */
+    var nav=document.getElementById('nav'); if(!nav) return;
+    var btns=nav.querySelectorAll('.nav-btn'); if(!btns.length) return;
+    btns.forEach(function(b){
+      var ic=b.querySelector('.ico'); var nl=b.querySelector('.nl');
+      if(!ic || !nl) return;
+      if(ic.getAttribute('data-neon')==='1') return; /* idempotent (le rebuild remet un glyphe) */
+      var k=keyFor(nl.textContent||b.textContent);
+      if(k && SYM[k]){ ic.innerHTML=svg(k); ic.setAttribute('data-neon','1'); }
+    });
+  }
+
+  if(typeof buildNav==='function'){
+    var _bn=buildNav;
+    buildNav=function(){ var r=_bn.apply(this,arguments); try{ decorate(); }catch(e){} return r; };
+  }
+  if(typeof render==='function'){
+    var _rd=render; render=function(){ var r=_rd.apply(this,arguments); try{ decorate(); }catch(e){} return r; };
+  }
+  try{ decorate(); }catch(e){}
+
+  /* ---------- style NÉON (injecté en dernier → prioritaire, #nav = spécificité id) ---------- */
+  var css=''
+    /* fond très sombre bleu nuit pour faire ressortir le néon */
+    +'html body[data-theme] aside{background:#070d18 !important;background-image:none !important;border-right:1px solid rgba(30,144,255,.30) !important;-webkit-backdrop-filter:none !important;backdrop-filter:none !important}'
+    /* entrées au repos */
+    +'body[data-theme] #nav .nav-btn{color:#9db6da !important;background:transparent !important;border:1px solid transparent !important;border-radius:11px !important;box-shadow:none !important;transform:none !important;transition:color .18s ease,background .18s ease,border-color .18s ease,box-shadow .18s ease !important}'
+    +'body[data-theme] #nav .nav-btn .ico{color:#6d8cbb !important;opacity:1 !important;display:inline-flex;align-items:center;justify-content:center;width:22px !important;transition:color .18s ease,filter .18s ease}'
+    +'body[data-theme] #nav .nav-btn .nav-neon-ic{width:18px;height:18px;display:block}'
+    +'body[data-theme] #nav .nav-sub-btn .nav-neon-ic{width:16px;height:16px}'
+    /* survol : icône qui s\'illumine */
+    +'body[data-theme] #nav .nav-btn:hover{color:#ffffff !important;background:rgba(30,144,255,.06) !important;transform:none !important}'
+    +'body[data-theme] #nav .nav-btn:hover .ico{color:#5ab0ff !important;filter:drop-shadow(0 0 6px rgba(90,176,255,.65))}'
+    /* actif : contour néon Crystal + halo */
+    +'body[data-theme] #nav .nav-btn.active,body[data-theme] #nav .nav-grp-h.has-active{color:#eaf4ff !important;border:1px solid rgba(90,176,255,.55) !important;background:radial-gradient(120% 140% at 0% 50%,rgba(30,144,255,.20),transparent 70%) !important;box-shadow:0 0 0 1px rgba(30,144,255,.25),0 0 22px -6px rgba(30,144,255,.85) !important;font-weight:600 !important;transform:none !important}'
+    +'body[data-theme] #nav .nav-btn.active .ico,body[data-theme] #nav .nav-grp-h.has-active .ico{color:#bfe4ff !important;filter:drop-shadow(0 0 7px rgba(90,176,255,.9))}'
+    /* sections, sous-groupe, chevron */
+    +'body[data-theme] #nav .nav-sec{color:#5f7db0 !important;letter-spacing:.2em !important}'
+    +'body[data-theme] #nav .nav-sub{border-left:2px solid rgba(30,144,255,.42) !important}'
+    +'body[data-theme] #nav .nav-chev{color:#5ab0ff !important;opacity:.85 !important}';
+  try{ var st=document.createElement('style'); st.id='neon-nav-mod'; st.textContent=css; document.head.appendChild(st); }catch(e){}
 })();
 </script>
 </body>
