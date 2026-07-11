@@ -10974,7 +10974,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v464';
+    b.textContent='YADA · v465';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21838,7 +21838,7 @@ ${lignes}
   }
   /* Page « Rapport » ouverte depuis l'accueil « Espace dossiers » (hors dossier). */
   function ecranRapport(){
-    return '<div class="login-wrap ds-rapport-wrap" style="max-width:1120px">'+loginHead()
+    return '<div class="login-wrap ds-rapport-wrap" style="max-width:1120px;height:100dvh;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch">'+loginHead()
       +'<div class="login-title">Rapport</div>'
       +'<div class="login-sub">Rapports journaliers des travaux effectués — transmis au module Pilotages (Espace Admin) pour le suivi.</div>'
       +'<div class="login-actions"><button class="btn btn-ghost ds-back-btn" onclick="dsAccueil()"><span class="ds-back-arrow">←</span> Retour aux dossiers</button></div>'
