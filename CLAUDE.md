@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Rapport (Cabinet) : Objet en liste éditable (11 propositions ou libre) + Travaux à plusieurs lignes (chaque travail = un rapport) + report AUTO dans l'État d'avancement — v471
+## 🟢 Dernière mise à jour — Boutons recentrés partout (libellé centré, espaces équilibrés) + Rapport mensuel = 1 objet + travaux par mois (fin de la liste des vendredis) — v472
+**Quoi :** deux évolutions.
+1. **Recentrage universel des boutons** — **chaque bouton du système** (`.btn`) a désormais son **libellé parfaitement centré** (horizontalement **et** verticalement), avec des **espaces équilibrés** en haut, en bas, à gauche et à droite. Le centrage flex n'était appliqué qu'en mobile (≤820px) ; il est étendu à **tout le système (desktop compris)** — les libellés (ex. « ← Fermer ») ne sont plus collés en haut du bouton.
+2. **Rapport mensuel simplifié** — la carte **« 📅 Rapport mensuel »** ne génère **plus une liste de tous les vendredis** du mois : elle présente **un seul rapport par mois** — **Objet du rapport du mois** (liste éditable des 11 propositions ou saisie libre) + **Travaux effectués** + **Avancement**. Navigation par mois (‹ / ›) conservée ; consolidation Admin alignée (colonne **Objet**, un rapport par utilisateur/mois).
+
+**Comment :** `addon221` — `<style id="btn-center-mod">` : `.btn{display:inline-flex;align-items:center!important;justify-content:center!important;gap:6px;line-height:1.1;box-sizing:border-box;text-align:center;vertical-align:middle}` (+ `.btn>*` centré). `display` **sans** `!important` → un bouton masqué (`display:none`) reste masqué. `addon218` — rapport mensuel réécrit : `db.parametres.rapportsMensuels[]` = `{authorKey,authorNom,mois,objet,travaux,statut,ts}` (clé **mois**, plus `vendredi`) ; `getM(key,mois)`, `rmSet(mois,field,val)` ; `rapportMensuelCard()` = formulaire `.rm-form` (Objet `<input list=rm-objet-list>` + `<datalist>` 11 propositions, Travaux `<textarea>`, Avancement `<select>`) ; `rapportMensuelAdminCard()` = table Utilisateur/Objet/Travaux/Avancement/Saisi le. `sw.js` yada-v64, badge v472, `version.json` 472.
+
+**Validé :** `node --check` (214 scripts, 0 erreur) + Playwright (boutons : `.btn` = `inline-flex` + align/justify `center`, bouton `display:none` reste masqué ; rapport mensuel : formulaire Objet+Travaux+Avancement, **aucune** table de vendredis (0 ligne `.rm-vd`), datalist **11** propositions, saisie → **1** entrée `{mois,objet,travaux,statut}` sans `vendredi` ; Admin : colonne **Objet**, entrée visible, plus d'en-tête « Vendredi » ; 0 pageerror) + capture (barre [← Fermer · ⤢ Agrandir · 🖨 Imprimer] libellés centrés) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v472**.
+
+---
+
+## 🟢 MAJ précédente — Rapport (Cabinet) : Objet en liste éditable (11 propositions ou libre) + Travaux à plusieurs lignes (chaque travail = un rapport) + report AUTO dans l'État d'avancement — v471
 **Quoi :** trois évolutions de la carte **« ➕ Nouveau rapport journalier »** (Espace Cabinet).
 1. **Objet en liste éditable** — le champ **Objet** propose désormais une **liste déroulante de propositions** *et* reste **saisissable librement** : **Déclaration TVA mensuel · Déclaration TVA annuel · Déclaration Impôt sur les Sociétés · Déclaration de Revenu · Relances Client · Rapprochement bancaire · Saisie Facture Fournisseur · Saisie Facture Client · Saisie OD de Charges · Saisie OD de Paie · Analyse** (on choisit dans la liste **ou** on écrit son propre objet).
 2. **Travaux à plusieurs lignes** — le champ **Travaux effectués** devient une **liste** : on **énumère plusieurs travaux** (bouton **« ➕ Ajouter un travail »**, ✕ pour retirer) **ou un seul** ; à l'enregistrement, **chaque travail non vide devient un rapport distinct** (même date/dossier/objet/avancement) → **chaque rapport est considéré** (listé & compté dans Pilotages).
