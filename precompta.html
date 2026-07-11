@@ -10974,7 +10974,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v470';
+    b.textContent='YADA · v471';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -24362,6 +24362,27 @@ ${lignes}
       +'</details>';
   }
   window.eaCard=eaCard;
+  /* Coche/décoche une case de l'état d'avancement (dossier × tâche × mois). Reste modifiable ensuite. */
+  window.eaSetCell=function(id, taskKey, monthIdx, val){
+    try{
+      if(!id||!taskKey) return false;
+      if(!TASKS.some(function(t){return t.k===taskKey;})) return false;
+      var m=+monthIdx; if(!(m>=0&&m<=11)) return false;
+      var rr=rec(id); rr.tasks[taskKey]=rr.tasks[taskKey]||{}; rr.tasks[taskKey][m]=(val!==false);
+      return true;
+    }catch(e){ return false; }
+  };
+  /* Correspondance Objet du rapport → tâche de l'état d'avancement (null si aucune). */
+  window.eaObjetTask=function(objet){
+    var o=String(objet||'').toLowerCase();
+    if(/tva/.test(o)) return 'tva';
+    if(/rapprochement|rappro/.test(o)) return 'rap';
+    if(/facture\s*fournisseur/.test(o)) return 'ha';
+    if(/facture\s*client/.test(o)) return 'vt';
+    if(/od\s*de\s*charges|od\s*de\s*paie|paie|charges/.test(o)) return 'od';
+    if(/analyse|inventaire/.test(o)) return 'inv';
+    return null;
+  };
   /* Exposé : statut d'avancement d'un dossier + tableau imprimable d'un dossier. */
   window.eaProgress=function(id){ return progress(id); };
   /* Signature de l'état d'avancement d'un dossier (pour la vérification Admin). */
@@ -24503,25 +24524,52 @@ ${lignes}
   function nom(s){ return [s.prenom,s.nom].filter(Boolean).join(' ')||s.email||'—'; }
   function meNom(){ try{ if(typeof window.yadaCurrentUserName==='function') return window.yadaCurrentUserName(); }catch(e){} return ''; }
   var STATUTS=['En cours','Terminé','Bloqué','En attente'];
+  /* Objets proposés (liste éditable : on choisit OU on écrit librement). */
+  var OBJETS=['Déclaration TVA mensuel','Déclaration TVA annuel','Déclaration Impôt sur les Sociétés','Déclaration de Revenu','Relances Client','Rapprochement bancaire','Saisie Facture Fournisseur','Saisie Facture Client','Saisie OD de Charges','Saisie OD de Paie','Analyse'];
 
   function meId(){ try{ return window.staffId||''; }catch(e){ return ''; } }
+  /* Travaux effectués : une ou plusieurs lignes (chaque ligne = un rapport considéré). */
+  window.raTwRow=function(){
+    return '<div class="ra-tw-row"><textarea class="ra-tw" rows="2" placeholder="Détail du travail effectué…"></textarea>'
+      +'<button type="button" class="btn btn-ghost btn-sm ra-tw-del" onclick="raTwDel(this)" title="Retirer ce travail">✕</button></div>';
+  };
+  window.raTwAdd=function(){ var l=document.getElementById('ra-travaux-list'); if(l){ l.insertAdjacentHTML('beforeend', window.raTwRow()); } };
+  window.raTwDel=function(btn){
+    var l=document.getElementById('ra-travaux-list'); if(!l) return;
+    var rows=l.querySelectorAll('.ra-tw-row');
+    if(rows.length<=1){ var ta=rows[0]?rows[0].querySelector('.ra-tw'):null; if(ta) ta.value=''; return; }
+    var row=btn.closest('.ra-tw-row'); if(row) row.remove();
+  };
   window.raEnregistrer=function(){
     var g=function(id){ var el=document.getElementById(id); return el?el.value:''; };
-    var travaux=(g('ra-travaux')||'').trim();
-    if(!travaux){ if(typeof toast==='function') toast('Renseignez les travaux effectués.'); else alert('Renseignez les travaux effectués.'); return; }
+    /* Travaux effectués : une ou plusieurs lignes → chaque ligne est un rapport considéré. */
+    var travs=[].slice.call(document.querySelectorAll('#ra-travaux-list .ra-tw'))
+      .map(function(t){ return (t.value||'').trim(); }).filter(function(x){ return x; });
+    if(!travs.length){ if(typeof toast==='function') toast('Renseignez au moins un travail effectué.'); else alert('Renseignez au moins un travail effectué.'); return; }
     /* utilisateur = compte connecté (un seul par connexion) — pas de choix d'utilisateur */
     var st=staffL().find(function(x){return x.id===meId();});
     var dossierId=g('ra-dossier'); var d=dossL().find(function(x){return x.id===dossierId;});
-    var r={ id:(typeof uid==='function'?uid():'r'+Date.now()), date:g('ra-date')||today(),
-      collabId:meId()||'', collabNom: st?nom(st):(meNom()||'—'),
-      dossierId:dossierId||'', dossierNom: d?(d.nom||''):'',
-      objet:(g('ra-objet')||'').trim(),
-      travaux:travaux,
-      statut:g('ra-statut')||'En cours', remarques:(g('ra-remarques')||'').trim(),
-      ts:(function(){ try{return (new Date()).getTime();}catch(e){return 0;} })() };
-    raps().push(r);
+    var date=g('ra-date')||today();
+    var objet=(g('ra-objet')||'').trim();
+    var statut=g('ra-statut')||'En cours';
+    var remarques=(g('ra-remarques')||'').trim();
+    var base=(function(){ try{return (new Date()).getTime();}catch(e){return 0;} })();
+    travs.forEach(function(tx,i){
+      var r={ id:(typeof uid==='function'?uid():'r'+base+'_'+i), date:date,
+        collabId:meId()||'', collabNom: st?nom(st):(meNom()||'—'),
+        dossierId:dossierId||'', dossierNom: d?(d.nom||''):'',
+        objet:objet, travaux:tx, statut:statut, remarques:remarques, ts:base+i };
+      raps().push(r);
+    });
+    /* Report automatique dans l'ÉTAT D'AVANCEMENT : coche la tâche liée à l'objet
+       pour le mois du rapport (le dossier concerné). Reste modifiable ensuite. */
+    if(dossierId && objet && typeof window.eaObjetTask==='function' && typeof window.eaSetCell==='function'){
+      var tk=window.eaObjetTask(objet);
+      var mi=parseInt(String(date).slice(5,7),10)-1;
+      if(tk && mi>=0 && mi<=11) window.eaSetCell(dossierId, tk, mi, true);
+    }
     try{ if(typeof save==='function') save(); }catch(e){}
-    if(typeof toast==='function') toast('Rapport journalier enregistré ✓ — transmis à Pilotages.');
+    if(typeof toast==='function') toast(travs.length>1?(travs.length+' rapports enregistrés ✓ — transmis à Pilotages & État d’avancement.'):'Rapport journalier enregistré ✓ — transmis à Pilotages & État d’avancement.');
     if(typeof render==='function') render();
   };
   /* Ouvrir le tableau d'avancement d'un dossier dans une page (modale) imprimable & enregistrable. */
@@ -24577,6 +24625,7 @@ ${lignes}
     var ds=dossL(), list=raps().slice().sort(function(a,b){ return String(b.date).localeCompare(String(a.date)) || ((b.ts||0)-(a.ts||0)); });
     var dossOpts='<option value="">— Général / interne —</option>'+ds.slice().sort(function(a,b){return String(a.nom||'').localeCompare(String(b.nom||''),'fr',{sensitivity:'base'});}).map(function(d){ return '<option value="'+esc(d.id)+'">'+esc(d.nom||'—')+'</option>'; }).join('');
     var statOpts=STATUTS.map(function(s){ return '<option value="'+esc(s)+'">'+esc(s)+'</option>'; }).join('');
+    var objOpts=OBJETS.map(function(o){ return '<option value="'+esc(o)+'"></option>'; }).join('');
 
     /* Formulaire : pas de choix d'utilisateur (compte connecté), pas de temps ; Objet avant Travaux. */
     var form='<div class="card"><h2>➕ Nouveau rapport journalier</h2>'
@@ -24585,8 +24634,10 @@ ${lignes}
       +'<label>Date<input id="ra-date" type="date" value="'+esc(today())+'" max="9999-12-31"></label>'
       +'<label>Dossier concerné<select id="ra-dossier">'+dossOpts+'</select></label>'
       +'<label>Avancement<select id="ra-statut">'+statOpts+'</select></label>'
-      +'<label class="ra-full">Objet<input id="ra-objet" type="text" placeholder="Ex. : TVA novembre, rapprochement bancaire…"></label>'
-      +'<label class="ra-full">Travaux effectués<textarea id="ra-travaux" rows="3" placeholder="Décrivez les travaux effectués aujourd’hui…"></textarea></label>'
+      +'<label class="ra-full">Objet<input id="ra-objet" list="ra-objet-list" type="text" autocomplete="off" placeholder="Choisir dans la liste ou écrire l’objet…"><datalist id="ra-objet-list">'+objOpts+'</datalist></label>'
+      +'<div class="ra-full ra-tw-block"><div class="ra-tw-lbl">Travaux effectués <span class="ra-tw-hint">— un ou plusieurs travaux ; chaque travail est un rapport considéré</span></div>'
+      +'<div id="ra-travaux-list">'+window.raTwRow()+'</div>'
+      +'<button type="button" class="btn btn-ghost btn-sm ra-tw-add" onclick="raTwAdd()">➕ Ajouter un travail</button></div>'
       +'<label class="ra-full">Remarques / points bloquants<textarea id="ra-remarques" rows="2" placeholder="Optionnel"></textarea></label>'
       +'</div>'
       +'<div style="margin-top:12px"><button class="btn btn-pri" onclick="raEnregistrer()">Enregistrer le rapport</button></div>'
@@ -24698,6 +24749,13 @@ ${lignes}
     +'.ra-form .ra-full{grid-column:1/-1}'
     +'.ra-form input,.ra-form select,.ra-form textarea{background:#0b1524;border:1px solid #24405d;color:#eaf2ff;border-radius:8px;padding:7px 9px;font-size:13px;font-family:inherit}'
     +'.ra-form textarea{resize:vertical}'
+    +'.ra-tw-lbl{font-size:12.5px;color:#9fb6d0;font-weight:600;margin-bottom:5px}'
+    +'.ra-tw-hint{font-weight:500;color:#7f93ab;font-size:11.5px}'
+    +'#ra-travaux-list{display:flex;flex-direction:column;gap:8px}'
+    +'.ra-tw-row{display:flex;gap:8px;align-items:flex-start}'
+    +'.ra-tw-row .ra-tw{flex:1;background:#0b1524;border:1px solid #24405d;color:#eaf2ff;border-radius:8px;padding:7px 9px;font-size:13px;font-family:inherit;resize:vertical}'
+    +'.ra-tw-del{flex:0 0 auto;padding:6px 10px}'
+    +'.ra-tw-add{margin-top:8px}'
     +'.ra-scroll{overflow:auto;max-height:60vh;border:1px solid rgba(130,185,255,.16);border-radius:10px;margin-top:10px}'
     +'.ra-tbl{width:100%;border-collapse:collapse;font-size:12.5px}'
     +'.ra-tbl th,.ra-tbl td{padding:6px 9px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;vertical-align:top}'
