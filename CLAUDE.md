@@ -36,7 +36,20 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Consultation des comptes : refonte NÉON (grand-livre + éditeur) + barre latérale (« Consultation » + défilement des titres longs) — v486
+## 🟢 Dernière mise à jour — Consultation : menu clic droit allégé + éditeur (icônes non-cliquables retirées, lignes d'écriture teintées) + grand-livre plein écran verrouillé — v487
+**Quoi :** quatre finitions de la Consultation des comptes.
+1. **Menu clic droit du grand-livre (`#cl-ctx`) allégé** : au lieu d'un bloc plein à bord épais, un menu **translucide** (fond `rgba(13,26,45,.86)` + flou), **bord fin**, **bouton léger** avec **petite icône crayon** (SVG) → « Modifier l'écriture ».
+2. **Éditeur d'écritures (`.ec-sage`) — icônes non-cliquables retirées** : dans la barre de titre, les glyphes décoratifs **`─` (réduire)** et **`▢` (agrandir)**, sans action, sont **supprimés** ; seule la **croix ✕** (fonctionnelle, `ecFermer()`) reste.
+3. **Lignes d'écriture teintées** : dans l'éditeur, la **ligne du compte consulté** (`.ec-r.ec-mine`) reçoit une **teinte bleue** (`rgba(30,144,255,.10)`), la contrepartie (`.ec-other`) une teinte très discrète, + survol accentué → meilleure lisibilité.
+4. **Grand-livre : plein écran VERROUILLÉ** : après avoir **lettré** puis **passé à un autre compte** (▲▼), la page ne **rétrécit plus**. Le gestionnaire de fenêtres (addon89) réappliquait une géométrie flottante réduite ; `#cl-overlay .cl-neon` est désormais forcé en **plein écran** (`position/width/height/left/top` en `!important`, poignée de redimensionnement masquée) → prime sur les styles inline du WM.
+
+**Comment :** `clMenu` (HTML du menu : `.cl-mi` + SVG crayon + « Modifier l'écriture ») ; `.ec-titlebar .ec-winbtn` (ligne 9230) → retrait de `<i>─</i><i>▢</i>` ; `yada-addon227` (`cl-neon-mod`) += teinte `.ec-r.ec-mine/.ec-other/:hover`, menu `#cl-ctx` allégé, et **verrou plein écran** `#cl-overlay .cl-neon{…!important}` + `.wm-resize` masquée. `sw.js` yada-v79, badge v487, `version.json` 487.
+
+**Validé :** `node --check` (221 scripts, 0 erreur) + Playwright (éditeur : `ec-winbtn` = 1 seule `<i class="x">✕`, plus de `─ ▢` ; ligne `.ec-mine` fond `rgba(30,144,255,.1)` ; menu clic droit : `.cl-mi` + SVG, fond translucide, « Modifier l'écriture » ; **plein écran verrouillé** : après `wmToggle('cl')` + `clRender` + `clNav`, `.cl-neon` reste **1300×800** (= viewport) ; 0 pageerror) + filet d'équilibre (achat 600=600 ✅). Badge → **v487**.
+
+---
+
+## 🟢 MAJ précédente — Consultation des comptes : refonte NÉON (grand-livre + éditeur) + barre latérale (« Consultation » + défilement des titres longs) — v486
 **Quoi :** deux volets.
 1. **Grand-livre du tiers (lecture seule, `#cl-overlay`) refondu en NÉON** avec **nouvelles fonctions** : barre de titre (compte + solde en évidence), barre d'outils groupée (navigation ▲▼ entre tiers · « Saisir une opération » · **recherche instantanée** · **filtres Tous / Non lettrés / Lettrés** · **Export CSV**), barre de lettrage avec **contrôle en direct** (bouton actif seulement si Débit = Crédit), tableau à **en-tête collant + tri par colonne** (clic sur l'en-tête), journal en pastille, lettres en badge, solde progressif (conservé même en tri/filtre), **totaux ancrés en bas**. L'**éditeur d'écritures (`.ec-sage`)** reçoit une **coherence Néon** (fond bleu nuit, en-têtes/accents Crystal). Fonctions conservées : lettrage (`clLettrerSel`/`clDelettrerSel`), navigation `clNav`, clic droit → journal (`clMenu`), saisie.
 2. **Barre latérale** : le module **« Analyse — centre de contrôle » devient « Consultation »** (libellé raccourci) ; les **titres trop longs défilent au survol** pour révéler l'intégralité (marquee).
