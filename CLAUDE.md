@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Accueil : ESPACE ADMIN & LISTE DOSSIER en bleu plein + soulignement BLANC — v478
+## 🟢 Dernière mise à jour — Accueil : soulignement blanc (ESPACE ADMIN & LISTE DOSSIER) animé au survol comme les autres boutons — v479
+**Quoi :** sur les deux boutons **ESPACE ADMIN** et **LISTE DOSSIER** (bleus pleins, v478), le **soulignement blanc** n'est plus figé (affiché en permanence) : il **apparaît/grandit au survol** (puis se rétracte), **comme sur les autres boutons**. Les boutons restent bleus pleins ; seule la barre blanche s'anime désormais.
+
+**Comment — `yada-addon223` (1 retrait) :** dans le `::after` ciblé de ces deux boutons, suppression du `transform:scaleX(1)!important` (affichage permanent) → il ne reste que `background:#fff` (ligne blanche). Le soulignement suit alors la règle générale (`.btn:hover::after{transform:scaleX(1)}`) : masqué au repos (`scaleX(0)`), révélé au survol. `sw.js` yada-v71, badge v479, `version.json` 479.
+
+**Validé :** `node --check` (216 scripts, 0 erreur) + Playwright (au repos : `::after` `scaleX(0)` blanc, bouton toujours rempli bleu ; au survol : `::after` `scaleX(1)` blanc ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v479**.
+
+---
+
+## 🟢 MAJ précédente — Accueil : ESPACE ADMIN & LISTE DOSSIER en bleu plein + soulignement BLANC — v478
 **Quoi :** sur la page d'accueil « Espace dossiers », les deux boutons **ESPACE ADMIN** et **LISTE DOSSIER** sont désormais **bleus (remplis)** avec un **soulignement blanc** permanent sous le libellé, pour les distinguer comme actions principales. Les autres boutons gardent le style contour bleu (v477).
 
 **Comment — `yada-addon223` (ajout au `<style id="btn-unify-mod">`) :** règles ciblées `#adm-enter-btn`, `#adm-enter-inline` (Espace Admin) et `.btn[onclick="dsOuvrirListe()"]` (Liste Dossier) → `color:#fff` + `box-shadow:inset 0 0 0 240px #1e90ff` (remplissage bleu) ; leur `::after` (soulignement) forcé à `transform:scaleX(1)` + `background:#fff` (ligne blanche permanente). `sw.js` yada-v70, badge v478, `version.json` 478.
