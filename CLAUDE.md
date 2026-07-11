@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Liste du personnel : tableau des salariés remonté (sous le texte, pied toujours en bas) — v476
+## 🟢 Dernière mise à jour — Tous les boutons unifiés : contour bleu + MAJUSCULES + remplissage bleu extérieur→intérieur au clic — v477
+**Quoi :** **tous les boutons du logiciel** (`.btn`) adoptent un **style unique** : pilule sombre à **CONTOUR BLEU** (dégradé `#5ab0ff→#1e90ff`), **libellé en MAJUSCULES**, **soulignement bleu** au survol, et — au **clic** — un **remplissage bleu de l'EXTÉRIEUR vers l'INTÉRIEUR** (les bords se colorent d'abord, la couleur converge vers le centre) puis retour au relâchement. Modèle issu du mélange n°15 (contour dégradé) + n°18 (souligné), contour passé en bleu, sans icône, actif sans soulignement.
+
+**Comment — `yada-addon223` (100% additif) :** `<style id="btn-unify-mod">` (injecté en dernier, sélecteur `html body[data-theme] .btn` pour primer sur les variantes de thème `.btn-pri`/`.btn-gold`) : `.btn` = `background:linear-gradient(#0c1f39,#0c1f39) padding-box, linear-gradient(120deg,#5ab0ff,#1e90ff) border-box`, `text-transform:uppercase`, `box-shadow:inset 0 0 0 0 #1e90ff` (transition .45s), `::after` soulignement bleu au survol ; classe **`.yada-fill`** = `box-shadow:inset 0 0 0 240px #1e90ff` (remplissage extérieur→intérieur). Écouteur **`pointerdown`** délégué au `document` → ajoute `.yada-fill` au press, la retire au relâchement (vaut pour tous les `.btn`, même ajoutés dynamiquement). **Non touchés** : boutons « danger » des confirmations (`.ya-btn.ya-danger`, restent rouges), navigation (`.nav-btn`), onglets, barres d'outils (autres classes) ; `display` jamais forcé (bouton masqué reste masqué). `sw.js` yada-v69, badge v477, `version.json` 477.
+
+**Validé :** `node --check` (216 scripts, 0 erreur) + Playwright (`.btn` = `text-transform:uppercase` + contour/dégradé bleu + rayon 12px ; `pointerdown` → `.yada-fill` + ombre interne (remplissage), `pointerup` → retirée ; **bouton danger de confirmation reste rouge** et n'est pas un `.btn` ; 0 pageerror) + capture (page d'accueil : boutons pilule contour bleu, libellés en majuscules) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v477**.
+
+---
+
+## 🟢 MAJ précédente — Liste du personnel : tableau des salariés remonté (sous le texte, pied toujours en bas) — v476
 **Quoi :** dans le document **« LISTE DU PERSONNEL »** (onglet Équipe), le **tableau des salariés est remonté** : au lieu d'être centré au milieu de la page, il est désormais **juste sous le texte d'attestation** (haut de page), le **pied « Fait à … » + signataire + cachet restant ancré en bas de page**.
 
 **Comment :** `addon222` (`<style id="lp-doc-mod">`) — `.lp-mid{justify-content:center → flex-start;padding:26px 0 → 26px 0 0}` (le tableau s'aligne en haut de la zone médiane ; `.lp-foot{margin-top:auto}` garde le pied en bas). `sw.js` yada-v68, badge v476, `version.json` 476.
