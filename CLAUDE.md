@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Admin (Collaborateurs & accès) : carte « Utilisateurs du cabinet » retirée + actions mot de passe / désactivation dans « Salariés — liste & informations » — v485
+## 🟢 Dernière mise à jour — Consultation des comptes : refonte NÉON (grand-livre + éditeur) + barre latérale (« Consultation » + défilement des titres longs) — v486
+**Quoi :** deux volets.
+1. **Grand-livre du tiers (lecture seule, `#cl-overlay`) refondu en NÉON** avec **nouvelles fonctions** : barre de titre (compte + solde en évidence), barre d'outils groupée (navigation ▲▼ entre tiers · « Saisir une opération » · **recherche instantanée** · **filtres Tous / Non lettrés / Lettrés** · **Export CSV**), barre de lettrage avec **contrôle en direct** (bouton actif seulement si Débit = Crédit), tableau à **en-tête collant + tri par colonne** (clic sur l'en-tête), journal en pastille, lettres en badge, solde progressif (conservé même en tri/filtre), **totaux ancrés en bas**. L'**éditeur d'écritures (`.ec-sage`)** reçoit une **coherence Néon** (fond bleu nuit, en-têtes/accents Crystal). Fonctions conservées : lettrage (`clLettrerSel`/`clDelettrerSel`), navigation `clNav`, clic droit → journal (`clMenu`), saisie.
+2. **Barre latérale** : le module **« Analyse — centre de contrôle » devient « Consultation »** (libellé raccourci) ; les **titres trop longs défilent au survol** pour révéler l'intégralité (marquee).
+
+**Comment :** `clRender` réécrit en place (Néon + `window.clView` {q,f,sort,dir} + `clSetQ`/`clSetFilter`/`clSort`/`clExportCSV`, solde sécurisé `+l.debit||0`) ; `yada-addon227` (`<style id="cl-neon-mod">` : `#cl-overlay .cl-neon` complet + coherence `#ec-overlay .ec-sage`) ; `LBL.compta` (addon164) → « Consultation » ; `yada-addon228` (`markMarquee()` enveloppe chaque `.nl` dans `.nl-in`, marque `.nl-ov` si dépassement > 12px, défilement au survol via `--sc`/`--dur` ; wrap `buildNav`/`render`). `sw.js` yada-v78, badge v486, `version.json` 486.
+
+**Validé :** `node --check` (221 scripts, 0 erreur) + Playwright (grand-livre : rendu `.cl-neon`, recherche → filtre les lignes, filtre « Non lettrés », **tri par colonne** actif, sélection/lettrage OK, solde **non-NaN** (0,00 S), export/tri exposés, 0 pageerror ; barre latérale : libellé **« Consultation »** présent, plus de « centre de contrôle », 23 libellés enveloppés `.nl-in`, marquee sur titres réellement longs, seuil 12px évitant les faux positifs) + filet d'équilibre (achat 600=600 ✅). Badge → **v486**.
+
+---
+
+## 🟢 MAJ précédente — Admin (Collaborateurs & accès) : carte « Utilisateurs du cabinet » retirée + actions mot de passe / désactivation dans « Salariés — liste & informations » — v485
 **Quoi :** dans l'**Espace Admin → Collaborateurs & accès**, la carte **« 🛡 ADMIN Utilisateurs du cabinet (salariés) »** (liste + recherche + boutons « Mot de passe »/« Désactiver » par salarié) est **supprimée**. Ses actions sont désormais **intégrées à la carte « Salariés — liste & informations »** : au survol d'un salarié, le **panneau de droite** (infos du compte) affiche en bas deux boutons — **« Modifier le mot de passe »** et **« Activer/Désactiver le compte »** (libellé selon l'état actif/inactif). La carte « Enregistrer un utilisateur » et le tableau des dossiers restent inchangés.
 
 **Comment (2 éditions chirurgicales + CSS) :** `admCollabPanel` — `return collab+add+…` → `return add+…` (la carte `collab`/`#adm-sec-users` n'est plus rendue). `infoHTML` (addon219) — après « Dossiers en responsabilité », ajout d'un bloc `.usr-info-act` avec `<button onclick="admStaffResetPwd(id)">Modifier le mot de passe</button>` + `<button onclick="admStaffActif(id)">Activer/Désactiver le compte</button>` (handlers existants, inchangés). `<style id="usr-mod">` += `.usr-info-act` (flex, liseré supérieur bleu). `sw.js` yada-v77, badge v485, `version.json` 485.
