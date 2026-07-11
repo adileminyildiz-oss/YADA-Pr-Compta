@@ -10974,7 +10974,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v476';
+    b.textContent='YADA · v477';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -25248,6 +25248,47 @@ ${lignes}
     /* Impression / PDF : pied ancré en bas de la page A4 */
     +'@media print{.lp-doc{min-height:262mm}}';
   try{ var s=document.createElement('style'); s.id='lp-doc-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
+})();
+</script>
+<script id="yada-addon223">
+/* v477 — Style unifié de TOUS les boutons (.btn) sur tout le logiciel :
+   pilule sombre, CONTOUR BLEU (dégradé), libellé en MAJUSCULES, soulignement bleu
+   au survol, et REMPLISSAGE bleu de l'EXTÉRIEUR vers l'INTÉRIEUR au clic.
+   100% additif. Les boutons « danger » (.ya-btn.ya-danger des confirmations),
+   la navigation (.nav-btn), les onglets et les barres d'outils ne sont PAS des .btn
+   → non touchés. `display` n'est jamais forcé (un bouton masqué reste masqué). */
+(function(){
+  var css=''
+    /* sélecteur assez spécifique (html body[data-theme] .btn) pour l'emporter sur les
+       variantes de thème (.btn-pri/.btn-gold) → tous les boutons ont le même style */
+    +'html body .btn, html body[data-theme] .btn{'
+    +'position:relative;text-transform:uppercase!important;letter-spacing:.6px!important;'
+    +'color:#dbe8ff!important;border:1.5px solid transparent!important;border-radius:12px!important;'
+    +'background:linear-gradient(#0c1f39,#0c1f39) padding-box, linear-gradient(120deg,#5ab0ff,#1e90ff) border-box!important;'
+    +'box-shadow:inset 0 0 0 0 #1e90ff!important;text-shadow:none!important;'
+    +'transition:transform .14s ease, color .18s ease, box-shadow .45s cubic-bezier(.4,0,.2,1)!important}'
+    /* soulignement bleu (révélé au survol) */
+    +'html body .btn::after{content:"";position:absolute;left:14%;right:14%;bottom:5px;height:2.5px;border-radius:2px;'
+    +'background:linear-gradient(90deg,#5ab0ff,#1e90ff);transform:scaleX(0);transform-origin:center;transition:transform .24s ease;pointer-events:none}'
+    +'html body[data-theme] .btn:hover{color:#fff!important;transform:translateY(-1px)}'
+    +'html body .btn:hover::after{transform:scaleX(1)}'
+    +'html body .btn:active{transform:translateY(1px)}'
+    /* clic → remplissage bleu extérieur→intérieur (ombre interne 0 → 240px) ; pas de soulignement */
+    +'html body[data-theme] .btn.yada-fill{color:#fff!important;box-shadow:inset 0 0 0 240px #1e90ff, 0 6px 18px rgba(30,144,255,.5)!important}'
+    +'html body .btn.yada-fill::after{transform:scaleX(0)!important}';
+  try{ var s=document.createElement('style'); s.id='btn-unify-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
+
+  /* Effet de clic : au press, le bouton se remplit de bleu de l'extérieur vers l'intérieur,
+     puis revient au relâchement. Délégation au niveau document → vaut pour TOUS les .btn,
+     y compris ceux ajoutés dynamiquement (modales, rendus). */
+  document.addEventListener('pointerdown', function(e){
+    var t=e.target; var b=(t&&t.closest)?t.closest('.btn'):null; if(!b) return;
+    b.classList.add('yada-fill');
+    var clear=function(){ try{ b.classList.remove('yada-fill'); }catch(_e){}
+      b.removeEventListener('pointerup',clear); b.removeEventListener('pointerleave',clear); b.removeEventListener('pointercancel',clear); };
+    b.addEventListener('pointerup',clear); b.addEventListener('pointerleave',clear); b.addEventListener('pointercancel',clear);
+    setTimeout(clear,700);
+  }, true);
 })();
 </script>
 </body>
