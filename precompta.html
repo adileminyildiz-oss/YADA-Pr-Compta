@@ -10974,7 +10974,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v468';
+    b.textContent='YADA · v469';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -24364,20 +24364,32 @@ ${lignes}
   window.eaCard=eaCard;
   /* Exposé : statut d'avancement d'un dossier + tableau imprimable d'un dossier. */
   window.eaProgress=function(id){ return progress(id); };
-  window.eaDossierTableHTML=function(id){
+  /* Signature de l'état d'avancement d'un dossier (pour la vérification Admin). */
+  window.eaSignature=function(id){ try{ var t=(store()[id]&&store()[id].tasks)||{}; var parts=[]; Object.keys(t).sort().forEach(function(k){ var mm=t[k]||{}; Object.keys(mm).filter(function(m){return mm[m];}).map(Number).sort(function(a,b){return a-b;}).forEach(function(m){ parts.push(k+m); }); }); return parts.join(','); }catch(e){ return ''; } };
+  /* Tableau d'un dossier — ÉDITABLE (editable=true : cases cliquables) ou lecture seule. */
+  window.eaDossierTableHTML=function(id, editable){
     var d=((db&&db.cabinet&&db.cabinet.dossiers)||[]).find(function(x){return x.id===id;})||{};
     var r=rec(id), p=progress(id);
     var thead='<tr><th style="text-align:left">Tâche</th>'+MOISL.map(function(m,i){ return '<th>'+MOIS[i]+'</th>'; }).join('')+'</tr>';
     var body=TASKS.map(function(t){ var mm=(r.tasks&&r.tasks[t.k])||{};
-      var cells=''; for(var i=0;i<12;i++){ cells+='<td class="eap-c'+(mm[i]?' on':'')+'">'+(mm[i]?'✓':'')+'</td>'; }
+      var cells=''; for(var i=0;i<12;i++){ cells+='<td class="eap-c'+(mm[i]?' on':'')+'" data-d="'+esc(id)+'" data-t="'+t.k+'" data-m="'+i+'">'+(mm[i]?'✓':'')+'</td>'; }
       return '<tr><td class="eap-t">'+esc(t.lbl)+'</td>'+cells+'</tr>';
     }).join('');
     var dt=''; try{ var x=new Date(); dt=String(x.getDate()).padStart(2,'0')+'/'+String(x.getMonth()+1).padStart(2,'0')+'/'+x.getFullYear(); }catch(e){}
-    return '<div class="doc-page eap-doc"><h2 class="eap-h">État d’avancement — '+esc(d.nom||'—')+'</h2>'
-      +'<div class="eap-sub">Statut : <b>'+esc(p.html)+'</b>'+(dt?(' · édité le '+dt):'')+'</div>'
+    return '<div class="doc-page eap-doc'+(editable?' editable':'')+'" data-eaid="'+esc(id)+'"><h2 class="eap-h">État d’avancement — '+esc(d.nom||'—')+'</h2>'
+      +'<div class="eap-sub" id="eap-sub-'+esc(id)+'">Statut : <b>'+esc(p.html)+'</b>'+(dt?(' · édité le '+dt):'')+(editable?' · <i>cliquez une case pour la cocher/décocher</i>':'')+'</div>'
       +'<table class="eap-tbl"><thead>'+thead+'</thead><tbody>'+body+'</tbody></table>'
       +'<div class="eap-legend">✓ = mois traité. « À jour » = tous les mois consécutifs cochés jusqu’au mois courant, sur les 8 tâches.</div></div>';
   };
+  /* Édition directe des cases dans le tableau ouvert (rapport, Espace Cabinet). */
+  document.addEventListener('click', function(e){
+    var c=e.target&&e.target.closest?e.target.closest('.eap-doc.editable .eap-c[data-d]'):null; if(!c) return;
+    var id=c.getAttribute('data-d'), tk=c.getAttribute('data-t'), m=+c.getAttribute('data-m');
+    var rr=rec(id); rr.tasks[tk]=rr.tasks[tk]||{}; rr.tasks[tk][m]=!rr.tasks[tk][m];
+    try{ if(typeof save==='function') save(); }catch(err){}
+    c.classList.toggle('on', !!rr.tasks[tk][m]); c.textContent=rr.tasks[tk][m]?'✓':'';
+    var sub=document.getElementById('eap-sub-'+id); if(sub){ var p=progress(id); sub.innerHTML='Statut : <b>'+esc(p.html)+'</b> · <i>cliquez une case pour la cocher/décocher</i>'; }
+  }, true);
 
   window.eaReset=function(){
     var go=function(){
@@ -24465,6 +24477,8 @@ ${lignes}
     +'.eap-tbl thead th{background:#eaf2fb;color:#0b346e;font-weight:700}'
     +'.eap-t{text-align:left!important;font-weight:600;white-space:nowrap;background:#f5f9ff}'
     +'.eap-c.on{background:#d6f5df;color:#1b7a3a;font-weight:800}'
+    +'.eap-doc.editable .eap-c{cursor:pointer}'
+    +'.eap-doc.editable .eap-c:hover{background:#dcecff;box-shadow:inset 0 0 0 2px #1e90ff}'
     +'.eap-legend{margin-top:10px;font-size:11px;color:#555}';
   try{ var s=document.createElement('style'); s.id='ea-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
 })();
@@ -24511,18 +24525,26 @@ ${lignes}
     if(typeof render==='function') render();
   };
   /* Ouvrir le tableau d'avancement d'un dossier dans une page (modale) imprimable & enregistrable. */
-  window.raOuvrirEtat=function(id){
-    var html=(typeof window.eaDossierTableHTML==='function')?window.eaDossierTableHTML(id):'';
-    window.__raEtatHTML=html;
+  window.raOuvrirEtat=function(id, editable){
+    if(editable===undefined) editable=true; /* rapport (Cabinet) = éditable par défaut */
+    window.__raEtatId=id; window.__raEtatEdit=!!editable;
+    var html=(typeof window.eaDossierTableHTML==='function')?window.eaDossierTableHTML(id, editable):'';
     var mo=document.getElementById('modal'), mc=document.getElementById('modal-c');
     if(mo&&mc){
       mc.innerHTML='<div class="ra-etat-actions"><button class="btn btn-ghost" onclick="closeModal()">← Fermer</button>'
-        +'<button class="btn btn-pri" onclick="raImprimerEtat()">🖨 Imprimer / Enregistrer (PDF)</button></div>'
-        +'<div class="ra-etat-scroll">'+html+'</div>';
+        +'<div style="display:flex;gap:8px"><button class="btn btn-ghost" onclick="raImprimerEtat(\'A4\')">🖨 Imprimer A4</button>'
+        +'<button class="btn btn-pri" onclick="raImprimerEtat(\'A3\')">🖨 Imprimer A3 (analyse)</button></div></div>'
+        +'<div class="ra-etat-scroll" id="ra-etat-scroll">'+html+'</div>';
       mo.classList.add('show');
     }
   };
-  window.raImprimerEtat=function(){ try{ var pa=document.getElementById('print-area'); if(pa){ pa.innerHTML=window.__raEtatHTML||''; } }catch(e){} try{ window.print(); }catch(e){} };
+  /* Impression A4/A3 : on met le format demandé sur @page puis on imprime le tableau (état à jour). */
+  window.raImprimerEtat=function(fmt){
+    try{ var html=(typeof window.eaDossierTableHTML==='function')?window.eaDossierTableHTML(window.__raEtatId, false):(window.__raEtatHTML||''); var pa=document.getElementById('print-area'); if(pa){ pa.innerHTML=html; } }catch(e){}
+    try{ var st=document.getElementById('ea-print-page'); if(!st){ st=document.createElement('style'); st.id='ea-print-page'; document.head.appendChild(st); }
+      st.textContent='@media print{@page{size:'+(fmt==='A3'?'A3 landscape':'A4 landscape')+';margin:8mm}}'; }catch(e){}
+    try{ window.print(); }catch(e){}
+  };
   window.raSupprimer=function(id){
     var go=function(){ db.parametres.rapports=raps().filter(function(r){return r.id!==id;}); try{ if(typeof save==='function') save(); }catch(e){} if(typeof render==='function') render(); };
     if(typeof yadaConfirm==='function') yadaConfirm('Supprimer ce rapport journalier ?', go, {danger:true, ok:'Supprimer'});
@@ -24926,6 +24948,75 @@ ${lignes}
     +'.usr-muted{color:#9fb6d0;font-size:12.5px}'
     +'@media(max-width:820px){.usr-2col{grid-template-columns:1fr}.usr-list{max-height:none}}';
   try{ var s=document.createElement('style'); s.id='usr-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
+})();
+</script>
+<script id="yada-addon220">
+/* v469 — Espace Admin (Pilotages) : carte FERMÉE « État d'avancement des dossiers » —
+   liste COMPLÈTE des dossiers ; chaque dossier ouvre son tableau (lecture) ; un BOUTON VERT
+   permet de vérifier si l'état d'avancement a été enregistré/modifié depuis la dernière
+   vérification. 100% additif (Espace Admin). */
+(function(){
+  if(window.__eaAdminVerif) return; window.__eaAdminVerif=true;
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];}); }
+  function allDoss(){ return (db&&db.cabinet&&db.cabinet.dossiers)||[]; }
+  function verifStore(){ try{ db.parametres=db.parametres||{}; db.parametres.etatAvancementVerif=db.parametres.etatAvancementVerif||{}; return db.parametres.etatAvancementVerif; }catch(e){ return {}; } }
+  function sig(id){ return (typeof window.eaSignature==='function')?window.eaSignature(id):''; }
+  function prog(id){ return (typeof window.eaProgress==='function')?window.eaProgress(id):{cls:'ea-none',html:'—'}; }
+
+  window.eaVerif=function(id){ verifStore()[id]=sig(id); try{ if(typeof save==='function') save(); }catch(e){}
+    if(typeof toast==='function') toast('État d’avancement vérifié ✓'); if(typeof render==='function') render(); };
+
+  window.eaAdminList=function(){
+    var ds=allDoss().slice().sort(function(a,b){ return String(a.nom||'').localeCompare(String(b.nom||''),'fr',{sensitivity:'base',numeric:true}); });
+    var nNew=ds.filter(function(d){ var c=sig(d.id); return c && c!==(verifStore()[d.id]||''); }).length;
+    var rows=ds.map(function(d){
+      var p=prog(d.id), cur=sig(d.id), ver=verifStore()[d.id]||'';
+      var verif;
+      if(!cur) verif='<span class="eav-non">Non renseigné</span>';
+      else if(cur!==ver) verif='<button type="button" class="eav-btn eav-new" onclick="eaVerif(\''+esc(d.id)+'\')" title="Un état d’avancement a été enregistré — cliquez pour vérifier">● Vérifier l’enregistrement</button>';
+      else verif='<span class="eav-ok">✓ Vérifié</span>';
+      return '<div class="eav-row">'
+        +'<button type="button" class="eav-open" onclick="raOuvrirEtat(\''+esc(d.id)+'\', false)">'
+          +'<span class="eav-nom">'+esc(d.nom||'—')+'</span>'
+          +'<span class="eav-st '+p.cls+'">'+esc(p.html)+'</span>'
+          +'<span class="eav-go">Voir le tableau →</span></button>'
+        +'<div class="eav-verif">'+verif+'</div></div>';
+    }).join('') || '<div class="adm-empty" style="padding:14px;color:#9fb6d0">Aucun dossier.</div>';
+    return '<details class="card eav-card">'
+      +'<summary><h2 style="display:inline">📋 État d’avancement des dossiers</h2>'
+      +'<span class="eav-badge'+(nNew?' hot':'')+'">'+nNew+' à vérifier</span>'
+      +'<span class="ra-hint">Cliquer pour ouvrir</span></summary>'
+      +'<div class="sub" style="margin-top:8px">Liste complète des dossiers. Le <b>bouton vert</b> signale un état d’avancement <b>enregistré/modifié</b> depuis votre dernière vérification — cliquez-le pour le vérifier. Cliquez un dossier pour voir &amp; imprimer son tableau.</div>'
+      +'<div class="eav-list">'+rows+'</div></details>';
+  };
+
+  /* Injection dans le module Pilotages de l'Espace Admin. */
+  if(typeof window.admModuleContent==='function'){ var _amc=window.admModuleContent;
+    window.admModuleContent=function(){ var m=window.admModule; var out=''; try{ out=_amc.apply(this,arguments)||''; }catch(e){}
+      if(m==='pilotages'){ try{ out+=eaAdminList(); }catch(e){} } return out; }; }
+
+  var css=''
+    +'.eav-card>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:12px;flex-wrap:wrap}'
+    +'.eav-card>summary::-webkit-details-marker{display:none}'
+    +'.eav-card>summary::before{content:"▸";color:#5ab0ff;font-size:14px}'
+    +'.eav-card[open]>summary::before{content:"▾"}'
+    +'.eav-badge{background:#0d2740;border:1px solid #1e90ff;color:#cfe0ff;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700}'
+    +'.eav-badge.hot{background:#12351f;border-color:#2fd07a;color:#8ff0b8}'
+    +'.eav-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}'
+    +'.eav-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}'
+    +'.eav-open{flex:1;min-width:220px;display:flex;align-items:center;gap:12px;text-align:left;background:rgba(120,180,255,.05);border:1px solid rgba(120,180,255,.20);border-radius:11px;padding:11px 13px;cursor:pointer;color:inherit;transition:background .12s,border-color .12s}'
+    +'.eav-open:hover{background:rgba(30,144,255,.16);border-color:#1e90ff}'
+    +'.eav-nom{flex:1;font-weight:700;font-size:13.5px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+    +'.eav-st{font-size:11.5px;font-weight:700;white-space:nowrap}'
+    +'.eav-st.ea-ok{color:#54d98c}.eav-st.ea-late{color:#f0b34b}.eav-st.ea-none{color:#8fa2b8}'
+    +'.eav-go{font-size:11.5px;color:#5ab0ff;white-space:nowrap}'
+    +'.eav-verif{flex:0 0 auto}'
+    +'.eav-btn.eav-new{background:linear-gradient(135deg,#1fbf5a,#0f9c45);border:1px solid #23c463;color:#eafff2;border-radius:9px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 0 10px rgba(35,196,99,.45)}'
+    +'.eav-btn.eav-new:hover{filter:brightness(1.08)}'
+    +'.eav-ok{color:#54d98c;font-weight:700;font-size:12.5px;padding:8px 6px}'
+    +'.eav-non{color:#8fa2b8;font-size:12px;padding:8px 6px}'
+    +'@media(max-width:640px){.eav-open{min-width:0;width:100%}}';
+  try{ var s=document.createElement('style'); s.id='eav-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
 })();
 </script>
 </body>

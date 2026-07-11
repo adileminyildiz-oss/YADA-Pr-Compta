@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Page Rapport (Cabinet) : disposition réajustée (Formulaire + État d'avancement en haut, Rapports saisis pleine largeur dessous) — v468
+## 🟢 Dernière mise à jour — État d'avancement : ÉDITABLE + impression A3 (Cabinet) ; Admin = carte fermée « liste complète des dossiers » + bouton VERT de vérification — v469
+**Quoi :** deux évolutions de l'**État d'avancement**.
+1. **Espace Cabinet** — le tableau ouvert depuis le **Rapport** (clic sur un dossier) devient **ÉDITABLE** : on **coche/décoche** chaque case directement (mois × tâche), le statut se recalcule en direct, et on peut **imprimer en A3** (« 🖨 Imprimer A3 (analyse) » — pleine largeur pour analyser) **ou A4**.
+2. **Espace Admin (Pilotages)** — nouvelle **carte FERMÉE « 📋 État d'avancement des dossiers »** listant **TOUS les dossiers** (liste complète). Chaque dossier ouvre son **tableau** (lecture) ; un **BOUTON VERT « ● Vérifier l'enregistrement »** apparaît quand l'état d'avancement a été **enregistré/modifié depuis la dernière vérification** (badge « N à vérifier ») → clic = **« ✓ Vérifié »** ; « Non renseigné » si aucune donnée.
+
+**Comment :** `addon216` — `eaDossierTableHTML(id, editable)` (cases `data-d/data-t/data-m`, classe `.eap-doc.editable`) + **délégation** `click` sur `.eap-doc.editable .eap-c` (bascule + `save` + maj du statut) ; `window.eaSignature(id)` (signature des cases cochées). `addon217` — `raOuvrirEtat(id, editable=true)` (modale éditable), `raImprimerEtat('A4'|'A3')` (injecte `@page{size:A3 landscape}` puis `window.print`). `addon220` — `eaAdminList()` (carte `<details>` fermée, tous dossiers, statut + `eaVerif`), `window.eaVerif(id)` (mémorise `db.parametres.etatAvancementVerif[id]=eaSignature`), greffé au module **Pilotages** admin. `sw.js` yada-v61, badge v469, `version.json` 469.
+
+**Validé :** `node --check` (213 scripts, 0 erreur) + Playwright (Cabinet : modale **éditable** — clic case tva/mois → coché & **persisté**, boutons A4+A3, `@page A3` injecté ; Admin : carte **fermée**, **liste complète** (3 dossiers), **bouton vert** sur dossier modifié + badge « 1 à vérifier », « ✓ Vérifié » après `eaVerif`, « Non renseigné » sinon ; captures conformes ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v469**.
+
+---
+
+## 🟢 MAJ précédente — Page Rapport (Cabinet) : disposition réajustée (Formulaire + État d'avancement en haut, Rapports saisis pleine largeur dessous) — v468
 **Quoi :** réagencement des cartes de la **page Rapport** (Espace Cabinet). En **haut**, deux colonnes à hauteur égale : **« Nouveau rapport journalier »** (gauche) et **« État d'avancement des dossiers »** (droite) ; **en dessous**, **« Rapports saisis »** sur **toute la largeur**. Auparavant, le formulaire et la liste des rapports étaient empilés dans la colonne de gauche (colonne droite courte, espace vide).
 
 **Comment — 1 édition de `raBuild()` (addon217) :** le `listCard` (« Rapports saisis ») sort de la colonne gauche `.ra-2col-l` et est renvoyé **après** le bloc `.ra-2col` (pleine largeur). La grille `.ra-2col` ne contient plus que le formulaire (gauche) + l'état d'avancement (droite). `sw.js` yada-v60, badge v468, `version.json` 468.
