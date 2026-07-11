@@ -10974,7 +10974,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v463';
+    b.textContent='YADA · v464';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -24726,13 +24726,9 @@ ${lignes}
     window.rmSet(el.getAttribute('data-v'), el.getAttribute('data-k'), el.value);
   }, true);
 
-  /* Espace CLIENT : module Rapport = carte fermée « Rapport mensuel » (éditable) +
-     tableau « État d'avancement » (à remplir par le client, sur son propre dossier). */
-  if(typeof window.pageEspaceClient==='function'){ var _pec=window.pageEspaceClient;
-    window.pageEspaceClient=function(){ var h=_pec.apply(this,arguments);
-      try{ h+=rapportMensuelCard(); }catch(e){}
-      try{ if(typeof window.eaCard==='function') h+=window.eaCard(); }catch(e){}
-      return h; }; }
+  /* Espace CLIENT : AUCUN rapport (le client n'a rien à voir avec les rapports).
+     Seul l'Espace CABINET rend des rapports ; l'Admin (compte de contrôle) les visualise.
+     → pas de greffe sur pageEspaceClient. */
 
   /* Bouton « Rapport » (page d'ouverture) :
      - Espace ADMIN → VISUALISATION UNIQUEMENT des rapports émis par les autres utilisateurs

@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Rapport : Admin = VISUALISATION seule (rapports émis) + Espace Client = éditer son rapport + remplir l'État d'avancement (son dossier) — v463
+## 🟢 Dernière mise à jour — Rapports : SEUL l'Espace Cabinet rend des rapports ; l'Espace Client n'a AUCUN rapport ; l'Admin (contrôle) visualise — v464
+**Quoi :** recentrage des rôles de reporting. **Seul l'Espace CABINET rend des rapports** (rapport journalier d'activité + rapport mensuel, via le bouton « Rapport » de la page d'ouverture). L'**Espace CLIENT n'a plus AUCUN rapport** : le rapport mensuel et le tableau « État d'avancement » ajoutés précédemment côté client (v462/v463) sont **retirés de l'Espace Client**. L'**Espace ADMIN** reste un **compte de contrôle** (plus d'autorité) qui **visualise uniquement** les rapports émis par les collaborateurs du cabinet (consolidation journalière + mensuelle).
+
+**Comment — `yada-addon218` (édition) :** suppression de la **greffe sur `pageEspaceClient`** (qui ajoutait `rapportMensuelCard()` + `eaCard()` au client) → l'Espace Client ne rend plus aucune carte de rapport. Le côté Cabinet (`rapportCards` = saisie journalière + mensuelle) et la visualisation Admin (`rapportsPilotageCard` + consolidation mensuelle, aucun formulaire) sont **inchangés**. L'`eaCard` (État d'avancement) reste dans le module **Pilotages** du Cabinet. `sw.js` yada-v56, badge v464, `version.json` 464.
+
+**Validé :** `node --check` (211 scripts, 0 erreur) + Playwright (Espace Client : **aucun** « Rapport mensuel » ni « État d'avancement » ; Cabinet : rapport journalier + mensuel présents ; Admin : aucun formulaire de saisie, consolidation présente ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v464**.
+
+---
+
+## 🟢 MAJ précédente — Rapport : Admin = VISUALISATION seule (rapports émis) + Espace Client = éditer son rapport + remplir l'État d'avancement (son dossier) — v463
 **Quoi :** deux ajustements du module Rapport.
 1. **Espace Admin** — le bouton **« Rapport »** ne sert **plus à saisir** un rapport : il **visualise UNIQUEMENT** les rapports **émis par les autres utilisateurs** (consolidation **journalière** + **mensuelle**), sans aucun formulaire de saisie.
 2. **Espace Client** — le module Rapport permet d'**éditer son rapport** (carte « 📅 Rapport mensuel », éditable) **et** de **remplir le tableau « État d'avancement »** — restreint au **dossier du client** (son dossier actif uniquement, jamais les autres).
