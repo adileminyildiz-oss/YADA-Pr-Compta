@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Rapports : SEUL l'Espace Cabinet rend des rapports ; l'Espace Client n'a AUCUN rapport ; l'Admin (contrôle) visualise — v464
+## 🟢 Dernière mise à jour — Module Rapport : page défilable (fin du contenu coupé) — v465
+**Quoi :** la **page « Rapport »** (bouton « ✎ Rapport » de la page d'ouverture → saisie/visualisation) est désormais **défilable** : quand le contenu dépasse la hauteur de l'écran (formulaire + liste des rapports + rapport mensuel, ou consolidations Admin), on peut **défiler** pour tout atteindre. Auparavant, `html,body{overflow:hidden}` (app-shell) coupait le bas de la page dans le parcours d'entrée (écran non défilable).
+
+**Comment — 1 édition d'`ecranRapport` (addon189) :** le conteneur `.ds-rapport-wrap` reçoit `height:100dvh;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch` (conteneur de défilement propre, indépendant du `overflow:hidden` global). `sw.js` yada-v57, badge v465, `version.json` 465.
+
+**Validé :** `node --check` (211 scripts, 0 erreur) + Playwright (30 rapports : `.ds-rapport-wrap` `overflow-y:auto`, `scrollHeight 1469 > clientHeight 700`, `scrollTop=300` appliqué → défile ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v465**.
+
+---
+
+## 🟢 MAJ précédente — Rapports : SEUL l'Espace Cabinet rend des rapports ; l'Espace Client n'a AUCUN rapport ; l'Admin (contrôle) visualise — v464
 **Quoi :** recentrage des rôles de reporting. **Seul l'Espace CABINET rend des rapports** (rapport journalier d'activité + rapport mensuel, via le bouton « Rapport » de la page d'ouverture). L'**Espace CLIENT n'a plus AUCUN rapport** : le rapport mensuel et le tableau « État d'avancement » ajoutés précédemment côté client (v462/v463) sont **retirés de l'Espace Client**. L'**Espace ADMIN** reste un **compte de contrôle** (plus d'autorité) qui **visualise uniquement** les rapports émis par les collaborateurs du cabinet (consolidation journalière + mensuelle).
 
 **Comment — `yada-addon218` (édition) :** suppression de la **greffe sur `pageEspaceClient`** (qui ajoutait `rapportMensuelCard()` + `eaCard()` au client) → l'Espace Client ne rend plus aucune carte de rapport. Le côté Cabinet (`rapportCards` = saisie journalière + mensuelle) et la visualisation Admin (`rapportsPilotageCard` + consolidation mensuelle, aucun formulaire) sont **inchangés**. L'`eaCard` (État d'avancement) reste dans le module **Pilotages** du Cabinet. `sw.js` yada-v56, badge v464, `version.json` 464.
