@@ -36,7 +36,20 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Espace Admin « Collaborateurs & accès » : vue deux colonnes (liste des salariés à gauche + fiche du compte au survol à droite) — v466
+## 🟢 Dernière mise à jour — Rapport (Cabinet) : sans choix d'utilisateur ni temps, champ « Objet », + colonne DROITE « État d'avancement des dossiers » (clic → tableau imprimable/PDF) — v467
+**Quoi :** refonte du **rapport journalier (Espace Cabinet)**.
+1. **Pas de choix d'utilisateur** : le rapport est celui du **compte connecté** (un seul par connexion) — le sélecteur « Collaborateur » est retiré.
+2. **« Temps passé » supprimé** ; ajout d'un champ **« Objet »** (avant « Travaux effectués »).
+3. **Deux colonnes** : à gauche le formulaire + la liste des rapports saisis ; à **droite** une **liste des dossiers attribués** avec leur **statut d'avancement** (À jour / Jusqu'à \<mois\> / Non commencé).
+4. **Clic sur un dossier** → **nouvelle page (modale)** affichant son **tableau d'avancement** (8 tâches × 12 mois), **imprimable & enregistrable en PDF** (bouton « 🖨 Imprimer / Enregistrer (PDF) »).
+
+**Comment :** `addon216` expose `window.eaProgress(id)` + `window.eaDossierTableHTML(id)` (tableau `.doc-page` noir/blanc imprimable) ; `addon217` : `raBuild()` réécrit (form sans `ra-collab`/`ra-temps`, `ra-objet` ajouté ; layout `.ra-2col` ; liste `.ra-doss-row` → `raOuvrirEtat(id)`), `raEnregistrer()` (auteur = `staffId`/`meNom`, `objet`, plus de `temps`), `raOuvrirEtat`/`raImprimerEtat` (modale `#modal` + `#print-area`+`window.print`). Consolidation Admin `rapportsPilotageCard` alignée (colonne **Objet** au lieu de Temps, KPI **Terminés** au lieu de Heures). `sw.js` yada-v59, badge v467, `version.json` 467.
+
+**Validé :** `node --check` (212 scripts, 0 erreur) + Playwright (form : pas de `ra-collab` ni `ra-temps`, `ra-objet` présent, deux colonnes ; liste droite = dossiers **attribués** (ALR CONSEIL, ACTION BTP) ; saisie → `objet='TVA novembre'`, auteur auto 'Sarah Durand', sans champ temps ; clic dossier → modale avec tableau `.eap-tbl` (✓ TVA 5 mois + HA 2 mois), bouton Imprimer/PDF, titre « État d'avancement — ALR CONSEIL » ; captures conformes ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v467**.
+
+---
+
+## 🟢 MAJ précédente — Espace Admin « Collaborateurs & accès » : vue deux colonnes (liste des salariés à gauche + fiche du compte au survol à droite) — v466
 **Quoi :** dans l'Espace **Admin → Collaborateurs & accès**, une carte **« Salariés — liste & informations »** présente **deux colonnes** : à **gauche**, la **liste de tous les salariés/utilisateurs** (avatar + nom + e-mail + voyant actif/inactif, avec recherche) ; à **droite**, au **survol** d'un salarié, les **informations de son compte** (identifiant e-mail, mot de passe masqué + « Afficher », statut Actif/Inactif, poste, salaire, nombre de dossiers + **dossiers attribués** en tags). Le premier salarié est affiché par défaut ; la fiche se met à jour au survol (et au focus clavier).
 
 **Comment — `yada-addon219` (100% additif, Espace Admin) :** `usrTwoColCard()` (grille `.usr-2col` = liste `#usr-list` + fiche `#usr-info`) greffée **en tête** de `admCollabPanel()` ; survol via **délégation** `mouseover`/`focusin` sur `.usr-row[data-id]` → `infoHTML(s)` (réutilise `admPwToggle` pour révéler le mot de passe) ; `usrSearch()` (filtre live). `<style id="usr-mod">` (responsive : 1 colonne < 820px). Le panneau de gestion existant (Mot de passe / Désactiver, dossiers & attribution) reste en dessous. `sw.js` yada-v58, badge v466, `version.json` 466.
