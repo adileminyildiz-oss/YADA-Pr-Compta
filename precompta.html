@@ -10974,7 +10974,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v482';
+    b.textContent='YADA · v483';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -25333,6 +25333,77 @@ ${lignes}
     +'.ds-open{transition:transform .2s ease}'
     +'html body .ds-row:hover .ds-open{transform:translateX(4px)}';
   try{ var s=document.createElement('style'); s.id='ds-row-fx-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
+})();
+</script>
+
+<script id="yada-addon225">
+/* v483 — Module TIERS : la colonne Actions passe d'un bouton « ✎ Modifier » +
+   « 🗑 » à un unique bouton « ⋮ » (trois points) qui déroule un petit menu
+   « Modifier » / « Supprimer ». 100% additif (wrap de window.sectionTiers +
+   menu flottant). */
+(function(){
+  /* fermer tout menu ouvert */
+  function fermer(){ var m=document.getElementById('tiers-menu'); if(m){ try{ m.remove(); }catch(e){ m.parentNode&&m.parentNode.removeChild(m); } } }
+  window.tiersMenuFermer=fermer;
+
+  window.tiersMenu=function(ev,id){
+    try{ ev.stopPropagation(); ev.preventDefault(); }catch(e){}
+    var deja=document.getElementById('tiers-menu');
+    fermer();
+    if(deja && deja.getAttribute('data-for')===id) return; /* re-clic = fermeture */
+    var btn=(ev&&ev.currentTarget)||null;
+    var m=document.createElement('div'); m.id='tiers-menu'; m.className='tiers-menu'; m.setAttribute('data-for',id);
+    m.innerHTML=''
+      +'<button type="button" class="tm-item" onclick="tiersMenuFermer();if(typeof tiersEditer===\'function\')tiersEditer(\''+id+'\')">'
+        +'<span class="tm-ic">✎</span><span>Modifier</span></button>'
+      +'<button type="button" class="tm-item tm-danger" onclick="tiersMenuFermer();if(typeof tiersSupprimer===\'function\')tiersSupprimer(\''+id+'\')">'
+        +'<span class="tm-ic">🗑</span><span>Supprimer</span></button>';
+    document.body.appendChild(m);
+    /* positionnement sous le bouton, aligné à droite, recadré à l'écran */
+    try{
+      var r=btn?btn.getBoundingClientRect():{left:ev.clientX,right:ev.clientX,bottom:ev.clientY,top:ev.clientY};
+      var mw=m.offsetWidth||168, mh=m.offsetHeight||88;
+      var left=r.right-mw; if(left<8) left=r.left; if(left+mw>innerWidth-8) left=innerWidth-8-mw; if(left<8) left=8;
+      var top=r.bottom+6; if(top+mh>innerHeight-8) top=r.top-mh-6; if(top<8) top=8;
+      m.style.left=left+'px'; m.style.top=top+'px';
+    }catch(e){}
+    /* fermeture au clic extérieur / échap / défilement */
+    setTimeout(function(){
+      function out(e){ if(!m.contains(e.target)){ fermer(); document.removeEventListener('mousedown',out,true); document.removeEventListener('keydown',esc,true); window.removeEventListener('scroll',sc,true); } }
+      function esc(e){ if(e.key==='Escape'){ fermer(); document.removeEventListener('mousedown',out,true); document.removeEventListener('keydown',esc,true); window.removeEventListener('scroll',sc,true); } }
+      function sc(){ fermer(); window.removeEventListener('scroll',sc,true); document.removeEventListener('mousedown',out,true); document.removeEventListener('keydown',esc,true); }
+      document.addEventListener('mousedown',out,true); document.addEventListener('keydown',esc,true); window.addEventListener('scroll',sc,true);
+    },0);
+  };
+
+  /* wrap de sectionTiers : remplace la cellule Actions (2 boutons) par un bouton ⋮ */
+  function poser(){
+    if(typeof window.sectionTiers!=='function' || window.__tiersDots) return false;
+    var _st=window.sectionTiers;
+    window.sectionTiers=function(title,list,kind){
+      var h=_st(title,list,kind);
+      /* cellule Actions : ✎ Modifier + 🗑 → bouton ⋮ */
+      h=h.replace(/<td class="r" style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="tiersEditer\('([^']+)'\)">✎ Modifier<\/button> <button class="btn btn-ghost btn-sm" title="Supprimer le tiers" onclick="tiersSupprimer\('[^']+'\)">🗑<\/button><\/td>/g,
+        function(_m,id){ return '<td class="r" style="white-space:nowrap"><button type="button" class="btn btn-ghost btn-sm tiers-dots" title="Actions (modifier / supprimer)" onclick="tiersMenu(event,\''+id+'\')">⋮</button></td>'; });
+      /* libellé d'aide */
+      h=h.replace('✎ pour modifier, 🗑 pour supprimer, ou cliquez sur un nom.','⋮ pour les actions (modifier / supprimer), ou cliquez sur un nom.');
+      return h;
+    };
+    window.__tiersDots=true; return true;
+  }
+  if(!poser()){ var n=0, iv=setInterval(function(){ if(poser()||++n>40) clearInterval(iv); },120); }
+
+  /* styles : bouton ⋮ compact + menu flottant bleu nuit */
+  var css=''
+    +'.tiers-dots{min-width:0!important;padding:4px 11px!important;font-size:17px!important;line-height:1!important;letter-spacing:0!important;font-weight:700!important}'
+    +'.tiers-menu{position:fixed;z-index:100060;min-width:168px;background:linear-gradient(180deg,#0e2340,#0a1a30);border:1px solid rgba(30,144,255,.5);border-radius:12px;box-shadow:0 18px 44px rgba(0,0,0,.55),0 0 0 1px rgba(30,144,255,.12);padding:6px;display:flex;flex-direction:column;gap:2px;animation:tmIn .12s ease}'
+    +'@keyframes tmIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}'
+    +'.tiers-menu .tm-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;border:0;border-radius:8px;padding:9px 11px;color:#dbe8ff;font:600 13.5px/1.1 inherit;cursor:pointer;transition:background .12s ease,color .12s ease}'
+    +'.tiers-menu .tm-item:hover{background:rgba(30,144,255,.22)}'
+    +'.tiers-menu .tm-item .tm-ic{width:18px;text-align:center;font-size:14px;opacity:.9}'
+    +'.tiers-menu .tm-danger{color:#ff9c9c}'
+    +'.tiers-menu .tm-danger:hover{background:rgba(225,52,44,.24);color:#ffd7d7}';
+  try{ var s=document.createElement('style'); s.id='tiers-menu-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
 })();
 </script>
 </body>

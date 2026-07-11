@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Liste des dossiers : effet au survol des lignes (soulèvement + halo, avatar reflet, flèche qui glisse) — v482
+## 🟢 Dernière mise à jour — Module TIERS : colonne Actions → bouton unique « ⋮ » (menu Modifier / Supprimer) — v483
+**Quoi :** dans le **module TIERS** (Fournisseurs · Clients — Sociétés · Clients — Particuliers), la colonne **Actions** n'affiche plus deux boutons **« ✎ Modifier »** + **« 🗑 »** : elle affiche un **unique bouton « ⋮ » (trois points)** qui **déroule un petit menu** avec **« Modifier »** (✎) et **« Supprimer »** (🗑, en rouge danger). Le libellé d'aide de la carte devient « ⋮ pour les actions (modifier / supprimer), ou cliquez sur un nom. ».
+
+**Comment — `yada-addon225` (100% additif) :** wrap de `window.sectionTiers` → la cellule Actions (regex sur les 2 boutons) est remplacée par `<button class="btn btn-ghost btn-sm tiers-dots" onclick="tiersMenu(event,'<id>')">⋮</button>`. `window.tiersMenu(ev,id)` crée un **menu flottant** `#tiers-menu` (position `fixed`, recadré à l'écran sous le bouton, aligné à droite) avec 2 items → `tiersEditer(id)` / `tiersSupprimer(id)` (fonctions existantes, inchangées) ; **fermeture** au clic extérieur / Échap / défilement / re-clic. `<style id="tiers-menu-mod">` (bouton ⋮ compact + menu bleu nuit, item danger rouge). `sw.js` yada-v75, badge v483, `version.json` 483.
+
+**Validé :** `node --check` (218 scripts, 0 erreur) + Playwright (`pageTiers()` : plus de « ✎ Modifier »/« 🗑 » — 1 bouton `tiers-dots` par tiers ; clic ⋮ → menu `position:fixed` à 2 items « Modifier »/« Supprimer » (danger) ; clic « Modifier » → fiche d'édition ouverte + menu refermé ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v483**.
+
+---
+
+## 🟢 MAJ précédente — Liste des dossiers : effet au survol des lignes (soulèvement + halo, avatar reflet, flèche qui glisse) — v482
 **Quoi :** dans la **Liste des dossiers**, chaque **ligne** (`.ds-row`) reçoit un **effet au survol** : la ligne se **soulève** (`translateY(-2px)`) avec un **halo bleu** (ombre), l'**avatar s'agrandit** légèrement et un **reflet le balaie** (light-sweep), et la flèche **« Sélectionner → » glisse** vers la droite.
 
 **Comment — `yada-addon224` (100% CSS additif, `<style id="ds-row-fx-mod">`) :** `.ds-row` transition ; `html body .ds-row:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(30,144,255,.28)}` ; `.ds-av{position:relative;overflow:hidden}` + `::after` reflet (skew, `left:-70%→130%`) ; `.ds-row:hover .ds-av{transform:scale(1.08);box-shadow halo}` ; `.ds-open` (flèche) `translateX(4px)` au survol. Sélecteur préfixé `html body` pour primer sur les surcharges de thème. `sw.js` yada-v74, badge v482, `version.json` 482.
