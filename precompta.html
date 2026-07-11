@@ -10974,7 +10974,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v484';
+    b.textContent='YADA · v485';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -22744,7 +22744,12 @@ ${lignes}
       +'<div class="fld"><label>Mot de passe</label><input id="adm-new-pwd" type="password"></div>'
       +'</div>'
       +'<div style="margin-top:10px"><button class="btn btn-pri btn-sm" onclick="admStaffAdd()">Créer l\'utilisateur</button></div></div>';
-    return collab+add+(window.admDossiersPanel?window.admDossiersPanel():'');
+    /* v485 — carte « Utilisateurs du cabinet (salariés) » retirée : la liste + les
+       actions (mot de passe / désactivation) sont désormais dans « Salariés —
+       liste & informations » (usrTwoColCard). On garde l'ajout d'utilisateur et le
+       tableau des dossiers. (collab reste calculé mais non rendu.) */
+    void collab;
+    return add+(window.admDossiersPanel?window.admDossiersPanel():'');
   };
 
   window.admAssignToggle=function(id){ window.admAssign=(window.admAssign===id?null:id); if(typeof render==='function') render(); };
@@ -25025,7 +25030,11 @@ ${lignes}
       +(sal?line('Salaire', sal):'')
       +line('Dossiers attribués', String(n))
       +'</div>'
-      +'<div class="usr-doss-lbl">Dossiers en responsabilité</div><div class="usr-doss">'+dtags+'</div>';
+      +'<div class="usr-doss-lbl">Dossiers en responsabilité</div><div class="usr-doss">'+dtags+'</div>'
+      +'<div class="usr-info-act">'
+        +'<button type="button" class="btn btn-ghost btn-sm" onclick="admStaffResetPwd(\''+esc(s.id)+'\')">Modifier le mot de passe</button>'
+        +'<button type="button" class="btn btn-ghost btn-sm" onclick="admStaffActif(\''+esc(s.id)+'\')">'+(s.actif===false?'Activer le compte':'Désactiver le compte')+'</button>'
+      +'</div>';
   }
 
   window.usrTwoColCard=function(){
@@ -25084,6 +25093,7 @@ ${lignes}
     +'.usr-doss{display:flex;flex-wrap:wrap;gap:6px}'
     +'.usr-dtag{background:rgba(30,144,255,.14);border:1px solid rgba(30,144,255,.30);color:#cfe0ff;border-radius:999px;padding:2px 10px;font-size:12px}'
     +'.usr-muted{color:#9fb6d0;font-size:12.5px}'
+    +'.usr-info-act{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;padding-top:13px;border-top:1px solid rgba(30,144,255,.20)}'
     +'@media(max-width:820px){.usr-2col{grid-template-columns:1fr}.usr-list{max-height:none}}';
   try{ var s=document.createElement('style'); s.id='usr-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
 })();
