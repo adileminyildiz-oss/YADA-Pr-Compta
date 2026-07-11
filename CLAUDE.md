@@ -36,7 +36,19 @@
 
 ---
 
-## 🟢 Dernière mise à jour — État d'avancement : bouton unique « 🖨 Imprimer » (nouvelle page + dialogue d'impression) + bouton « ⤢ Agrandir » (Cabinet & Admin) — v470
+## 🟢 Dernière mise à jour — Rapport (Cabinet) : Objet en liste éditable (11 propositions ou libre) + Travaux à plusieurs lignes (chaque travail = un rapport) + report AUTO dans l'État d'avancement — v471
+**Quoi :** trois évolutions de la carte **« ➕ Nouveau rapport journalier »** (Espace Cabinet).
+1. **Objet en liste éditable** — le champ **Objet** propose désormais une **liste déroulante de propositions** *et* reste **saisissable librement** : **Déclaration TVA mensuel · Déclaration TVA annuel · Déclaration Impôt sur les Sociétés · Déclaration de Revenu · Relances Client · Rapprochement bancaire · Saisie Facture Fournisseur · Saisie Facture Client · Saisie OD de Charges · Saisie OD de Paie · Analyse** (on choisit dans la liste **ou** on écrit son propre objet).
+2. **Travaux à plusieurs lignes** — le champ **Travaux effectués** devient une **liste** : on **énumère plusieurs travaux** (bouton **« ➕ Ajouter un travail »**, ✕ pour retirer) **ou un seul** ; à l'enregistrement, **chaque travail non vide devient un rapport distinct** (même date/dossier/objet/avancement) → **chaque rapport est considéré** (listé & compté dans Pilotages).
+3. **Report AUTOMATIQUE dans l'État d'avancement** — à chaque **rapport journalier** enregistré avec un **dossier concerné** + un **objet**, la **tâche correspondante de l'État d'avancement** de ce dossier est **cochée automatiquement** pour le **mois du rapport** (TVA→TVA, Rapprochement→Rappro. BQ, Saisie Facture Fournisseur→Saisie HA, Saisie Facture Client→Saisie VT, OD de Charges/Paie→OD paie/charges, Analyse→inventaire). L'État d'avancement **reste modifiable** (cases toujours cochables/décochables).
+
+**Comment :** `addon217` — `OBJETS[]` (11 propositions) → `<input list="ra-objet-list">`+`<datalist>` (éditable) ; `window.raTwRow()`/`raTwAdd()`/`raTwDel()` (lignes `.ra-tw-row` de Travaux) ; `raEnregistrer()` réécrit (collecte `#ra-travaux-list .ra-tw`, **un rapport par travail non vide**, puis coche l'État d'avancement). `addon216` — `window.eaSetCell(id,taskKey,monthIdx,val)` (coche une case, reste modifiable) + `window.eaObjetTask(objet)` (Objet→tâche via mots-clés, `null` si aucune : IS/Revenu/Relances). `sw.js` yada-v63, badge v471, `version.json` 471.
+
+**Validé :** `node --check` (213 scripts, 0 erreur) + Playwright (Objet = liste éditable de **11** propositions ; Travaux : 1 ligne → +2 = 3 lignes ; 2 travaux remplis + 1 vide → **2 rapports** distincts (travaux différents, même objet/dossier), ligne vide ignorée ; État d'avancement de d2 : tâche **`ha` mois mars cochée** automatiquement (seule `ha`) ; mapping tva/rap/vt/od/inv + IS→null ; tableau **toujours éditable**, case cochée présente ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v471**.
+
+---
+
+## 🟢 MAJ précédente — État d'avancement : bouton unique « 🖨 Imprimer » (nouvelle page + dialogue d'impression) + bouton « ⤢ Agrandir » (Cabinet & Admin) — v470
 **Quoi :** deux évolutions de la **modale de l'État d'avancement** (partagée par l'Espace **Cabinet** — depuis le Rapport — et l'Espace **Admin** — depuis la carte « État d'avancement des dossiers »).
 1. **Impression repensée** — les **deux boutons d'impression** (« 🖨 Imprimer A4 » / « 🖨 Imprimer A3 (analyse) ») sont **remplacés par un SEUL bouton « 🖨 Imprimer »**. Au clic, une **nouvelle page (fenêtre)** s'ouvre avec le **dialogue d'impression natif** (où l'utilisateur choisit **tous les paramètres** : format A4/A3, orientation, marges, échelle…).
 2. **Agrandir** — un bouton **« ⤢ Agrandir »** agrandit le tableau d'état d'avancement (modale à **96vw**, tableau en plus grande police/espacement) pour analyser sur tout l'espace disponible → **« ⤡ Réduire »** revient à la taille normale. Disponible dans **l'Espace Admin ET l'Espace Cabinet**.
