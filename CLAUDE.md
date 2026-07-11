@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Rapport (Cabinet) : sans choix d'utilisateur ni temps, champ « Objet », + colonne DROITE « État d'avancement des dossiers » (clic → tableau imprimable/PDF) — v467
+## 🟢 Dernière mise à jour — Page Rapport (Cabinet) : disposition réajustée (Formulaire + État d'avancement en haut, Rapports saisis pleine largeur dessous) — v468
+**Quoi :** réagencement des cartes de la **page Rapport** (Espace Cabinet). En **haut**, deux colonnes à hauteur égale : **« Nouveau rapport journalier »** (gauche) et **« État d'avancement des dossiers »** (droite) ; **en dessous**, **« Rapports saisis »** sur **toute la largeur**. Auparavant, le formulaire et la liste des rapports étaient empilés dans la colonne de gauche (colonne droite courte, espace vide).
+
+**Comment — 1 édition de `raBuild()` (addon217) :** le `listCard` (« Rapports saisis ») sort de la colonne gauche `.ra-2col-l` et est renvoyé **après** le bloc `.ra-2col` (pleine largeur). La grille `.ra-2col` ne contient plus que le formulaire (gauche) + l'état d'avancement (droite). `sw.js` yada-v60, badge v468, `version.json` 468.
+
+**Validé :** `node --check` (212 scripts, 0 erreur) + Playwright/capture (haut : Nouveau rapport + État d'avancement côte à côte ; « Rapports saisis » pleine largeur dessous ; 0 pageerror) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅). Badge → **v468**.
+
+---
+
+## 🟢 MAJ précédente — Rapport (Cabinet) : sans choix d'utilisateur ni temps, champ « Objet », + colonne DROITE « État d'avancement des dossiers » (clic → tableau imprimable/PDF) — v467
 **Quoi :** refonte du **rapport journalier (Espace Cabinet)**.
 1. **Pas de choix d'utilisateur** : le rapport est celui du **compte connecté** (un seul par connexion) — le sélecteur « Collaborateur » est retiré.
 2. **« Temps passé » supprimé** ; ajout d'un champ **« Objet »** (avant « Travaux effectués »).

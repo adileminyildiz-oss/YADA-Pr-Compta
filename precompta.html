@@ -10974,7 +10974,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v467';
+    b.textContent='YADA · v468';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -24576,8 +24576,10 @@ ${lignes}
       +'<div class="sub">Vos dossiers attribués. Cliquez un dossier pour ouvrir son tableau d’avancement (imprimable &amp; enregistrable en PDF).</div>'
       +'<div class="ra-doss-list">'+dRows+'</div></div>';
 
-    return '<div class="ra-2col"><div class="ra-2col-l">'+form+listCard+'</div>'
-      +'<div class="ra-2col-r">'+etatCard+'</div></div>';
+    /* Haut : Formulaire (gauche) + État d'avancement (droite) ; dessous : Rapports saisis pleine largeur. */
+    return '<div class="ra-2col"><div class="ra-2col-l">'+form+'</div>'
+      +'<div class="ra-2col-r">'+etatCard+'</div></div>'
+      +listCard;
   }
 
   /* Cartes du module Rapport (formulaire + liste) — réutilisées par la page d'ouverture
