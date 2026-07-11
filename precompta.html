@@ -10974,7 +10974,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v471';
+    b.textContent='YADA · v472';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -24819,10 +24819,11 @@ ${lignes}
   function meNom(){ try{ if(typeof window.yadaCurrentUserName==='function') return window.yadaCurrentUserName(); }catch(e){} return 'Utilisateur'; }
   function authKey(){ try{ return window.staffId?('s:'+window.staffId):('n:'+meNom()); }catch(e){ return 'n:'+meNom(); } }
   var STATUTS=['En cours','Terminé','Bloqué','En attente'];
+  var RM_OBJETS=['Déclaration TVA mensuel','Déclaration TVA annuel','Déclaration Impôt sur les Sociétés','Déclaration de Revenu','Relances Client','Rapprochement bancaire','Saisie Facture Fournisseur','Saisie Facture Client','Saisie OD de Charges','Saisie OD de Paie','Analyse'];
 
   function store(){ try{ db.parametres=db.parametres||{}; if(!Array.isArray(db.parametres.rapportsMensuels)) db.parametres.rapportsMensuels=[]; return db.parametres.rapportsMensuels; }catch(e){ return []; } }
-  function getE(key,vend){ return store().find(function(r){ return r.authorKey===key && r.vendredi===vend; }); }
-  function fridays(mois){ try{ var y=+mois.slice(0,4), m=+mois.slice(5,7)-1, out=[], d=new Date(y,m,1); while(d.getMonth()===m){ if(d.getDay()===5) out.push(isoOf(d)); d.setDate(d.getDate()+1); } return out; }catch(e){ return []; } }
+  /* Un rapport mensuel = une entrée par (utilisateur, mois) : objet + travaux + avancement. */
+  function getM(key,mois){ return store().find(function(r){ return r.authorKey===key && (r.mois||'')===mois; }); }
   function moisLabel(mois){ try{ var M=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre']; return M[(+mois.slice(5,7))-1]+' '+mois.slice(0,4); }catch(e){ return mois; } }
   function addMonth(mois,delta){ try{ var y=+mois.slice(0,4), m=+mois.slice(5,7)-1+delta; var d=new Date(y,m,1); return d.getFullYear()+'-'+pad(d.getMonth()+1); }catch(e){ return mois; } }
 
@@ -24830,60 +24831,58 @@ ${lignes}
   if(window.rmOpen===undefined) window.rmOpen=false;
   window.rmNav=function(delta){ window.rmMois=addMonth(window.rmMois||curMonth(),delta); window.rmOpen=true; if(typeof render==='function') render(); };
   window.rmToggleOpen=function(el){ try{ window.rmOpen=!!(el&&el.open); }catch(e){} };
-  window.rmSet=function(vend,field,val){
-    var key=authKey(), e=getE(key,vend);
-    if(!e){ e={ id:(typeof uid==='function'?uid():'m'+Date.now()), authorKey:key, authorNom:meNom(), vendredi:vend, travaux:'', statut:'En cours', ts:0 }; store().push(e); }
+  window.rmSet=function(mois,field,val){
+    var key=authKey(), e=getM(key,mois);
+    if(!e){ e={ id:(typeof uid==='function'?uid():'m'+Date.now()), authorKey:key, authorNom:meNom(), mois:mois, objet:'', travaux:'', statut:'En cours', ts:0 }; store().push(e); }
     e[field]=val; e.authorNom=meNom();
     e.ts=(function(){ try{return (new Date()).getTime();}catch(x){return 0;} })();
     try{ if(typeof save==='function') save(); }catch(x){}
-    var st=document.getElementById('rm-st-'+vend); if(st){ var cls=(e.statut==='Terminé')?'ra-ok':(e.statut==='Bloqué')?'ra-ko':(e.statut==='En attente')?'ra-wait':'ra-cur'; }
   };
 
-  /* Carte « Rapport mensuel » à compléter (utilisateur courant). */
+  /* Carte « Rapport mensuel » (utilisateur courant) : UN rapport par mois —
+     l'objet du rapport du mois + les travaux effectués + l'avancement. */
   window.rapportMensuelCard=function(){
-    var mois=window.rmMois||curMonth(), key=authKey(), fr=fridays(mois), tISO=todayISO();
-    var rows=fr.map(function(v){
-      var e=getE(key,v)||{}, done=!!(e.travaux&&e.travaux.trim());
-      var cls=done?'rm-done':((v<=tISO)?'rm-due':'rm-future');
-      var opts=STATUTS.map(function(s){ return '<option value="'+esc(s)+'"'+((e.statut||'En cours')===s?' selected':'')+'>'+esc(s)+'</option>'; }).join('');
-      return '<tr class="'+cls+'">'
-        +'<td class="rm-vd"><b>Vendredi</b><br>'+esc(frD(v))+(v===tISO?'<span class="rm-tag-due">aujourd’hui</span>':'')+'</td>'
-        +'<td><textarea class="rm-in" data-v="'+esc(v)+'" data-k="travaux" rows="2" placeholder="Travaux effectués cette semaine…">'+esc(e.travaux||'')+'</textarea></td>'
-        +'<td><select class="rm-in rm-sel" data-v="'+esc(v)+'" data-k="statut">'+opts+'</select></td>'
-        +'<td class="ra-when">'+esc(frDT(e.ts))+'</td></tr>';
-    }).join('') || '<tr><td colspan="4" class="adm-empty" style="text-align:center;color:#9fb6d0;padding:12px">Aucun vendredi ce mois-ci.</td></tr>';
-    var nDone=fr.filter(function(v){ var e=getE(key,v); return e&&e.travaux&&e.travaux.trim(); }).length;
+    var mois=window.rmMois||curMonth(), key=authKey();
+    var e=getM(key,mois)||{};
+    var opts=STATUTS.map(function(s){ return '<option value="'+esc(s)+'"'+((e.statut||'En cours')===s?' selected':'')+'>'+esc(s)+'</option>'; }).join('');
+    var objOpts=RM_OBJETS.map(function(o){ return '<option value="'+esc(o)+'"></option>'; }).join('');
+    var done=!!(e.travaux&&e.travaux.trim());
     return '<details class="card rm-card"'+(window.rmOpen?' open':'')+' ontoggle="rmToggleOpen(this)">'
       +'<summary><h2 style="display:inline">📅 Rapport mensuel</h2>'
-      +'<span class="ra-cnt">'+nDone+' / '+fr.length+' vendredis</span>'
+      +'<span class="ra-cnt">'+(done?'complété ✓':'à compléter')+'</span>'
       +'<span class="ra-hint">Cliquer pour ouvrir</span></summary>'
-      +'<div class="sub" style="margin-top:8px">À compléter <b>chaque vendredi</b> de la semaine. Renseignez les travaux effectués pour chaque vendredi du mois.</div>'
+      +'<div class="sub" style="margin-top:8px">Un rapport par mois : l’<b>objet</b> du mois et les <b>travaux effectués</b>.</div>'
       +'<div class="rm-nav"><button class="btn btn-ghost btn-sm" onclick="rmNav(-1)">‹ Mois précédent</button>'
       +'<span class="rm-mois">'+esc(moisLabel(mois))+'</span>'
       +'<button class="btn btn-ghost btn-sm" onclick="rmNav(1)">Mois suivant ›</button></div>'
-      +'<div class="rm-scroll"><table class="rm-tbl"><thead><tr><th>Vendredi</th><th>Travaux effectués</th><th>Avancement</th><th>Saisi le</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+      +'<div class="rm-form">'
+      +'<label class="rm-f">Objet du rapport du mois<input class="rm-in" list="rm-objet-list" data-v="'+esc(mois)+'" data-k="objet" autocomplete="off" placeholder="Choisir ou écrire l’objet du mois…" value="'+esc(e.objet||'')+'"><datalist id="rm-objet-list">'+objOpts+'</datalist></label>'
+      +'<label class="rm-f">Travaux effectués<textarea class="rm-in" data-v="'+esc(mois)+'" data-k="travaux" rows="4" placeholder="Décrivez les travaux effectués ce mois…">'+esc(e.travaux||'')+'</textarea></label>'
+      +'<label class="rm-f rm-f-sm">Avancement<select class="rm-in rm-sel" data-v="'+esc(mois)+'" data-k="statut">'+opts+'</select></label>'
+      +(e.ts?'<div class="rm-when">Dernière saisie : '+esc(frDT(e.ts))+'</div>':'')
+      +'</div>'
       +'</details>';
   };
 
-  /* Consolidation ADMIN : rapports mensuels de TOUS les utilisateurs (lecture). */
+  /* Consolidation ADMIN : rapports mensuels de TOUS les utilisateurs (lecture) — un par mois. */
   window.rapportMensuelAdminCard=function(){
     var mois=window.rmMois||curMonth();
-    var list=store().filter(function(r){ return String(r.vendredi||'').slice(0,7)===mois && r.travaux && r.travaux.trim(); })
-      .slice().sort(function(a,b){ return String(a.authorNom||'').localeCompare(String(b.authorNom||''),'fr') || String(a.vendredi).localeCompare(String(b.vendredi)); });
+    var list=store().filter(function(r){ return (r.mois||'')===mois && ((r.travaux&&r.travaux.trim())||(r.objet&&r.objet.trim())); })
+      .slice().sort(function(a,b){ return String(a.authorNom||'').localeCompare(String(b.authorNom||''),'fr'); });
     var rows=list.map(function(r){
       var stc=(r.statut==='Terminé')?'ra-ok':(r.statut==='Bloqué')?'ra-ko':(r.statut==='En attente')?'ra-wait':'ra-cur';
-      return '<tr><td><b>'+esc(r.authorNom||'—')+'</b></td><td>'+esc(frD(r.vendredi))+'</td><td class="ra-tx">'+esc(r.travaux||'')+'</td><td><span class="ra-tag '+stc+'">'+esc(r.statut||'En cours')+'</span></td><td class="ra-when">'+esc(frDT(r.ts))+'</td></tr>';
+      return '<tr><td><b>'+esc(r.authorNom||'—')+'</b></td><td>'+esc(r.objet||'—')+'</td><td class="ra-tx">'+esc(r.travaux||'')+'</td><td><span class="ra-tag '+stc+'">'+esc(r.statut||'En cours')+'</span></td><td class="ra-when">'+esc(frDT(r.ts))+'</td></tr>';
     }).join('') || '<tr><td colspan="5" class="adm-empty" style="text-align:center;color:#9fb6d0;padding:12px">Aucun rapport mensuel pour '+esc(moisLabel(mois))+'.</td></tr>';
     var nAuth=Object.keys(list.reduce(function(a,r){a[r.authorNom||'—']=1;return a;},{})).length;
     return '<details class="card rm-card">'
       +'<summary><h2 style="display:inline">📅 Rapports mensuels des utilisateurs</h2>'
-      +'<span class="ra-cnt">'+list.length+' saisie(s) · '+nAuth+' utilisateur(s)</span>'
+      +'<span class="ra-cnt">'+list.length+' rapport(s) · '+nAuth+' utilisateur(s)</span>'
       +'<span class="ra-hint">Cliquer pour ouvrir</span></summary>'
-      +'<div class="sub" style="margin-top:8px">Rapports mensuels (par vendredi) de tous les utilisateurs — '+esc(moisLabel(mois))+'.</div>'
+      +'<div class="sub" style="margin-top:8px">Rapports mensuels (un par utilisateur) — '+esc(moisLabel(mois))+'.</div>'
       +'<div class="rm-nav"><button class="btn btn-ghost btn-sm" onclick="rmNav(-1)">‹ Mois précédent</button>'
       +'<span class="rm-mois">'+esc(moisLabel(mois))+'</span>'
       +'<button class="btn btn-ghost btn-sm" onclick="rmNav(1)">Mois suivant ›</button></div>'
-      +'<div class="rm-scroll"><table class="rm-tbl"><thead><tr><th>Utilisateur</th><th>Vendredi</th><th>Travaux effectués</th><th>Avancement</th><th>Saisi le</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+      +'<div class="rm-scroll"><table class="rm-tbl"><thead><tr><th>Utilisateur</th><th>Objet</th><th>Travaux effectués</th><th>Avancement</th><th>Saisi le</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
       +'</details>';
   };
 
@@ -24930,6 +24929,11 @@ ${lignes}
     +'.rm-vd{white-space:nowrap;color:#cfe0ff}'
     +'.rm-tag-due{display:inline-block;margin-left:6px;background:#332616;color:#f0b34b;border:1px solid #7a5a1e;border-radius:999px;padding:1px 8px;font-size:10.5px;font-weight:700}'
     +'.rm-in{width:100%;background:#0b1524;border:1px solid #24405d;color:#eaf2ff;border-radius:7px;padding:6px 8px;font-size:12.5px;font-family:inherit}'
+    +'.rm-form{display:flex;flex-direction:column;gap:12px;margin-top:6px}'
+    +'.rm-f{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:#9fb6d0;font-weight:600}'
+    +'.rm-f-sm{max-width:240px}'
+    +'.rm-form textarea.rm-in{resize:vertical}'
+    +'.rm-when{font-size:11.5px;color:#5ab0ff;font-weight:600}'
     +'.rm-tbl textarea.rm-in{resize:vertical;min-width:260px}'
     +'.rm-sel{min-width:120px}'
     +'.rm-tbl tr.rm-due td{background:rgba(240,179,75,.06)}'
@@ -25100,6 +25104,22 @@ ${lignes}
     +'.eav-non{color:#8fa2b8;font-size:12px;padding:8px 6px}'
     +'@media(max-width:640px){.eav-open{min-width:0;width:100%}}';
   try{ var s=document.createElement('style'); s.id='eav-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
+})();
+</script>
+<script id="yada-addon221">
+/* v472 — Recentrage universel des boutons.
+   Pour CHAQUE bouton du système (.btn), le libellé est centré à la fois
+   horizontalement et verticalement, avec des espaces équilibrés en haut, en bas,
+   à gauche et à droite. Le centrage flex était déjà appliqué en mobile (≤820px) ;
+   on l'étend à tout le système (desktop compris). `display` est posé SANS
+   !important pour ne jamais réafficher un bouton masqué (display:none). */
+(function(){
+  var css=''
+    +'.btn{display:inline-flex;align-items:center !important;justify-content:center !important;'
+    +'gap:6px;line-height:1.1;box-sizing:border-box;text-align:center;vertical-align:middle}'
+    /* libellé (icône + texte) parfaitement centré, sans décalage vertical */
+    +'.btn>*{display:inline-flex;align-items:center}';
+  try{ var s=document.createElement('style'); s.id='btn-center-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
 })();
 </script>
 </body>
