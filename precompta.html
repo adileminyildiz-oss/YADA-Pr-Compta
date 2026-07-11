@@ -10974,7 +10974,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v466';
+    b.textContent='YADA · v467';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -24362,6 +24362,22 @@ ${lignes}
       +'</details>';
   }
   window.eaCard=eaCard;
+  /* Exposé : statut d'avancement d'un dossier + tableau imprimable d'un dossier. */
+  window.eaProgress=function(id){ return progress(id); };
+  window.eaDossierTableHTML=function(id){
+    var d=((db&&db.cabinet&&db.cabinet.dossiers)||[]).find(function(x){return x.id===id;})||{};
+    var r=rec(id), p=progress(id);
+    var thead='<tr><th style="text-align:left">Tâche</th>'+MOISL.map(function(m,i){ return '<th>'+MOIS[i]+'</th>'; }).join('')+'</tr>';
+    var body=TASKS.map(function(t){ var mm=(r.tasks&&r.tasks[t.k])||{};
+      var cells=''; for(var i=0;i<12;i++){ cells+='<td class="eap-c'+(mm[i]?' on':'')+'">'+(mm[i]?'✓':'')+'</td>'; }
+      return '<tr><td class="eap-t">'+esc(t.lbl)+'</td>'+cells+'</tr>';
+    }).join('');
+    var dt=''; try{ var x=new Date(); dt=String(x.getDate()).padStart(2,'0')+'/'+String(x.getMonth()+1).padStart(2,'0')+'/'+x.getFullYear(); }catch(e){}
+    return '<div class="doc-page eap-doc"><h2 class="eap-h">État d’avancement — '+esc(d.nom||'—')+'</h2>'
+      +'<div class="eap-sub">Statut : <b>'+esc(p.html)+'</b>'+(dt?(' · édité le '+dt):'')+'</div>'
+      +'<table class="eap-tbl"><thead>'+thead+'</thead><tbody>'+body+'</tbody></table>'
+      +'<div class="eap-legend">✓ = mois traité. « À jour » = tous les mois consécutifs cochés jusqu’au mois courant, sur les 8 tâches.</div></div>';
+  };
 
   window.eaReset=function(){
     var go=function(){
@@ -24441,7 +24457,15 @@ ${lignes}
     +'.ea-col{width:46px;text-align:center}.ea-yr{width:52px;text-align:center}'
     +'.ea-sel{background:#0b1524;border:1px solid #24405d;color:#eaf2ff;border-radius:5px;padding:2px 4px;font-size:11px}'
     +'.ea-st{font-weight:700;text-align:center;font-size:11px}'
-    +'.ea-st.ea-ok{color:#54d98c}.ea-st.ea-late{color:#f0b34b}.ea-st.ea-none{color:#8fa2b8}';
+    +'.ea-st.ea-ok{color:#54d98c}.ea-st.ea-late{color:#f0b34b}.ea-st.ea-none{color:#8fa2b8}'
+    /* tableau imprimable d'un dossier (noir sur blanc) */
+    +'.eap-doc{color:#111418}.eap-h{text-align:center;margin:0 0 4px;color:#0b346e}.eap-sub{text-align:center;margin-bottom:12px;font-size:13px}'
+    +'.eap-tbl{width:100%;border-collapse:collapse;font-size:12px}'
+    +'.eap-tbl th,.eap-tbl td{border:1px solid #999;padding:5px 4px;text-align:center}'
+    +'.eap-tbl thead th{background:#eaf2fb;color:#0b346e;font-weight:700}'
+    +'.eap-t{text-align:left!important;font-weight:600;white-space:nowrap;background:#f5f9ff}'
+    +'.eap-c.on{background:#d6f5df;color:#1b7a3a;font-weight:800}'
+    +'.eap-legend{margin-top:10px;font-size:11px;color:#555}';
   try{ var s=document.createElement('style'); s.id='ea-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
 })();
 </script>
@@ -24466,16 +24490,19 @@ ${lignes}
   function meNom(){ try{ if(typeof window.yadaCurrentUserName==='function') return window.yadaCurrentUserName(); }catch(e){} return ''; }
   var STATUTS=['En cours','Terminé','Bloqué','En attente'];
 
+  function meId(){ try{ return window.staffId||''; }catch(e){ return ''; } }
   window.raEnregistrer=function(){
     var g=function(id){ var el=document.getElementById(id); return el?el.value:''; };
     var travaux=(g('ra-travaux')||'').trim();
     if(!travaux){ if(typeof toast==='function') toast('Renseignez les travaux effectués.'); else alert('Renseignez les travaux effectués.'); return; }
-    var collabId=g('ra-collab'); var st=staffL().find(function(x){return x.id===collabId;});
+    /* utilisateur = compte connecté (un seul par connexion) — pas de choix d'utilisateur */
+    var st=staffL().find(function(x){return x.id===meId();});
     var dossierId=g('ra-dossier'); var d=dossL().find(function(x){return x.id===dossierId;});
     var r={ id:(typeof uid==='function'?uid():'r'+Date.now()), date:g('ra-date')||today(),
-      collabId:collabId||'', collabNom: st?nom(st):(meNom()||'—'),
+      collabId:meId()||'', collabNom: st?nom(st):(meNom()||'—'),
       dossierId:dossierId||'', dossierNom: d?(d.nom||''):'',
-      travaux:travaux, temps:(parseFloat(String(g('ra-temps')).replace(',','.'))||0),
+      objet:(g('ra-objet')||'').trim(),
+      travaux:travaux,
       statut:g('ra-statut')||'En cours', remarques:(g('ra-remarques')||'').trim(),
       ts:(function(){ try{return (new Date()).getTime();}catch(e){return 0;} })() };
     raps().push(r);
@@ -24483,6 +24510,19 @@ ${lignes}
     if(typeof toast==='function') toast('Rapport journalier enregistré ✓ — transmis à Pilotages.');
     if(typeof render==='function') render();
   };
+  /* Ouvrir le tableau d'avancement d'un dossier dans une page (modale) imprimable & enregistrable. */
+  window.raOuvrirEtat=function(id){
+    var html=(typeof window.eaDossierTableHTML==='function')?window.eaDossierTableHTML(id):'';
+    window.__raEtatHTML=html;
+    var mo=document.getElementById('modal'), mc=document.getElementById('modal-c');
+    if(mo&&mc){
+      mc.innerHTML='<div class="ra-etat-actions"><button class="btn btn-ghost" onclick="closeModal()">← Fermer</button>'
+        +'<button class="btn btn-pri" onclick="raImprimerEtat()">🖨 Imprimer / Enregistrer (PDF)</button></div>'
+        +'<div class="ra-etat-scroll">'+html+'</div>';
+      mo.classList.add('show');
+    }
+  };
+  window.raImprimerEtat=function(){ try{ var pa=document.getElementById('print-area'); if(pa){ pa.innerHTML=window.__raEtatHTML||''; } }catch(e){} try{ window.print(); }catch(e){} };
   window.raSupprimer=function(id){
     var go=function(){ db.parametres.rapports=raps().filter(function(r){return r.id!==id;}); try{ if(typeof save==='function') save(); }catch(e){} if(typeof render==='function') render(); };
     if(typeof yadaConfirm==='function') yadaConfirm('Supprimer ce rapport journalier ?', go, {danger:true, ok:'Supprimer'});
@@ -24492,22 +24532,19 @@ ${lignes}
   function statutTag(s){ var c=(s==='Terminé')?'ra-ok':(s==='Bloqué')?'ra-ko':(s==='En attente')?'ra-wait':'ra-cur'; return '<span class="ra-tag '+c+'">'+esc(s||'En cours')+'</span>'; }
 
   function raBuild(){
-    var st=staffL(), ds=dossL(), list=raps().slice().sort(function(a,b){ return String(b.date).localeCompare(String(a.date)) || ((b.ts||0)-(a.ts||0)); });
-    var meId=(function(){ try{ return window.staffId||''; }catch(e){ return ''; } })();
-    var collOpts=st.map(function(s){ return '<option value="'+esc(s.id)+'"'+(s.id===meId?' selected':'')+'>'+esc(nom(s))+'</option>'; }).join('');
-    if(!collOpts) collOpts='<option value="">'+esc(meNom()||'Collaborateur')+'</option>';
+    var ds=dossL(), list=raps().slice().sort(function(a,b){ return String(b.date).localeCompare(String(a.date)) || ((b.ts||0)-(a.ts||0)); });
     var dossOpts='<option value="">— Général / interne —</option>'+ds.slice().sort(function(a,b){return String(a.nom||'').localeCompare(String(b.nom||''),'fr',{sensitivity:'base'});}).map(function(d){ return '<option value="'+esc(d.id)+'">'+esc(d.nom||'—')+'</option>'; }).join('');
     var statOpts=STATUTS.map(function(s){ return '<option value="'+esc(s)+'">'+esc(s)+'</option>'; }).join('');
 
+    /* Formulaire : pas de choix d'utilisateur (compte connecté), pas de temps ; Objet avant Travaux. */
     var form='<div class="card"><h2>➕ Nouveau rapport journalier</h2>'
-      +'<div class="sub">Décrivez les travaux effectués aujourd’hui. Le rapport est transmis au module <b>Pilotages</b> pour le suivi.</div>'
+      +'<div class="sub">Rapport de <b>'+esc(meNom()||'l’utilisateur connecté')+'</b>. Le rapport est transmis au module <b>Pilotages</b> pour le suivi.</div>'
       +'<div class="ra-form">'
       +'<label>Date<input id="ra-date" type="date" value="'+esc(today())+'" max="9999-12-31"></label>'
-      +'<label>Collaborateur<select id="ra-collab">'+collOpts+'</select></label>'
       +'<label>Dossier concerné<select id="ra-dossier">'+dossOpts+'</select></label>'
-      +'<label>Temps passé (h)<input id="ra-temps" type="number" step="0.25" min="0" placeholder="ex. 2.5"></label>'
       +'<label>Avancement<select id="ra-statut">'+statOpts+'</select></label>'
-      +'<label class="ra-full">Travaux effectués<textarea id="ra-travaux" rows="3" placeholder="Ex. : Saisie des achats de novembre, rapprochement bancaire, préparation TVA…"></textarea></label>'
+      +'<label class="ra-full">Objet<input id="ra-objet" type="text" placeholder="Ex. : TVA novembre, rapprochement bancaire…"></label>'
+      +'<label class="ra-full">Travaux effectués<textarea id="ra-travaux" rows="3" placeholder="Décrivez les travaux effectués aujourd’hui…"></textarea></label>'
       +'<label class="ra-full">Remarques / points bloquants<textarea id="ra-remarques" rows="2" placeholder="Optionnel"></textarea></label>'
       +'</div>'
       +'<div style="margin-top:12px"><button class="btn btn-pri" onclick="raEnregistrer()">Enregistrer le rapport</button></div>'
@@ -24516,20 +24553,31 @@ ${lignes}
     var rows=list.map(function(r){
       return '<tr>'
         +'<td>'+esc(frD(r.date))+'</td>'
-        +'<td><b>'+esc(r.collabNom||'—')+'</b></td>'
+        +'<td><b>'+esc(r.objet||'—')+'</b></td>'
         +'<td>'+esc(r.dossierNom||'— Général —')+'</td>'
         +'<td class="ra-tx">'+esc(r.travaux||'')+(r.remarques?'<div class="ra-rem">— '+esc(r.remarques)+'</div>':'')+'</td>'
-        +'<td class="r num">'+(r.temps?(r.temps+' h'):'—')+'</td>'
         +'<td>'+statutTag(r.statut)+'</td>'
         +'<td><button class="btn btn-ghost btn-sm" onclick="raSupprimer(\''+esc(r.id)+'\')">🗑</button></td>'
         +'</tr>';
-    }).join('') || '<tr><td colspan="7" class="adm-empty" style="text-align:center;color:#9fb6d0;padding:14px">Aucun rapport saisi. Utilisez le formulaire ci-dessus.</td></tr>';
+    }).join('') || '<tr><td colspan="6" class="adm-empty" style="text-align:center;color:#9fb6d0;padding:14px">Aucun rapport saisi. Utilisez le formulaire ci-dessus.</td></tr>';
 
     var listCard='<div class="card"><h2>📋 Rapports saisis</h2>'
       +'<div class="sub">'+list.length+' rapport(s). Tous les rapports sont transmis au module <b>Pilotages</b> (vue d’ensemble & suivi).</div>'
-      +'<div class="ra-scroll"><table class="ra-tbl"><thead><tr><th>Date</th><th>Collaborateur</th><th>Dossier</th><th>Travaux effectués</th><th class="r">Temps</th><th>Avancement</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+      +'<div class="ra-scroll"><table class="ra-tbl"><thead><tr><th>Date</th><th>Objet</th><th>Dossier</th><th>Travaux effectués</th><th>Avancement</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
 
-    return form+listCard;
+    /* Colonne DROITE : liste des dossiers attribués + leur avancement ; clic → tableau imprimable. */
+    var dRows=ds.map(function(d){ var p=(typeof window.eaProgress==='function')?window.eaProgress(d.id):{cls:'ea-none',html:'—'};
+      return '<button type="button" class="ra-doss-row" onclick="raOuvrirEtat(\''+esc(d.id)+'\')">'
+        +'<span class="ra-doss-nom">'+esc(d.nom||'—')+'</span>'
+        +'<span class="ra-doss-st '+p.cls+'">'+esc(p.html)+'</span>'
+        +'<span class="ra-doss-go">Ouvrir →</span></button>';
+    }).join('') || '<div class="adm-empty" style="padding:14px;color:#9fb6d0">Aucun dossier attribué.</div>';
+    var etatCard='<div class="card"><h2>📋 État d’avancement des dossiers</h2>'
+      +'<div class="sub">Vos dossiers attribués. Cliquez un dossier pour ouvrir son tableau d’avancement (imprimable &amp; enregistrable en PDF).</div>'
+      +'<div class="ra-doss-list">'+dRows+'</div></div>';
+
+    return '<div class="ra-2col"><div class="ra-2col-l">'+form+listCard+'</div>'
+      +'<div class="ra-2col-r">'+etatCard+'</div></div>';
   }
 
   /* Cartes du module Rapport (formulaire + liste) — réutilisées par la page d'ouverture
@@ -24554,13 +24602,13 @@ ${lignes}
       var dk=r.dossierNom||'— Général —'; byDoss[dk]=byDoss[dk]||{n:0,h:0}; byDoss[dk].n++; byDoss[dk].h+=(+r.temps||0);
     });
     var kpi=function(l,v){ return '<div class="kpi"><div class="lbl">'+l+'</div><div class="val">'+v+'</div></div>'; };
-    var nH=function(h){ return (Math.round(h*100)/100)+' h'; };
+    var nTermines=list.filter(function(r){return r.statut==='Terminé';}).length;
     var rows=list.slice(0,120).map(function(r){
       var stc=(r.statut==='Terminé')?'ra-ok':(r.statut==='Bloqué')?'ra-ko':(r.statut==='En attente')?'ra-wait':'ra-cur';
-      return '<tr><td>'+esc(frD(r.date))+'</td><td><b>'+esc(r.collabNom||'—')+'</b></td><td>'+esc(r.dossierNom||'— Général —')+'</td><td class="ra-tx">'+esc(r.travaux||'')+(r.remarques?'<div class="ra-rem">— '+esc(r.remarques)+'</div>':'')+'</td><td class="r num">'+(r.temps?(r.temps+' h'):'—')+'</td><td><span class="ra-tag '+stc+'">'+esc(r.statut||'En cours')+'</span></td><td class="ra-when">'+esc(frDT(r.ts))+'</td></tr>';
+      return '<tr><td>'+esc(frD(r.date))+'</td><td><b>'+esc(r.collabNom||'—')+'</b></td><td>'+esc(r.objet||'—')+'</td><td>'+esc(r.dossierNom||'— Général —')+'</td><td class="ra-tx">'+esc(r.travaux||'')+(r.remarques?'<div class="ra-rem">— '+esc(r.remarques)+'</div>':'')+'</td><td><span class="ra-tag '+stc+'">'+esc(r.statut||'En cours')+'</span></td><td class="ra-when">'+esc(frDT(r.ts))+'</td></tr>';
     }).join('') || '<tr><td colspan="7" class="adm-empty" style="text-align:center;color:#9fb6d0;padding:14px">Aucun rapport transmis pour l’instant.</td></tr>';
-    var collRows=Object.keys(byColl).sort().map(function(k){ return '<tr><td><b>'+esc(k)+'</b></td><td class="r num">'+byColl[k].n+'</td><td class="r num">'+nH(byColl[k].h)+'</td></tr>'; }).join('') || '<tr><td colspan="3" class="adm-empty">—</td></tr>';
-    var dossRows=Object.keys(byDoss).sort().map(function(k){ return '<tr><td><b>'+esc(k)+'</b></td><td class="r num">'+byDoss[k].n+'</td><td class="r num">'+nH(byDoss[k].h)+'</td></tr>'; }).join('') || '<tr><td colspan="3" class="adm-empty">—</td></tr>';
+    var collRows=Object.keys(byColl).sort().map(function(k){ return '<tr><td><b>'+esc(k)+'</b></td><td class="r num">'+byColl[k].n+'</td></tr>'; }).join('') || '<tr><td colspan="2" class="adm-empty">—</td></tr>';
+    var dossRows=Object.keys(byDoss).sort().map(function(k){ return '<tr><td><b>'+esc(k)+'</b></td><td class="r num">'+byDoss[k].n+'</td></tr>'; }).join('') || '<tr><td colspan="2" class="adm-empty">—</td></tr>';
 
     /* Suivi des saisies (VISIBLE, au-dessus) : quel jour et à quelle heure chaque
        collaborateur a complété son rapport. */
@@ -24576,14 +24624,14 @@ ${lignes}
       +'<summary><h2 style="display:inline">📝 Rapports journaliers des collaborateurs</h2><span class="ra-cnt">'+list.length+' rapport(s)</span><span class="ra-hint">Cliquer pour ouvrir</span></summary>'
       +'<div class="sub" style="margin-top:8px">Transmis depuis le module <b>Rapport</b> — vue d’ensemble & suivi des travaux effectués par dossier et par collaborateur.</div>'
       +'<div class="grid g4" style="margin-top:8px">'
-        +kpi('Rapports',list.length)+kpi('Heures déclarées',nH(totH))+kpi('Collaborateurs',Object.keys(byColl).length)+kpi('Dossiers suivis',Object.keys(byDoss).filter(function(k){return k!=='— Général —';}).length)
+        +kpi('Rapports',list.length)+kpi('Terminés',nTermines)+kpi('Collaborateurs',Object.keys(byColl).length)+kpi('Dossiers suivis',Object.keys(byDoss).filter(function(k){return k!=='— Général —';}).length)
       +'</div>'
       +'<div class="ra-two">'
-        +'<div><div class="ra-sub">Par collaborateur</div><table class="ra-mini"><thead><tr><th>Collaborateur</th><th class="r">Rapports</th><th class="r">Heures</th></tr></thead><tbody>'+collRows+'</tbody></table></div>'
-        +'<div><div class="ra-sub">Par dossier</div><table class="ra-mini"><thead><tr><th>Dossier</th><th class="r">Rapports</th><th class="r">Heures</th></tr></thead><tbody>'+dossRows+'</tbody></table></div>'
+        +'<div><div class="ra-sub">Par collaborateur</div><table class="ra-mini"><thead><tr><th>Collaborateur</th><th class="r">Rapports</th></tr></thead><tbody>'+collRows+'</tbody></table></div>'
+        +'<div><div class="ra-sub">Par dossier</div><table class="ra-mini"><thead><tr><th>Dossier</th><th class="r">Rapports</th></tr></thead><tbody>'+dossRows+'</tbody></table></div>'
       +'</div>'
       +'<div class="ra-sub" style="margin-top:14px">Détail des rapports</div>'
-      +'<div class="ra-scroll"><table class="ra-tbl"><thead><tr><th>Date</th><th>Collaborateur</th><th>Dossier</th><th>Travaux effectués</th><th class="r">Temps</th><th>Avancement</th><th>Saisi le</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+      +'<div class="ra-scroll"><table class="ra-tbl"><thead><tr><th>Date</th><th>Collaborateur</th><th>Objet</th><th>Dossier</th><th>Travaux effectués</th><th>Avancement</th><th>Saisi le</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
       +'</details>';
 
     return suiviCard+closed;
@@ -24630,6 +24678,18 @@ ${lignes}
     +'.ra-details[open]>summary::before{content:"▾"}'
     +'.ra-cnt{background:#0d2740;border:1px solid #1e90ff;color:#cfe0ff;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700}'
     +'.ra-hint{color:#9fb6d0;font-size:12px;margin-left:auto}'
+    +'.ra-2col{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:start}'
+    +'.ra-2col-l,.ra-2col-r{min-width:0}'
+    +'.ra-doss-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}'
+    +'.ra-doss-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:rgba(120,180,255,.05);border:1px solid rgba(120,180,255,.20);border-radius:11px;padding:11px 13px;cursor:pointer;color:inherit;transition:background .12s,border-color .12s}'
+    +'.ra-doss-row:hover{background:rgba(30,144,255,.18);border-color:#1e90ff}'
+    +'.ra-doss-nom{flex:1;font-weight:700;font-size:13.5px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+    +'.ra-doss-st{font-size:11.5px;font-weight:700;white-space:nowrap}'
+    +'.ra-doss-st.ea-ok{color:#54d98c}.ra-doss-st.ea-late{color:#f0b34b}.ra-doss-st.ea-none{color:#8fa2b8}'
+    +'.ra-doss-go{font-size:11.5px;color:#5ab0ff;flex:0 0 auto}'
+    +'.ra-etat-actions{display:flex;justify-content:space-between;gap:10px;margin-bottom:12px}'
+    +'.ra-etat-scroll{overflow:auto;max-height:70vh;background:#fff;border-radius:10px;padding:14px}'
+    +'@media(max-width:960px){.ra-2col{grid-template-columns:1fr}}'
     +'@media(max-width:820px){.ra-form{grid-template-columns:1fr}.ra-two{grid-template-columns:1fr}}';
   try{ var s2=document.createElement('style'); s2.id='ra-mod'; s2.textContent=css; document.head.appendChild(s2); }catch(e){}
 })();
