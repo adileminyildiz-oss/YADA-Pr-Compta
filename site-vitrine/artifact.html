@@ -437,6 +437,44 @@ body::before{display:none}
 .card,.hero-card,#chat-panel,#modal-c,.ai-band{border-top-color:rgba(255,255,255,.5) !important}
 :root[data-theme="dark"] .card,:root[data-theme="dark"] .hero-card,:root[data-theme="dark"] #chat-panel,:root[data-theme="dark"] #modal-c,:root[data-theme="dark"] .ai-band{border-top-color:rgba(255,255,255,.22) !important}
 @media (prefers-reduced-motion:reduce){#ambient .orb{transition:none}.card:hover,.ai-feat:hover{transform:none}}
+
+/* ===================================================================
+   Fond d'écran travaillé — dégradés de noirs, halos, vignette, texture
+   (le sombre n'est plus un noir plat). Monochrome.
+   =================================================================== */
+html{background:var(--bg)}
+body{background:transparent}
+/* Halos ambiants plus présents en sombre pour animer le noir */
+:root[data-theme="dark"]{ --orb1:rgba(255,255,255,.09); --orb2:rgba(120,150,200,.08); }
+@media (prefers-color-scheme:dark){ :root{ --orb1:rgba(255,255,255,.09); --orb2:rgba(120,150,200,.08); } }
+/* Couche de fond principale (re-activée) : dégradés superposés + vignette */
+body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;display:block;
+  background:
+    radial-gradient(1200px 820px at 18% -8%, #ffffff, transparent 60%),
+    radial-gradient(900px 700px at 92% 6%, #f2f5f9, transparent 55%),
+    linear-gradient(180deg,#fbfcfe 0%,#f4f6f9 100%)}
+:root[data-theme="dark"] body::before{
+  background:
+    radial-gradient(1150px 780px at 20% -10%, #1b1f27, transparent 58%),
+    radial-gradient(980px 720px at 88% 4%, #151b25, transparent 54%),
+    radial-gradient(1250px 900px at 50% 122%, #10151e, transparent 60%),
+    linear-gradient(180deg,#0e1015 0%,#0b0d12 55%,#070809 100%),
+    radial-gradient(150% 130% at 50% 26%, transparent 52%, rgba(0,0,0,.6) 100%)}
+@media (prefers-color-scheme:dark){ body::before{
+  background:
+    radial-gradient(1150px 780px at 20% -10%, #1b1f27, transparent 58%),
+    radial-gradient(980px 720px at 88% 4%, #151b25, transparent 54%),
+    radial-gradient(1250px 900px at 50% 122%, #10151e, transparent 60%),
+    linear-gradient(180deg,#0e1015 0%,#0b0d12 55%,#070809 100%),
+    radial-gradient(150% 130% at 50% 26%, transparent 52%, rgba(0,0,0,.6) 100%)} }
+/* Texture fine (points) — visible surtout en sombre, fondue vers les bords */
+body::after{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;opacity:0;
+  background-image:radial-gradient(circle, rgba(255,255,255,.05) 1px, transparent 1.4px);
+  background-size:24px 24px;
+  -webkit-mask-image:radial-gradient(130% 100% at 50% 22%, #000 30%, transparent 78%);
+          mask-image:radial-gradient(130% 100% at 50% 22%, #000 30%, transparent 78%)}
+:root[data-theme="dark"] body::after{opacity:.6}
+@media (prefers-color-scheme:dark){ body::after{opacity:.6} }
 </style>
 <!-- ============ HEADER ============ -->
 <header>
