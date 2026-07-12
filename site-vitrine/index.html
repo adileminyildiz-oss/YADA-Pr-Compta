@@ -9,7 +9,7 @@
 <meta property="og:title" content="LAST — Accompagnement administratif des professions libérales">
 <meta property="og:description" content="Création & modification de société, accompagnement administratif dédié aux métiers libéraux. Assistant IA pour qualifier et confirmer votre demande.">
 <meta property="og:type" content="website">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23103a32'/%3E%3Ctext x='16' y='22' font-size='18' font-family='Georgia' fill='%23d8a63f' text-anchor='middle'%3EL%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23103a32'/%3E%3Ctext x='16' y='22' font-size='18' font-family='Georgia' fill='%23d8a63f' text-anchor='middle'%3EL%3C/text%3E%3Crect x='11' y='24' width='10' height='1.6' rx='.8' fill='%23d8a63f'/%3E%3C/svg%3E">
 <style>
 /* ============ Design system ============ */
 :root{
@@ -90,8 +90,8 @@ header{position:sticky;top:0;z-index:60;background:rgba(250,248,242,.82);backdro
 @media (prefers-color-scheme:dark){header{background:rgba(10,24,38,.8)}}
 .nav{display:flex;align-items:center;justify-content:space-between;height:72px}
 .brand{display:flex;align-items:center;gap:11px;font-family:var(--serif);font-weight:600;font-size:1.35rem;color:var(--ink)}
-.brand .logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--navy-3),var(--navy));
-  display:grid;place-items:center;color:var(--gold);font-family:var(--serif);font-size:1.25rem;box-shadow:var(--shadow-sm)}
+.brand .logo{width:40px;height:40px;border-radius:11px;overflow:hidden;box-shadow:var(--shadow-sm);display:block;flex:none}
+.brand .logo svg{width:100%;height:100%;display:block}
 .brand small{font-family:var(--sans);font-weight:500;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);display:block;margin-top:-3px}
 .nav-links{display:flex;align-items:center;gap:6px}
 .nav-links a{padding:9px 14px;border-radius:9px;font-weight:500;font-size:.95rem;color:var(--muted);transition:.15s}
@@ -319,7 +319,7 @@ footer a:hover{color:var(--gold)}
 <header>
   <div class="wrap nav">
     <a class="brand" href="#top" aria-label="LAST, accueil">
-      <span class="logo">L</span>
+      <span class="logo"><svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg" aria-label="LAST"><rect width="88" height="88" fill="#103a32"/><text x="44" y="59" font-family="Georgia,'Times New Roman',serif" font-size="47" font-weight="600" fill="#d8a63f" text-anchor="middle">L</text><rect x="30" y="65" width="28" height="3.5" rx="1.75" fill="#d8a63f"/></svg></span>
       <span>LAST<small>Accompagnement libéral</small></span>
     </a>
     <nav class="nav-links" id="navLinks">
@@ -651,7 +651,7 @@ footer a:hover{color:var(--gold)}
   <div class="wrap">
     <div class="foot-grid">
       <div>
-        <a class="brand" href="#top"><span class="logo">L</span><span>LAST<small>Accompagnement libéral</small></span></a>
+        <a class="brand" href="#top"><span class="logo"><svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg" aria-label="LAST"><rect width="88" height="88" fill="#103a32"/><text x="44" y="59" font-family="Georgia,'Times New Roman',serif" font-size="47" font-weight="600" fill="#d8a63f" text-anchor="middle">L</text><rect x="30" y="65" width="28" height="3.5" rx="1.75" fill="#d8a63f"/></svg></span><span>LAST<small>Accompagnement libéral</small></span></a>
         <p style="margin-top:14px;color:#9db4cb;font-size:.92rem;max-width:280px">L'accompagnement administratif des professions libérales : création, modification et gestion de société.</p>
       </div>
       <div>
@@ -704,7 +704,7 @@ footer a:hover{color:var(--gold)}
 <!-- ============ CRM / ESPACE CONSEILLER ============ -->
 <div id="crm">
   <div class="crm-head">
-    <span class="brand"><span class="logo">L</span></span>
+    <span class="brand"><span class="logo"><svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg" aria-label="LAST"><rect width="88" height="88" fill="#103a32"/><text x="44" y="59" font-family="Georgia,'Times New Roman',serif" font-size="47" font-weight="600" fill="#d8a63f" text-anchor="middle">L</text><rect x="30" y="65" width="28" height="3.5" rx="1.75" fill="#d8a63f"/></svg></span></span>
     <h2>Espace conseiller — demandes qualifiées</h2>
     <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="CRM.exportCSV()">⬇ Export CSV</button>
     <button class="btn btn-ghost btn-sm" onclick="CRM.close()">Fermer ✕</button>
