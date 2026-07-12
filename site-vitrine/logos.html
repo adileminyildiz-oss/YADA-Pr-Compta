@@ -4,21 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LAST — Propositions de logos</title>
-<meta name="theme-color" content="#103a32">
+<meta name="theme-color" content="#0d0f12">
 <style>
 :root{
-  --green:#103a32; --green-2:#15493d; --green-3:#1c6b58; --gold:#d8a63f; --gold-2:#bd8c28;
-  --ink:#17231e; --muted:#5a6b63; --line:#e6e9df; --bg:#faf8f2; --bg-2:#f3f0e6; --card:#fffdf7;
-  --shadow:0 12px 34px rgba(16,58,50,.12); --shadow-sm:0 4px 14px rgba(16,58,50,.09);
-  --serif:'Fraunces',Georgia,'Times New Roman',serif;
+  --green:#0d0f12; --green-2:#1a1d22; --green-3:#14171c; --gold:#14171c; --gold-2:#3a3f47;
+  --ink:#17231e; --muted:#5a6b63; --line:#e6e8eb; --bg:#ffffff; --bg-2:#f5f6f8; --card:#ffffff;
+  --shadow:0 12px 34px rgba(13,15,18,.12); --shadow-sm:0 4px 14px rgba(13,15,18,.09);
+  --serif:'Helvetica Neue',Helvetica,Arial,'Segoe UI',system-ui,sans-serif;
   --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
 }
 @media (prefers-color-scheme:dark){
-  :root{--ink:#eaf1ec;--muted:#98a99f;--line:#213029;--bg:#0b1310;--bg-2:#0f1a15;--card:#111d18;
-    --green-3:#48b39a;--gold:#e9c06a;--shadow:0 14px 44px rgba(0,0,0,.5);--shadow-sm:0 4px 16px rgba(0,0,0,.42)}
+  :root{--ink:#eaf1ec;--muted:#98a99f;--line:#23262b;--bg:#0b0c0e;--bg-2:#131518;--card:#101215;
+    --green-3:#f2f3f5;--gold:#ffffff;--shadow:0 14px 44px rgba(0,0,0,.5);--shadow-sm:0 4px 16px rgba(0,0,0,.42)}
 }
-:root[data-theme="light"]{--ink:#17231e;--muted:#5a6b63;--line:#e6e9df;--bg:#faf8f2;--bg-2:#f3f0e6;--card:#fffdf7;--green-3:#1c6b58;--gold:#d8a63f}
-:root[data-theme="dark"]{--ink:#eaf1ec;--muted:#98a99f;--line:#213029;--bg:#0b1310;--bg-2:#0f1a15;--card:#111d18;--green-3:#48b39a;--gold:#e9c06a}
+:root[data-theme="light"]{--ink:#17231e;--muted:#5a6b63;--line:#e6e8eb;--bg:#ffffff;--bg-2:#f5f6f8;--card:#ffffff;--green-3:#14171c;--gold:#14171c}
+:root[data-theme="dark"]{--ink:#eaf1ec;--muted:#98a99f;--line:#23262b;--bg:#0b0c0e;--bg-2:#131518;--card:#101215;--green-3:#f2f3f5;--gold:#ffffff}
 *{box-sizing:border-box}
 body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
 .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
@@ -36,9 +36,9 @@ h1{font-family:var(--serif);font-weight:600;font-size:clamp(2rem,4.5vw,3rem);mar
 .stage{display:grid;grid-template-columns:1.4fr 1fr;min-height:180px}
 @media(max-width:420px){.stage{grid-template-columns:1fr;grid-template-rows:1fr auto}}
 .on-light{background:
-  radial-gradient(120% 120% at 15% 0%,rgba(28,107,88,.06),transparent 60%),#fbfaf5;
+  radial-gradient(120% 120% at 15% 0%,rgba(13,15,18,.05),transparent 60%),#fbfaf5;
   display:grid;place-items:center;padding:26px}
-.on-dark{background:linear-gradient(150deg,#103a32,#0b241e);display:grid;place-items:center;padding:22px}
+.on-dark{background:linear-gradient(150deg,#0d0f12,#0d0f12);display:grid;place-items:center;padding:22px}
 .stage svg{width:100%;height:auto;max-height:110px}
 .on-dark svg{max-height:76px}
 .meta{padding:18px 20px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
@@ -48,7 +48,7 @@ h1{font-family:var(--serif);font-weight:600;font-size:clamp(2rem,4.5vw,3rem);mar
 .meta .dl{align-self:flex-start;margin-top:8px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;
   border:1.5px solid var(--line);background:transparent;color:var(--green-3);font-weight:600;font-size:.82rem;
   padding:8px 14px;border-radius:9px;font-family:var(--sans);transition:.15s}
-.meta .dl:hover{border-color:var(--green-3);background:rgba(28,107,88,.07)}
+.meta .dl:hover{border-color:var(--green-3);background:rgba(13,15,18,.06)}
 .note{background:var(--bg-2);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin:8px 0 60px;color:var(--muted);font-size:.92rem}
 .note b{color:var(--ink)}
 .pref{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
@@ -62,7 +62,7 @@ footer{text-align:center;color:var(--muted);font-size:.82rem;padding:20px 0 50px
 <header class="wrap">
   <span class="eyebrow">Identité de marque</span>
   <h1>LAST — propositions de logo</h1>
-  <p class="sub">Six pistes autour du nom <b>LAST</b>, dans l'identité vert sapin + or safran du site. Survolez pour comparer version claire et version sombre. Chaque logo est téléchargeable en SVG (vectoriel, redimensionnable à l'infini).</p>
+  <p class="sub">Six pistes autour du nom <b>LAST</b>, dans l'identité monochrome (noir & blanc) du site. Survolez pour comparer version claire et version sombre. Chaque logo est téléchargeable en SVG (vectoriel, redimensionnable à l'infini).</p>
 </header>
 
 <main class="wrap">
@@ -96,13 +96,13 @@ const CONCEPTS = [
       <rect x="30" y="64" width="28" height="3" rx="1.5" fill="${gold}"/>`
   },
   {
-    no:'02', nom:'Mot — LAST.', desc:"Logotype à empattement avec un point final or : la marque comme signe de complétude, de dossier « mené à terme ».",
+    no:'02', nom:'Mot — LAST.', desc:"Logotype à empattement avec un point final marqué : la marque comme signe de complétude, de dossier « mené à terme ».",
     vb:'0 0 300 76',
     draw:(fg,gold)=>`
       <text x="8" y="54" font-family="Georgia,serif" font-size="54" font-weight="600" letter-spacing="3" fill="${fg}">LAST<tspan fill="${gold}">.</tspan></text>`
   },
   {
-    no:'03', nom:'Mot + coche', desc:"LAST suivi d'une pastille or à coche : « dernière étape validée ». Rassurant, orienté service accompli.",
+    no:'03', nom:'Mot + coche', desc:"LAST suivi d'une pastille à coche : « dernière étape validée ». Rassurant, orienté service accompli.",
     vb:'0 0 340 76',
     draw:(fg,gold)=>`
       <text x="8" y="54" font-family="Georgia,serif" font-size="54" font-weight="600" letter-spacing="3" fill="${fg}">LAST</text>
@@ -110,7 +110,7 @@ const CONCEPTS = [
       <path d="M289 39 l7 7 l14 -16" fill="none" stroke="${fg}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`
   },
   {
-    no:'04', nom:'Progression', desc:"Le nom posé sur une barre de progression or presque achevée, point d'arrivée marqué : l'idée d'aller jusqu'au bout du dossier.",
+    no:'04', nom:'Progression', desc:"Le nom posé sur une barre de progression presque achevée, point d'arrivée marqué : l'idée d'aller jusqu'au bout du dossier.",
     vb:'0 0 300 92',
     draw:(fg,gold)=>`
       <text x="8" y="50" font-family="Georgia,serif" font-size="50" font-weight="600" letter-spacing="3" fill="${fg}">LAST</text>
@@ -146,8 +146,8 @@ const CONCEPTS = [
 
 const grid=document.getElementById('grid');
 CONCEPTS.forEach((c,i)=>{
-  const light=svg(c.vb,c.draw,{fg:'#103a32',gold:'#c98f2a'});
-  const dark =svg(c.vb,c.draw,{fg:'#faf8f2',gold:'#e9c06a'});
+  const light=svg(c.vb,c.draw,{fg:'#0d0f12',gold:'#74797f'});
+  const dark =svg(c.vb,c.draw,{fg:'#ffffff',gold:'#8a9098'});
   const el=document.createElement('div');
   el.className='card';
   el.innerHTML=`
@@ -169,7 +169,7 @@ grid.addEventListener('click',e=>{
   const c=CONCEPTS[+b.dataset.i];
   // Version fond clair, en couleurs de marque, autonome
   const out=`<?xml version="1.0" encoding="UTF-8"?>\n`+
-    `<svg viewBox="${c.vb}" xmlns="http://www.w3.org/2000/svg">${c.draw('#103a32','#c98f2a')}</svg>`;
+    `<svg viewBox="${c.vb}" xmlns="http://www.w3.org/2000/svg">${c.draw('#0d0f12','#74797f')}</svg>`;
   const blob=new Blob([out],{type:'image/svg+xml'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
