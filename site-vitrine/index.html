@@ -339,6 +339,84 @@ footer a:hover{color:var(--gold)}
 :root[data-theme="dark"] .tag.cold{background:rgba(255,255,255,.06)}
 :root[data-theme="dark"] .tag.info{background:rgba(255,255,255,.08)}
 @media (prefers-color-scheme:dark){.tag.hot{background:rgba(255,255,255,.14)}.tag.warm{background:rgba(255,255,255,.1)}.tag.cold{background:rgba(255,255,255,.06)}.tag.info{background:rgba(255,255,255,.08)}}
+
+/* =====================================================================
+   Liquid glass + Spatial UI (monochrome) — surfaces en verre dépoli,
+   fond ambiant pour la réfraction, profondeur par ombres étagées.
+   ===================================================================== */
+:root{
+  --glass-bg:linear-gradient(155deg,rgba(255,255,255,.72),rgba(255,255,255,.46));
+  --glass-brd:rgba(255,255,255,.7);
+  --glass-blur:blur(20px) saturate(175%);
+  --glass-hi:inset 0 1px 0 rgba(255,255,255,.85), inset 0 0 0 1px rgba(13,15,18,.04);
+  --glass-sh:0 20px 50px -14px rgba(13,15,18,.30), 0 6px 18px -8px rgba(13,15,18,.16);
+  --glass-sh-hi:0 32px 70px -16px rgba(13,15,18,.36), 0 10px 24px -8px rgba(13,15,18,.2);
+  --amb-a:rgba(13,15,18,.06); --amb-b:rgba(13,15,18,.045);
+}
+@media (prefers-color-scheme:dark){:root{
+  --glass-bg:linear-gradient(155deg,rgba(255,255,255,.10),rgba(255,255,255,.028));
+  --glass-brd:rgba(255,255,255,.15);
+  --glass-hi:inset 0 1px 0 rgba(255,255,255,.16), inset 0 0 0 1px rgba(255,255,255,.03);
+  --glass-sh:0 26px 60px -16px rgba(0,0,0,.72), 0 8px 22px -10px rgba(0,0,0,.55);
+  --glass-sh-hi:0 40px 90px -18px rgba(0,0,0,.8), 0 12px 30px -10px rgba(0,0,0,.6);
+  --amb-a:rgba(255,255,255,.06); --amb-b:rgba(255,255,255,.045);
+}}
+:root[data-theme="light"]{
+  --glass-bg:linear-gradient(155deg,rgba(255,255,255,.72),rgba(255,255,255,.46));
+  --glass-brd:rgba(255,255,255,.7);
+  --glass-hi:inset 0 1px 0 rgba(255,255,255,.85), inset 0 0 0 1px rgba(13,15,18,.04);
+  --glass-sh:0 20px 50px -14px rgba(13,15,18,.30), 0 6px 18px -8px rgba(13,15,18,.16);
+  --glass-sh-hi:0 32px 70px -16px rgba(13,15,18,.36), 0 10px 24px -8px rgba(13,15,18,.2);
+  --amb-a:rgba(13,15,18,.06); --amb-b:rgba(13,15,18,.045);
+}
+:root[data-theme="dark"]{
+  --glass-bg:linear-gradient(155deg,rgba(255,255,255,.10),rgba(255,255,255,.028));
+  --glass-brd:rgba(255,255,255,.15);
+  --glass-hi:inset 0 1px 0 rgba(255,255,255,.16), inset 0 0 0 1px rgba(255,255,255,.03);
+  --glass-sh:0 26px 60px -16px rgba(0,0,0,.72), 0 8px 22px -10px rgba(0,0,0,.55);
+  --glass-sh-hi:0 40px 90px -18px rgba(0,0,0,.8), 0 12px 30px -10px rgba(0,0,0,.6);
+  --amb-a:rgba(255,255,255,.06); --amb-b:rgba(255,255,255,.045);
+}
+/* Fond ambiant fixe : blooms doux monochromes (matière pour le flou) */
+body::before{content:"";position:fixed;inset:-10% -10% -10% -10%;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(38% 34% at 14% 8%, var(--amb-a), transparent 62%),
+    radial-gradient(34% 32% at 88% 10%, var(--amb-b), transparent 60%),
+    radial-gradient(46% 40% at 60% 108%, var(--amb-a), transparent 62%);}
+/* Surfaces en verre */
+.card,.kpi,.step,.aud .pill,.faq details,.hero-card,.contact-side .card,
+#intakeForm,.lead,.recap,#chat-panel,#modal-c,.msg.ai,.bub.ai,.bub.chips span{
+  background:var(--glass-bg) !important;
+  -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur);
+  border:1px solid var(--glass-brd) !important;
+  box-shadow:var(--glass-sh), var(--glass-hi) !important;
+}
+.card:hover,.aud .pill:hover{box-shadow:var(--glass-sh-hi), var(--glass-hi) !important; transform:translateY(-5px)}
+/* Chat & KPI : rayons doux et texte inchangé */
+.msg.ai,.bub.ai{border-radius:15px}
+.bub.chips span{box-shadow:none !important}
+/* En-tête : verre plus prononcé */
+header{-webkit-backdrop-filter:blur(24px) saturate(180%) !important; backdrop-filter:blur(24px) saturate(180%) !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,255,255,.5)) !important; border-bottom:1px solid var(--glass-brd) !important}
+:root[data-theme="dark"] header, @media(prefers-color-scheme:dark){}
+:root[data-theme="dark"] header{background:linear-gradient(180deg,rgba(20,22,26,.6),rgba(11,12,14,.42)) !important; border-bottom:1px solid rgba(255,255,255,.1) !important}
+@media (prefers-color-scheme:dark){header{background:linear-gradient(180deg,rgba(20,22,26,.6),rgba(11,12,14,.42)) !important; border-bottom:1px solid rgba(255,255,255,.1) !important}}
+/* Bande IA : panneau de verre sombre flottant (spatial) */
+.ai-band{background:linear-gradient(155deg,rgba(22,24,29,.78),rgba(10,11,13,.62)) !important;
+  -webkit-backdrop-filter:blur(22px) saturate(160%); backdrop-filter:blur(22px) saturate(160%);
+  border:1px solid rgba(255,255,255,.14); box-shadow:var(--glass-sh-hi), inset 0 1px 0 rgba(255,255,255,.12)}
+.ai-feat{background:rgba(255,255,255,.07) !important; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.14) !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.1)}
+/* Bouton fantôme en verre */
+.btn-ghost{background:var(--glass-bg) !important; -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur);
+  border:1px solid var(--glass-brd) !important; box-shadow:var(--glass-hi)}
+.btn-ghost:hover{box-shadow:var(--glass-sh), var(--glass-hi)}
+/* Léger flottement du visuel hero (spatial, discret) */
+@keyframes lastFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@media (prefers-reduced-motion:no-preference){.hero-card{animation:lastFloat 7s ease-in-out infinite}}
+/* Le FAB reste en verre teinté noir */
+#chat-fab{background:linear-gradient(150deg,rgba(26,29,34,.92),rgba(13,15,18,.92)) !important;
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.14)}
 </style>
 </head>
 <body>
