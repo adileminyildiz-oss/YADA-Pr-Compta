@@ -417,6 +417,38 @@ header{-webkit-backdrop-filter:blur(24px) saturate(180%) !important; backdrop-fi
 /* Le FAB reste en verre teinté noir */
 #chat-fab{background:linear-gradient(150deg,rgba(26,29,34,.92),rgba(13,15,18,.92)) !important;
   -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.14)}
+
+/* ===================================================================
+   Passe qualité v2 — Spatial UI (parallaxe ambiante) + Liquid glass
+   premium (reflet spéculaire suivant le curseur). 100% monochrome.
+   =================================================================== */
+:root{ --glass-blur:blur(26px) saturate(185%); --orb1:rgba(13,15,18,.075); --orb2:rgba(13,15,18,.05); }
+@media (prefers-color-scheme:dark){ :root{ --glass-blur:blur(26px) saturate(150%); --orb1:rgba(255,255,255,.07); --orb2:rgba(130,150,180,.06); } }
+:root[data-theme="light"]{ --orb1:rgba(13,15,18,.075); --orb2:rgba(13,15,18,.05); }
+:root[data-theme="dark"]{ --orb1:rgba(255,255,255,.07); --orb2:rgba(130,150,180,.06); }
+/* Couche ambiante à halos (profondeur spatiale) — remplace le fond fixe simple */
+body::before{display:none}
+#ambient{position:fixed;inset:-18%;z-index:-1;pointer-events:none;overflow:hidden}
+#ambient .orb{position:absolute;border-radius:50%;filter:blur(72px);opacity:.6;transition:transform .35s cubic-bezier(.22,.61,.36,1);will-change:transform}
+#ambient .orb-a{width:48vw;height:48vw;left:-6vw;top:-9vw;background:radial-gradient(circle at 32% 30%,var(--orb1),transparent 62%)}
+#ambient .orb-b{width:42vw;height:42vw;right:-8vw;top:3vw;background:radial-gradient(circle at 60% 40%,var(--orb2),transparent 60%)}
+#ambient .orb-c{width:54vw;height:54vw;left:24vw;bottom:-24vw;background:radial-gradient(circle at 50% 50%,var(--orb1),transparent 64%)}
+/* Reflet spéculaire qui suit le curseur sur les surfaces de verre */
+.card,.kpi,.hero-card,.ai-feat{position:relative;isolation:isolate}
+.card::after,.kpi::after,.hero-card::after,.ai-feat::after{content:"";position:absolute;inset:0;border-radius:inherit;
+  pointer-events:none;z-index:1;opacity:0;transition:opacity .4s ease;mix-blend-mode:screen;
+  background:radial-gradient(300px circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.18),transparent 55%)}
+.card:hover::after,.kpi:hover::after,.hero-card:hover::after,.ai-feat:hover::after{opacity:1}
+.card>*,.kpi>*,.hero-card>*,.ai-feat>*{position:relative;z-index:2}
+/* Profondeur au survol : élévation plus marquée + ombre premium */
+.card{transition:transform .3s cubic-bezier(.22,.61,.36,1),box-shadow .3s ease}
+.card:hover{transform:translateY(-7px) scale(1.008)}
+.ai-feat{transition:transform .3s cubic-bezier(.22,.61,.36,1),box-shadow .3s ease}
+.ai-feat:hover{transform:translateY(-4px)}
+/* Fine arête spéculaire en haut des cartes (bord de verre) */
+.card,.hero-card,#chat-panel,#modal-c,.ai-band{border-top-color:rgba(255,255,255,.5) !important}
+:root[data-theme="dark"] .card,:root[data-theme="dark"] .hero-card,:root[data-theme="dark"] #chat-panel,:root[data-theme="dark"] #modal-c,:root[data-theme="dark"] .ai-band{border-top-color:rgba(255,255,255,.22) !important}
+@media (prefers-reduced-motion:reduce){#ambient .orb{transition:none}.card:hover,.ai-feat:hover{transform:none}}
 </style>
 </head>
 <body>
@@ -1227,5 +1259,37 @@ document.querySelectorAll('#navLinks a').forEach(a=>a.addEventListener('click',(
 /* Init */
 Chat.init();
 </script>
+
+<script>
+/* Spatial UI + liquid glass — parallaxe ambiante & reflet curseur (additif) */
+(function(){
+  'use strict';
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Couche ambiante
+  var amb=document.createElement('div'); amb.id='ambient';
+  amb.innerHTML='<div class="orb orb-a"></div><div class="orb orb-b"></div><div class="orb orb-c"></div>';
+  document.body.insertBefore(amb, document.body.firstChild);
+  var orbs=amb.querySelectorAll('.orb');
+  var px=0,py=0,sy=0,raf=0;
+  var amp=[[28,18,0.03],[-34,22,-0.02],[20,-26,0.025]];
+  function paint(){ raf=0;
+    for(var i=0;i<orbs.length;i++){ var a=amp[i];
+      orbs[i].style.transform='translate3d('+(px*a[0]).toFixed(1)+'px,'+((py*a[1])+(sy*a[2])).toFixed(1)+'px,0)'; } }
+  function req(){ if(!raf) raf=requestAnimationFrame(paint); }
+  if(!reduce){
+    addEventListener('pointermove',function(e){ px=e.clientX/innerWidth-0.5; py=e.clientY/innerHeight-0.5; req(); },{passive:true});
+    addEventListener('scroll',function(){ sy=scrollY; req(); },{passive:true});
+  }
+  // Reflet spéculaire suivant le curseur sur les cartes de verre
+  var SEL='.card,.kpi,.hero-card,.ai-feat';
+  addEventListener('pointermove',function(e){
+    var el=e.target.closest?e.target.closest(SEL):null; if(!el) return;
+    var r=el.getBoundingClientRect();
+    el.style.setProperty('--mx',((e.clientX-r.left)/r.width*100).toFixed(1)+'%');
+    el.style.setProperty('--my',((e.clientY-r.top)/r.height*100).toFixed(1)+'%');
+  },{passive:true});
+})();
+</script>
+
 </body>
 </html>
