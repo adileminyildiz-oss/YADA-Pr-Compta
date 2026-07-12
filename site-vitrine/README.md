@@ -1,4 +1,4 @@
-# Libéo — site vitrine (accompagnement administratif des professions libérales)
+# LAST — site vitrine (accompagnement administratif des professions libérales)
 
 Site vitrine **autonome, en un seul fichier** (`index.html`) pour vendre un service
 d'**accompagnement administratif** : création de société, modifications statutaires
@@ -37,11 +37,11 @@ fonctionne **hors-ligne** (démo). Pour l'héberger : n'importe quel hébergeur 
 Tout est prévu pour se brancher **sans réécrire le front**. La config est centralisée :
 
 ```js
-window.LIBEO_CONFIG = {
+window.LAST_CONFIG = {
   llmEndpoint:  '',   // proxy vers un vrai modèle (Claude) — vide = moteur local
   leadsEndpoint:'',   // API de persistance des demandes — vide = localStorage
   crmPin:'0000',
-  storageKey:'libeo-leads'
+  storageKey:'last-leads'
 };
 ```
 
@@ -58,7 +58,7 @@ POST { messages:[{role,content}], context:{...brouillon en cours...} }
 Le repo contient déjà de quoi héberger ce proxy :
 - **`server/`** — proxy Node (`@supabase/server`) : ajoutez une route qui appelle
   l'API Claude (`ANTHROPIC_API_KEY` en variable d'environnement) avec un *system
-  prompt* décrivant l'agent Libéo (rôle : recevoir, qualifier, faire confirmer).
+  prompt* décrivant l'agent LAST (rôle : recevoir, qualifier, faire confirmer).
 - **`supabase/functions/`** — même logique en Edge Function.
 
 Système recommandé pour l'agent : demander la forme juridique adaptée à la profession,
@@ -97,7 +97,7 @@ de confidentialité, droit de suppression, et stockage chiffré (Supabase).
 
 ## Personnalisation rapide
 
-- **Marque / positionnement** : chercher `Libéo` et `--navy` / `--gold` dans
+- **Marque / positionnement** : chercher `LAST` et `--navy` / `--gold` dans
   `index.html`.
 - **Services, tarifs, cibles** : sections HTML dédiées (`#services`, `#tarifs`,
   `#pour-qui`).
