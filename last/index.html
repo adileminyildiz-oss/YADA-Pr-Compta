@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0e17">
+<title>LAST — logiciel de traitement des demandes (AEM CONSEIL)</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 88 88'%3E%3Crect width='88' height='88' rx='18' fill='%230a0e17'/%3E%3Ctext x='44' y='58' font-family='Georgia,serif' font-size='44' font-weight='700' fill='%233b82f6' text-anchor='middle'%3EL%3C/text%3E%3Crect x='28' y='64' width='32' height='4' rx='2' fill='%233b82f6'/%3E%3C/svg%3E">
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --blue:#3b82f6; --blue-2:#5aa2ff; --blue-3:#1e4fd6; --blue-soft:rgba(59,130,246,.14);
+  --ink:#e8eefc; --ink-2:#9fb0cc; --ink-3:#6b7d9c;
+  --bg:#070a12; --bg-2:#0a0e17; --panel:#0d1220; --panel-2:#111827;
+  --line:rgba(120,150,200,.14); --line-2:rgba(120,150,200,.22);
+  --glass:rgba(18,26,44,.55); --glass-2:rgba(14,20,36,.72);
+  --glow:0 0 0 1px rgba(59,130,246,.25), 0 18px 50px -18px rgba(20,60,140,.55);
+  --shadow:0 24px 60px -28px rgba(0,0,0,.75);
+  --radius:16px; --radius-sm:12px;
+  --ok:#28c76f; --warn:#ffb23e; --hot:#ff5d6c; --cold:#6b7d9c;
+  --sans:'Helvetica Neue',Helvetica,Arial,'Segoe UI',system-ui,'Liberation Sans',sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  font-family:var(--sans); color:var(--ink);
+  background:var(--bg); overflow-x:hidden;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  letter-spacing:.1px;
+}
+/* ============ SPATIAL AMBIENT ============ */
+#ambient{position:fixed; inset:0; z-index:-2; overflow:hidden; pointer-events:none}
+#ambient::before{content:"";position:absolute;inset:0;
+  background:
+    radial-gradient(1100px 760px at 18% -8%, #14203a, transparent 60%),
+    radial-gradient(900px 640px at 92% 8%, #101a33, transparent 58%),
+    linear-gradient(180deg,#0a0f1c,#070a12 60%,#05070d),
+    radial-gradient(150% 130% at 50% 22%, transparent 52%, rgba(0,0,0,.55));
+}
+#ambient .orb{position:absolute;border-radius:50%;filter:blur(60px);opacity:.5;
+  transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+.orb.a{width:520px;height:520px;left:-6%;top:-8%;background:radial-gradient(circle,#2f6fed,transparent 65%)}
+.orb.b{width:460px;height:460px;right:-8%;top:14%;background:radial-gradient(circle,#1b3a86,transparent 62%)}
+.orb.c{width:600px;height:600px;left:32%;bottom:-24%;background:radial-gradient(circle,#12275e,transparent 66%)}
+#ambient::after{content:"";position:absolute;inset:0;opacity:.5;
+  background-image:radial-gradient(circle, rgba(140,175,255,.05) 1px, transparent 1.4px);
+  background-size:26px 26px;
+  -webkit-mask-image:radial-gradient(120% 100% at 50% 0%, #000 30%, transparent 78%);
+          mask-image:radial-gradient(120% 100% at 50% 0%, #000 30%, transparent 78%);}
+
+/* ============ LAYOUT ============ */
+.app{display:grid;grid-template-columns:264px 1fr;min-height:100vh}
+aside{position:sticky;top:0;height:100vh;padding:20px 16px;
+  background:linear-gradient(180deg,rgba(12,18,34,.86),rgba(8,12,24,.92));
+  backdrop-filter:blur(14px) saturate(1.3);
+  border-right:1px solid var(--line);display:flex;flex-direction:column;gap:6px;z-index:20}
+.brand{display:flex;align-items:center;gap:11px;padding:6px 8px 16px}
+.logo{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;flex:none;
+  background:linear-gradient(160deg,#0e1830,#0a0e17);border:1px solid rgba(90,162,255,.35);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 8px 22px -10px rgba(30,90,220,.7)}
+.logo svg{width:26px;height:26px}
+.brand h1{font-size:19px;margin:0;font-weight:800;letter-spacing:2px}
+.brand small{display:block;font-size:10px;color:var(--ink-3);letter-spacing:1.4px;font-weight:600;margin-top:1px}
+.nav{display:flex;flex-direction:column;gap:3px;margin-top:4px}
+.nav-lbl{font-size:10px;letter-spacing:1.6px;color:var(--ink-3);font-weight:700;text-transform:uppercase;padding:12px 10px 6px}
+.nav-btn{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:11px;border:1px solid transparent;
+  background:none;color:var(--ink-2);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;text-align:left;width:100%;
+  transition:all .16s ease}
+.nav-btn svg{width:17px;height:17px;opacity:.8;flex:none}
+.nav-btn:hover{background:rgba(90,140,230,.08);color:var(--ink)}
+.nav-btn.on{color:#fff;border-color:rgba(90,162,255,.35);
+  background:linear-gradient(120deg,rgba(59,130,246,.24),rgba(30,79,214,.14));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 0 18px -4px rgba(59,130,246,.6)}
+.nav-btn.on svg{opacity:1}
+.nav-badge{margin-left:auto;font-size:11px;font-weight:700;background:var(--blue);color:#fff;border-radius:20px;padding:1px 8px}
+.side-foot{margin-top:auto;padding-top:12px;border-top:1px solid var(--line)}
+.userchip{display:flex;align-items:center;gap:10px;padding:8px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.av{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-weight:800;font-size:12px;color:#fff;flex:none}
+.userchip b{font-size:12.5px;display:block}
+.userchip span{font-size:11px;color:var(--ink-3)}
+
+main{min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:15;display:flex;align-items:center;gap:14px;padding:16px 26px;
+  background:linear-gradient(180deg,rgba(8,12,22,.82),rgba(8,12,22,.4));
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.burger{display:none;background:none;border:1px solid var(--line);border-radius:10px;color:var(--ink);width:38px;height:38px;font-size:18px;cursor:pointer}
+.page-title{font-size:20px;font-weight:800;letter-spacing:.2px}
+.page-title small{display:block;font-size:12px;color:var(--ink-3);font-weight:500;letter-spacing:.3px}
+.search{margin-left:auto;position:relative;max-width:280px;flex:1}
+.search input{width:100%;padding:9px 12px 9px 34px;border-radius:11px;border:1px solid var(--line);
+  background:rgba(10,16,30,.7);color:var(--ink);font:inherit;font-size:13px;outline:none}
+.search input:focus{border-color:rgba(90,162,255,.5);box-shadow:0 0 0 3px var(--blue-soft)}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--ink-3)}
+.content{padding:24px 26px 80px;max-width:1320px;width:100%}
+
+/* ============ GLASS CARD ============ */
+.card{position:relative;background:linear-gradient(160deg,var(--glass),var(--glass-2));
+  border:1px solid var(--line);border-radius:var(--radius);
+  backdrop-filter:blur(16px) saturate(1.4);box-shadow:var(--shadow);overflow:hidden}
+.card::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07), inset 0 0 40px -22px rgba(90,160,255,.5)}
+.card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .3s;
+  background:radial-gradient(340px circle at var(--mx,50%) var(--my,0%), rgba(90,160,255,.10), transparent 60%);
+  mix-blend-mode:screen}
+.card:hover::after{opacity:1}
+.card-h{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.card-h h2{font-size:14px;margin:0;font-weight:700;letter-spacing:.3px}
+.card-h .sub{font-size:12px;color:var(--ink-3)}
+.card-b{padding:16px 18px}
+.grid{display:grid;gap:16px}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+
+/* KPI */
+.kpi{position:relative;padding:18px;border-radius:var(--radius);overflow:hidden;
+  background:linear-gradient(160deg,var(--glass),var(--glass-2));border:1px solid var(--line);
+  backdrop-filter:blur(16px) saturate(1.4);box-shadow:var(--shadow)}
+.kpi::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .3s;
+  background:radial-gradient(300px circle at var(--mx,50%) var(--my,0%), rgba(90,160,255,.12), transparent 60%);mix-blend-mode:screen}
+.kpi:hover::after{opacity:1}
+.kpi .ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;margin-bottom:12px;
+  background:linear-gradient(160deg,rgba(59,130,246,.22),rgba(30,79,214,.1));border:1px solid rgba(90,162,255,.28);color:var(--blue-2)}
+.kpi .ic svg{width:19px;height:19px}
+.kpi .val{font-size:26px;font-weight:800;letter-spacing:.3px}
+.kpi .lbl{font-size:12px;color:var(--ink-3);margin-top:2px}
+.kpi .val.blue{color:var(--blue-2)}
+.kpi .val.ok{color:var(--ok)} .kpi .val.hot{color:var(--hot)}
+
+/* ============ BUTTONS ============ */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:11px;border:1px solid var(--line-2);
+  background:rgba(255,255,255,.03);color:var(--ink);font:inherit;font-size:13px;font-weight:600;cursor:pointer;
+  transition:all .16s ease}
+.btn:hover{border-color:rgba(90,162,255,.45);background:rgba(59,130,246,.1)}
+.btn svg{width:15px;height:15px}
+.btn-pri{border:none;color:#fff;background:linear-gradient(120deg,var(--blue),var(--blue-3));
+  box-shadow:0 8px 24px -10px rgba(59,130,246,.8), inset 0 1px 0 rgba(255,255,255,.2)}
+.btn-pri:hover{filter:brightness(1.08);background:linear-gradient(120deg,var(--blue),var(--blue-3))}
+.btn-sm{padding:6px 10px;font-size:12px;border-radius:9px}
+.btn-ghost{background:none;border-color:var(--line)}
+.btn-danger:hover{border-color:rgba(255,93,108,.5);background:rgba(255,93,108,.12);color:#ffb8bf}
+
+/* ============ TABLE / LIST ============ */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-3);font-weight:700;
+  padding:10px 12px;border-bottom:1px solid var(--line)}
+td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr{transition:background .14s}
+tbody tr:hover{background:rgba(90,140,230,.06)}
+.tname{font-weight:700}
+.tsub{font-size:11.5px;color:var(--ink-3)}
+
+/* ============ TAGS / BADGES ============ */
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;
+  background:rgba(90,140,230,.12);border:1px solid var(--line);color:var(--ink-2);white-space:nowrap}
+.tag.blue{background:var(--blue-soft);border-color:rgba(90,162,255,.35);color:var(--blue-2)}
+.tag.hot{background:rgba(255,93,108,.14);border-color:rgba(255,93,108,.35);color:#ff9aa4}
+.tag.warm{background:rgba(255,178,62,.14);border-color:rgba(255,178,62,.35);color:#ffcf87}
+.tag.ok{background:rgba(40,199,111,.14);border-color:rgba(40,199,111,.35);color:#7ee6ac}
+.tag.mut{color:var(--ink-3)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+.pill-stat{font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:20px;border:1px solid var(--line);white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.score{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:13px}
+.score .bar{width:54px;height:6px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden}
+.score .bar i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--blue),var(--blue-2))}
+
+/* ============ FORMS ============ */
+label{display:block;font-size:12px;color:var(--ink-2);font-weight:600;margin:12px 0 5px}
+input,select,textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line-2);
+  background:rgba(8,12,24,.6);color:var(--ink);font:inherit;font-size:13.5px;outline:none;transition:.15s}
+input:focus,select:focus,textarea:focus{border-color:rgba(90,162,255,.55);box-shadow:0 0 0 3px var(--blue-soft)}
+textarea{resize:vertical;min-height:70px}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239fb0cc' stroke-width='3'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+option{background:#0d1220;color:var(--ink)}
+
+/* ============ MODAL ============ */
+.overlay{position:fixed;inset:0;z-index:60;background:rgba(4,7,14,.6);backdrop-filter:blur(5px);
+  display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
+.overlay.show{display:flex}
+.modal{width:100%;max-width:640px;border-radius:18px;position:relative;
+  background:linear-gradient(160deg,rgba(20,28,48,.9),rgba(12,18,34,.96));
+  border:1px solid var(--line-2);backdrop-filter:blur(20px) saturate(1.4);
+  box-shadow:0 40px 100px -30px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.06)}
+.modal-h{display:flex;align-items:center;padding:18px 20px;border-bottom:1px solid var(--line)}
+.modal-h h3{margin:0;font-size:16px;font-weight:800}
+.modal-h .x{margin-left:auto;background:none;border:none;color:var(--ink-3);font-size:22px;cursor:pointer;line-height:1}
+.modal-b{padding:20px;max-height:64vh;overflow:auto}
+.modal-f{display:flex;gap:10px;justify-content:flex-end;padding:16px 20px;border-top:1px solid var(--line)}
+
+/* assoc rows */
+.assoc-row{display:grid;grid-template-columns:1fr 120px 34px;gap:8px;margin-bottom:8px;align-items:center}
+.assoc-row .del{background:none;border:1px solid var(--line);border-radius:9px;color:var(--ink-3);cursor:pointer;height:38px}
+.mini-add{font-size:12px;color:var(--blue-2);background:none;border:1px dashed rgba(90,162,255,.4);border-radius:9px;padding:8px;width:100%;cursor:pointer;font-weight:600}
+
+/* empty / hint */
+.empty{text-align:center;padding:40px 20px;color:var(--ink-3)}
+.hint{font-size:12px;color:var(--ink-3);line-height:1.6}
+.soon{display:inline-block;font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:20px;
+  background:rgba(255,178,62,.14);border:1px solid rgba(255,178,62,.35);color:#ffcf87;text-transform:uppercase}
+
+.flow-note{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:var(--ink-2);
+  background:var(--blue-soft);border:1px solid rgba(90,162,255,.28);border-radius:12px;padding:12px 14px;line-height:1.6}
+.section-t{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin:26px 0 12px}
+
+/* toast + save indicator */
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);z-index:90;opacity:0;
+  background:linear-gradient(120deg,var(--blue),var(--blue-3));color:#fff;padding:11px 20px;border-radius:12px;
+  font-size:13px;font-weight:600;box-shadow:0 16px 40px -12px rgba(30,90,220,.8);transition:.3s;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#saveind{position:fixed;bottom:14px;left:14px;z-index:40;font-size:11px;color:var(--ink-3);
+  display:flex;align-items:center;gap:6px;opacity:.7}
+#saveind .dot{width:7px;height:7px;background:var(--ok)}
+
+/* kanban */
+.kanban{display:grid;grid-template-columns:repeat(8,minmax(180px,1fr));gap:12px;overflow-x:auto;padding-bottom:8px}
+.kcol{background:rgba(10,16,30,.5);border:1px solid var(--line);border-radius:14px;padding:10px;min-height:120px}
+.kcol h4{font-size:11.5px;margin:0 0 10px;display:flex;align-items:center;gap:6px;font-weight:700;letter-spacing:.3px}
+.kcol h4 .n{margin-left:auto;font-size:11px;color:var(--ink-3)}
+.kcard{background:linear-gradient(160deg,rgba(20,28,48,.7),rgba(12,18,34,.85));border:1px solid var(--line-2);
+  border-radius:11px;padding:11px;margin-bottom:9px;cursor:pointer;transition:.15s}
+.kcard:hover{border-color:rgba(90,162,255,.45);transform:translateY(-2px)}
+.kcard b{font-size:12.5px} .kcard .m{font-size:11px;color:var(--ink-3);margin-top:3px}
+
+/* ============ RESPONSIVE ============ */
+@media(max-width:980px){
+  .g4{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:1fr}
+}
+@media(max-width:860px){
+  .app{grid-template-columns:1fr}
+  aside{position:fixed;left:0;top:0;width:280px;transform:translateX(-100%);transition:transform .25s;box-shadow:var(--shadow)}
+  aside.open{transform:translateX(0)}
+  .burger{display:grid;place-items:center}
+  .content{padding:18px 16px 90px}
+  .g4,.g2{grid-template-columns:1fr}
+  .search{max-width:none}
+  .frow{grid-template-columns:1fr}
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:19;display:none}
+  .scrim.show{display:block}
+  table{font-size:12px}
+  .hide-sm{display:none}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}#ambient .orb{transition:none}}
+</style>
+</head>
+<body>
+<div id="ambient"><span class="orb a"></span><span class="orb b"></span><span class="orb c"></span></div>
+<div class="scrim" id="scrim" onclick="toggleNav(false)"></div>
+
+<div class="app">
+  <aside id="side">
+    <div class="brand">
+      <span class="logo"><svg viewBox="0 0 88 88"><rect width="88" height="88" rx="18" fill="#0a0e17"/><text x="44" y="58" font-family="Georgia,serif" font-size="44" font-weight="700" fill="#3b82f6" text-anchor="middle">L</text><rect x="28" y="64" width="32" height="4" rx="2" fill="#3b82f6"/></svg></span>
+      <div><h1>LAST</h1><small>AEM CONSEIL · INTERNE</small></div>
+    </div>
+    <div class="nav" id="nav"></div>
+    <div class="side-foot">
+      <div class="userchip">
+        <span class="av" id="me-av" style="background:linear-gradient(160deg,#3b82f6,#1e4fd6)">A</span>
+        <div><b id="me-nom">Admin</b><span>Administrateur</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <button class="burger" onclick="toggleNav(true)">☰</button>
+      <div class="page-title" id="ptitle">Tableau de bord<small id="psub"></small></div>
+      <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+        <input id="q" placeholder="Rechercher un client, un dossier…" oninput="onSearch(this.value)"></div>
+    </div>
+    <div class="content" id="view"></div>
+  </main>
+</div>
+
+<div class="overlay" id="ov" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-h"><h3 id="ov-t">—</h3><button class="x" onclick="closeModal()">×</button></div>
+    <div class="modal-b" id="ov-b"></div>
+    <div class="modal-f" id="ov-f"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="saveind"><span class="dot"></span><span id="saveind-t">Enregistré</span></div>
+
+<script>
+/* =================================================================
+   LAST — noyau (Niveau 0 + 1)
+   ================================================================= */
+const KEY='last-db-v1';
+const uid=p=>(p||'id')+'-'+Math.random().toString(36).slice(2,8);
+const eur=n=>(n==null||n==='')?'—':new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR'}).format(+n||0);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const today=()=>new Date().toISOString().slice(0,10);
+const frDate=s=>{if(!s)return'—';const d=new Date(s);return isNaN(d)?s:d.toLocaleDateString('fr-FR')};
+
+/* --- statuts pipeline --- */
+const STATUTS=[
+  {k:'Nouveau',c:'#5aa2ff'},{k:'Qualification',c:'#7c5cff'},{k:'Pièces attendues',c:'#ffb23e'},
+  {k:'En cours',c:'#3b82f6'},{k:'Signature',c:'#22b8cf'},{k:'Paiement',c:'#e879f9'},
+  {k:'Transmis greffe',c:'#28c76f'},{k:'Clôturé',c:'#6b7d9c'}
+];
+const statColor=k=>(STATUTS.find(s=>s.k===k)||{c:'#6b7d9c'}).c;
+
+/* --- icônes --- */
+const IC={
+  dash:'<path d="M3 3h8v8H3zM13 3h8v5h-8zM13 10h8v11h-8zM3 13h8v8H3z"/>',
+  inbox:'<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5 5h14l3 7v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z"/>',
+  users:'<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M17 8a4 4 0 0 1 0 8"/><path d="M21 21a6 6 0 0 0-4-5.6"/>',
+  folder:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  tag:'<path d="M20 12l-8 8-9-9V3h8z"/><circle cx="7" cy="7" r="1.5"/>',
+  quote:'<path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5"/><path d="M9 13h7M9 17h5"/>',
+  card:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+  trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v5h-5"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 0 0-1.7-1l-.4-2.6h-4l-.4 2.6a7 7 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7 7 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7 7 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6a7 7 0 0 0 .1-1z"/>',
+  bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>', plus:'<path d="M12 5v14M5 12h14"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  check:'<path d="M20 6L9 17l-5-5"/>', euro:'<path d="M17 5a7 7 0 1 0 0 14M4 10h9M4 14h9"/>'
+};
+const svg=(p,cls)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${cls||''}">${p}</svg>`;
+
+/* =================================================================
+   DB + seed
+   ================================================================= */
+let DB=null;
+function seed(){
+  const U=[
+    {id:'u-admin',nom:'Admin',role:'admin',couleur:'#3b82f6'},
+    {id:'u-sofia',nom:'Sofia B.',role:'collab',couleur:'#22b8cf'},
+    {id:'u-karim',nom:'Karim D.',role:'collab',couleur:'#e879f9'},
+    {id:'u-lea',nom:'Léa M.',role:'collab',couleur:'#ffb23e'},
+    {id:'u-yanis',nom:'Yanis R.',role:'collab',couleur:'#28c76f'}
+  ];
+  const S=[
+    ['Formalité de création de société','Création','forfait',390,0],
+    ['Transfert de siège social','Modification','forfait',180,0],
+    ['Changement de dirigeant','Modification','forfait',160,0],
+    ['Changement de dénomination','Modification','forfait',160,0],
+    ["Modification de l'objet social",'Modification','forfait',170,0],
+    ['Augmentation de capital','Modification','forfait',240,0],
+    ['Transformation de forme (SARL→SAS…)','Modification','forfait',450,0],
+    ['Cession de parts / actions','Modification','forfait',290,0],
+    ['Mise en sommeil / reprise','Modification','forfait',210,0],
+    ['Dissolution-liquidation amiable','Modification','forfait',520,0],
+    ['Approbation des comptes (PV + dépôt)','Annuel','forfait',150,0],
+    ['Rédaction de statuts sur mesure','Rédaction','forfait',300,0],
+    ["Pacte d'associés",'Rédaction','forfait',350,0],
+    ['Dépôt de marque INPI','Propriété int.','forfait',250,190],
+    ['Annonce légale','Débours','debours',0,180],
+    ['Frais de greffe','Débours','debours',0,66],
+    ['Domiciliation commerciale','Débours','debours',0,240],
+    ['Ouverture de compte pro (apport)','Commission','commission',0,0],
+    ['Assurance pro (courtage)','Commission','commission',0,0],
+    ['Mise en relation expert-comptable (YADA)','Commission','commission',0,0]
+  ].map(a=>({id:uid('svc'),nom:a[0],famille:a[1],type:a[2],prix:a[3],debours:a[4],actif:true}));
+
+  const C=[
+    {id:'c-1',nom:'Marchand',prenom:'Julien',email:'j.marchand@gmail.com',tel:'06 12 34 56 78',adresse:'12 rue de Rivoli, 75004 Paris',parts:600,capital:1000,activites:['Conseil en informatique','Formation'],associes:[{nom:'Julien Marchand',parts:600},{nom:'Claire Fontaine',parts:400}],createdAt:today()},
+    {id:'c-2',nom:'Bernard',prenom:'Amélie',email:'amelie.bernard@outlook.fr',tel:'07 88 22 11 09',adresse:'5 av. Foch, 92100 Boulogne',parts:100,capital:5000,activites:['Cabinet infirmier'],associes:[{nom:'Amélie Bernard',parts:100}],createdAt:today()},
+    {id:'c-3',nom:'Okonkwo',prenom:'David',email:'david.okonkwo@proton.me',tel:'06 55 44 33 22',adresse:'40 rue du Faubourg, 93200 Saint-Denis',parts:500,capital:2000,activites:['Import-export','Négoce de matériaux'],associes:[{nom:'David Okonkwo',parts:500},{nom:'Rania Haddad',parts:500}],createdAt:today()}
+  ];
+  const D=[
+    {id:'d-1',clientNom:'Julien Marchand',clientEmail:'j.marchand@gmail.com',clientTel:'06 12 34 56 78',canal:'Site AEM',serviceSouhaite:'Création SAS',message:"Je veux créer ma SAS de conseil, j'ai déjà les statuts en tête, capital 1000€, 2 associés. J'ai la CNI et l'attestation de domiciliation prêtes.",date:today(),statut:'Nouveau',assigneA:'',docsRecus:true,dossierId:''},
+    {id:'d-2',clientNom:'Amélie Bernard',clientEmail:'amelie.bernard@outlook.fr',clientTel:'07 88 22 11 09',canal:'Instagram',serviceSouhaite:'Création (à préciser)',message:"Bonjour, je suis infirmière et j'aimerais me mettre à mon compte mais je ne sais pas trop quelle forme choisir, pouvez-vous m'aider ?",date:today(),statut:'Nouveau',assigneA:'',docsRecus:false,dossierId:''},
+    {id:'d-3',clientNom:'David Okonkwo',clientEmail:'david.okonkwo@proton.me',clientTel:'06 55 44 33 22',canal:'Site AEM',serviceSouhaite:'Création SARL urgent',message:"URGENT : besoin de créer une SARL d'import-export cette semaine, tout est prêt, je veux avancer vite. Documents fournis.",date:today(),statut:'Qualification',assigneA:'u-sofia',docsRecus:true,dossierId:''},
+    {id:'d-4',clientNom:'Sonia Petit',clientEmail:'sonia.petit@gmail.com',clientTel:'06 77 66 55 44',canal:'Mail',serviceSouhaite:'Transfert de siège',message:"Je souhaite un devis pour un transfert de siège social, société déjà existante.",date:today(),statut:'Nouveau',assigneA:'',docsRecus:false,dossierId:''}
+  ];
+  const DOS=[
+    {id:'do-1',ref:'DOS-2601',clientIds:['c-3'],serviceIds:[S[0].id,S[14].id,S[15].id],statut:'En cours',assigneA:'u-sofia',createdAt:today(),historique:[]},
+    {id:'do-2',ref:'DOS-2602',clientIds:['c-1'],serviceIds:[S[0].id],statut:'Pièces attendues',assigneA:'u-karim',createdAt:today(),historique:[]}
+  ];
+  return {users:U,services:S,clients:C,demandes:D,dossiers:DOS,devis:[],factures:[],
+    params:{cabinet:'AEM CONSEIL'}, seq:{dossier:2603}};
+}
+function load(){try{const r=localStorage.getItem(KEY);DB=r?JSON.parse(r):seed();}catch(e){DB=seed();}}
+let saveT=null;
+function save(){
+  try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){}
+  const t=document.getElementById('saveind-t');
+  if(t){t.textContent='Enregistré · '+new Date().toLocaleTimeString('fr-FR');
+    const s=document.getElementById('saveind');s.style.opacity='1';clearTimeout(saveT);saveT=setTimeout(()=>s.style.opacity='.6',1400);}
+}
+function svcById(id){return DB.services.find(s=>s.id===id)}
+function clientById(id){return DB.clients.find(c=>c.id===id)}
+function userById(id){return DB.users.find(u=>u.id===id)}
+
+/* =================================================================
+   MOTEUR IA — qualification des demandes
+   ================================================================= */
+const IA={
+  qualify(d){
+    const t=((d.message||'')+' '+(d.serviceSouhaite||'')).toLowerCase();
+    const tags=[]; let score=30;
+    const has=(...w)=>w.some(x=>t.includes(x));
+    const decisif=has('je veux','je souhaite','créer ma','tout est prêt','déjà','prêt','avancer','on y va','décidé');
+    const flou=has('je ne sais pas','pas trop','aider','conseil','hésite','peut-être','quelle forme','pouvez-vous');
+    const urgent=has('urgent','vite','rapide','cette semaine','au plus vite','asap','pressé');
+    const complet=!!d.docsRecus||has('documents fournis','cni','attestation','j\'ai la','pièces');
+    const precis=has('sas','sarl','sci','sasu','eurl','holding','transfert','cession','capital','statuts');
+
+    if(decisif){tags.push({t:'🎯 Déterminé',c:'ok'});score+=20;}
+    if(precis){tags.push({t:'🧭 Sait ce qu\'il veut',c:'blue'});score+=15;}
+    if(complet){tags.push({t:'📎 Dossier complet',c:'ok'});score+=20;}
+    if(urgent){tags.push({t:'⚡ Rapide / urgent',c:'hot'});score+=15;}
+    if(decisif&&precis&&!flou){tags.push({t:'✅ Sûr de son choix',c:'ok'});score+=10;}
+    if(flou){tags.push({t:'💬 Besoin d\'entretien',c:'warm'});score-=10;}
+    if(!complet&&!flou){tags.push({t:'📥 Pièces à demander',c:'mut'});}
+    if((d.capital||0)>=5000||has('holding','plusieurs sociétés')){tags.push({t:'💎 Fort potentiel',c:'blue'});score+=8;}
+    if(has('infirmier','médecin','avocat','architecte','pharmac','expert','notaire')){tags.push({t:'⚠️ Activité réglementée',c:'warm'});}
+
+    score=Math.max(5,Math.min(100,score));
+    const niveau=score>=70?'chaud':score>=45?'tiède':'froid';
+    const priorite=(urgent||score>=75)?'Haute':score>=50?'Moyenne':'Basse';
+    return {tags,score,niveau,priorite,traitement:flou?'compliqué':'simple'};
+  }
+};
+const nivClass=n=>n==='chaud'?'hot':n==='tiède'?'warm':'cold';
+const nivTag=n=>`<span class="tag ${n==='chaud'?'hot':n==='tiède'?'warm':'mut'}">${n==='chaud'?'🔥 Chaud':n==='tiède'?'🌤️ Tiède':'🧊 Froid'}</span>`;
+
+/* =================================================================
+   ROUTER / RENDER
+   ================================================================= */
+const PAGES=[
+  {id:'dash',lbl:'Tableau de bord',ic:'dash',sub:'Vue d\'ensemble de l\'activité'},
+  {id:'demandes',lbl:'Demandes',ic:'inbox',sub:'Réception & qualification IA'},
+  {id:'clients',lbl:'Clients',ic:'users',sub:'Fiches & informations'},
+  {id:'dossiers',lbl:'Dossiers',ic:'folder',sub:'Traitement des formalités'},
+  {id:'services',lbl:'Services & prix',ic:'tag',sub:'Catalogue des prestations'},
+  {id:'devis',lbl:'Devis',ic:'quote',sub:'Devis automatiques',soon:1},
+  {id:'facturation',lbl:'Facturation',ic:'card',sub:'Ventes & achats',soon:1},
+  {id:'marge',lbl:'Marge',ic:'trend',sub:'Rentabilité par dossier',soon:1},
+  {id:'params',lbl:'Paramètres',ic:'gear',sub:'Équipe & réglages'}
+];
+const state={page:'dash',q:''};
+function toggleNav(o){document.getElementById('side').classList.toggle('open',o);document.getElementById('scrim').classList.toggle('show',o);}
+function go(p){state.page=p;toggleNav(false);render();window.scrollTo(0,0);}
+function onSearch(v){state.q=v.trim().toLowerCase();if(['clients','dossiers','demandes'].includes(state.page))render();}
+
+function buildNav(){
+  const nb=DB.demandes.filter(d=>!d.dossierId&&d.statut!=='Clôturé').length;
+  document.getElementById('nav').innerHTML=
+    `<div class="nav-lbl">Pilotage</div>`+
+    PAGES.slice(0,5).map(p=>navBtn(p,nb)).join('')+
+    `<div class="nav-lbl">Facturation</div>`+
+    PAGES.slice(5,8).map(p=>navBtn(p,nb)).join('')+
+    `<div class="nav-lbl">Système</div>`+
+    PAGES.slice(8).map(p=>navBtn(p,nb)).join('');
+}
+function navBtn(p,nb){
+  const badge=p.id==='demandes'&&nb?`<span class="nav-badge">${nb}</span>`:'';
+  const soon=p.soon?`<span class="nav-badge" style="background:rgba(255,178,62,.2);color:#ffcf87">bientôt</span>`:'';
+  return `<button class="nav-btn ${state.page===p.id?'on':''}" onclick="go('${p.id}')">${svg(IC[p.ic])}<span>${p.lbl}</span>${badge||soon}</button>`;
+}
+function render(){
+  buildNav();
+  const p=PAGES.find(x=>x.id===state.page);
+  document.getElementById('ptitle').firstChild.textContent=p.lbl;
+  document.getElementById('psub').textContent=p.sub;
+  const V=document.getElementById('view');
+  V.innerHTML=({dash:pageDash,demandes:pageDemandes,clients:pageClients,dossiers:pageDossiers,
+    services:pageServices,devis:pageSoon,facturation:pageSoon,marge:pageMarge,params:pageParams}[state.page]||pageDash)();
+  wireCards();
+}
+
+/* =================================================================
+   PAGES
+   ================================================================= */
+function kpi(ic,val,lbl,cls){return `<div class="kpi"><div class="ic">${svg(IC[ic])}</div><div class="val ${cls||''}">${val}</div><div class="lbl">${lbl}</div></div>`;}
+
+function pageDash(){
+  const nb=DB.demandes.filter(d=>!d.dossierId).length;
+  const chaud=DB.demandes.filter(d=>!d.dossierId&&IA.qualify(d).niveau==='chaud').length;
+  const enCours=DB.dossiers.filter(d=>d.statut!=='Clôturé').length;
+  const ca=DB.dossiers.reduce((s,d)=>s+dossierMontant(d),0);
+  const recent=[...DB.demandes].filter(d=>!d.dossierId).slice(0,5);
+  return `
+  <div class="grid g4">
+    ${kpi('inbox',nb,'Demandes à traiter','blue')}
+    ${kpi('bolt',chaud,'Demandes chaudes 🔥','hot')}
+    ${kpi('folder',enCours,'Dossiers en cours')}
+    ${kpi('euro',eur(ca),'Honoraires potentiels','ok')}
+  </div>
+  <div class="section-t">Dernières demandes reçues</div>
+  <div class="card"><div class="card-b" style="padding:0">
+    ${recent.length?tableDemandes(recent):`<div class="empty">Aucune demande en attente.</div>`}
+  </div></div>
+  <div class="grid g2" style="margin-top:20px">
+    <div class="card"><div class="card-h"><h2>Répartition par statut</h2></div><div class="card-b">${statBars()}</div></div>
+    <div class="card"><div class="card-h"><h2>Charge par collaborateur</h2></div><div class="card-b">${chargeCollab()}</div></div>
+  </div>`;
+}
+function statBars(){
+  const tot=DB.dossiers.length||1;
+  return STATUTS.map(s=>{const n=DB.dossiers.filter(d=>d.statut===s.k).length;
+    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px">
+      <span style="width:120px;font-size:12px;color:var(--ink-2)">${s.k}</span>
+      <div class="bar" style="flex:1;height:8px;border-radius:6px;background:rgba(255,255,255,.06);overflow:hidden">
+        <i style="display:block;height:100%;width:${n/tot*100}%;background:${s.c};border-radius:6px"></i></div>
+      <b style="font-size:12px;width:20px;text-align:right">${n}</b></div>`;}).join('');
+}
+function chargeCollab(){
+  return DB.users.filter(u=>u.role==='collab').map(u=>{
+    const n=DB.dossiers.filter(d=>d.assigneA===u.id&&d.statut!=='Clôturé').length;
+    const dm=DB.demandes.filter(d=>d.assigneA===u.id&&!d.dossierId).length;
+    return `<div style="display:flex;align-items:center;gap:11px;margin-bottom:11px">
+      <span class="av" style="background:${u.couleur}">${initials(u.nom)}</span>
+      <div style="flex:1"><b style="font-size:13px">${u.nom}</b></div>
+      <span class="tag">${n} dossier${n>1?'s':''}</span><span class="tag mut">${dm} demande${dm>1?'s':''}</span></div>`;
+  }).join('');
+}
+const initials=n=>n.split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+/* ---------- DEMANDES ---------- */
+function pageDemandes(){
+  let list=DB.demandes.filter(d=>!d.dossierId);
+  if(state.q)list=list.filter(d=>(d.clientNom+d.serviceSouhaite+d.message).toLowerCase().includes(state.q));
+  list.sort((a,b)=>IA.qualify(b).score-IA.qualify(a).score);
+  return `
+  <div class="flow-note">${svg(IC.bolt,'')}<div><b>L'IA qualifie chaque demande automatiquement</b> — elle repère les clients les plus déterminés, sûrs de leur choix, dossiers complets, urgents… et les classe par priorité. Réponses programmables au Niveau 5.</div></div>
+  <div style="display:flex;gap:10px;margin:18px 0"><button class="btn btn-pri" onclick="modalDemande()">${svg(IC.plus)}Nouvelle demande</button>
+    <span class="tag blue">${list.length} en attente</span></div>
+  <div class="card"><div class="card-b" style="padding:0">
+    ${list.length?tableDemandes(list,true):`<div class="empty">Aucune demande — tout est traité 🎉</div>`}
+  </div></div>`;
+}
+function tableDemandes(list,full){
+  return `<table><thead><tr><th>Client</th><th>Demande</th><th class="hide-sm">Qualification IA</th><th>Score</th><th class="hide-sm">Assigné</th>${full?'<th></th>':''}</tr></thead><tbody>
+  ${list.map(d=>{const q=IA.qualify(d);const u=userById(d.assigneA);
+    return `<tr onclick="modalDemandeView('${d.id}')" style="cursor:pointer">
+      <td><div class="tname">${esc(d.clientNom)}</div><div class="tsub">${esc(d.canal)} · ${frDate(d.date)}</div></td>
+      <td><div style="font-size:12.5px">${esc(d.serviceSouhaite)}</div>
+        <div class="chips" style="margin-top:5px">${nivTag(q.niveau)}<span class="tag ${q.priorite==='Haute'?'hot':'mut'}">${q.priorite}</span></div></td>
+      <td class="hide-sm"><div class="chips">${q.tags.slice(0,3).map(t=>`<span class="tag ${t.c}">${t.t}</span>`).join('')}</div></td>
+      <td><span class="score"><span class="bar"><i style="width:${q.score}%"></i></span>${q.score}</span></td>
+      <td class="hide-sm">${u?`<span class="tag"><span class="av" style="width:20px;height:20px;font-size:9px;background:${u.couleur}">${initials(u.nom)}</span> ${u.nom}</span>`:'<span class="tag mut">—</span>'}</td>
+      ${full?`<td onclick="event.stopPropagation()"><button class="btn btn-sm btn-pri" onclick="creerDossierDepuis('${d.id}')">Créer dossier</button></td>`:''}
+    </tr>`;}).join('')}
+  </tbody></table>`;
+}
+function modalDemandeView(id){
+  const d=DB.demandes.find(x=>x.id===id);if(!d)return;const q=IA.qualify(d);
+  openModal('Demande — '+esc(d.clientNom),`
+    <div class="chips" style="margin-bottom:14px">${nivTag(q.niveau)}<span class="tag ${q.priorite==='Haute'?'hot':'mut'}">Priorité ${q.priorite}</span><span class="tag blue">Traitement ${q.traitement}</span></div>
+    <div class="grid g2" style="gap:10px">
+      <div><label>Email</label><div class="hint">${esc(d.clientEmail||'—')}</div></div>
+      <div><label>Téléphone</label><div class="hint">${esc(d.clientTel||'—')}</div></div>
+    </div>
+    <label>Demande</label><div class="hint">${esc(d.serviceSouhaite)}</div>
+    <label>Message</label><div class="hint" style="background:rgba(10,16,30,.5);border:1px solid var(--line);border-radius:10px;padding:12px">${esc(d.message)}</div>
+    <label>Qualification IA</label><div class="chips">${q.tags.map(t=>`<span class="tag ${t.c}">${t.t}</span>`).join('')}</div>
+    <label>Assigner à un collaborateur</label>
+    <select id="dm-assign">${['<option value="">— Non assigné —</option>'].concat(DB.users.map(u=>`<option value="${u.id}" ${d.assigneA===u.id?'selected':''}>${u.nom}${u.role==='admin'?' (admin)':''}</option>`)).join('')}</select>
+  `,`<button class="btn btn-ghost" onclick="closeModal()">Fermer</button>
+     <button class="btn" onclick="assignDemande('${id}')">Enregistrer l'assignation</button>
+     <button class="btn btn-pri" onclick="creerDossierDepuis('${id}')">${svg(IC.folder)}Créer le dossier</button>`);
+}
+function assignDemande(id){const d=DB.demandes.find(x=>x.id===id);d.assigneA=document.getElementById('dm-assign').value;save();closeModal();toast('Assignation enregistrée');render();}
+function modalDemande(){
+  openModal('Nouvelle demande',`
+    <div class="frow"><div><label>Nom du client</label><input id="nd-nom" placeholder="Prénom Nom"></div>
+      <div><label>Canal</label><select id="nd-canal"><option>Site AEM</option><option>Instagram</option><option>Mail</option><option>Téléphone</option><option>Recommandation</option></select></div></div>
+    <div class="frow"><div><label>Email</label><input id="nd-mail" type="email"></div><div><label>Téléphone</label><input id="nd-tel"></div></div>
+    <label>Demande (service souhaité)</label><input id="nd-svc" placeholder="Ex. Création SAS">
+    <label>Message du client</label><textarea id="nd-msg" placeholder="Colle ici le message reçu…"></textarea>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="nd-docs" style="width:auto"> Documents déjà fournis</label>
+  `,`<button class="btn btn-ghost" onclick="closeModal()">Annuler</button><button class="btn btn-pri" onclick="saveDemande()">Ajouter la demande</button>`);
+}
+function saveDemande(){
+  const g=id=>document.getElementById(id);
+  const nom=g('nd-nom').value.trim();if(!nom)return toast('Nom requis');
+  DB.demandes.unshift({id:uid('d'),clientNom:nom,clientEmail:g('nd-mail').value.trim(),clientTel:g('nd-tel').value.trim(),
+    canal:g('nd-canal').value,serviceSouhaite:g('nd-svc').value.trim()||'À qualifier',message:g('nd-msg').value.trim(),
+    date:today(),statut:'Nouveau',assigneA:'',docsRecus:g('nd-docs').checked,dossierId:''});
+  save();closeModal();toast('Demande ajoutée & qualifiée par l\'IA');render();
+}
+function creerDossierDepuis(id){
+  const d=DB.demandes.find(x=>x.id===id);if(!d)return;
+  let c=DB.clients.find(x=>(x.prenom+' '+x.nom).toLowerCase()===d.clientNom.toLowerCase()||x.email===d.clientEmail);
+  if(!c){const parts=d.clientNom.split(/\s+/);
+    c={id:uid('c'),prenom:parts[0]||'',nom:parts.slice(1).join(' ')||parts[0]||'Client',email:d.clientEmail,tel:d.clientTel,
+      adresse:'',parts:0,capital:0,activites:[],associes:[],createdAt:today()};
+    DB.clients.push(c);}
+  const ref='DOS-'+(DB.seq.dossier++);
+  const dos={id:uid('do'),ref,clientIds:[c.id],serviceIds:[],statut:'Qualification',assigneA:d.assigneA,createdAt:today(),
+    historique:[{d:today(),t:'Créé depuis la demande de '+d.clientNom}]};
+  DB.dossiers.unshift(dos);d.dossierId=dos.id;
+  save();closeModal();toast('Dossier '+ref+' créé');state.page='dossiers';render();
+  setTimeout(()=>modalDossier(dos.id),150);
+}
+
+/* ---------- CLIENTS ---------- */
+function pageClients(){
+  let list=DB.clients;
+  if(state.q)list=list.filter(c=>(c.nom+c.prenom+c.email+(c.activites||[]).join(' ')).toLowerCase().includes(state.q));
+  return `<div style="display:flex;gap:10px;margin-bottom:18px"><button class="btn btn-pri" onclick="modalClient()">${svg(IC.plus)}Nouveau client</button><span class="tag blue">${DB.clients.length} clients</span></div>
+  <div class="card"><div class="card-b" style="padding:0">
+  ${list.length?`<table><thead><tr><th>Client</th><th class="hide-sm">Contact</th><th class="hide-sm">Activité(s)</th><th>Capital</th><th>Dossiers</th><th></th></tr></thead><tbody>
+  ${list.map(c=>{const nd=DB.dossiers.filter(d=>d.clientIds.includes(c.id)).length;
+    return `<tr onclick="modalClient('${c.id}')" style="cursor:pointer">
+      <td><div style="display:flex;align-items:center;gap:10px"><span class="av" style="background:linear-gradient(160deg,#3b82f6,#1e4fd6)">${initials(c.prenom+' '+c.nom)}</span>
+        <div><div class="tname">${esc(c.prenom)} ${esc(c.nom)}</div><div class="tsub">${(c.associes||[]).length} associé(s)</div></div></div></td>
+      <td class="hide-sm"><div style="font-size:12px">${esc(c.email||'—')}</div><div class="tsub">${esc(c.tel||'')}</div></td>
+      <td class="hide-sm"><div class="chips">${(c.activites||[]).slice(0,2).map(a=>`<span class="tag">${esc(a)}</span>`).join('')||'<span class="tag mut">—</span>'}</div></td>
+      <td>${eur(c.capital)}</td>
+      <td><span class="tag ${nd?'blue':'mut'}">${nd}</span></td>
+      <td onclick="event.stopPropagation()"><button class="btn btn-sm btn-ghost" onclick="modalClient('${c.id}')">Ouvrir</button></td>
+    </tr>`;}).join('')}
+  </tbody></table>`:`<div class="empty">Aucun client. Ajoute ta première fiche.</div>`}
+  </div></div>`;
+}
+function modalClient(id){
+  const c=id?DB.clients.find(x=>x.id===id):{prenom:'',nom:'',email:'',tel:'',adresse:'',parts:'',capital:'',activites:[],associes:[]};
+  window._assoc=(c.associes||[]).map(a=>({...a}));if(!window._assoc.length)window._assoc=[{nom:'',parts:''}];
+  openModal(id?'Fiche client — '+esc(c.prenom+' '+c.nom):'Nouveau client',`
+    <div class="frow"><div><label>Prénom</label><input id="cl-prenom" value="${esc(c.prenom)}"></div><div><label>Nom</label><input id="cl-nom" value="${esc(c.nom)}"></div></div>
+    <div class="frow"><div><label>Email</label><input id="cl-mail" type="email" value="${esc(c.email)}"></div><div><label>Téléphone</label><input id="cl-tel" value="${esc(c.tel)}"></div></div>
+    <label>Adresse</label><input id="cl-adr" value="${esc(c.adresse)}">
+    <div class="frow"><div><label>Nombre de parts dans la société</label><input id="cl-parts" type="number" value="${esc(c.parts)}"></div>
+      <div><label>Montant du dépôt de capital (€)</label><input id="cl-cap" type="number" value="${esc(c.capital)}"></div></div>
+    <label>Activité(s) — séparées par des virgules</label><input id="cl-act" value="${esc((c.activites||[]).join(', '))}" placeholder="Conseil, Formation, Négoce…">
+    <label>Associés & répartition des parts / actions</label>
+    <div id="assoc-list">${assocRows()}</div>
+    <button class="mini-add" onclick="addAssoc()">+ Ajouter un associé</button>
+  `,`<button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+     ${id?`<button class="btn btn-danger" onclick="delClient('${id}')">Supprimer</button>`:''}
+     <button class="btn btn-pri" onclick="saveClient('${id||''}')">Enregistrer</button>`);
+}
+function assocRows(){
+  return window._assoc.map((a,i)=>`<div class="assoc-row">
+    <input placeholder="Nom de l'associé" value="${esc(a.nom)}" oninput="_assoc[${i}].nom=this.value">
+    <input type="number" placeholder="Parts" value="${esc(a.parts)}" oninput="_assoc[${i}].parts=this.value">
+    <button class="del" onclick="delAssoc(${i})">×</button></div>`).join('');
+}
+function addAssoc(){window._assoc.push({nom:'',parts:''});document.getElementById('assoc-list').innerHTML=assocRows();}
+function delAssoc(i){window._assoc.splice(i,1);if(!window._assoc.length)window._assoc=[{nom:'',parts:''}];document.getElementById('assoc-list').innerHTML=assocRows();}
+function saveClient(id){
+  const g=x=>document.getElementById(x);
+  const obj={prenom:g('cl-prenom').value.trim(),nom:g('cl-nom').value.trim(),email:g('cl-mail').value.trim(),
+    tel:g('cl-tel').value.trim(),adresse:g('cl-adr').value.trim(),parts:g('cl-parts').value,capital:g('cl-cap').value,
+    activites:g('cl-act').value.split(',').map(s=>s.trim()).filter(Boolean),
+    associes:window._assoc.filter(a=>a.nom.trim())};
+  if(!obj.nom&&!obj.prenom)return toast('Nom requis');
+  if(id){Object.assign(DB.clients.find(x=>x.id===id),obj);}else{DB.clients.push({id:uid('c'),createdAt:today(),...obj});}
+  save();closeModal();toast('Fiche client enregistrée');render();
+}
+function delClient(id){if(!confirm('Supprimer cette fiche client ?'))return;DB.clients=DB.clients.filter(c=>c.id!==id);save();closeModal();toast('Client supprimé');render();}
+
+/* ---------- DOSSIERS ---------- */
+function pageDossiers(){
+  const view=state.dossView||'kanban';
+  let list=DB.dossiers;
+  if(state.q)list=list.filter(d=>(d.ref+dossierClients(d)).toLowerCase().includes(state.q));
+  return `<div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+    <button class="btn btn-pri" onclick="modalNewDossier()">${svg(IC.plus)}Nouveau dossier</button>
+    <button class="btn ${view==='kanban'?'':'btn-ghost'}" onclick="state.dossView='kanban';render()">Vue pipeline</button>
+    <button class="btn ${view==='list'?'':'btn-ghost'}" onclick="state.dossView='list';render()">Vue liste</button>
+    <span class="tag blue" style="margin-left:auto;align-self:center">${DB.dossiers.length} dossiers</span></div>
+    ${view==='kanban'?kanban(list):listeDossiers(list)}`;
+}
+function kanban(list){
+  return `<div class="kanban">${STATUTS.map(s=>{
+    const items=list.filter(d=>d.statut===s.k);
+    return `<div class="kcol"><h4><span class="dot" style="background:${s.c}"></span>${s.k}<span class="n">${items.length}</span></h4>
+    ${items.map(d=>`<div class="kcard" onclick="modalDossier('${d.id}')">
+      <b>${d.ref}</b><div class="m">${esc(dossierClients(d))}</div>
+      <div class="chips" style="margin-top:7px">${assigneTag(d)}<span class="tag mut">${eur(dossierMontant(d))}</span></div></div>`).join('')||'<div class="hint" style="padding:4px 2px">—</div>'}
+    </div>`;}).join('')}</div>`;
+}
+function listeDossiers(list){
+  return `<div class="card"><div class="card-b" style="padding:0">${list.length?`<table><thead><tr><th>Réf.</th><th>Client(s)</th><th class="hide-sm">Prestations</th><th>Statut</th><th class="hide-sm">Assigné</th><th>Montant</th></tr></thead><tbody>
+  ${list.map(d=>`<tr onclick="modalDossier('${d.id}')" style="cursor:pointer">
+    <td class="tname">${d.ref}</td><td>${esc(dossierClients(d))}</td>
+    <td class="hide-sm"><span class="tag">${d.serviceIds.length} presta.</span></td>
+    <td><span class="pill-stat" style="color:${statColor(d.statut)};border-color:${statColor(d.statut)}55;background:${statColor(d.statut)}18">${d.statut}</span></td>
+    <td class="hide-sm">${assigneTag(d)}</td><td>${eur(dossierMontant(d))}</td></tr>`).join('')}
+  </tbody></table>`:`<div class="empty">Aucun dossier.</div>`}</div></div>`;
+}
+const dossierClients=d=>d.clientIds.map(id=>{const c=clientById(id);return c?c.prenom+' '+c.nom:'?';}).join(', ')||'—';
+const dossierMontant=d=>d.serviceIds.reduce((s,id)=>{const v=svcById(id);return s+(v?(+v.prix||0)+(+v.debours||0):0);},0);
+function assigneTag(d){const u=userById(d.assigneA);return u?`<span class="tag"><span class="av" style="width:18px;height:18px;font-size:8px;background:${u.couleur}">${initials(u.nom)}</span>${u.nom}</span>`:'<span class="tag mut">Non assigné</span>';}
+
+function modalNewDossier(){
+  const dos={id:'',ref:'DOS-'+DB.seq.dossier,clientIds:[],serviceIds:[],statut:'Nouveau',assigneA:''};
+  modalDossier(null,dos);
+}
+function modalDossier(id,draft){
+  const d=id?DB.dossiers.find(x=>x.id===id):draft;if(!d)return;
+  const clientOpts=DB.clients.map(c=>`<label style="display:flex;align-items:center;gap:8px;font-weight:500;margin:4px 0"><input type="checkbox" style="width:auto" value="${c.id}" ${d.clientIds.includes(c.id)?'checked':''} onchange="toggArr('cl','${c.id}')"> ${esc(c.prenom+' '+c.nom)}</label>`).join('')||'<div class="hint">Aucun client — créez-en un d\'abord.</div>';
+  const svcByFam={};DB.services.filter(s=>s.actif).forEach(s=>{(svcByFam[s.famille]=svcByFam[s.famille]||[]).push(s);});
+  const svcOpts=Object.keys(svcByFam).map(f=>`<div class="section-t" style="margin:12px 0 6px">${f}</div>`+svcByFam[f].map(s=>`<label style="display:flex;align-items:center;gap:8px;font-weight:500;margin:3px 0"><input type="checkbox" style="width:auto" value="${s.id}" ${d.serviceIds.includes(s.id)?'checked':''} onchange="toggArr('sv','${s.id}')"> ${esc(s.nom)} <span class="tag mut" style="margin-left:auto">${s.type==='commission'?'commission':eur((+s.prix)+(+s.debours))}</span></label>`).join('')).join('');
+  window._dcl=[...d.clientIds];window._dsv=[...d.serviceIds];
+  openModal((id?d.ref:'Nouveau dossier — '+d.ref),`
+    ${id?`<div class="chips" style="margin-bottom:14px"><span class="pill-stat" style="color:${statColor(d.statut)};border-color:${statColor(d.statut)}55;background:${statColor(d.statut)}18">${d.statut}</span>${assigneTag(d)}<span class="tag blue">${eur(dossierMontant(d))}</span></div>`:''}
+    <div class="frow"><div><label>Statut</label><select id="do-stat">${STATUTS.map(s=>`<option ${d.statut===s.k?'selected':''}>${s.k}</option>`).join('')}</select></div>
+      <div><label>Assigné à</label><select id="do-assign"><option value="">— Non assigné —</option>${DB.users.map(u=>`<option value="${u.id}" ${d.assigneA===u.id?'selected':''}>${u.nom}</option>`).join('')}</select></div></div>
+    <label>Client(s) concerné(s)</label><div style="max-height:120px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:8px 12px">${clientOpts}</div>
+    <label>Prestations du dossier</label><div style="max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:8px 12px">${svcOpts}</div>
+    ${id&&(d.historique||[]).length?`<label>Historique</label>${d.historique.map(h=>`<div class="hint">• ${frDate(h.d)} — ${esc(h.t)}</div>`).join('')}`:''}
+  `,`<button class="btn btn-ghost" onclick="closeModal()">Fermer</button>
+     ${id?`<button class="btn btn-danger" onclick="delDossier('${id}')">Supprimer</button>`:''}
+     <button class="btn btn-pri" onclick="saveDossier('${id||''}','${id?'':d.ref}')">Enregistrer</button>`);
+}
+function toggArr(which,val){const arr=which==='cl'?window._dcl:window._dsv;const i=arr.indexOf(val);if(i<0)arr.push(val);else arr.splice(i,1);}
+function saveDossier(id,newref){
+  const stat=document.getElementById('do-stat').value,assign=document.getElementById('do-assign').value;
+  if(id){const d=DB.dossiers.find(x=>x.id===id);const chg=d.statut!==stat;
+    d.statut=stat;d.assigneA=assign;d.clientIds=[...window._dcl];d.serviceIds=[...window._dsv];
+    if(chg)(d.historique=d.historique||[]).push({d:today(),t:'Statut → '+stat});
+  }else{DB.dossiers.unshift({id:uid('do'),ref:newref,clientIds:[...window._dcl],serviceIds:[...window._dsv],
+    statut:stat,assigneA:assign,createdAt:today(),historique:[{d:today(),t:'Dossier créé'}]});DB.seq.dossier++;}
+  save();closeModal();toast('Dossier enregistré');render();
+}
+function delDossier(id){if(!confirm('Supprimer ce dossier ?'))return;const d=DB.dossiers.find(x=>x.id===id);
+  DB.dossiers=DB.dossiers.filter(x=>x.id!==id);const dm=DB.demandes.find(x=>x.dossierId===id);if(dm)dm.dossierId='';
+  save();closeModal();toast('Dossier supprimé');render();}
+
+/* ---------- SERVICES ---------- */
+function pageServices(){
+  const fams={};DB.services.forEach(s=>{(fams[s.famille]=fams[s.famille]||[]).push(s);});
+  const typeTag=t=>({forfait:'<span class="tag ok">Forfait</span>',debours:'<span class="tag warm">Débours</span>',commission:'<span class="tag blue">Commission</span>'}[t]||'');
+  return `<div style="display:flex;gap:10px;margin-bottom:18px"><button class="btn btn-pri" onclick="modalService()">${svg(IC.plus)}Nouveau service</button><span class="tag blue">${DB.services.length} prestations</span><span class="tag mut">Prix indicatifs — modifiables</span></div>
+  ${Object.keys(fams).map(f=>`<div class="section-t">${f}</div>
+    <div class="card"><div class="card-b" style="padding:0"><table><thead><tr><th>Prestation</th><th>Type</th><th>Forfait</th><th>Débours</th><th></th></tr></thead><tbody>
+    ${fams[f].map(s=>`<tr>
+      <td class="tname">${esc(s.nom)}</td><td>${typeTag(s.type)}</td>
+      <td>${s.type==='commission'?'<span class="tag mut">variable</span>':eur(s.prix)}</td>
+      <td>${s.debours?eur(s.debours):'<span class="tsub">—</span>'}</td>
+      <td><button class="btn btn-sm btn-ghost" onclick="modalService('${s.id}')">Modifier</button></td></tr>`).join('')}
+    </tbody></table></div></div>`).join('')}`;
+}
+function modalService(id){
+  const s=id?DB.services.find(x=>x.id===id):{nom:'',famille:'Création',type:'forfait',prix:'',debours:''};
+  const fams=['Création','Modification','Annuel','Rédaction','Propriété int.','Débours','Commission','Administratif'];
+  openModal(id?'Modifier le service':'Nouveau service',`
+    <label>Nom de la prestation</label><input id="sv-nom" value="${esc(s.nom)}">
+    <div class="frow"><div><label>Famille</label><select id="sv-fam">${fams.map(f=>`<option ${s.famille===f?'selected':''}>${f}</option>`).join('')}</select></div>
+      <div><label>Type de revenu</label><select id="sv-type"><option value="forfait" ${s.type==='forfait'?'selected':''}>Forfait</option><option value="debours" ${s.type==='debours'?'selected':''}>Débours</option><option value="commission" ${s.type==='commission'?'selected':''}>Commission</option></select></div></div>
+    <div class="frow"><div><label>Forfait honoraires (€)</label><input id="sv-prix" type="number" value="${esc(s.prix)}"></div>
+      <div><label>Débours associé (€)</label><input id="sv-deb" type="number" value="${esc(s.debours)}"></div></div>
+  `,`<button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+     ${id?`<button class="btn btn-danger" onclick="delService('${id}')">Supprimer</button>`:''}
+     <button class="btn btn-pri" onclick="saveService('${id||''}')">Enregistrer</button>`);
+}
+function saveService(id){
+  const g=x=>document.getElementById(x);
+  const obj={nom:g('sv-nom').value.trim(),famille:g('sv-fam').value,type:g('sv-type').value,prix:+g('sv-prix').value||0,debours:+g('sv-deb').value||0,actif:true};
+  if(!obj.nom)return toast('Nom requis');
+  if(id)Object.assign(DB.services.find(x=>x.id===id),obj);else DB.services.push({id:uid('svc'),...obj});
+  save();closeModal();toast('Service enregistré');render();
+}
+function delService(id){if(!confirm('Supprimer ce service ?'))return;DB.services=DB.services.filter(s=>s.id!==id);save();closeModal();toast('Service supprimé');render();}
+
+/* ---------- MARGE (aperçu) ---------- */
+function pageMarge(){
+  const ca=DB.dossiers.reduce((s,d)=>s+d.serviceIds.reduce((a,id)=>{const v=svcById(id);return a+(v?+v.prix||0:0);},0),0);
+  const deb=DB.dossiers.reduce((s,d)=>s+d.serviceIds.reduce((a,id)=>{const v=svcById(id);return a+(v?+v.debours||0:0);},0),0);
+  return `<div class="flow-note">${svg(IC.trend)}<div><b>Aperçu de marge (indicatif)</b> — calcul complet au Niveau 4 (facturation vente + achats/débours + commissions). Ici : honoraires forfait vs débours refacturés sur les dossiers en cours.</div></div>
+  <div class="grid g3" style="margin-top:18px">
+    ${kpi('euro',eur(ca),'Honoraires (forfait)','ok')}
+    ${kpi('card',eur(deb),'Débours refacturés','warm')}
+    ${kpi('trend',eur(ca),'Marge honoraires','blue')}
+  </div>
+  <div class="card" style="margin-top:20px"><div class="card-h"><h2>Marge par dossier</h2></div><div class="card-b" style="padding:0">
+  <table><thead><tr><th>Réf.</th><th>Client(s)</th><th>Honoraires</th><th>Débours</th><th>Marge</th></tr></thead><tbody>
+  ${DB.dossiers.map(d=>{const h=d.serviceIds.reduce((a,id)=>{const v=svcById(id);return a+(v?+v.prix||0:0);},0);
+    const b=d.serviceIds.reduce((a,id)=>{const v=svcById(id);return a+(v?+v.debours||0:0);},0);
+    return `<tr><td class="tname">${d.ref}</td><td>${esc(dossierClients(d))}</td><td>${eur(h)}</td><td>${eur(b)}</td><td><b style="color:var(--ok)">${eur(h)}</b></td></tr>`;}).join('')||'<tr><td colspan="5" class="empty">Aucun dossier.</td></tr>'}
+  </tbody></table></div></div>`;
+}
+
+/* ---------- PARAMS ---------- */
+function pageParams(){
+  return `<div class="grid g2">
+    <div class="card"><div class="card-h"><h2>Équipe</h2><span class="sub">1 admin + collaborateurs</span></div><div class="card-b">
+      ${DB.users.map(u=>`<div style="display:flex;align-items:center;gap:11px;padding:8px 0;border-bottom:1px solid var(--line)">
+        <span class="av" style="background:${u.couleur}">${initials(u.nom)}</span>
+        <div style="flex:1"><b style="font-size:13px">${esc(u.nom)}</b><div class="tsub">${u.role==='admin'?'Administrateur':'Collaborateur'}</div></div>
+        ${u.role!=='admin'?`<button class="btn btn-sm btn-ghost" onclick="delUser('${u.id}')">Retirer</button>`:'<span class="tag blue">Admin</span>'}</div>`).join('')}
+      <button class="mini-add" style="margin-top:12px" onclick="modalUser()">+ Ajouter un collaborateur</button>
+    </div></div>
+    <div class="card"><div class="card-h"><h2>Réglages</h2></div><div class="card-b">
+      <label>Nom du cabinet</label><input value="${esc(DB.params.cabinet)}" onchange="DB.params.cabinet=this.value;save();toast('Enregistré')">
+      <div class="section-t">Pipeline de traitement</div>
+      <div class="chips">${STATUTS.map(s=>`<span class="tag" style="border-color:${s.c}55"><span class="dot" style="background:${s.c}"></span>${s.k}</span>`).join('')}</div>
+      <div class="section-t">Données</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-sm" onclick="exportDB()">Exporter (JSON)</button>
+        <button class="btn btn-sm btn-ghost" onclick="document.getElementById('imp').click()">Importer</button>
+        <button class="btn btn-sm btn-danger" onclick="if(confirm('Réinitialiser toutes les données de démonstration ?')){localStorage.removeItem(KEY);location.reload();}">Réinitialiser</button>
+      </div><input type="file" id="imp" accept="application/json" style="display:none" onchange="importDB(this)">
+    </div></div>
+  </div>
+  <div class="flow-note" style="margin-top:20px">${svg(IC.gear)}<div>Prochains niveaux de la pyramide : <b>Devis auto</b>, <b>facturation & marge complète</b>, <b>signature + paiement</b>, <b>IA de réponse locale</b>, puis <b>stockage lourd, archivage 10 ans, multi-poste & mise en ligne</b>.</div></div>`;
+}
+function modalUser(){openModal('Nouveau collaborateur',`<label>Nom</label><input id="u-nom" placeholder="Prénom N.">
+  <label>Couleur</label><input id="u-col" type="color" value="#22b8cf" style="height:44px">`,
+  `<button class="btn btn-ghost" onclick="closeModal()">Annuler</button><button class="btn btn-pri" onclick="saveUser()">Ajouter</button>`);}
+function saveUser(){const n=document.getElementById('u-nom').value.trim();if(!n)return toast('Nom requis');
+  DB.users.push({id:uid('u'),nom:n,role:'collab',couleur:document.getElementById('u-col').value});save();closeModal();toast('Collaborateur ajouté');render();}
+function delUser(id){if(!confirm('Retirer ce collaborateur ?'))return;DB.users=DB.users.filter(u=>u.id!==id);save();render();}
+
+function pageSoon(){
+  const p=PAGES.find(x=>x.id===state.page);
+  return `<div class="card"><div class="card-b" style="text-align:center;padding:56px 24px">
+    <div class="kpi" style="display:inline-flex;flex-direction:column;align-items:center;border:none;box-shadow:none;background:none">
+      <div class="ic" style="width:56px;height:56px">${svg(IC[p.ic])}</div></div>
+    <h2 style="margin:6px 0 8px">${p.lbl} <span class="soon">Niveau à venir</span></h2>
+    <p class="hint" style="max-width:440px;margin:0 auto">Ce module sera construit à l'étape suivante de la pyramide, à partir des données déjà en place (services, dossiers, clients) et de tes tableaux.</p>
+  </div></div>`;
+}
+
+/* =================================================================
+   MODAL + utilitaires
+   ================================================================= */
+function openModal(t,b,f){document.getElementById('ov-t').innerHTML=t;document.getElementById('ov-b').innerHTML=b;
+  document.getElementById('ov-f').innerHTML=f||'';document.getElementById('ov').classList.add('show');}
+function closeModal(){document.getElementById('ov').classList.remove('show');}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(()=>t.classList.remove('show'),2200);}
+function exportDB(){const b=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download='last-donnees-'+today()+'.json';a.click();}
+function importDB(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();
+  r.onload=e=>{try{DB=JSON.parse(e.target.result);save();toast('Données importées');render();}catch(_e){toast('Fichier invalide');}};r.readAsText(f);}
+
+/* pointer parallax + specular */
+function wireCards(){
+  document.querySelectorAll('.card,.kpi').forEach(el=>{
+    el.onmousemove=e=>{const r=el.getBoundingClientRect();el.style.setProperty('--mx',(e.clientX-r.left)+'px');el.style.setProperty('--my',(e.clientY-r.top)+'px');};
+  });
+}
+document.addEventListener('mousemove',e=>{
+  const x=(e.clientX/innerWidth-.5),y=(e.clientY/innerHeight-.5);
+  const o=document.querySelectorAll('#ambient .orb');
+  if(o[0])o[0].style.transform=`translate(${x*30}px,${y*30}px)`;
+  if(o[1])o[1].style.transform=`translate(${x*-40}px,${y*24}px)`;
+  if(o[2])o[2].style.transform=`translate(${x*24}px,${y*-30}px)`;
+},{passive:true});
+
+/* boot */
+load();render();
+</script>
+</body>
+</html>
