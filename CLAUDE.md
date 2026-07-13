@@ -36,7 +36,19 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Consultation « Comptes Généraux » : comptes de tiers (Fournisseurs/Clients) retirés + titres de classe supprimés (liste à plat) — v488
+## 🟢 Dernière mise à jour — Facturation (fenêtre « Nouvelle facture » / module Client) : rien ne bouge à la saisie d'une désignation + montant TOTAL HT dans la carte + « unité » sur la même ligne — v489
+**Quoi :** correction d'un **bug d'affichage** de la saisie de facture (module **Client**, qui ouvre la fenêtre « Nouvelle facture » `#nf-overlay`, v323).
+1. **La saisie d'une désignation longue ne déplace plus rien** : une désignation **sans espaces** (mot très long) faisait **grandir la colonne Description** de l'aperçu A4 (`.inv-t`) → toute la table/l'aperçu se décalait. Désormais la désignation se **coupe DANS sa colonne** (`overflow-wrap:anywhere`), la table garde une **largeur fixe**, et les **items de la ligne de saisie** (`.nf-li-top`/`.nfl-grid`) sont verrouillés (`min-width:0`) → **plus aucun mouvement**.
+2. **Montant TOTAL HT dans la carte** : sur les cartes de ligne (`.nf-li`), le montant **TOTAL HT** (ex. 8 000,00 €) **débordait à droite de la carte**. Les colonnes de la grille (`.nfl-head`/`.nfl-grid`) sont **redimensionnées** (`40px 60px 64px 46px 28px minmax(50px,1fr)`) pour laisser la place au total ; `.nf-li` reçoit `overflow:hidden` (aucun débordement résiduel).
+3. **« unité » sur la même ligne que la quantité** : dans l'aperçu A4, la cellule **Qté** (`<td class="q">`) passe en `white-space:nowrap` → le nombre et son unité (« 1 unité ») restent **toujours sur la même ligne**, jamais empilés.
+
+**Comment :** `yada-addon229` (100% **CSS additif**, `<style id="nf-line-fixe-mod">` injecté en dernier) : règles `#nf-overlay .nf-li-top/.nfl-grid{min-width:0}`, `.inv-t th,td{overflow-wrap:anywhere}`, `.inv-t td.q{white-space:nowrap}`, resize `.nfl-grid` + `.nf-li{overflow:hidden}`. 1 édition chirurgicale de `docHTML` (cellule Qté → `class="q"`). Aucune logique comptable modifiée. `sw.js` yada-v81, badge v489, `version.json` 489.
+
+**Validé :** `node --check` (222 scripts, 0 erreur) + `sw.js` OK + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + Playwright (fenêtre facture, désignation longue 95×« r » : **totSpill −13px** = montant DANS la carte, `lineSpill 0`, aperçu A4 `tableSpill 0`, cellule Description `overflow-wrap:anywhere`, cellule Qté `white-space:nowrap` = « 1 unité » sur une ligne ; 0 pageerror). Badge → **v489**.
+
+---
+
+## 🟢 MAJ précédente — Consultation « Comptes Généraux » : comptes de tiers (Fournisseurs/Clients) retirés + titres de classe supprimés (liste à plat) — v488
 **Quoi :** deux ajustements de l'onglet **« Comptes Généraux »** de la Consultation des comptes.
 1. **Comptes de TIERS retirés** : les comptes **Fournisseurs (401…)** et **Clients (411…)** individuels **n'apparaissent plus** dans « Comptes Généraux » — ils figurent déjà dans les onglets **Fournisseurs divers** et **Clients divers**. Le **compte collectif** (401000000 / 411000000) et les autres comptes de classe 4 (TVA 445…, personnel 42…, 408…) **restent** affichés.
 2. **Titres de classe supprimés** : la liste ne montre plus les **en-têtes de classe** (« 1. Comptes de capitaux », « 4. Comptes de tiers »…) ni les **sous-totaux « Total X »** → **liste à plat** (Compte · Libellé · Solde), triée par numéro de compte.
