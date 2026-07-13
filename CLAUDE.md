@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Facturation (fenêtre « Nouvelle facture » / module Client) : rien ne bouge à la saisie d'une désignation + montant TOTAL HT dans la carte + « unité » sur la même ligne — v489
+## 🟢 Dernière mise à jour — Facture client : aperçu paginé en feuilles A4 STRICTES (cadre respecté, 2ᵉ page si besoin) — v490
+**Quoi :** à la génération/aperçu d'une **facture client** (fenêtre « Nouvelle facture » `#nf-overlay` + « Voir » `#modal-c`), la facture est désormais **concentrée sur une page A4 stricte (210 × 297 mm)** ; si le contenu **déborde**, une **2ᵉ (puis 3ᵉ…) page A4** est ajoutée automatiquement. Le **cadre A4 n'est plus déformé** (avant : une seule page qui s'étirait en hauteur quand il y avait beaucoup de lignes). Les **lignes du tableau sont réparties** sur les pages, l'**en-tête de colonnes (Description · Qté · PU · TVA · Total HT) est répété** sur chaque page, et les **totaux + RIB + mentions** restent sur la **dernière page**.
+
+**Comment :** `yada-addon230` (100% additif) — `<style id="inv-a4-paginate-mod">` fixe l'aperçu écran à `.inv .inv-page{height:297mm;overflow:hidden}` (cadre A4 exact, jamais déformé) ; `window.invPaginate(inv)` découpe le `.inv-page` source en **feuilles A4 successives** (`.inv-pages`) — mesure de débordement (`scrollHeight > clientHeight`), split du `<tbody>` ligne à ligne avec `thead` cloné, blocs d'en-tête/totaux repositionnés. Un **MutationObserver** (garde anti-boucle `busy`/rAF) pagine tout aperçu **non encore paginé** (`#nf-prev-inner` / `#modal-c`) à chaque mise à jour — les appels internes `nfUpdate→nfApercu` ne passant pas par `window`. **Desktop uniquement** (mobile inchangé). Impression : la pagination native `@page A4` (addon160) reste en place. `sw.js` yada-v82, badge v490, `version.json` 490.
+
+**Validé :** `node --check` (223 scripts, 0 erreur) + `sw.js` OK + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + Playwright (facture **2 lignes → 1 feuille** 794×1123 px = A4 ; **40 lignes → 3 feuilles**, toutes 794×1123 px ; `thead` répété par page ; totaux + RIB sur la dernière page ; 0 pageerror). Badge → **v490**.
+
+---
+
+## 🟢 MAJ précédente — Facturation (fenêtre « Nouvelle facture » / module Client) : rien ne bouge à la saisie d'une désignation + montant TOTAL HT dans la carte + « unité » sur la même ligne — v489
 **Quoi :** correction d'un **bug d'affichage** de la saisie de facture (module **Client**, qui ouvre la fenêtre « Nouvelle facture » `#nf-overlay`, v323).
 1. **La saisie d'une désignation longue ne déplace plus rien** : une désignation **sans espaces** (mot très long) faisait **grandir la colonne Description** de l'aperçu A4 (`.inv-t`) → toute la table/l'aperçu se décalait. Désormais la désignation se **coupe DANS sa colonne** (`overflow-wrap:anywhere`), la table garde une **largeur fixe**, et les **items de la ligne de saisie** (`.nf-li-top`/`.nfl-grid`) sont verrouillés (`min-width:0`) → **plus aucun mouvement**.
 2. **Montant TOTAL HT dans la carte** : sur les cartes de ligne (`.nf-li`), le montant **TOTAL HT** (ex. 8 000,00 €) **débordait à droite de la carte**. Les colonnes de la grille (`.nfl-head`/`.nfl-grid`) sont **redimensionnées** (`40px 60px 64px 46px 28px minmax(50px,1fr)`) pour laisser la place au total ; `.nf-li` reçoit `overflow:hidden` (aucun débordement résiduel).

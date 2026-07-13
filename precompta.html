@@ -10975,7 +10975,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v489';
+    b.textContent='YADA · v490';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -25730,6 +25730,73 @@ ${lignes}
     '#nf-overlay .nf-li{overflow:hidden}'
   ].join('');
   try{ var s=document.createElement('style'); s.id='nf-line-fixe-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
+})();
+</script>
+<script id="yada-addon230">
+/* v490 — Facture client : aperçu paginé en feuilles A4 STRICTES (210 × 297 mm).
+   La facture est concentrée sur une page ; si le contenu déborde, une 2e page A4 est ajoutée
+   (les lignes du tableau sont réparties, l'en-tête de colonnes est répété). Le cadre A4 n'est
+   jamais déformé (hauteur fixe, cadre respecté). 100% additif — aucune logique comptable modifiée. */
+(function(){
+  try{
+    var css='@media screen and (min-width:821px){'
+      +'.inv-pages{display:flex;flex-direction:column;gap:18px;align-items:center}'
+      +'.inv .inv-page{height:297mm !important;min-height:297mm !important;max-height:297mm !important;overflow:hidden !important}'
+      +'}';
+    var st=document.createElement('style'); st.id='inv-a4-paginate-mod'; st.textContent=css; document.head.appendChild(st);
+  }catch(e){}
+
+  /* Découpe le contenu d'une facture (.inv > .inv-page) en feuilles A4 successives. */
+  window.invPaginate=function(inv){
+    try{
+      if(!inv) return;
+      if(window.matchMedia && !window.matchMedia('(min-width:821px)').matches) return; /* pagination A4 : desktop uniquement */
+      if(inv.querySelector('.inv-pages')) return;                                       /* déjà paginé */
+      var src=inv.querySelector('.inv-page'); if(!src) return;
+      var blocks=Array.prototype.slice.call(src.children);
+      var wrap=document.createElement('div'); wrap.className='inv-pages';
+      inv.insertBefore(wrap, src);
+      var MAXP=40, np=0, page=null, tb=null;
+      function newPage(){ np++; page=document.createElement('div'); page.className='inv-page'; wrap.appendChild(page); return page; }
+      function over(){ return page.scrollHeight > page.clientHeight + 1; }
+      function freshTable(thead){ var t=document.createElement('table'); t.className='inv-t';
+        if(thead) t.appendChild(thead.cloneNode(true)); tb=document.createElement('tbody'); t.appendChild(tb); page.appendChild(t); }
+      newPage();
+      for(var bi=0; bi<blocks.length && np<MAXP; bi++){
+        var b=blocks[bi];
+        if(b.tagName==='TABLE' && b.classList && b.classList.contains('inv-t')){
+          var thead=b.querySelector('thead');
+          var rows=Array.prototype.slice.call(b.querySelectorAll('tbody > tr'));
+          freshTable(thead);
+          for(var ri=0; ri<rows.length && np<MAXP; ri++){
+            var r=rows[ri].cloneNode(true); tb.appendChild(r);
+            if(over() && tb.children.length>1){ tb.removeChild(r); newPage(); freshTable(thead); tb.appendChild(r); }
+          }
+        } else {
+          var c=b.cloneNode(true); page.appendChild(c);
+          if(over() && page.children.length>1){ page.removeChild(c); newPage(); page.appendChild(c); }
+        }
+      }
+      if(src.parentNode) src.parentNode.removeChild(src);
+    }catch(e){}
+  };
+
+  /* Les aperçus (#nf-prev-inner pour la fenêtre facture, #modal-c pour « Voir ») sont ré-écrits
+     à chaque frappe par des appels internes (nfUpdate→nfApercu) qui ne passent pas par window.
+     Un MutationObserver pagine donc tout aperçu non encore paginé (garde anti-boucle). */
+  var busy=false, scheduled=false;
+  function run(){
+    scheduled=false; if(busy) return; busy=true;
+    try{
+      ['#nf-prev-inner .inv','#modal-c .inv'].forEach(function(sel){
+        var inv=document.querySelector(sel);
+        if(inv && !inv.querySelector('.inv-pages')) window.invPaginate(inv);
+      });
+    }catch(e){}
+    busy=false;
+  }
+  function schedule(){ if(scheduled||busy) return; scheduled=true; try{ requestAnimationFrame(run); }catch(e){ setTimeout(run,16); } }
+  try{ new MutationObserver(function(){ if(!busy) schedule(); }).observe(document.documentElement,{childList:true,subtree:true}); }catch(e){}
 })();
 </script>
 </body>
