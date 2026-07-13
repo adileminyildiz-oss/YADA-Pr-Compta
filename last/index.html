@@ -244,6 +244,67 @@ option{background:#0d1220;color:var(--ink)}
   .hide-sm{display:none}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important}#ambient .orb{transition:none}}
+
+/* =====================================================================
+   DIRECTION « PRO » — plus simple, plus professionnelle (override final)
+   Fond sobre · surfaces plates & nettes · bleu parcimonieux · sérieux
+   ===================================================================== */
+:root{
+  --radius:10px; --radius-sm:8px;
+  --bg:#0a0d13;
+  --ink:#e7ecf5; --ink-2:#93a0b5; --ink-3:#606d82;
+  --line:rgba(148,163,184,.13); --line-2:rgba(148,163,184,.2);
+  --shadow:0 10px 30px -24px rgba(0,0,0,.85);
+}
+/* ambiance calme : plus d'orbes animées, dégradé statique très discret */
+#ambient .orb{display:none}
+#ambient::before{background:
+  radial-gradient(1200px 720px at 50% -22%, #111725, transparent 62%),
+  linear-gradient(180deg,#0c1017,#0a0d13 60%,#080a0f)}
+#ambient::after{opacity:.12;
+  -webkit-mask-image:linear-gradient(180deg,#000,transparent 68%);mask-image:linear-gradient(180deg,#000,transparent 68%)}
+
+/* cartes plates, nettes, sans flou ni halo */
+.card{background:#111621;backdrop-filter:none;border:1px solid var(--line);box-shadow:var(--shadow)}
+.card::before{box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+.card::after{display:none}
+.card-h{border-bottom:1px solid var(--line)}
+.kpi{background:#111621;backdrop-filter:none;border:1px solid var(--line);box-shadow:var(--shadow)}
+.kpi::after{display:none}
+.kpi .ic{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);box-shadow:none;border-radius:9px;color:var(--blue-2)}
+.kpi .val{font-weight:700}
+
+/* barre latérale & en-tête : opaques, sobres */
+aside{background:#0c1017;backdrop-filter:none;border-right:1px solid var(--line)}
+.logo{background:#0c1017;border:1px solid var(--line-2);box-shadow:none;border-radius:9px}
+.brand h1{letter-spacing:1.4px;font-weight:700}
+.nav-lbl{color:var(--ink-3)}
+.nav-btn{border-radius:8px;font-weight:600}
+.nav-btn:hover{background:rgba(148,163,184,.07)}
+.nav-btn.on{background:rgba(59,130,246,.12);border:1px solid transparent;box-shadow:none;color:#fff}
+.nav-btn.on svg{color:var(--blue-2);opacity:1}
+.nav-badge{font-weight:600}
+.userchip{background:rgba(148,163,184,.05)}
+.topbar{background:rgba(10,13,19,.92);backdrop-filter:none;border-bottom:1px solid var(--line)}
+.page-title{font-weight:700;letter-spacing:0}
+
+/* boutons : nets, bleu plein sans lueur */
+.btn{border-radius:8px}
+.btn:hover{border-color:var(--line-2);background:rgba(148,163,184,.06)}
+.btn-pri{background:var(--blue);box-shadow:none}
+.btn-pri:hover{background:#2f6fe0;filter:none}
+.btn-sm{border-radius:7px}
+
+/* modale, kanban, champs : plats et propres */
+.modal{background:#111621;backdrop-filter:none;border:1px solid var(--line-2);box-shadow:0 30px 80px -34px rgba(0,0,0,.85)}
+.kcol{background:#0e131d;border:1px solid var(--line)}
+.kcard{background:#141a26;box-shadow:none}
+.kcard:hover{transform:none;border-color:var(--line-2)}
+input,select,textarea{background:#0c111a}
+.search input{background:#0c111a}
+#toast{background:var(--blue);box-shadow:0 14px 34px -16px rgba(0,0,0,.7)}
+.flow-note{background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.2)}
+.pill-stat{font-weight:600}
 </style>
 </head>
 <body>

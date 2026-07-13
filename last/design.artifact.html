@@ -1,0 +1,140 @@
+<style>
+:root{
+  --blue:#3b82f6; --blue-2:#5aa2ff;
+  --ink:#e7ecf5; --ink-2:#93a0b5; --ink-3:#606d82;
+  --bg:#080a0f; --line:rgba(148,163,184,.13); --line-2:rgba(148,163,184,.2);
+  --sans:'Helvetica Neue',Helvetica,Arial,'Segoe UI',system-ui,'Liberation Sans',sans-serif;
+  --serif:Georgia,'Times New Roman',serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:var(--sans);color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;letter-spacing:.1px;padding:0 0 90px}
+#amb{position:fixed;inset:0;z-index:-1;background:radial-gradient(1100px 700px at 50% -20%,#111725,transparent 62%),linear-gradient(180deg,#0c1017,#080a0f 62%)}
+
+.head{max-width:1120px;margin:0 auto;padding:40px 24px 6px}
+.kick{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--blue-2);font-weight:700}
+.head h1{font-size:29px;margin:8px 0 6px;font-weight:800}
+.head p{color:var(--ink-2);max-width:720px;line-height:1.65;margin:0;font-size:14.5px}
+
+.gallery{max-width:1120px;margin:0 auto;padding:24px;display:grid;gap:30px}
+.opt{display:grid;grid-template-columns:280px 1fr;gap:24px;align-items:start}
+@media(max-width:880px){.opt{grid-template-columns:1fr}}
+.opt-info{position:sticky;top:22px}
+.opt-num{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:11px;font-weight:800;font-size:16px;color:#fff;background:var(--blue);margin-bottom:12px}
+.opt-info h2{margin:0 0 4px;font-size:19px;font-weight:800}
+.opt-info .role{font-size:11.5px;color:var(--blue-2);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px}
+.opt-info p{color:var(--ink-2);font-size:13.5px;line-height:1.6;margin:0 0 12px}
+.opt-info ul{margin:0 0 16px;padding-left:16px;color:var(--ink-2);font-size:12.5px;line-height:1.7}
+.swatches{display:flex;gap:6px;margin:0 0 14px}
+.sw{width:22px;height:22px;border-radius:6px;border:1px solid rgba(255,255,255,.12)}
+.pick{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#fff;border:none;cursor:pointer;padding:10px 16px;border-radius:10px;background:var(--blue)}
+.pick:hover{background:#2f6fe0}
+.frame{border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 22px 60px -34px rgba(0,0,0,.85)}
+
+/* =========== MOCKUP (composants pilotés par variables) =========== */
+.mock{background:var(--m-bg);color:var(--m-ink);padding:20px;font-size:13px}
+.mock .mtop{display:flex;align-items:center;gap:11px;margin-bottom:16px}
+.mock .mlogo{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-family:var(--serif);font-weight:700;font-size:20px;color:var(--m-acc);background:var(--m-panel);border:1px solid var(--m-line)}
+.mock .mtitle{font-weight:700;font-size:16px}
+.mock.C .mtitle,.mock.C .mk .v{font-family:var(--serif)}
+.mock .msub{font-size:11px;color:var(--m-mut)}
+.mock .msearch{margin-left:auto;font-size:11.5px;color:var(--m-mut);background:var(--m-panel);border:1px solid var(--m-line);border-radius:9px;padding:8px 12px}
+.mock .mkpis{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:14px}
+.mock .mk{background:var(--m-panel);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:13px 14px;box-shadow:var(--m-shadow)}
+.mock .mk .ic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;margin-bottom:9px;background:var(--m-acc-soft);color:var(--m-acc)}
+.mock .mk .ic svg{width:15px;height:15px}
+.mock .mk .v{font-size:21px;font-weight:700}
+.mock .mk .l{font-size:11px;color:var(--m-mut);margin-top:1px}
+.mock .mpanel{background:var(--m-panel);border:1px solid var(--m-line);border-radius:var(--m-radius);box-shadow:var(--m-shadow);overflow:hidden}
+.mock .mph{display:flex;align-items:center;padding:12px 14px;border-bottom:1px solid var(--m-line)}
+.mock .mph b{font-size:12.5px}
+.mock table{width:100%;border-collapse:collapse}
+.mock th{text-align:left;font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--m-mut);font-weight:700;padding:9px 14px;border-bottom:1px solid var(--m-line)}
+.mock td{padding:11px 14px;border-bottom:1px solid var(--m-line);font-size:12.5px}
+.mock tr:last-child td{border-bottom:none}
+.mock .cname{font-weight:700}.mock .csub{font-size:11px;color:var(--m-mut)}
+.mock .pill{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.mock .hot{background:var(--m-hot-bg);color:var(--m-hot)}
+.mock .cold{background:var(--m-cold-bg);color:var(--m-cold)}
+.mock .tia{font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:20px;background:var(--m-acc-soft);color:var(--m-acc);border:1px solid var(--m-acc-line)}
+.mock .score{display:inline-flex;align-items:center;gap:7px;font-weight:800;font-size:12.5px}
+.mock .bar{width:48px;height:6px;border-radius:6px;background:var(--m-track);overflow:hidden}
+.mock .bar i{display:block;height:100%;background:var(--m-acc);border-radius:6px}
+.mock .mbtns{display:flex;gap:9px;margin-top:14px}
+.mock .bp{background:var(--m-acc);color:#fff;border:none;border-radius:var(--m-radius);padding:9px 15px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+.mock .bg{background:transparent;color:var(--m-ink);border:1px solid var(--m-line-2);border-radius:var(--m-radius);padding:9px 15px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+
+/* ---- A · Slate sombre ---- */
+.mock.A{--m-bg:#0a0d13;--m-panel:#111621;--m-line:rgba(148,163,184,.14);--m-line-2:rgba(148,163,184,.22);--m-ink:#e7ecf5;--m-mut:#93a0b5;--m-acc:#3b82f6;--m-acc-soft:rgba(59,130,246,.12);--m-acc-line:rgba(59,130,246,.3);--m-radius:10px;--m-shadow:0 10px 30px -26px rgba(0,0,0,.9);--m-track:rgba(255,255,255,.08);--m-hot:#ff8a94;--m-hot-bg:rgba(255,93,108,.14);--m-cold:#9aa6ba;--m-cold-bg:rgba(148,163,184,.12)}
+/* ---- B · Clair corporate ---- */
+.mock.B{--m-bg:#f6f8fb;--m-panel:#ffffff;--m-line:#e7ecf3;--m-line-2:#dbe2ec;--m-ink:#1a2230;--m-mut:#5c6b82;--m-acc:#2563eb;--m-acc-soft:rgba(37,99,235,.09);--m-acc-line:rgba(37,99,235,.2);--m-radius:10px;--m-shadow:0 6px 18px -12px rgba(20,40,80,.2);--m-track:#e7ecf3;--m-hot:#e11d48;--m-hot-bg:rgba(225,29,72,.1);--m-cold:#5c6b82;--m-cold-bg:rgba(92,107,130,.1)}
+/* ---- C · Marine institutionnel ---- */
+.mock.C{--m-bg:#0b1a2f;--m-panel:#10294d;--m-line:rgba(120,160,220,.18);--m-line-2:rgba(120,160,220,.28);--m-ink:#eaf1fb;--m-mut:#9db4d6;--m-acc:#4f9bff;--m-acc-soft:rgba(79,155,255,.14);--m-acc-line:rgba(79,155,255,.3);--m-radius:8px;--m-shadow:0 12px 30px -24px rgba(0,10,30,.8);--m-track:rgba(160,190,230,.14);--m-hot:#ff9aa4;--m-hot-bg:rgba(255,120,130,.16);--m-cold:#9db4d6;--m-cold-bg:rgba(120,160,220,.14)}
+/* ---- D · Minimal mono ---- */
+.mock.D{--m-bg:#0b0b0d;--m-panel:#141417;--m-line:rgba(255,255,255,.08);--m-line-2:rgba(255,255,255,.14);--m-ink:#f2f3f5;--m-mut:#8b8f98;--m-acc:#3b82f6;--m-acc-soft:rgba(59,130,246,.1);--m-acc-line:rgba(59,130,246,.26);--m-radius:6px;--m-shadow:none;--m-track:rgba(255,255,255,.08);--m-hot:#ff8a94;--m-hot-bg:rgba(255,93,108,.12);--m-cold:#8b8f98;--m-cold-bg:rgba(255,255,255,.06)}
+.mock.D{padding:26px}.mock.D .mkpis{gap:14px}.mock.D .mk{padding:15px 16px}
+
+.note{max-width:1120px;margin:6px auto 0;padding:16px 24px}
+.note .box{background:rgba(59,130,246,.08);border:1px solid rgba(90,162,255,.22);border-radius:14px;padding:16px 18px;font-size:13.5px;color:var(--ink-2);line-height:1.65}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);z-index:90;opacity:0;background:var(--blue);color:#fff;padding:12px 22px;border-radius:12px;font-size:13.5px;font-weight:600;box-shadow:0 16px 40px -16px rgba(0,0,0,.7);transition:.3s;pointer-events:none;max-width:88vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<div id="amb"></div>
+<div class="head">
+  <div class="kick">LAST · AEM CONSEIL — Directions de design</div>
+  <h1>Plusieurs styles « simple &amp; professionnel »</h1>
+  <p>Quatre directions sobres pour ton logiciel, toutes en bleu &amp; noir (sauf la claire). Même écran (tableau de bord) présenté dans chaque style pour comparer. Choisis-en une — je l'applique à tout LAST.</p>
+</div>
+<div class="gallery" id="gallery"></div>
+<div class="note"><div class="box">💡 Tu peux aussi <b>mixer</b> (ex. la sobriété de « Slate » avec le clair de « Corporate » en bascule jour/nuit). Dis-moi la direction retenue et j'unifie tout le logiciel dessus.</div></div>
+<div id="toast"></div>
+
+<script>
+const IC={
+  inbox:'<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5 5h14l3 7v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z"/>',
+  bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>', euro:'<path d="M17 5a7 7 0 1 0 0 14M4 10h9M4 14h9"/>'
+};
+const sv=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+function mock(){return `
+  <div class="mtop"><div class="mlogo">L</div><div><div class="mtitle">LAST — Tableau de bord</div><div class="msub">AEM CONSEIL · interne</div></div><div class="msearch">Rechercher…</div></div>
+  <div class="mkpis">
+    <div class="mk"><div class="ic">${sv(IC.inbox)}</div><div class="v">4</div><div class="l">Demandes à traiter</div></div>
+    <div class="mk"><div class="ic">${sv(IC.bolt)}</div><div class="v">3</div><div class="l">Demandes chaudes</div></div>
+    <div class="mk"><div class="ic">${sv(IC.euro)}</div><div class="v">1 074 €</div><div class="l">Honoraires</div></div>
+  </div>
+  <div class="mpanel"><div class="mph"><b>Dernières demandes</b></div>
+    <table><thead><tr><th>Client</th><th>Demande</th><th>Qualification IA</th><th>Score</th></tr></thead><tbody>
+    <tr><td><div class="cname">Julien Marchand</div><div class="csub">Site AEM</div></td><td>Création SAS</td><td><span class="pill hot">🔥 Chaud</span> <span class="tia">Dossier complet</span></td><td><span class="score"><span class="bar"><i style="width:75%"></i></span>75</span></td></tr>
+    <tr><td><div class="cname">Amélie Bernard</div><div class="csub">Instagram</div></td><td>Création (à préciser)</td><td><span class="pill cold">🧊 Froid</span> <span class="tia">À cadrer</span></td><td><span class="score"><span class="bar"><i style="width:20%"></i></span>20</span></td></tr>
+    <tr><td><div class="cname">David Okonkwo</div><div class="csub">Site AEM</div></td><td>Création SARL urgent</td><td><span class="pill hot">🔥 Chaud</span> <span class="tia">Déterminé</span></td><td><span class="score"><span class="bar"><i style="width:100%"></i></span>100</span></td></tr>
+    </tbody></table></div>
+  <div class="mbtns"><button class="bp">Nouvelle demande</button><button class="bg">Filtrer</button></div>`;
+}
+const DIRS=[
+  {c:'A',num:1,role:'Sombre · sobre',name:'Slate',desc:'Le style actuel, épuré : panneaux plats, fond calme, bleu par petites touches. Ambiance « cockpit » professionnelle, reposante pour de longues sessions.',
+   pts:['Repos visuel, zéro effet superflu','Idéal pour travailler la journée entière','Cohérent avec un outil interne sérieux'],sw:['#0a0d13','#111621','#3b82f6']},
+  {c:'B',num:2,role:'Clair · corporate',name:'Clair Corporate',desc:"Fond clair blanc / gris bleuté, façon SaaS pro (type Stripe / Supabase clair). Très lisible, lumineux, rassurant — parfait pour un cabinet.",
+   pts:['Maximum de lisibilité et de clarté','Impression pro & institutionnelle','Impeccable en environnement bureau'],sw:['#f6f8fb','#ffffff','#2563eb']},
+  {c:'C',num:3,role:'Marine · institutionnel',name:'Marine',desc:'Bleu marine profond, titres en serif, accent bleu clair. Registre bancaire / notarial : confiance et solennité, tout en restant simple.',
+   pts:['Inspire la confiance (juridique/finance)','Caractère fort mais sobre','Titres serif = sérieux institutionnel'],sw:['#0b1a2f','#10294d','#4f9bff']},
+  {c:'D',num:4,role:'Minimal · mono',name:'Minimal',desc:'Presque noir, beaucoup d’air, filets très fins, une seule touche de bleu. Style « Linear » : précis, moderne, minimaliste.',
+   pts:['Ultra épuré, très moderne','Le bleu ne sert qu’aux actions clés','Respirations larges, lecture facile'],sw:['#0b0b0d','#141417','#3b82f6']}
+];
+document.getElementById('gallery').innerHTML=DIRS.map(d=>`
+  <div class="opt">
+    <div class="opt-info">
+      <div class="opt-num">${d.num}</div>
+      <div class="role">${d.role}</div>
+      <h2>${d.name}</h2>
+      <div class="swatches">${d.sw.map(x=>`<span class="sw" style="background:${x}"></span>`).join('')}</div>
+      <p>${d.desc}</p>
+      <ul>${d.pts.map(p=>`<li>${p}</li>`).join('')}</ul>
+      <button class="pick" onclick="choisir('${d.name}')">✓ Choisir « ${d.name} »</button>
+    </div>
+    <div class="frame"><div class="mock ${d.c}">${mock()}</div></div>
+  </div>`).join('');
+
+function choisir(n){const t=document.getElementById('toast');t.textContent='✓ Direction retenue : '+n+' — dis-le-moi dans le chat et j\'unifie tout LAST dessus.';
+  t.classList.add('show');clearTimeout(window._t);window._t=setTimeout(()=>t.classList.remove('show'),4200);}
+</script>
