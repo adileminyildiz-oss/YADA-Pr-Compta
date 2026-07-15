@@ -199,6 +199,28 @@ body[data-page="dash"] .grid.g2{margin-top:12px}
 .ftab:hover{color:var(--ink)}
 .ftab.on{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(70,55,25,.1)}
 .fv-view-scroll{overflow:auto;border:1px solid var(--line);border-radius:8px;background:#e7e0d1;padding:8px;margin-bottom:8px}
+/* ---- Espace (poste de travail) ---- */
+.esp-sel{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:14px}
+.esp-doss{flex:none;text-align:left;border:1px solid var(--line-2);background:var(--card);border-radius:8px;padding:7px 12px;cursor:pointer;min-width:150px;transition:border-color .15s}
+.esp-doss:hover{border-color:#cbbc93}
+.esp-doss.on{border-color:#cbbc93;background:#f3ead6}
+.esp-doss b{display:block;font-size:12px;color:var(--ink)}
+.esp-doss span{font-size:10.5px;color:var(--ink-3)}
+.esp-steps{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0}
+.esp-step{font-size:10px;padding:3px 9px;border-radius:20px;border:1px solid var(--line-2);color:var(--ink-3);white-space:nowrap}
+.esp-check{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line-soft)}
+.esp-check:last-child{border-bottom:none}
+.esp-check input[type=checkbox]{width:auto;flex:none}
+.esp-check .l{flex:1;font-size:12px;color:var(--ink)}
+/* documents générés (aperçu papier) */
+.doc-gen .dg-page{background:#fff;color:#1a1a1a;padding:24px 26px;border-radius:6px;font-size:12px;line-height:1.55;box-shadow:0 8px 24px rgba(60,45,20,.2)}
+.dg-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #302c24;padding-bottom:10px;margin-bottom:6px}
+.dg-em{font-weight:800;font-size:15px}.dg-t{font-weight:800;font-size:13px;letter-spacing:.5px;text-align:right}
+.dg-sub{color:#666;font-size:10.5px;margin-bottom:14px}
+.dg-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px}
+.dg-l{font-size:9.5px;letter-spacing:.5px;text-transform:uppercase;color:#8a7f6c;font-weight:700;margin-bottom:3px}
+.dg-note{background:#f6efdf;border:1px solid #e6d8b2;border-radius:6px;padding:10px 12px;margin-top:14px;font-size:11px;color:#5a5344}
+.dg-foot{border-top:1px solid #ccc;margin-top:16px;padding-top:8px;font-size:9.5px;color:#888}
 
 /* ============ RESPONSIVE ============ */
 @media(max-width:980px){ .g4{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:1fr} }
@@ -293,7 +315,8 @@ const IC={
   bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>', plus:'<path d="M12 5v14M5 12h14"/>',
   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   check:'<path d="M20 6L9 17l-5-5"/>', euro:'<path d="M17 5a7 7 0 1 0 0 14M4 10h9M4 14h9"/>',
-  idcard:'<rect x="2.5" y="5" width="19" height="14" rx="2"/><circle cx="8" cy="11" r="2.1"/><path d="M5.3 16c.7-1.8 4.7-1.8 5.4 0"/><path d="M14 10.5h4.5M14 13.5h3"/>'
+  idcard:'<rect x="2.5" y="5" width="19" height="14" rx="2"/><circle cx="8" cy="11" r="2.1"/><path d="M5.3 16c.7-1.8 4.7-1.8 5.4 0"/><path d="M14 10.5h4.5M14 13.5h3"/>',
+  espace:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/>'
 };
 const svg=(p,cls)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${cls||''}">${p}</svg>`;
 
@@ -404,6 +427,7 @@ const PAGES=[
   {id:'clients',lbl:'Clients',ic:'users',sub:'Fiches & informations'},
   {id:'tiers',lbl:'Tiers',ic:'idcard',sub:'Identités clients & fournisseurs'},
   {id:'dossiers',lbl:'Dossiers',ic:'folder',sub:'Traitement des formalités'},
+  {id:'espace',lbl:'Espace',ic:'espace',sub:'Travail & génération des dossiers'},
   {id:'services',lbl:'Services & prix',ic:'tag',sub:'Catalogue des prestations'},
   {id:'devis',lbl:'Devis',ic:'quote',sub:'Devis automatiques',soon:1},
   {id:'facturation',lbl:'Facturation',ic:'card',sub:'Client & fournisseur'},
@@ -419,11 +443,11 @@ function buildNav(){
   const nb=DB.demandes.filter(d=>!d.dossierId&&d.statut!=='Clôturé').length;
   document.getElementById('nav').innerHTML=
     `<div class="nav-lbl">Pilotage</div>`+
-    PAGES.slice(0,6).map(p=>navBtn(p,nb)).join('')+
+    PAGES.slice(0,7).map(p=>navBtn(p,nb)).join('')+
     `<div class="nav-lbl">Facturation</div>`+
-    PAGES.slice(6,9).map(p=>navBtn(p,nb)).join('')+
+    PAGES.slice(7,10).map(p=>navBtn(p,nb)).join('')+
     `<div class="nav-lbl">Système</div>`+
-    PAGES.slice(9).map(p=>navBtn(p,nb)).join('');
+    PAGES.slice(10).map(p=>navBtn(p,nb)).join('');
 }
 function navBtn(p,nb){
   const badge=p.id==='demandes'&&nb?`<span class="nav-badge">${nb}</span>`:'';
@@ -437,7 +461,7 @@ function render(){
   document.getElementById('ptitle').firstChild.textContent=p.lbl;
   document.getElementById('psub').textContent=p.sub;
   const V=document.getElementById('view');
-  V.innerHTML=({dash:pageDash,demandes:pageDemandes,clients:pageClients,tiers:pageTiers,dossiers:pageDossiers,
+  V.innerHTML=({dash:pageDash,demandes:pageDemandes,clients:pageClients,tiers:pageTiers,dossiers:pageDossiers,espace:pageEspace,
     services:pageServices,devis:pageSoon,facturation:pageFacturation,marge:pageMarge,params:pageParams}[state.page]||pageDash)();
   wireCards();
 }
@@ -839,6 +863,92 @@ function factSave(id,t){
   save();closeModal();toast('Facture enregistrée');render();
 }
 function factDel(id){if(!confirm('Supprimer cette facture ?'))return;DB.factures=DB.factures.filter(f=>f.id!==id);save();closeModal();toast('Facture supprimée');render();}
+
+/* ---------- ESPACE — poste de travail des dossiers ---------- */
+const ESP_PIECES=[
+  {k:'cni',l:"Pièce d'identité du/des associé(s)"},
+  {k:'domicile',l:"Attestation de domiciliation (EDF, mobile, impôts)"},
+  {k:'capital',l:"Attestation de dépôt de capital"},
+  {k:'dnc',l:"Déclaration de non-condamnation"},
+  {k:'statutsSig',l:"Statuts signés"},
+  {k:'annonce',l:"Justificatif d'annonce légale"}
+];
+const ESP_DOCS=[
+  {k:'statuts',l:'Projet de statuts'},
+  {k:'dnc',l:'Déclaration de non-condamnation'},
+  {k:'rbe',l:'Déclaration des bénéficiaires effectifs (RBE)'},
+  {k:'m0',l:'Formulaire M0 (constitution)'},
+  {k:'nomination',l:'Acte de nomination du dirigeant'},
+  {k:'annonce',l:"Avis d'annonce légale"}
+];
+function espDoss(){return (DB.dossiers||[]);}
+function pageEspace(){
+  const list=espDoss();
+  if(!list.length) return '<div class="card"><div class="card-b"><div class="empty">Aucun dossier à traiter.<br>Créez un dossier depuis une <b>Demande</b> ou l\'onglet <b>Dossiers</b>.</div></div></div>';
+  let id=state.espaceDossier; if(!list.find(d=>d.id===id)) id=list[0].id;
+  const d=list.find(x=>x.id===id);
+  const sel='<div class="esp-sel">'+list.map(x=>'<button class="esp-doss '+(x.id===id?'on':'')+'" onclick="state.espaceDossier=\''+x.id+'\';render()"><b>'+esc(x.ref)+'</b><span>'+esc(dossierClients(x))+'</span></button>').join('')+'</div>';
+  return sel+espPanel(d);
+}
+function espPanel(d){
+  const idx=STATUTS.findIndex(s=>s.k===d.statut); const cur=idx<0?0:idx;
+  const steps=STATUTS.map(function(s,i){return '<span class="esp-step" style="'+(i===cur?('background:'+s.c+';border-color:'+s.c+';color:#fff'):'')+'">'+s.k+'</span>';}).join('');
+  const svcTags=(d.serviceIds||[]).map(function(id){var v=svcById(id);return v?('<span class="tag">'+esc(v.nom)+'</span>'):'';}).join('')||'<span class="tag mut">Aucune prestation</span>';
+  return '<div class="grid g2" style="align-items:start">'
+   +'<div class="card"><div class="card-h"><h2>'+esc(d.ref)+' — '+esc(dossierClients(d))+'</h2></div><div class="card-b">'
+   +'<div class="chips" style="margin-bottom:10px">'+assigneTag(d)+'<span class="tag blue">'+eur(dossierMontant(d))+'</span></div>'
+   +'<div class="section-t" style="margin-top:2px">Avancement</div><div class="esp-steps">'+steps+'</div>'
+   +'<div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-sm" onclick="espStatut(\''+d.id+'\',-1)">‹ Reculer</button><button class="btn btn-sm btn-pri" onclick="espStatut(\''+d.id+'\',1)">Avancer ›</button></div>'
+   +'<div class="section-t">Prestations</div><div class="chips">'+svcTags+'</div>'
+   +'<div class="section-t">Actions</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm" onclick="espFacture(\''+d.id+'\')">Facture</button><button class="btn btn-sm btn-ghost" onclick="modalDossier(\''+d.id+'\')">Éditer</button></div>'
+   +'</div></div>'
+   +'<div class="card"><div class="card-h"><h2>Pièces à fournir</h2><span class="sub" style="margin-left:auto">'+espPiecesCount(d)+'</span></div><div class="card-b">'
+   +ESP_PIECES.map(function(pc){return espPieceRow(d,pc);}).join('')
+   +'</div></div></div>'
+   +'<div class="card" style="margin-top:14px"><div class="card-h"><h2>Documents à générer</h2><span class="sub" style="margin-left:auto">'+espDocsCount(d)+'</span></div><div class="card-b" style="padding:0">'
+   +'<table><tbody>'+ESP_DOCS.map(function(dc){return espDocRow(d,dc);}).join('')+'</tbody></table>'
+   +'</div></div>';
+}
+function espPieceState(d,k){d.pieces=d.pieces||{};return d.pieces[k]||{recu:false};}
+function espPiecesCount(d){return ESP_PIECES.filter(function(pc){return espPieceState(d,pc.k).recu;}).length+'/'+ESP_PIECES.length;}
+function espPieceRow(d,pc){var st=espPieceState(d,pc.k);
+  return '<div class="esp-check"><input type="checkbox" '+(st.recu?'checked':'')+' onchange="espPieceToggle(\''+d.id+'\',\''+pc.k+'\',this.checked)">'
+   +'<div class="l">'+esc(pc.l)+(st.nom?('<div class="tsub">📎 '+esc(st.nom)+'</div>'):'')+'</div>'
+   +(st.data?'<button class="btn btn-sm btn-ghost" onclick="espPieceDl(\''+d.id+'\',\''+pc.k+'\')">⤓</button>':'')
+   +'<label class="btn btn-sm btn-ghost" style="cursor:pointer">＋<input type="file" style="display:none" onchange="espPieceUpload(\''+d.id+'\',\''+pc.k+'\',this)"></label></div>';
+}
+function espPieceToggle(id,k,v){var d=espDoss().find(function(x){return x.id===id;});d.pieces=d.pieces||{};d.pieces[k]=Object.assign(espPieceState(d,k),{recu:v});save();render();}
+function espPieceUpload(id,k,inp){var f=inp.files[0];if(!f)return;var d=espDoss().find(function(x){return x.id===id;});var r=new FileReader();r.onload=function(e){d.pieces=d.pieces||{};d.pieces[k]=Object.assign(espPieceState(d,k),{recu:true,nom:f.name,data:e.target.result});save();toast('Pièce jointe');render();};r.readAsDataURL(f);}
+function espPieceDl(id,k){var d=espDoss().find(function(x){return x.id===id;});var st=espPieceState(d,k);if(!st.data)return;var a=document.createElement('a');a.href=st.data;a.download=st.nom||'piece';a.click();}
+function espDocState(d,k){d.docs=d.docs||{};return d.docs[k]||{genere:false};}
+function espDocsCount(d){return ESP_DOCS.filter(function(dc){return espDocState(d,dc.k).genere;}).length+'/'+ESP_DOCS.length;}
+function espDocRow(d,dc){var st=espDocState(d,dc.k);
+  return '<tr><td class="tname">'+esc(dc.l)+'</td><td>'+(st.genere?'<span class="tag ok">Généré</span>':'<span class="tag mut">À générer</span>')+'</td>'
+   +'<td style="text-align:right">'+(st.genere?'<button class="btn btn-sm btn-ghost" onclick="espDocVoir(\''+d.id+'\',\''+dc.k+'\')">Voir</button> ':'')
+   +'<button class="btn btn-sm btn-pri" onclick="espDocGen(\''+d.id+'\',\''+dc.k+'\')">'+(st.genere?'Régénérer':'Générer')+'</button></td></tr>';
+}
+function espDocGen(id,k){var d=espDoss().find(function(x){return x.id===id;});d.docs=d.docs||{};d.docs[k]={genere:true,date:today()};save();toast('Document généré');espDocVoir(id,k);}
+function espDocVoir(id,k){var d=espDoss().find(function(x){return x.id===id;});var dc=ESP_DOCS.find(function(x){return x.k===k;});
+  openModal(esc(dc.l),'<div class="fv-view-scroll" style="background:#e7e0d1"><div class="doc-gen">'+espDocHTML(d,dc)+'</div></div>',
+   '<button class="btn btn-ghost" onclick="closeModal()">Fermer</button><button class="btn btn-pri" onclick="espDocPrint()">Imprimer</button>');
+}
+function espDocPrint(){var el=document.querySelector('#ov .doc-gen');if(!el)return;if(typeof FactureVente!=='undefined'&&FactureVente.injectCSS)FactureVente.injectCSS();var pa=document.getElementById('fv-printarea');if(!pa){pa=document.createElement('div');pa.id='fv-printarea';document.body.appendChild(pa);}pa.innerHTML='<div class="doc-gen">'+el.innerHTML+'</div>';setTimeout(function(){window.print();},120);}
+function espDocHTML(d,dc){
+  var s=DB.societe||{}; var c=clientById((d.clientIds||[])[0])||{};
+  var cl=((c.prenom?c.prenom+' ':'')+(c.nom||'')).trim();
+  var assoc=(c.associes||[]).map(function(a){return '<div>• '+esc(a.nom)+' — '+(esc(a.parts)||'?')+' parts</div>';}).join('')||'<div>—</div>';
+  var act=(c.activites||[]).join(', ')||'—';
+  return '<div class="dg-page">'
+   +'<div class="dg-head"><div class="dg-em">'+esc(s.raison||'AEM CONSEIL')+'</div><div class="dg-t">'+esc(dc.l).toUpperCase()+'</div></div>'
+   +'<div class="dg-sub">Dossier '+esc(d.ref)+' — établi le '+frDate(today())+'</div>'
+   +'<div class="dg-grid"><div><div class="dg-l">Client / porteur de projet</div><b>'+esc(cl||'—')+'</b><div>'+esc(c.adresse||'')+'</div><div>'+esc(c.email||'')+'</div></div>'
+   +'<div><div class="dg-l">Capital / activité</div><div>Capital : '+eur(c.capital)+'</div><div>Activité : '+esc(act)+'</div></div></div>'
+   +'<div class="dg-l" style="margin-top:14px">Associés & répartition</div>'+assoc
+   +'<div class="dg-note">Document généré par LAST à partir des données du dossier. <b>Le contenu détaillé (clauses, mentions légales) sera produit selon le modèle fourni</b> — champs à compléter/valider avant dépôt.</div>'
+   +'<div class="dg-foot">'+esc(s.raison||'AEM CONSEIL')+' — '+esc(s.formeJur||'SAS')+' · accompagnement administratif</div></div>';
+}
+function espStatut(id,dir){var d=espDoss().find(function(x){return x.id===id;});var i=STATUTS.findIndex(function(s){return s.k===d.statut;});var n=Math.max(0,Math.min(STATUTS.length-1,(i<0?0:i)+dir));var ns=STATUTS[n].k;if(ns!==d.statut){d.statut=ns;(d.historique=d.historique||[]).push({d:today(),t:'Statut → '+ns});save();render();}}
+function espFacture(id){var d=espDoss().find(function(x){return x.id===id;});var cid=(d.clientIds||[])[0];if(typeof FactureVente==='undefined')return toast('Module facture indisponible');FactureVente.ouvrir({societe:fvSociete(),clients:fvClients(),numero:fvNextNum(),initial:{clientId:cid},onCreer:fvOnCreer});}
 
 /* ---------- Facture de vente (via module FactureVente) ---------- */
 function fvSociete(){var s=DB.societe||{};return {raison:s.raison||'AEM CONSEIL',formeJur:s.formeJur||'SAS',siren:s.siren||'',siret:s.siret||'',adresse:s.adresse||'',cp:s.cp||'',ville:s.ville||'',iban:s.iban||'',bic:s.bic||'',banqueBenef:s.banqueBenef||s.raison||'AEM CONSEIL',tvaCondition:s.tvaCondition||'Sur les encaissements',fraisRecouvrement:(s.fraisRecouvrement!=null?s.fraisRecouvrement:40)};}
