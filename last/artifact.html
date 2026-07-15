@@ -185,6 +185,12 @@ body[data-page="dash"] .card-h h2{font-size:11.5px}
 body[data-page="dash"] .card-b{padding:11px 13px}
 body[data-page="dash"] .grid.g2{margin-top:12px}
 
+/* ============ Onglets (segmented) ============ */
+.fact-tabs{display:inline-flex;gap:3px;background:var(--paper-2);border:1px solid var(--line-2);border-radius:8px;padding:3px;margin-bottom:14px}
+.ftab{border:none;background:none;color:var(--ink-2);font:inherit;font-size:12px;font-weight:600;padding:6px 15px;border-radius:6px;cursor:pointer;transition:background .15s,color .15s}
+.ftab:hover{color:var(--ink)}
+.ftab.on{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(70,55,25,.1)}
+
 /* ============ RESPONSIVE ============ */
 @media(max-width:980px){ .g4{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:1fr} }
 @media(max-width:860px){
@@ -275,7 +281,8 @@ const IC={
   gear:'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 0 0-1.7-1l-.4-2.6h-4l-.4 2.6a7 7 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7 7 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7 7 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6a7 7 0 0 0 .1-1z"/>',
   bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>', plus:'<path d="M12 5v14M5 12h14"/>',
   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-  check:'<path d="M20 6L9 17l-5-5"/>', euro:'<path d="M17 5a7 7 0 1 0 0 14M4 10h9M4 14h9"/>'
+  check:'<path d="M20 6L9 17l-5-5"/>', euro:'<path d="M17 5a7 7 0 1 0 0 14M4 10h9M4 14h9"/>',
+  idcard:'<rect x="2.5" y="5" width="19" height="14" rx="2"/><circle cx="8" cy="11" r="2.1"/><path d="M5.3 16c.7-1.8 4.7-1.8 5.4 0"/><path d="M14 10.5h4.5M14 13.5h3"/>'
 };
 const svg=(p,cls)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${cls||''}">${p}</svg>`;
 
@@ -329,8 +336,8 @@ function seed(){
     {id:'do-1',ref:'DOS-2601',clientIds:['c-3'],serviceIds:[S[0].id,S[14].id,S[15].id],statut:'En cours',assigneA:'u-sofia',createdAt:today(),historique:[]},
     {id:'do-2',ref:'DOS-2602',clientIds:['c-1'],serviceIds:[S[0].id],statut:'Pièces attendues',assigneA:'u-karim',createdAt:today(),historique:[]}
   ];
-  return {users:U,services:S,clients:C,demandes:D,dossiers:DOS,devis:[],factures:[],
-    params:{cabinet:'AEM CONSEIL'}, seq:{dossier:2603}};
+  return {users:U,services:S,clients:C,demandes:D,dossiers:DOS,devis:[],factures:[],fournisseurs:[],
+    params:{cabinet:'AEM CONSEIL'}, seq:{dossier:2603,factVente:1,factAchat:1}};
 }
 function load(){try{const r=localStorage.getItem(KEY);DB=r?JSON.parse(r):seed();}catch(e){DB=seed();}}
 let saveT=null;
@@ -384,10 +391,11 @@ const PAGES=[
   {id:'dash',lbl:'Tableau de bord',ic:'dash',sub:'Vue d\'ensemble de l\'activité'},
   {id:'demandes',lbl:'Demandes',ic:'inbox',sub:'Réception & qualification IA'},
   {id:'clients',lbl:'Clients',ic:'users',sub:'Fiches & informations'},
+  {id:'tiers',lbl:'Tiers',ic:'idcard',sub:'Identités clients & fournisseurs'},
   {id:'dossiers',lbl:'Dossiers',ic:'folder',sub:'Traitement des formalités'},
   {id:'services',lbl:'Services & prix',ic:'tag',sub:'Catalogue des prestations'},
   {id:'devis',lbl:'Devis',ic:'quote',sub:'Devis automatiques',soon:1},
-  {id:'facturation',lbl:'Facturation',ic:'card',sub:'Ventes & achats',soon:1},
+  {id:'facturation',lbl:'Facturation',ic:'card',sub:'Client & fournisseur'},
   {id:'marge',lbl:'Marge',ic:'trend',sub:'Rentabilité par dossier',soon:1},
   {id:'params',lbl:'Paramètres',ic:'gear',sub:'Équipe & réglages'}
 ];
@@ -400,11 +408,11 @@ function buildNav(){
   const nb=DB.demandes.filter(d=>!d.dossierId&&d.statut!=='Clôturé').length;
   document.getElementById('nav').innerHTML=
     `<div class="nav-lbl">Pilotage</div>`+
-    PAGES.slice(0,5).map(p=>navBtn(p,nb)).join('')+
+    PAGES.slice(0,6).map(p=>navBtn(p,nb)).join('')+
     `<div class="nav-lbl">Facturation</div>`+
-    PAGES.slice(5,8).map(p=>navBtn(p,nb)).join('')+
+    PAGES.slice(6,9).map(p=>navBtn(p,nb)).join('')+
     `<div class="nav-lbl">Système</div>`+
-    PAGES.slice(8).map(p=>navBtn(p,nb)).join('');
+    PAGES.slice(9).map(p=>navBtn(p,nb)).join('');
 }
 function navBtn(p,nb){
   const badge=p.id==='demandes'&&nb?`<span class="nav-badge">${nb}</span>`:'';
@@ -418,8 +426,8 @@ function render(){
   document.getElementById('ptitle').firstChild.textContent=p.lbl;
   document.getElementById('psub').textContent=p.sub;
   const V=document.getElementById('view');
-  V.innerHTML=({dash:pageDash,demandes:pageDemandes,clients:pageClients,dossiers:pageDossiers,
-    services:pageServices,devis:pageSoon,facturation:pageSoon,marge:pageMarge,params:pageParams}[state.page]||pageDash)();
+  V.innerHTML=({dash:pageDash,demandes:pageDemandes,clients:pageClients,tiers:pageTiers,dossiers:pageDossiers,
+    services:pageServices,devis:pageSoon,facturation:pageFacturation,marge:pageMarge,params:pageParams}[state.page]||pageDash)();
   wireCards();
 }
 
@@ -759,6 +767,115 @@ function saveUser(){const n=document.getElementById('u-nom').value.trim();if(!n)
   DB.users.push({id:uid('u'),nom:n,role:'collab',couleur:document.getElementById('u-col').value});save();closeModal();toast('Collaborateur ajouté');render();}
 function delUser(id){if(!confirm('Retirer ce collaborateur ?'))return;DB.users=DB.users.filter(u=>u.id!==id);save();render();}
 
+/* ---------- FACTURATION (Client / Fournisseur) ---------- */
+function factStatColor(s){return {'Émise':'#977619','Payée':'#5c7a4c','Impayée':'#a85a34','À payer':'#977619'}[s]||'#8a7f6c';}
+function factNum(t){DB.seq=DB.seq||{};const k=t==='client'?'factVente':'factAchat';const n=DB.seq[k]||1;DB.seq[k]=n+1;return (t==='client'?'FV-':'FA-')+(2600+n);}
+function pageFacturation(){
+  const t=state.factTab||'client';
+  const list=(DB.factures||[]).filter(f=>f.type===t).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const totTVA=list.reduce((s,f)=>s+(+f.tva||0),0), totTTC=list.reduce((s,f)=>s+(+f.ttc||0),0);
+  const du=list.filter(f=>f.statut==='Impayée'||f.statut==='À payer').reduce((s,f)=>s+(+f.ttc||0),0);
+  return `
+  <div class="fact-tabs">
+    <button class="ftab ${t==='client'?'on':''}" onclick="state.factTab='client';render()">Client — ventes</button>
+    <button class="ftab ${t==='fournisseur'?'on':''}" onclick="state.factTab='fournisseur';render()">Fournisseur — achats</button>
+  </div>
+  <div class="grid g3" style="margin-bottom:14px">
+    ${kpi('card',eur(totTTC),'Total TTC — '+(t==='client'?'ventes':'achats'))}
+    ${kpi('euro',eur(totTVA),'TVA')}
+    ${kpi('trend',eur(du),t==='client'?'Impayé':'Reste à payer',t==='client'?'hot':'')}
+  </div>
+  <div style="display:flex;gap:10px;margin-bottom:14px"><button class="btn btn-pri" onclick="factModal()">${svg(IC.plus)}Nouvelle facture ${t==='client'?'client':'fournisseur'}</button>
+    <span class="tag blue">${list.length} facture(s)</span></div>
+  <div class="card"><div class="card-b" style="padding:0">
+  ${list.length?`<table><thead><tr><th>N°</th><th>${t==='client'?'Client':'Fournisseur'}</th><th class="hide-sm">Date</th><th>HT</th><th class="hide-sm">TVA</th><th>TTC</th><th>Statut</th><th></th></tr></thead><tbody>
+  ${list.map(f=>`<tr onclick="factModal('${f.id}')" style="cursor:pointer">
+    <td class="tname">${esc(f.num)}</td><td>${esc(f.tiers)}</td><td class="hide-sm">${frDate(f.date)}</td>
+    <td>${eur(f.ht)}</td><td class="hide-sm">${eur(f.tva)}</td><td>${eur(f.ttc)}</td>
+    <td><span class="pill-stat" style="color:${factStatColor(f.statut)};border-color:${factStatColor(f.statut)}55;background:${factStatColor(f.statut)}18">${esc(f.statut)}</span></td>
+    <td onclick="event.stopPropagation()"><button class="btn btn-sm btn-ghost" onclick="factModal('${f.id}')">Ouvrir</button></td></tr>`).join('')}
+  </tbody></table>`:`<div class="empty">Aucune facture ${t==='client'?'client (ventes)':'fournisseur (achats/débours)'}. Ajoutez-en une.</div>`}
+  </div></div>`;
+}
+function factModal(id){
+  const t=id?(DB.factures.find(x=>x.id===id)||{}).type:(state.factTab||'client');
+  const f=id?DB.factures.find(x=>x.id===id):{type:t,num:'',tiers:'',date:today(),ht:'',taux:20,statut:t==='client'?'Émise':'À payer'};
+  const tiersField = t==='client'
+    ? `<select id="fa-tiers">${['<option value="">— Choisir un client —</option>'].concat((DB.clients||[]).map(c=>{const n=(c.prenom+' '+c.nom).trim();return `<option ${f.tiers===n?'selected':''}>${esc(n)}</option>`;})).join('')}</select>`
+    : `<input id="fa-tiers" list="fa-four-list" value="${esc(f.tiers)}" placeholder="Greffe, INPI, Annonces légales…"><datalist id="fa-four-list">${(DB.fournisseurs||[]).map(x=>`<option>${esc(x.nom)}</option>`).join('')}</datalist>`;
+  const statOpts=(t==='client'?['Émise','Payée','Impayée']:['À payer','Payée']);
+  openModal(id?('Facture '+esc(f.num)):('Nouvelle facture '+(t==='client'?'client':'fournisseur')),`
+    <div class="frow"><div><label>${t==='client'?'Client':'Fournisseur'}</label>${tiersField}</div>
+      <div><label>Date</label><input id="fa-date" type="date" value="${esc(f.date)}"></div></div>
+    <div class="frow"><div><label>Montant HT (€)</label><input id="fa-ht" type="number" step="0.01" value="${esc(f.ht)}" oninput="factCalc()"></div>
+      <div><label>TVA (%)</label><select id="fa-taux" onchange="factCalc()">${[0,5.5,10,20].map(x=>`<option value="${x}" ${(+f.taux)===x?'selected':''}>${x} %</option>`).join('')}</select></div></div>
+    <div class="frow"><div><label>TVA (€)</label><input id="fa-tva" readonly></div><div><label>TTC (€)</label><input id="fa-ttc" readonly></div></div>
+    <label>Statut</label><select id="fa-statut">${statOpts.map(s=>`<option ${f.statut===s?'selected':''}>${s}</option>`).join('')}</select>
+  `,`<button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+     ${id?`<button class="btn btn-danger" onclick="factDel('${id}')">Supprimer</button>`:''}
+     <button class="btn btn-pri" onclick="factSave('${id||''}','${t}')">Enregistrer</button>`);
+  factCalc();
+}
+function factCalc(){const g=x=>document.getElementById(x);if(!g('fa-ht'))return;const ht=+g('fa-ht').value||0,taux=+g('fa-taux').value||0;const tva=Math.round(ht*taux)/100;g('fa-tva').value=tva.toFixed(2);g('fa-ttc').value=(ht+tva).toFixed(2);}
+function factSave(id,t){
+  const g=x=>document.getElementById(x);
+  const ht=+g('fa-ht').value||0,taux=+g('fa-taux').value||0,tva=Math.round(ht*taux)/100,ttc=ht+tva;
+  const tiers=(g('fa-tiers').value||'').trim();
+  if(!tiers)return toast(t==='client'?'Client requis':'Fournisseur requis');
+  if(!DB.factures)DB.factures=[];
+  if(id){Object.assign(DB.factures.find(x=>x.id===id),{tiers,date:g('fa-date').value,ht,taux,tva,ttc,statut:g('fa-statut').value});}
+  else{DB.factures.push({id:uid('fa'),type:t,num:factNum(t),tiers,date:g('fa-date').value,ht,taux,tva,ttc,statut:g('fa-statut').value,createdAt:today()});}
+  save();closeModal();toast('Facture enregistrée');render();
+}
+function factDel(id){if(!confirm('Supprimer cette facture ?'))return;DB.factures=DB.factures.filter(f=>f.id!==id);save();closeModal();toast('Facture supprimée');render();}
+
+/* ---------- TIERS (Clients & Fournisseurs) ---------- */
+function pageTiers(){
+  const t=state.tiersTab||'clients';
+  return `<div class="fact-tabs">
+    <button class="ftab ${t==='clients'?'on':''}" onclick="state.tiersTab='clients';render()">Clients</button>
+    <button class="ftab ${t==='fournisseurs'?'on':''}" onclick="state.tiersTab='fournisseurs';render()">Fournisseurs</button>
+  </div>${t==='clients'?pageClients():tiersFourn()}`;
+}
+function tiersFourn(){
+  let list=(DB.fournisseurs||[]);
+  if(state.q)list=list.filter(f=>((f.nom||'')+(f.email||'')+(f.prestation||'')).toLowerCase().includes(state.q));
+  return `<div style="display:flex;gap:10px;margin-bottom:14px"><button class="btn btn-pri" onclick="fournModal()">${svg(IC.plus)}Nouveau fournisseur</button><span class="tag blue">${(DB.fournisseurs||[]).length} fournisseur(s)</span></div>
+  <div class="card"><div class="card-b" style="padding:0">
+  ${list.length?`<table><thead><tr><th>Fournisseur</th><th class="hide-sm">Contact</th><th class="hide-sm">Prestation</th><th>SIRET</th><th></th></tr></thead><tbody>
+  ${list.map(f=>`<tr onclick="fournModal('${f.id}')" style="cursor:pointer">
+    <td><div style="display:flex;align-items:center;gap:9px"><span class="av" style="background:#544a3b">${initials(f.nom||'?')}</span><div><div class="tname">${esc(f.nom)}</div><div class="tsub">${esc(f.ville||'')}</div></div></div></td>
+    <td class="hide-sm"><div style="font-size:11.5px">${esc(f.email||'—')}</div><div class="tsub">${esc(f.tel||'')}</div></td>
+    <td class="hide-sm">${esc(f.prestation||'—')}</td><td>${esc(f.siret||'—')}</td>
+    <td onclick="event.stopPropagation()"><button class="btn btn-sm btn-ghost" onclick="fournModal('${f.id}')">Ouvrir</button></td></tr>`).join('')}
+  </tbody></table>`:`<div class="empty">Aucun fournisseur. Ajoutez vos prestataires (greffe, INPI, annonces légales, domiciliation…).</div>`}
+  </div></div>`;
+}
+function fournModal(id){
+  const f=id?DB.fournisseurs.find(x=>x.id===id):{nom:'',siret:'',tvaIntra:'',adresse:'',cp:'',ville:'',email:'',tel:'',prestation:''};
+  openModal(id?'Fournisseur — '+esc(f.nom):'Nouveau fournisseur',`
+    <label>Dénomination</label><input id="fo-nom" value="${esc(f.nom)}" placeholder="Greffe, INPI, Journal d'annonces…">
+    <div class="frow"><div><label>Prestation / nature</label><input id="fo-prest" value="${esc(f.prestation)}" placeholder="Annonces légales, dépôt…"></div>
+      <div><label>SIRET</label><input id="fo-siret" value="${esc(f.siret)}"></div></div>
+    <div class="frow"><div><label>N° TVA intracom.</label><input id="fo-tva" value="${esc(f.tvaIntra)}"></div>
+      <div><label>Téléphone</label><input id="fo-tel" value="${esc(f.tel)}"></div></div>
+    <label>Email</label><input id="fo-mail" type="email" value="${esc(f.email)}">
+    <label>Adresse</label><input id="fo-adr" value="${esc(f.adresse)}">
+    <div class="frow"><div><label>Code postal</label><input id="fo-cp" value="${esc(f.cp)}"></div><div><label>Ville</label><input id="fo-ville" value="${esc(f.ville)}"></div></div>
+  `,`<button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+     ${id?`<button class="btn btn-danger" onclick="fournDel('${id}')">Supprimer</button>`:''}
+     <button class="btn btn-pri" onclick="fournSave('${id||''}')">Enregistrer</button>`);
+}
+function fournSave(id){
+  const g=x=>document.getElementById(x);
+  const obj={nom:g('fo-nom').value.trim(),prestation:g('fo-prest').value.trim(),siret:g('fo-siret').value.trim(),tvaIntra:g('fo-tva').value.trim(),tel:g('fo-tel').value.trim(),email:g('fo-mail').value.trim(),adresse:g('fo-adr').value.trim(),cp:g('fo-cp').value.trim(),ville:g('fo-ville').value.trim()};
+  if(!obj.nom)return toast('Dénomination requise');
+  if(!DB.fournisseurs)DB.fournisseurs=[];
+  if(id)Object.assign(DB.fournisseurs.find(x=>x.id===id),obj);else DB.fournisseurs.push({id:uid('fo'),createdAt:today(),...obj});
+  save();closeModal();toast('Fournisseur enregistré');render();
+}
+function fournDel(id){if(!confirm('Supprimer ce fournisseur ?'))return;DB.fournisseurs=DB.fournisseurs.filter(f=>f.id!==id);save();closeModal();toast('Fournisseur supprimé');render();}
+
 function pageSoon(){
   const p=PAGES.find(x=>x.id===state.page);
   return `<div class="card"><div class="card-b" style="text-align:center;padding:56px 24px">
@@ -795,6 +912,31 @@ document.addEventListener('mousemove',e=>{
   if(o[2])o[2].style.transform=`translate(${x*24}px,${y*-30}px)`;
 },{passive:true});
 
+/* migrations légères (factures & fournisseurs) + jeu de démonstration */
+function ensureData(){
+  if(!DB.factures)DB.factures=[];
+  if(!DB.fournisseurs)DB.fournisseurs=[];
+  DB.seq=DB.seq||{}; if(!DB.seq.factVente)DB.seq.factVente=1; if(!DB.seq.factAchat)DB.seq.factAchat=1;
+  if(!localStorage.getItem('last-seed2')){
+    if(DB.fournisseurs.length===0){
+      DB.fournisseurs.push(
+        {id:uid('fo'),nom:'Greffe du Tribunal de commerce',prestation:'Dépôt / immatriculation',siret:'',tvaIntra:'',adresse:'',cp:'',ville:'Paris',email:'',tel:'',createdAt:today()},
+        {id:uid('fo'),nom:'INPI',prestation:'Dépôt de marque',siret:'',tvaIntra:'',adresse:'',cp:'',ville:'Courbevoie',email:'',tel:'',createdAt:today()},
+        {id:uid('fo'),nom:"Journal d'annonces légales",prestation:'Annonces légales',siret:'',tvaIntra:'',adresse:'',cp:'',ville:'',email:'',tel:'',createdAt:today()},
+        {id:uid('fo'),nom:'Domiciliation Paris',prestation:'Domiciliation commerciale',siret:'',tvaIntra:'',adresse:'',cp:'75002',ville:'Paris',email:'',tel:'',createdAt:today()}
+      );
+    }
+    if(DB.factures.length===0){
+      DB.factures.push(
+        {id:uid('fa'),type:'client',num:factNum('client'),tiers:'David Okonkwo',date:today(),ht:690,taux:20,tva:138,ttc:828,statut:'Émise',createdAt:today()},
+        {id:uid('fa'),type:'client',num:factNum('client'),tiers:'Julien Marchand',date:today(),ht:390,taux:20,tva:78,ttc:468,statut:'Payée',createdAt:today()},
+        {id:uid('fa'),type:'fournisseur',num:factNum('fournisseur'),tiers:"Journal d'annonces légales",date:today(),ht:180,taux:0,tva:0,ttc:180,statut:'À payer',createdAt:today()}
+      );
+    }
+    localStorage.setItem('last-seed2','1');
+  }
+  save();
+}
 /* boot */
-load();render();
+load();ensureData();render();
 </script>
