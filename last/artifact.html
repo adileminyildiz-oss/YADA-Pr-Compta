@@ -240,6 +240,37 @@ body[data-page="dash"] .grid.g2{margin-top:12px}
 .esp-banner{margin-top:12px;border-radius:8px;padding:10px 13px;font-size:12px;font-weight:600}
 .esp-banner.ok{background:#eaf4ea;border:1px solid #bcd9bc;color:#3d6b3d}
 .esp-banner.wait{background:#f7f0e0;border:1px solid #e6d8b2;color:#7a6a3a}
+/* Demandes — onglets + recherche */
+.dem-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.dem-tab{border:1px solid var(--line-2);background:var(--card);border-radius:7px;padding:6px 11px;font:inherit;font-size:11px;font-weight:600;color:var(--ink-2);cursor:pointer;display:flex;align-items:center;gap:6px}
+.dem-tab:hover{border-color:#cbbc93}
+.dem-tab.on{background:#ece1c8;border-color:#ddd0b0;color:var(--ink)}
+.dem-c{font-size:9.5px;font-weight:700;background:var(--paper-2);border:1px solid var(--line-2);border-radius:20px;padding:0 6px;color:var(--ink-3)}
+.dem-tab.on .dem-c{background:var(--espresso);border-color:var(--espresso);color:#f7f2e6}
+.dem-search{position:relative;margin-bottom:12px;max-width:420px}
+.dem-search input{width:100%;padding:7px 10px 7px 30px;border-radius:7px;border:1px solid var(--line-2);background:var(--paper);color:var(--ink);font:inherit;font-size:12px;outline:none}
+.dem-search input:focus{border-color:#cbbc93;box-shadow:var(--focus)}
+.dem-search svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--ink-3)}
+.dem-tbl td{padding:9px 12px}
+/* Espace — plus compact */
+.esp-top{grid-template-columns:1fr 260px;gap:12px}
+.esp-mailcard .card-b,.esp-side .card-b{padding:9px 11px}
+.esp-dlist{padding:7px;gap:5px;max-height:66vh}
+.esp-dl{padding:6px 8px;gap:7px}
+.esp-dl-txt b{font-size:11px}
+.esp-dl-txt span{font-size:9px}
+.esp-dl-eur{font-size:9.5px}
+.esp-from{margin-bottom:8px}
+.esp-from .av{width:24px;height:24px}
+.esp-from .tname{font-size:12px}
+.esp-mail{padding:9px 11px}
+.esp-mail-obj{font-size:10.5px}
+.esp-mail-body{font-size:11px;line-height:1.5}
+.esp-doc-tbl th{padding:7px 11px}
+.esp-doc-tbl td{padding:7px 11px;font-size:11px}
+.esp-total{font-size:12px;padding:4px 10px}
+.esp-check{padding:7px 0}
+.esp-check .l{font-size:11.5px}
 /* documents générés (aperçu papier) */
 .doc-gen .dg-page{background:#fff;color:#1a1a1a;padding:28px 30px;border-radius:6px;font-size:10.5px;line-height:1.8;box-shadow:0 8px 24px rgba(60,45,20,.2)}
 .dg-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #302c24;padding-bottom:10px;margin-bottom:6px}
@@ -464,6 +495,41 @@ const IA={
     const niveau=score>=70?'chaud':score>=45?'tiède':'froid';
     const priorite=(urgent||score>=75)?'Haute':score>=50?'Moyenne':'Basse';
     return {tags,score,niveau,priorite,traitement:flou?'compliqué':'simple'};
+  },
+  objet(d){
+    const t=((d.serviceSouhaite||'')+' '+(d.message||'')).toLowerCase();
+    const has=(...w)=>w.some(x=>t.includes(x));
+    if(has('transfert','changement de siège','déménage','nouvelle adresse'))return 'Transfert de siège social';
+    if(has('cession','vente de parts','vente de titres','rachat de parts'))return 'Cession de parts / actions';
+    if(has('fermeture','dissolution','cessation','radiation','liquidation'))return 'Fermeture / dissolution';
+    if(has('augmentation de capital','augmentation du capital'))return 'Augmentation de capital';
+    if(has('changement de gérant','changement de président','modif','modification','ajout d\'activité','objet social'))return 'Modification statutaire';
+    if(has('holding'))return 'Création de holding';
+    if(has('sasu'))return 'Création SASU';
+    if(has('sarl'))return 'Création SARL';
+    if(has('eurl'))return 'Création EURL';
+    if(has('sci'))return 'Création SCI';
+    if(has(' sas','création sas','créer ma sas','une sas'))return 'Création SAS';
+    if(has('devis','prix','tarif','combien','coût','cout','honoraires'))return 'Demande de devis / prix';
+    if(has('créer','création','ouvrir','me mettre à mon compte','société','entreprise','immatricul','statut'))return 'Création de société (à préciser)';
+    if(has('bonjour','renseign','question','aimerais','pouvez-vous','comment','?'))return 'Question / renseignement';
+    return d.serviceSouhaite||'À qualifier';
+  },
+  pieces(d){
+    const t=((d.message||'')).toLowerCase();
+    const complet=!!d.docsRecus||['documents fournis','document fourni','cni','carte identité','carte d\'identité','attestation','pièces','justificatif','tout est prêt','tout est pret'].some(x=>t.includes(x));
+    const flou=['je ne sais pas','pas trop','aider','hésite','peut-être','peut etre','quelle forme','pouvez-vous','conseil','me mettre à mon compte'].some(x=>t.includes(x));
+    return {complet,flou};
+  },
+  mail(d){
+    const p=this.pieces(d);const objet=this.objet(d);
+    const prenom=(d.clientNom||'').split(/\s+/)[0]||'';
+    if(p.flou){return {sujet:'AEM CONSEIL — '+objet+' : précisions par téléphone',
+      corps:'Bonjour '+prenom+',\n\nMerci pour votre demande concernant « '+objet+' ».\n\nAfin de bien cadrer votre projet et vous proposer la solution la plus adaptée, nous souhaiterions convenir d\'un court appel téléphonique pour préciser quelques points (forme juridique, activité, associés, capital, calendrier).\n\nPourriez-vous nous indiquer vos disponibilités cette semaine ? Vous pouvez également nous rappeler directement.\n\nBien cordialement,\nAEM CONSEIL'};}
+    if(!p.complet){return {sujet:'AEM CONSEIL — '+objet+' : pièces à fournir',
+      corps:'Bonjour '+prenom+',\n\nMerci pour votre demande concernant « '+objet+' ».\n\nPour engager la constitution de votre dossier, merci de nous transmettre les pièces suivantes :\n- Pièce d\'identité du/des associé(s)\n- Justificatif de domicile de moins de 3 mois (facture EDF, téléphone ou avis d\'imposition)\n- Attestation de dépôt de capital\n\nDès réception de l\'ensemble, nous démarrons la rédaction des documents.\n\nBien cordialement,\nAEM CONSEIL'};}
+    return {sujet:'AEM CONSEIL — '+objet+' : prise en charge de votre dossier',
+      corps:'Bonjour '+prenom+',\n\nNous avons bien reçu votre demande « '+objet+' » ainsi que les pièces nécessaires. Votre dossier est pris en charge et nous revenons vers vous très prochainement avec les documents à établir et signer.\n\nBien cordialement,\nAEM CONSEIL'};
   }
 };
 const nivClass=n=>n==='chaud'?'hot':n==='tiède'?'warm':'cold';
@@ -523,15 +589,15 @@ function render(){
 function kpi(ic,val,lbl,cls){return `<div class="kpi"><div class="ic">${svg(IC[ic])}</div><div class="val ${cls||''}">${val}</div><div class="lbl">${lbl}</div></div>`;}
 
 function pageDash(){
-  const nb=DB.demandes.filter(d=>!d.dossierId).length;
-  const chaud=DB.demandes.filter(d=>!d.dossierId&&IA.qualify(d).niveau==='chaud').length;
+  const nb=DB.demandes.filter(d=>demEtat(d)==='nouveau').length;
+  const assignees=DB.demandes.filter(d=>demEtat(d)==='assigne').length;
   const enCours=DB.dossiers.filter(d=>d.statut!=='Clôturé').length;
   const ca=DB.dossiers.reduce((s,d)=>s+dossierMontant(d),0);
   const recent=[...DB.demandes].filter(d=>!d.dossierId).slice(0,5);
   return `
   <div class="grid g4">
-    ${kpi('inbox',nb,'Demandes à traiter','blue')}
-    ${kpi('bolt',chaud,'Demandes chaudes 🔥','hot')}
+    ${kpi('inbox',nb,'À traiter','blue')}
+    ${kpi('check',assignees,'Assignées')}
     ${kpi('folder',enCours,'Dossiers en cours')}
     ${kpi('euro',eur(ca),'Honoraires potentiels','ok')}
   </div>
@@ -566,48 +632,72 @@ function chargeCollab(){
 const initials=n=>n.split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
 
 /* ---------- DEMANDES ---------- */
-function pageDemandes(){
-  let list=DB.demandes.filter(d=>!d.dossierId);
-  if(state.q)list=list.filter(d=>(d.clientNom+d.serviceSouhaite+d.message).toLowerCase().includes(state.q));
-  list.sort((a,b)=>IA.qualify(b).score-IA.qualify(a).score);
-  return `
-  <div style="display:flex;gap:10px;margin:0 0 18px"><button class="btn btn-pri" onclick="modalDemande()">${svg(IC.plus)}Ajouter</button>
-    <span class="tag blue">${list.length} en attente</span></div>
-  <div class="card"><div class="card-b" style="padding:0">
-    ${list.length?tableDemandes(list,true):`<div class="empty">Aucune demande — tout est traité 🎉</div>`}
-  </div></div>`;
+function demEtat(d){
+  if(d.dossierId){var dos=DB.dossiers.find(function(x){return x.id===d.dossierId;});
+    if(dos&&dos.statut==='Clôturé')return 'finalise';return 'encours';}
+  if(d.assigneA)return 'assigne';return 'nouveau';
 }
-function tableDemandes(list,full){
-  return `<table><thead><tr><th>Client</th><th>Demande</th><th class="hide-sm">Qualification IA</th><th>Score</th><th class="hide-sm">Assigné</th>${full?'<th></th>':''}</tr></thead><tbody>
-  ${list.map(d=>{const q=IA.qualify(d);const u=userById(d.assigneA);
-    return `<tr onclick="modalDemandeView('${d.id}')" style="cursor:pointer">
-      <td><div class="tname">${esc(d.clientNom)}</div><div class="tsub">${esc(d.canal)} · ${frDate(d.date)}</div></td>
-      <td><div style="font-size:12.5px">${esc(d.serviceSouhaite)}</div>
-        <div class="chips" style="margin-top:5px">${nivTag(q.niveau)}<span class="tag ${q.priorite==='Haute'?'hot':'mut'}">${q.priorite}</span></div></td>
-      <td class="hide-sm"><div class="chips">${q.tags.slice(0,3).map(t=>`<span class="tag ${t.c}">${t.t}</span>`).join('')}</div></td>
-      <td><span class="score"><span class="bar"><i style="width:${q.score}%"></i></span>${q.score}</span></td>
-      <td class="hide-sm">${u?`<span class="tag"><span class="av" style="width:20px;height:20px;font-size:9px;background:${u.couleur}">${initials(u.nom)}</span> ${u.nom}</span>`:'<span class="tag mut">—</span>'}</td>
-      ${full?`<td onclick="event.stopPropagation()"><button class="btn btn-sm btn-pri" onclick="creerDossierDepuis('${d.id}')">Créer</button></td>`:''}
-    </tr>`;}).join('')}
-  </tbody></table>`;
+const DEM_TABS=[['nouveau','À traiter'],['assigne','Assignées'],['encours','En cours de traitement'],['finalise','Finalisées']];
+function pageDemandes(){
+  var tab=state.demTab||'nouveau';var q=(state.q||'').toLowerCase();
+  var counts={nouveau:0,assigne:0,encours:0,finalise:0};
+  DB.demandes.forEach(function(d){counts[demEtat(d)]++;});
+  var list=DB.demandes.filter(function(d){return demEtat(d)===tab;});
+  if(q)list=list.filter(function(d){return (d.clientNom+' '+IA.objet(d)+' '+(d.serviceSouhaite||'')+' '+(d.message||'')).toLowerCase().includes(q);});
+  var tabs='<div class="dem-tabs">'+DEM_TABS.map(function(t){return '<button class="dem-tab '+(t[0]===tab?'on':'')+'" onclick="state.demTab=\''+t[0]+'\';render()">'+t[1]+' <span class="dem-c">'+counts[t[0]]+'</span></button>';}).join('')+'</div>';
+  var search='<div class="dem-search">'+svg(IC.inbox)+'<input value="'+esc(state.q||'')+'" oninput="state.q=this.value.toLowerCase();render()" placeholder="Rechercher un client ou un type de demande…"></div>';
+  return tabs+search+'<div class="card"><div class="card-b" style="padding:0">'
+    +(list.length?tableDemandes(list,tab):'<div class="empty">Aucune demande dans cet onglet.</div>')
+    +'</div></div>';
+}
+function tableDemandes(list,tab){
+  return '<table class="dem-tbl"><thead><tr><th>Client</th><th>Objet (IA)</th><th class="hide-sm">Pièces</th><th class="hide-sm">Assigné</th><th></th></tr></thead><tbody>'
+   +list.map(function(d){var u=userById(d.assigneA);var p=IA.pieces(d);
+      var ptag=p.complet?'<span class="tag ok">Dossier complet</span>':(p.flou?'<span class="tag warm">Précisions à obtenir</span>':'<span class="tag mut">Pièces à demander</span>');
+      return '<tr onclick="modalDemandeView(\''+d.id+'\')" style="cursor:pointer">'
+        +'<td><div class="tname">'+esc(d.clientNom)+'</div><div class="tsub">'+esc(d.canal)+' · '+frDate(d.date)+'</div></td>'
+        +'<td><span class="tag blue">'+esc(IA.objet(d))+'</span></td>'
+        +'<td class="hide-sm">'+ptag+'</td>'
+        +'<td class="hide-sm">'+(u?'<span class="tag"><span class="av" style="width:18px;height:18px;font-size:8px;background:'+u.couleur+'">'+initials(u.nom)+'</span> '+u.nom+'</span>':'<span class="tag mut">Non assigné</span>')+'</td>'
+        +'<td onclick="event.stopPropagation()"><button class="btn btn-sm btn-ghost" onclick="modalDemandeView(\''+d.id+'\')">Récapitulatif</button></td>'
+        +'</tr>';
+    }).join('')
+   +'</tbody></table>';
 }
 function modalDemandeView(id){
-  const d=DB.demandes.find(x=>x.id===id);if(!d)return;const q=IA.qualify(d);
-  openModal('Demande — '+esc(d.clientNom),`
-    <div class="chips" style="margin-bottom:14px">${nivTag(q.niveau)}<span class="tag ${q.priorite==='Haute'?'hot':'mut'}">Priorité ${q.priorite}</span><span class="tag blue">Traitement ${q.traitement}</span></div>
-    <div class="grid g2" style="gap:10px">
-      <div><label>Email</label><div class="hint">${esc(d.clientEmail||'—')}</div></div>
-      <div><label>Téléphone</label><div class="hint">${esc(d.clientTel||'—')}</div></div>
-    </div>
-    <label>Demande</label><div class="hint">${esc(d.serviceSouhaite)}</div>
-    <label>Message</label><div class="hint" style="background:rgba(10,16,30,.5);border:1px solid var(--line);border-radius:10px;padding:12px">${esc(d.message)}</div>
-    <label>Qualification IA</label><div class="chips">${q.tags.map(t=>`<span class="tag ${t.c}">${t.t}</span>`).join('')}</div>
-    <label>Assigner à un collaborateur</label>
-    <select id="dm-assign">${['<option value="">— Non assigné —</option>'].concat(DB.users.map(u=>`<option value="${u.id}" ${d.assigneA===u.id?'selected':''}>${u.nom}${u.role==='admin'?' (admin)':''}</option>`)).join('')}</select>
-  `,`<button class="btn btn-ghost" onclick="closeModal()">Fermer</button>
-     <button class="btn" onclick="assignDemande('${id}')">Assigner</button>
-     <button class="btn btn-pri" onclick="creerDossierDepuis('${id}')">${svg(IC.folder)}Créer</button>`);
+  var d=DB.demandes.find(function(x){return x.id===id;});if(!d)return;
+  var p=IA.pieces(d);
+  var ptag=p.complet?'<span class="tag ok">Dossier complet</span>':(p.flou?'<span class="tag warm">Précisions à obtenir (appel conseillé)</span>':'<span class="tag mut">Pièces à demander</span>');
+  openModal('Fiche technique — '+esc(d.clientNom),
+    '<div class="chips" style="margin-bottom:12px"><span class="tag blue">Objet : '+esc(IA.objet(d))+'</span>'+ptag+'</div>'
+    +'<div class="grid g2" style="gap:10px">'
+    +'<div><label>Email</label><div class="hint">'+esc(d.clientEmail||'—')+'</div></div>'
+    +'<div><label>Téléphone</label><div class="hint">'+esc(d.clientTel||'—')+'</div></div>'
+    +'<div><label>Canal</label><div class="hint">'+esc(d.canal||'—')+'</div></div>'
+    +'<div><label>Reçue le</label><div class="hint">'+frDate(d.date)+'</div></div></div>'
+    +'<label>Message reçu</label><div class="hint" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:11px;white-space:pre-wrap">'+esc(d.message||'—')+'</div>'
+    +'<label>Assigner à un collaborateur</label>'
+    +'<select id="dm-assign">'+['<option value="">— Non assigné —</option>'].concat(DB.users.map(function(u){return '<option value="'+u.id+'" '+(d.assigneA===u.id?'selected':'')+'>'+esc(u.nom)+(u.role==='admin'?' (admin)':'')+'</option>';})).join('')+'</select>'
+    +'<div class="hint" style="margin-top:6px;font-size:11px">Sans assignation, la demande reste dans l\'onglet « À traiter ».</div>',
+    '<button class="btn btn-ghost" onclick="closeModal()">Fermer</button>'
+    +'<button class="btn" onclick="assignDemande(\''+id+'\')">Assigner</button>'
+    +'<button class="btn" onclick="modalDemandeMail(\''+id+'\')">✉ Mail IA</button>'
+    +'<button class="btn btn-pri" onclick="creerDossierDepuis(\''+id+'\')">Ouvrir le dossier</button>');
 }
+function modalDemandeMail(id){
+  var d=DB.demandes.find(function(x){return x.id===id;});if(!d)return;
+  var m=IA.mail(d);
+  openModal('Mail préparé par l\'IA — '+esc(d.clientNom),
+    '<label>Destinataire</label><input id="ml-to" value="'+esc(d.clientEmail||'')+'">'
+    +'<label>Objet du mail</label><input id="ml-sujet" value="'+esc(m.sujet)+'">'
+    +'<label>Message</label><textarea id="ml-corps" style="min-height:230px">'+esc(m.corps)+'</textarea>'
+    +'<div class="hint" style="margin-top:6px;font-size:11px">Rédigé automatiquement selon la demande (pièces manquantes ou appel pour précisions). Modifiable avant envoi.</div>',
+    '<button class="btn btn-ghost" onclick="closeModal()">Fermer</button>'
+    +'<button class="btn" onclick="demMailCopier()">Copier</button>'
+    +'<button class="btn btn-pri" onclick="demMailEnvoyer()">Envoyer</button>');
+}
+function demMailCopier(){var t=(document.getElementById('ml-corps')||{}).value||'';if(navigator.clipboard)navigator.clipboard.writeText(t);toast('Message copié');}
+function demMailEnvoyer(){var to=(document.getElementById('ml-to')||{}).value||'';var s=(document.getElementById('ml-sujet')||{}).value||'';var b=(document.getElementById('ml-corps')||{}).value||'';window.location.href='mailto:'+encodeURIComponent(to.trim())+'?subject='+encodeURIComponent(s)+'&body='+encodeURIComponent(b);toast('Ouverture de votre messagerie…');}
 function assignDemande(id){const d=DB.demandes.find(x=>x.id===id);d.assigneA=document.getElementById('dm-assign').value;save();closeModal();toast('Assignation enregistrée');render();}
 function modalDemande(){
   openModal('Nouvelle demande',`
@@ -638,8 +728,7 @@ function creerDossierDepuis(id){
   const dos={id:uid('do'),ref,clientIds:[c.id],serviceIds:[],statut:'Qualification',assigneA:d.assigneA,createdAt:today(),
     historique:[{d:today(),t:'Créé depuis la demande de '+d.clientNom}]};
   DB.dossiers.unshift(dos);d.dossierId=dos.id;
-  save();closeModal();toast('Dossier '+ref+' créé');state.page='dossiers';render();
-  setTimeout(()=>modalDossier(dos.id),150);
+  save();closeModal();toast('Dossier '+ref+' créé');state.page='espace';state.espaceDossier=dos.id;render();
 }
 
 /* ---------- CLIENTS ---------- */
@@ -972,36 +1061,42 @@ function espDlist(list,id){
    +list.map(function(x){var c=statColor(x.statut);
       return '<button class="esp-dl '+(x.id===id?'on':'')+'" onclick="state.espaceDossier=\''+x.id+'\';render()">'
         +'<span class="esp-dl-dot" style="background:'+c+'"></span>'
-        +'<span class="esp-dl-txt"><b>'+esc(x.ref)+'</b><span>'+esc(dossierClients(x))+'</span></span>'
+        +'<span class="esp-dl-txt"><b>'+esc(dossierClients(x))+'</b><span>'+esc(x.ref)+'</span></span>'
         +'<span class="esp-dl-eur">'+eur(dossierMontant(x))+'</span></button>';
     }).join('')
    +'</div></div>';
+}
+function espFidelite(d){
+  var cid=(d.clientIds||[])[0];
+  var n=cid?DB.dossiers.filter(function(x){return (x.clientIds||[]).indexOf(cid)>=0;}).length:1;
+  if(n>=4)return {lbl:'Client habituel',c:'ok'};
+  if(n>=2)return {lbl:'En fidélisation',c:'blue'};
+  return {lbl:'Client inconnu (1ʳᵉ fois)',c:'mut'};
+}
+function espDuree(d){
+  var nbDocs=ESP_DOCS.filter(function(dc){return espDocReq(d,dc.k);}).length;
+  var c=clientById((d.clientIds||[])[0])||{};
+  var nbAssoc=(c.associes||[]).filter(function(a){return a&&(''+(a.nom||'')).trim();}).length;
+  var dm=espDemandeDe(d);var objet=dm?IA.objet(dm):'';
+  var complexe=/holding/i.test(objet)||nbAssoc>=3;
+  var simple=/(question|devis|prix|renseign)/i.test(objet)||nbDocs<=3;
+  if(complexe||nbDocs>=8)return {lbl:'Traitement long',temps:'+ de 40 min',c:'warm'};
+  if(simple)return {lbl:'Traitement rapide',temps:'moins de 20 min',c:'ok'};
+  return {lbl:'Traitement moyen',temps:'20–30 min',c:'blue'};
 }
 function espMailCard(d){
   var dm=espDemandeDe(d);var c=clientById((d.clientIds||[])[0])||{};
   var email=(dm&&dm.clientEmail)||c.email||'—';
   var canal=(dm&&dm.canal)||'—';
-  var objet=(dm&&dm.serviceSouhaite)||'—';
+  var objet=dm?IA.objet(dm):'—';
   var corps=(dm&&dm.message)||'<i>Aucun mail lié à ce dossier (créé manuellement).</i>';
-  var q=dm?IA.qualify(dm):null;
-  var notes='';
-  if(q){
-    notes='<div class="section-t">Notes de l\'analyse</div>'
-      +'<div class="esp-notes"><span class="tag '+nivClass(q.niveau)+'">'+(q.niveau==='chaud'?'🔥 Chaud':q.niveau==='tiède'?'🌤️ Tiède':'🧊 Froid')+'</span>'
-      +'<span class="tag">Score '+q.score+'/100</span><span class="tag">Priorité '+esc(q.priorite)+'</span>'
-      +'<span class="tag">Traitement '+esc(q.traitement)+'</span></div>'
-      +'<div class="chips" style="margin-top:6px">'+q.tags.map(function(t){return '<span class="tag '+t.c+'">'+t.t+'</span>';}).join('')+'</div>';
-  }
-  var idx=STATUTS.findIndex(function(s){return s.k===d.statut;});var cur=idx<0?0:idx;
-  var steps=STATUTS.map(function(s,i){return '<span class="esp-step" style="'+(i===cur?('background:'+s.c+';border-color:'+s.c+';color:#fff'):'')+'">'+s.k+'</span>';}).join('');
-  return '<div class="card esp-mailcard"><div class="card-h"><h2>Demande du client</h2><span class="sub" style="margin-left:auto">'+esc(d.ref)+'</span></div><div class="card-b">'
+  var du=espDuree(d);var fi=espFidelite(d);
+  return '<div class="card esp-mailcard"><div class="card-h"><h2>Demande du client</h2><span class="sub" style="margin-left:auto">'+esc(dossierClients(d))+' · '+esc(d.ref)+'</span></div><div class="card-b">'
    +'<div class="esp-from"><span class="av" style="background:linear-gradient(160deg,#4a4034,#2c271f)">'+initials(dossierClients(d))+'</span>'
    +'<div><div class="tname">'+esc(dossierClients(d))+'</div><div class="tsub">'+esc(email)+' · '+esc(canal)+'</div></div></div>'
    +'<div class="esp-mail"><div class="esp-mail-obj">Objet : '+esc(objet)+'</div><div class="esp-mail-body">'+corps+'</div></div>'
-   +notes
-   +'<div class="section-t">Avancement</div><div class="esp-steps">'+steps+'</div>'
-   +'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-sm" onclick="espStatut(\''+d.id+'\',-1)">‹ Reculer</button><button class="btn btn-sm btn-pri" onclick="espStatut(\''+d.id+'\',1)">Avancer ›</button>'
-   +'<button class="btn btn-sm btn-ghost" onclick="espFacture(\''+d.id+'\')">Facture</button><button class="btn btn-sm btn-ghost" onclick="modalDossier(\''+d.id+'\')">Éditer</button></div>'
+   +'<div class="esp-notes"><span class="tag '+du.c+'">⏱ '+du.lbl+' · '+du.temps+'</span><span class="tag '+fi.c+'">'+fi.lbl+'</span></div>'
+   +'<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn btn-sm btn-ghost" onclick="espFacture(\''+d.id+'\')">Facture</button><button class="btn btn-sm btn-ghost" onclick="modalDossier(\''+d.id+'\')">Éditer</button></div>'
    +'</div></div>';
 }
 function espDocsCard(d){
