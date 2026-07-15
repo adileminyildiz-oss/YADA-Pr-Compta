@@ -152,6 +152,7 @@ option{background:var(--paper);color:var(--ink)}
   background:#f7eed0;border:1px solid #e8d59d;color:var(--ochre);text-transform:uppercase}
 .flow-note{display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:#5a5344;background:var(--paper-2);
   border:1px solid #e6d8b2;border-radius:8px;padding:10px 12px;line-height:1.5}
+.flow-note svg{width:15px;height:15px;flex:none;margin-top:1px}
 .section-t{font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin:20px 0 10px}
 
 #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(20px);z-index:90;opacity:0;
@@ -477,8 +478,7 @@ function pageDemandes(){
   if(state.q)list=list.filter(d=>(d.clientNom+d.serviceSouhaite+d.message).toLowerCase().includes(state.q));
   list.sort((a,b)=>IA.qualify(b).score-IA.qualify(a).score);
   return `
-  <div class="flow-note">${svg(IC.bolt,'')}<div><b>L'IA qualifie chaque demande automatiquement</b> — elle repère les clients les plus déterminés, sûrs de leur choix, dossiers complets, urgents… et les classe par priorité. Réponses programmables au Niveau 5.</div></div>
-  <div style="display:flex;gap:10px;margin:18px 0"><button class="btn btn-pri" onclick="modalDemande()">${svg(IC.plus)}Nouvelle demande</button>
+  <div style="display:flex;gap:10px;margin:0 0 18px"><button class="btn btn-pri" onclick="modalDemande()">${svg(IC.plus)}Nouvelle demande</button>
     <span class="tag blue">${list.length} en attente</span></div>
   <div class="card"><div class="card-b" style="padding:0">
     ${list.length?tableDemandes(list,true):`<div class="empty">Aucune demande — tout est traité 🎉</div>`}
