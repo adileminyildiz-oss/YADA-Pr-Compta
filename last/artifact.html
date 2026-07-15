@@ -188,6 +188,22 @@ option{background:var(--paper);color:var(--ink)}
   .hide-sm{display:none}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ============ Tableau de bord — compact ============ */
+body[data-page="dash"] .content{max-width:1180px}
+body[data-page="dash"] .grid{gap:11px}
+body[data-page="dash"] .kpi{padding:12px 13px}
+body[data-page="dash"] .kpi .ic{width:28px;height:28px;border-radius:6px;margin-bottom:7px}
+body[data-page="dash"] .kpi .ic svg{width:15px;height:15px}
+body[data-page="dash"] .kpi .val{font-size:18px}
+body[data-page="dash"] .kpi .lbl{font-size:11px}
+body[data-page="dash"] .section-t{margin:18px 0 9px}
+body[data-page="dash"] .card-h{padding:11px 15px}
+body[data-page="dash"] .card-h h2{font-size:12.5px}
+body[data-page="dash"] .card-b{padding:12px 14px}
+body[data-page="dash"] th{padding:7px 11px}
+body[data-page="dash"] td{padding:8px 11px}
+body[data-page="dash"] .grid.g2{margin-top:14px}
 </style>
 <div id="ambient"><span class="orb a"></span><span class="orb b"></span><span class="orb c"></span></div>
 <div class="scrim" id="scrim" onclick="toggleNav(false)"></div>
@@ -399,6 +415,7 @@ function navBtn(p,nb){
 }
 function render(){
   buildNav();
+  document.body.dataset.page=state.page;
   const p=PAGES.find(x=>x.id===state.page);
   document.getElementById('ptitle').firstChild.textContent=p.lbl;
   document.getElementById('psub').textContent=p.sub;
