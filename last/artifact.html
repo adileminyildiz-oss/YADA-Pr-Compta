@@ -1179,23 +1179,12 @@ function espFicheModal(id){
   var d=espDoss().find(function(x){return x.id===id;});if(!d)return;
   var dm=espDemandeDe(d);var objet=dm?IA.objet(dm):'—';
   var manq=espPiecesManquantes(d);
-  var rows=ESP_PIECES.map(function(pc){var st=espPieceState(d,pc.k);var recu=st.recu;
-    return '<div class="esp-fp '+(recu?'':'manq')+'">'
-      +'<input type="checkbox" '+(recu?'checked':'')+' onchange="espPieceToggleFiche(\''+d.id+'\',\''+pc.k+'\',this.checked)">'
-      +'<span class="esp-fp-l">'+esc(pc.l)+(st.nom?' <span class="tsub">📎 '+esc(st.nom)+'</span>':'')+'</span>'
-      +(recu?'<span class="tag ok">Reçu</span>':'<span class="tag warm">Manquant</span>')
-      +(st.data?'<button class="btn btn-sm btn-ghost" onclick="espPieceDl(\''+d.id+'\',\''+pc.k+'\')">⤓</button>':'')
-      +'<label class="btn btn-sm btn-ghost" style="cursor:pointer">＋<input type="file" style="display:none" onchange="espPieceUploadFiche(\''+d.id+'\',\''+pc.k+'\',this)"></label>'
-      +'</div>';
-  }).join('');
   window._espDemande={};manq.forEach(function(pc){window._espDemande[pc.k]=true;});
   var reqBlock=manq.length?('<div class="section-t">Documents à demander au client</div>'
     +'<div class="esp-req-list">'+manq.map(function(pc){return '<label class="esp-req"><input type="checkbox" checked onchange="espDemandeToggle(\''+d.id+'\',\''+pc.k+'\',this.checked)"> '+esc(pc.l)+'</label>';}).join('')+'</div>'):'';
   var m=espMailPieces(d);
   var body='<div class="chips" style="margin-bottom:10px"><span class="tag blue">Objet : '+esc(objet)+'</span>'
     +'<span class="tag '+(manq.length?'warm':'ok')+'">'+(manq.length?manq.length+' pièce(s) manquante(s)':'Dossier complet')+'</span></div>'
-    +'<div class="section-t" style="margin-top:2px">Documents à fournir par le client</div>'
-    +'<div class="esp-fp-list">'+rows+'</div>'
     +reqBlock
     +'<div class="section-t">Mail au client — documents manquants</div>'
     +'<label>Destinataire</label><input id="ml-to" value="'+esc((dm&&dm.clientEmail)||(clientById((d.clientIds||[])[0])||{}).email||'')+'">'
