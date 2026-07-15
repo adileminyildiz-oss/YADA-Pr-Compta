@@ -36,7 +36,18 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Barre latérale « Aurora Glass » (Spatial UI + Liquid Glass) — v492
+## 🟢 Dernière mise à jour — Liste des dossiers : barre de recherche + boutons sans MAJUSCULES forcées — v493
+**Quoi :** deux ajustements.
+1. **Barre de recherche de dossiers** : sur l'écran **« Liste des dossiers »**, un champ **« Rechercher un dossier (nom, ville, SIREN…) »** est ajouté **juste au-dessus de la liste** → il **filtre les lignes en direct** (par nom, ville, SIREN, activité — insensible à la casse et aux accents). Message « Aucun dossier ne correspond » si rien ne matche.
+2. **Boutons sans MAJUSCULES forcées** : tous les boutons (`.btn`) étaient rendus **EN MAJUSCULES** (addon223/v477, `text-transform:uppercase`). C'est retiré → **casse normale** (1ʳᵉ lettre en majuscule seulement, ex. « Créer un dossier », « Espace Admin », « Déconnexion »).
+
+**Comment — `yada-addon233` (100% additif) :** 1 édition de `ecranListe` (colonne droite enveloppée dans `.ds-list-col` avec `<input id="ds-search" oninput="dsFilterListe(...)">` + `#ds-search-empty`) ; `window.dsFilterListe(q)` masque les `.ds-row` non correspondantes (`normalize('NFD')`, re-déclenche le `scroll` pour repeindre l'effet « roue » d'addon192). `<style id="ds-search-btncase-mod">` : `.ds-search`/`.ds-list-col` + **`html body[data-theme] .btn{text-transform:none !important;letter-spacing:.01em !important}`** (injecté après addon223 → prime). `sw.js` yada-v85, badge v493, `version.json` 493.
+
+**Validé :** `node --check` (226 scripts, 0 erreur) + `sw.js` OK + filet d'équilibre (achat 600=600 ✅) + Playwright (`.btn` `text-transform:none` ; `dsFilterListe('bruce')` → seule la ligne « BRUCE GOURMET » visible, `dsFilterListe('zzz')` → message « aucun résultat », reset → toutes visibles ; 0 pageerror). Badge → **v493**.
+
+---
+
+## 🟢 MAJ précédente — Barre latérale « Aurora Glass » (Spatial UI + Liquid Glass) — v492
 **Quoi :** la **barre latérale de l'Espace Cabinet** adopte le style **Aurora Glass** (choix n°6) : panneau en **verre dépoli translucide** (bleu nuit + outremer + transparence, `backdrop-filter:blur`) avec un **halo bleu MOUVANT** (aurora) qui glisse lentement derrière la navigation, et un **item actif en glass Crystal** (fond translucide `rgba(30,144,255,.22)` + anneau + halo, au lieu du contour néon). Les **icônes filaires Néon** (v484) sont conservées.
 
 **Comment — `yada-addon232` (100% additif, injecté APRÈS le Néon → prime à spécificité égale) :** `<style id="aurora-nav-mod">` — `html body[data-theme] aside{background:linear-gradient(180deg,rgba(16,36,88,.55)…) !important;backdrop-filter:blur(20px) saturate(1.35) !important;overflow:hidden;position:relative}` (prime sur le `#070d18` d'addon226 et le dégradé opaque d'addon160) ; halo `#nav-aurora{position:absolute;radial-gradient(#1e90ff);filter:blur(46px);animation:navAur 13s}` (respecte `prefers-reduced-motion`) ; contenu (`.brand`/`#nav`/`.side-foot`) en `z-index:1` au-dessus du halo ; survol = reflet de verre, actif = glass Crystal + anneau + halo. Un `ensureAurora()` (greffé sur `render` + intervalle 900 ms, idempotent) insère le halo comme 1ᵉʳ enfant de `aside`. `sw.js` yada-v84, badge v492, `version.json` 492.

@@ -10975,7 +10975,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v492';
+    b.textContent='YADA · v493';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21862,7 +21862,7 @@ ${lignes}
       +'<div class="login-sub">Survolez un dossier pour voir ses informations, cliquez pour le sélectionner.</div>'
       +'<div class="ds-liste-layout">'
       +'<div class="ds-info-col"><div id="ds-info-panel" class="ds-info-empty">Survolez un dossier pour afficher ses informations.</div></div>'
-      +'<div id="ds-liste-scroll" class="ds-list ds-list-right">'+rows+'</div>'
+      +'<div class="ds-list-col"><input id="ds-search" class="ds-search" type="search" placeholder="Rechercher un dossier (nom, ville, SIREN…)" oninput="dsFilterListe(this.value)" autocomplete="off"><div id="ds-search-empty" class="ds-search-empty" style="display:none">Aucun dossier ne correspond à votre recherche.</div><div id="ds-liste-scroll" class="ds-list ds-list-right">'+rows+'</div></div>'
       +'</div>'
       +actions('<button class="btn btn-ghost" onclick="dsAccueil()">← Retour</button>')+'</div>';
   }
@@ -25858,6 +25858,33 @@ ${lignes}
     /* sous-groupe : liseré Crystal conservé */
     +'body[data-theme] #nav .nav-sub{border-left:2px solid rgba(30,144,255,.42) !important}';
   try{ var st=document.createElement('style'); st.id='aurora-nav-mod'; st.textContent=css; document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon233">
+/* v493 — (1) Barre de recherche de dossiers au-dessus de la liste (écran « Liste des dossiers »)
+   → filtre les lignes par nom / ville / SIREN / activité.  (2) Retrait des MAJUSCULES forcées
+   sur tous les boutons (.btn) : casse normale (1ʳᵉ lettre). 100% additif. */
+(function(){
+  window.dsFilterListe=function(q){
+    try{
+      var box=document.getElementById('ds-liste-scroll'); if(!box) return;
+      var norm=function(s){return (s||'').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');};
+      var needle=norm(q).trim();
+      var rows=box.querySelectorAll('.ds-row'), shown=0;
+      for(var i=0;i<rows.length;i++){ var ok=!needle || norm(rows[i].textContent).indexOf(needle)>=0; rows[i].style.display=ok?'':'none'; if(ok)shown++; }
+      var em=document.getElementById('ds-search-empty'); if(em) em.style.display=(needle && shown===0)?'block':'none';
+      try{ box.dispatchEvent(new Event('scroll')); }catch(e){}   /* repeint l'effet « roue » (addon192) */
+    }catch(e){}
+  };
+  var css=''
+    +'.ds-list-col{display:flex;flex-direction:column;gap:12px;min-height:0}'
+    +'.ds-search{width:100%;box-sizing:border-box;padding:12px 16px;border-radius:12px;border:1px solid rgba(120,170,255,.24);background:rgba(8,16,34,.55);color:#eaf1ff;font-size:14px;outline:none;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:border-color .18s,box-shadow .18s}'
+    +'.ds-search::placeholder{color:#6b7ea6}'
+    +'.ds-search:focus{border-color:#1e90ff;box-shadow:0 0 0 3px rgba(30,144,255,.22)}'
+    +'.ds-search-empty{color:#9fb2d4;font-size:13px;padding:6px 4px}'
+    /* Boutons : plus de MAJUSCULES forcées → casse normale (prime sur addon223, injecté après) */
+    +'html body[data-theme] .btn{text-transform:none !important;letter-spacing:.01em !important}';
+  try{ var s=document.createElement('style'); s.id='ds-search-btncase-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
 })();
 </script>
 </body>
