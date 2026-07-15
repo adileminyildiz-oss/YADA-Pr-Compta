@@ -36,7 +36,57 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Consultation « Comptes Généraux » : comptes de tiers (Fournisseurs/Clients) retirés + titres de classe supprimés (liste à plat) — v488
+## 🟢 Dernière mise à jour — Liste des dossiers : barre de recherche + boutons sans MAJUSCULES forcées — v493
+**Quoi :** deux ajustements.
+1. **Barre de recherche de dossiers** : sur l'écran **« Liste des dossiers »**, un champ **« Rechercher un dossier (nom, ville, SIREN…) »** est ajouté **juste au-dessus de la liste** → il **filtre les lignes en direct** (par nom, ville, SIREN, activité — insensible à la casse et aux accents). Message « Aucun dossier ne correspond » si rien ne matche.
+2. **Boutons sans MAJUSCULES forcées** : tous les boutons (`.btn`) étaient rendus **EN MAJUSCULES** (addon223/v477, `text-transform:uppercase`). C'est retiré → **casse normale** (1ʳᵉ lettre en majuscule seulement, ex. « Créer un dossier », « Espace Admin », « Déconnexion »).
+
+**Comment — `yada-addon233` (100% additif) :** 1 édition de `ecranListe` (colonne droite enveloppée dans `.ds-list-col` avec `<input id="ds-search" oninput="dsFilterListe(...)">` + `#ds-search-empty`) ; `window.dsFilterListe(q)` masque les `.ds-row` non correspondantes (`normalize('NFD')`, re-déclenche le `scroll` pour repeindre l'effet « roue » d'addon192). `<style id="ds-search-btncase-mod">` : `.ds-search`/`.ds-list-col` + **`html body[data-theme] .btn{text-transform:none !important;letter-spacing:.01em !important}`** (injecté après addon223 → prime). `sw.js` yada-v85, badge v493, `version.json` 493.
+
+**Validé :** `node --check` (226 scripts, 0 erreur) + `sw.js` OK + filet d'équilibre (achat 600=600 ✅) + Playwright (`.btn` `text-transform:none` ; `dsFilterListe('bruce')` → seule la ligne « BRUCE GOURMET » visible, `dsFilterListe('zzz')` → message « aucun résultat », reset → toutes visibles ; 0 pageerror). Badge → **v493**.
+
+---
+
+## 🟢 MAJ précédente — Barre latérale « Aurora Glass » (Spatial UI + Liquid Glass) — v492
+**Quoi :** la **barre latérale de l'Espace Cabinet** adopte le style **Aurora Glass** (choix n°6) : panneau en **verre dépoli translucide** (bleu nuit + outremer + transparence, `backdrop-filter:blur`) avec un **halo bleu MOUVANT** (aurora) qui glisse lentement derrière la navigation, et un **item actif en glass Crystal** (fond translucide `rgba(30,144,255,.22)` + anneau + halo, au lieu du contour néon). Les **icônes filaires Néon** (v484) sont conservées.
+
+**Comment — `yada-addon232` (100% additif, injecté APRÈS le Néon → prime à spécificité égale) :** `<style id="aurora-nav-mod">` — `html body[data-theme] aside{background:linear-gradient(180deg,rgba(16,36,88,.55)…) !important;backdrop-filter:blur(20px) saturate(1.35) !important;overflow:hidden;position:relative}` (prime sur le `#070d18` d'addon226 et le dégradé opaque d'addon160) ; halo `#nav-aurora{position:absolute;radial-gradient(#1e90ff);filter:blur(46px);animation:navAur 13s}` (respecte `prefers-reduced-motion`) ; contenu (`.brand`/`#nav`/`.side-foot`) en `z-index:1` au-dessus du halo ; survol = reflet de verre, actif = glass Crystal + anneau + halo. Un `ensureAurora()` (greffé sur `render` + intervalle 900 ms, idempotent) insère le halo comme 1ᵉʳ enfant de `aside`. `sw.js` yada-v84, badge v492, `version.json` 492.
+
+**Validé :** `node --check` (225 scripts, 0 erreur) + `sw.js` OK + filet d'équilibre (achat 600=600 ✅) + Playwright (thème nuit : `#aurora-nav-mod` injecté, `#nav-aurora` présent + animation `navAur`, `aside` `position:relative` + fond dégradé verre + `backdrop-filter:blur(20px) saturate(1.35)` ; 0 pageerror). Badge → **v492**.
+
+---
+
+## 🟢 MAJ précédente — Consultation des comptes : aucun trait sur les cases VIDES (traits seulement sur les lignes remplies) — v491
+**Quoi :** dans la **Consultation des comptes**, la grille affichait des **traits horizontaux sur toute la zone**, y compris là où il n'y a **aucune écriture** (en thème nuit, de fins traits bleus). Ces traits venaient d'un **fond « papier réglé »** (`repeating-linear-gradient`) appliqué au conteneur de grille, indépendant des données. Il est **retiré** → **plus aucun trait sur les cases vides** ; seules les **lignes réellement remplies** gardent leurs **bordures de cellule** (`td` border-bottom).
+
+**Comment :** `yada-addon231` (100% CSS additif, `<style id="sg-no-ruled-mod">` injecté en dernier) : `html body[data-theme] .sg-grid,.sgj-grid{background-image:none !important}` (+ variante sans thème) — la spécificité `html body[data-theme]` (0,2,2) prime sur les règles de fond réglé par thème (noir/liquid, 0,2,1) qui posaient `repeating-linear-gradient(... rgba(30,144,255,.18/.12) ...)`. Les bordures `td` des lignes de données (`.sg-tbl`/`.sgj`) sont conservées. Aucune logique modifiée. `sw.js` yada-v83, badge v491, `version.json` 491.
+
+**Validé :** `node --check` (224 scripts, 0 erreur) + `sw.js` OK + filet d'équilibre (achat 600=600 ✅) + Playwright (thème nuit : `.sg-grid` et `.sgj-grid` → `background-image:none` ; style `sg-no-ruled-mod` injecté ; 0 pageerror). Badge → **v491**.
+
+---
+
+## 🟢 MAJ précédente — Facture client : aperçu paginé en feuilles A4 STRICTES (cadre respecté, 2ᵉ page si besoin) — v490
+**Quoi :** à la génération/aperçu d'une **facture client** (fenêtre « Nouvelle facture » `#nf-overlay` + « Voir » `#modal-c`), la facture est désormais **concentrée sur une page A4 stricte (210 × 297 mm)** ; si le contenu **déborde**, une **2ᵉ (puis 3ᵉ…) page A4** est ajoutée automatiquement. Le **cadre A4 n'est plus déformé** (avant : une seule page qui s'étirait en hauteur quand il y avait beaucoup de lignes). Les **lignes du tableau sont réparties** sur les pages, l'**en-tête de colonnes (Description · Qté · PU · TVA · Total HT) est répété** sur chaque page, et les **totaux + RIB + mentions** restent sur la **dernière page**.
+
+**Comment :** `yada-addon230` (100% additif) — `<style id="inv-a4-paginate-mod">` fixe l'aperçu écran à `.inv .inv-page{height:297mm;overflow:hidden}` (cadre A4 exact, jamais déformé) ; `window.invPaginate(inv)` découpe le `.inv-page` source en **feuilles A4 successives** (`.inv-pages`) — mesure de débordement (`scrollHeight > clientHeight`), split du `<tbody>` ligne à ligne avec `thead` cloné, blocs d'en-tête/totaux repositionnés. Un **MutationObserver** (garde anti-boucle `busy`/rAF) pagine tout aperçu **non encore paginé** (`#nf-prev-inner` / `#modal-c`) à chaque mise à jour — les appels internes `nfUpdate→nfApercu` ne passant pas par `window`. **Desktop uniquement** (mobile inchangé). Impression : la pagination native `@page A4` (addon160) reste en place. `sw.js` yada-v82, badge v490, `version.json` 490.
+
+**Validé :** `node --check` (223 scripts, 0 erreur) + `sw.js` OK + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + Playwright (facture **2 lignes → 1 feuille** 794×1123 px = A4 ; **40 lignes → 3 feuilles**, toutes 794×1123 px ; `thead` répété par page ; totaux + RIB sur la dernière page ; 0 pageerror). Badge → **v490**.
+
+---
+
+## 🟢 MAJ précédente — Facturation (fenêtre « Nouvelle facture » / module Client) : rien ne bouge à la saisie d'une désignation + montant TOTAL HT dans la carte + « unité » sur la même ligne — v489
+**Quoi :** correction d'un **bug d'affichage** de la saisie de facture (module **Client**, qui ouvre la fenêtre « Nouvelle facture » `#nf-overlay`, v323).
+1. **La saisie d'une désignation longue ne déplace plus rien** : une désignation **sans espaces** (mot très long) faisait **grandir la colonne Description** de l'aperçu A4 (`.inv-t`) → toute la table/l'aperçu se décalait. Désormais la désignation se **coupe DANS sa colonne** (`overflow-wrap:anywhere`), la table garde une **largeur fixe**, et les **items de la ligne de saisie** (`.nf-li-top`/`.nfl-grid`) sont verrouillés (`min-width:0`) → **plus aucun mouvement**.
+2. **Montant TOTAL HT dans la carte** : sur les cartes de ligne (`.nf-li`), le montant **TOTAL HT** (ex. 8 000,00 €) **débordait à droite de la carte**. Les colonnes de la grille (`.nfl-head`/`.nfl-grid`) sont **redimensionnées** (`40px 60px 64px 46px 28px minmax(50px,1fr)`) pour laisser la place au total ; `.nf-li` reçoit `overflow:hidden` (aucun débordement résiduel).
+3. **« unité » sur la même ligne que la quantité** : dans l'aperçu A4, la cellule **Qté** (`<td class="q">`) passe en `white-space:nowrap` → le nombre et son unité (« 1 unité ») restent **toujours sur la même ligne**, jamais empilés.
+
+**Comment :** `yada-addon229` (100% **CSS additif**, `<style id="nf-line-fixe-mod">` injecté en dernier) : règles `#nf-overlay .nf-li-top/.nfl-grid{min-width:0}`, `.inv-t th,td{overflow-wrap:anywhere}`, `.inv-t td.q{white-space:nowrap}`, resize `.nfl-grid` + `.nf-li{overflow:hidden}`. 1 édition chirurgicale de `docHTML` (cellule Qté → `class="q"`). Aucune logique comptable modifiée. `sw.js` yada-v81, badge v489, `version.json` 489.
+
+**Validé :** `node --check` (222 scripts, 0 erreur) + `sw.js` OK + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + Playwright (fenêtre facture, désignation longue 95×« r » : **totSpill −13px** = montant DANS la carte, `lineSpill 0`, aperçu A4 `tableSpill 0`, cellule Description `overflow-wrap:anywhere`, cellule Qté `white-space:nowrap` = « 1 unité » sur une ligne ; 0 pageerror). Badge → **v489**.
+
+---
+
+## 🟢 MAJ précédente — Consultation « Comptes Généraux » : comptes de tiers (Fournisseurs/Clients) retirés + titres de classe supprimés (liste à plat) — v488
 **Quoi :** deux ajustements de l'onglet **« Comptes Généraux »** de la Consultation des comptes.
 1. **Comptes de TIERS retirés** : les comptes **Fournisseurs (401…)** et **Clients (411…)** individuels **n'apparaissent plus** dans « Comptes Généraux » — ils figurent déjà dans les onglets **Fournisseurs divers** et **Clients divers**. Le **compte collectif** (401000000 / 411000000) et les autres comptes de classe 4 (TVA 445…, personnel 42…, 408…) **restent** affichés.
 2. **Titres de classe supprimés** : la liste ne montre plus les **en-têtes de classe** (« 1. Comptes de capitaux », « 4. Comptes de tiers »…) ni les **sous-totaux « Total X »** → **liste à plat** (Compte · Libellé · Solde), triée par numéro de compte.

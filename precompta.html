@@ -4664,7 +4664,7 @@ function docHTML(d){
   const lignesSaisies=lignesAll.filter(l=>(l.desc!=null&&String(l.desc).trim()!=='') || r2((+l.qte||0)*(+l.pu||0))!==0);
   const lignes=lignesSaisies.length?lignesSaisies:[{desc:d.lib||'',qte:1,pu:Math.abs(d.ht||0),taux:20,unite:''}];
   const rows=lignes.map(l=>{const presta=(l.nature==='prestation'); const q=presta?1:(+l.qte||0); const lht=r2(q*(+l.pu||0));
-    return `<tr><td class="l">${l.desc||''}</td><td>${presta?'—':(q+(l.unite?(' '+l.unite):''))}</td><td>${eur(+l.pu||0)}</td><td>${(+l.taux||0).toLocaleString('fr-FR',{minimumFractionDigits:1})}%</td><td>${eur(lht)}</td></tr>`;}).join('');
+    return `<tr><td class="l">${l.desc||''}</td><td class="q">${presta?'—':(q+(l.unite?(' '+l.unite):''))}</td><td>${eur(+l.pu||0)}</td><td>${(+l.taux||0).toLocaleString('fr-FR',{minimumFractionDigits:1})}%</td><td>${eur(lht)}</td></tr>`;}).join('');
   const ht=Math.abs(d.ht), tva=Math.abs(d.tva), ttc=Math.abs(d.ttc);
   return `<div class="inv-page">
     <div class="inv-top"><div class="inv-h1">${titre}</div><div class="inv-logo">${(s.raison||'AMA')}</div></div>
@@ -10975,7 +10975,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v488';
+    b.textContent='YADA · v493';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21862,7 +21862,7 @@ ${lignes}
       +'<div class="login-sub">Survolez un dossier pour voir ses informations, cliquez pour le sélectionner.</div>'
       +'<div class="ds-liste-layout">'
       +'<div class="ds-info-col"><div id="ds-info-panel" class="ds-info-empty">Survolez un dossier pour afficher ses informations.</div></div>'
-      +'<div id="ds-liste-scroll" class="ds-list ds-list-right">'+rows+'</div>'
+      +'<div class="ds-list-col"><input id="ds-search" class="ds-search" type="search" placeholder="Rechercher un dossier (nom, ville, SIREN…)" oninput="dsFilterListe(this.value)" autocomplete="off"><div id="ds-search-empty" class="ds-search-empty" style="display:none">Aucun dossier ne correspond à votre recherche.</div><div id="ds-liste-scroll" class="ds-list ds-list-right">'+rows+'</div></div>'
       +'</div>'
       +actions('<button class="btn btn-ghost" onclick="dsAccueil()">← Retour</button>')+'</div>';
   }
@@ -25704,6 +25704,187 @@ ${lignes}
     +'#nav .nav-btn .nl.nl-ov{text-overflow:clip}'
     +'#nav .nav-btn:hover .nl.nl-ov .nl-in,#nav .nav-grp-h:hover .nl.nl-ov .nl-in{transform:translateX(calc(-1 * var(--sc,0px)));transition:transform var(--dur,3s) linear}';
   try{ var s=document.createElement('style'); s.id='nav-marquee-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
+})();
+</script>
+<script id="yada-addon229">
+/* v489 — Facturation (fenêtre Nouvelle facture / module Client) : la saisie d'une désignation
+   longue ne doit plus rien déplacer, et le mot « unité » reste sur la même ligne que la quantité.
+   100% CSS additif (aucune logique modifiée), injecté en dernier → prime sur la cascade. */
+(function(){
+  var css=[
+    /* Ligne de saisie : rien ne bouge, quel que soit le texte tapé (items grille/flex verrouillés) */
+    '#nf-overlay .nf-form,#nf-overlay #nf-lignes,#nf-overlay .nf-li,#nf-overlay .nfl-head,#nf-overlay .nfl-grid,#nf-overlay .nf-li-top{min-width:0;max-width:100%}',
+    '#nf-overlay .nf-li-top input,#nf-overlay .nf-li-top select{min-width:0}',
+    '#nf-overlay .nfl-grid input,#nf-overlay .nfl-grid select{min-width:0}',
+    '.li-row input,.li-row select,.li-row .li-cell{min-width:0}',
+    /* Aperçu A4 (écran + impression) : une désignation longue sans espace se coupe DANS sa colonne
+       → la table garde une largeur fixe et ne pousse plus rien */
+    '.inv-t{max-width:100%}',
+    '.inv-t th,.inv-t td{overflow-wrap:anywhere;word-break:break-word}',
+    '.inv-t td.l,.inv-t th.l{white-space:normal}',
+    /* Quantité : le nombre et son unité restent TOUJOURS sur la même ligne (jamais empilés) */
+    '.inv-t td.q{white-space:nowrap}',
+    /* Ligne de saisie : colonnes redimensionnées pour que le montant TOTAL HT tienne DANS la carte */
+    '#nf-overlay .nfl-head,#nf-overlay .nfl-grid{grid-template-columns:40px 60px 64px 46px 28px minmax(50px,1fr) !important;gap:5px !important}',
+    '#nf-overlay .nfl-tot{font-size:12px;white-space:nowrap;text-align:right;padding-right:2px}',
+    '#nf-overlay .nf-li{overflow:hidden}'
+  ].join('');
+  try{ var s=document.createElement('style'); s.id='nf-line-fixe-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
+})();
+</script>
+<script id="yada-addon230">
+/* v490 — Facture client : aperçu paginé en feuilles A4 STRICTES (210 × 297 mm).
+   La facture est concentrée sur une page ; si le contenu déborde, une 2e page A4 est ajoutée
+   (les lignes du tableau sont réparties, l'en-tête de colonnes est répété). Le cadre A4 n'est
+   jamais déformé (hauteur fixe, cadre respecté). 100% additif — aucune logique comptable modifiée. */
+(function(){
+  try{
+    var css='@media screen and (min-width:821px){'
+      +'.inv-pages{display:flex;flex-direction:column;gap:18px;align-items:center}'
+      +'.inv .inv-page{height:297mm !important;min-height:297mm !important;max-height:297mm !important;overflow:hidden !important}'
+      +'}';
+    var st=document.createElement('style'); st.id='inv-a4-paginate-mod'; st.textContent=css; document.head.appendChild(st);
+  }catch(e){}
+
+  /* Découpe le contenu d'une facture (.inv > .inv-page) en feuilles A4 successives. */
+  window.invPaginate=function(inv){
+    try{
+      if(!inv) return;
+      if(window.matchMedia && !window.matchMedia('(min-width:821px)').matches) return; /* pagination A4 : desktop uniquement */
+      if(inv.querySelector('.inv-pages')) return;                                       /* déjà paginé */
+      var src=inv.querySelector('.inv-page'); if(!src) return;
+      var blocks=Array.prototype.slice.call(src.children);
+      var wrap=document.createElement('div'); wrap.className='inv-pages';
+      inv.insertBefore(wrap, src);
+      var MAXP=40, np=0, page=null, tb=null;
+      function newPage(){ np++; page=document.createElement('div'); page.className='inv-page'; wrap.appendChild(page); return page; }
+      function over(){ return page.scrollHeight > page.clientHeight + 1; }
+      function freshTable(thead){ var t=document.createElement('table'); t.className='inv-t';
+        if(thead) t.appendChild(thead.cloneNode(true)); tb=document.createElement('tbody'); t.appendChild(tb); page.appendChild(t); }
+      newPage();
+      for(var bi=0; bi<blocks.length && np<MAXP; bi++){
+        var b=blocks[bi];
+        if(b.tagName==='TABLE' && b.classList && b.classList.contains('inv-t')){
+          var thead=b.querySelector('thead');
+          var rows=Array.prototype.slice.call(b.querySelectorAll('tbody > tr'));
+          freshTable(thead);
+          for(var ri=0; ri<rows.length && np<MAXP; ri++){
+            var r=rows[ri].cloneNode(true); tb.appendChild(r);
+            if(over() && tb.children.length>1){ tb.removeChild(r); newPage(); freshTable(thead); tb.appendChild(r); }
+          }
+        } else {
+          var c=b.cloneNode(true); page.appendChild(c);
+          if(over() && page.children.length>1){ page.removeChild(c); newPage(); page.appendChild(c); }
+        }
+      }
+      if(src.parentNode) src.parentNode.removeChild(src);
+    }catch(e){}
+  };
+
+  /* Les aperçus (#nf-prev-inner pour la fenêtre facture, #modal-c pour « Voir ») sont ré-écrits
+     à chaque frappe par des appels internes (nfUpdate→nfApercu) qui ne passent pas par window.
+     Un MutationObserver pagine donc tout aperçu non encore paginé (garde anti-boucle). */
+  var busy=false, scheduled=false;
+  function run(){
+    scheduled=false; if(busy) return; busy=true;
+    try{
+      ['#nf-prev-inner .inv','#modal-c .inv'].forEach(function(sel){
+        var inv=document.querySelector(sel);
+        if(inv && !inv.querySelector('.inv-pages')) window.invPaginate(inv);
+      });
+    }catch(e){}
+    busy=false;
+  }
+  function schedule(){ if(scheduled||busy) return; scheduled=true; try{ requestAnimationFrame(run); }catch(e){ setTimeout(run,16); } }
+  try{ new MutationObserver(function(){ if(!busy) schedule(); }).observe(document.documentElement,{childList:true,subtree:true}); }catch(e){}
+})();
+</script>
+<script id="yada-addon231">
+/* v491 — Consultation des comptes : aucun trait sur les cases VIDES.
+   Le fond « papier réglé » (repeating-linear-gradient) de la grille dessinait des lignes sur
+   toute la zone, y compris le vide (en thème nuit, le bleu rgba(30,144,255,.18/.12)).
+   On le retire : seules les LIGNES REMPLIES gardent leurs bordures de cellule.
+   100% CSS additif, injecté en dernier (spécificité html body[data-theme] → prime, tous thèmes). */
+(function(){
+  try{
+    var css='html body[data-theme] .sg-grid,html body[data-theme] .sgj-grid{background-image:none !important}'
+      +'html body .sg-grid,html body .sgj-grid{background-image:none !important}';
+    var s=document.createElement('style'); s.id='sg-no-ruled-mod'; s.textContent=css; document.head.appendChild(s);
+  }catch(e){}
+})();
+</script>
+<script id="yada-addon232">
+/* v492 — Barre latérale « Aurora Glass » (Spatial UI + Liquid Glass).
+   Panneau en verre dépoli translucide (bleu nuit + outremer + transparence) + halo bleu MOUVANT
+   derrière la nav ; item actif en glass Crystal. Conserve les icônes filaires Néon (addon226).
+   100% additif ; injecté APRÈS le Néon → prime à spécificité égale. Cabinet (aside/#nav). */
+(function(){
+  function ensureAurora(){
+    try{
+      var aside=document.querySelector('aside'); if(!aside) return;
+      if(!aside.querySelector('#nav-aurora')){
+        var el=document.createElement('div'); el.id='nav-aurora'; aside.insertBefore(el, aside.firstChild);
+      }
+    }catch(e){}
+  }
+  if(typeof render==='function'){ var _r=render; render=function(){ var r=_r.apply(this,arguments); ensureAurora(); return r; }; }
+  try{ ensureAurora(); }catch(e){}
+  var iv=setInterval(ensureAurora, 900);
+
+  var css=''
+    /* panneau verre dépoli translucide (prime sur addon226 #070d18 et addon160 dégradé) */
+    +'html body[data-theme] aside{'
+    +'background:linear-gradient(180deg,rgba(16,36,88,.55),rgba(8,16,38,.62) 60%,rgba(5,9,20,.66)) !important;'
+    +'background-image:linear-gradient(180deg,rgba(16,36,88,.55),rgba(8,16,38,.62) 60%,rgba(5,9,20,.66)) !important;'
+    +'-webkit-backdrop-filter:blur(20px) saturate(1.35) !important;backdrop-filter:blur(20px) saturate(1.35) !important;'
+    +'border-right:1px solid rgba(130,180,255,.22) !important;overflow:hidden !important;position:relative !important}'
+    /* halo bleu mouvant (aurora) derrière la nav */
+    +'#nav-aurora{position:absolute;left:-56px;top:24%;width:230px;height:230px;border-radius:50%;'
+    +'background:radial-gradient(circle,#1e90ff,rgba(30,144,255,0) 65%);filter:blur(46px);opacity:.5;'
+    +'pointer-events:none;z-index:0;animation:navAur 13s ease-in-out infinite}'
+    +'@keyframes navAur{0%,100%{transform:translateY(0)}50%{transform:translateY(130px)}}'
+    +'@media (prefers-reduced-motion:reduce){#nav-aurora{animation:none}}'
+    /* contenu au-dessus du halo */
+    +'html body[data-theme] aside .brand,html body[data-theme] aside #nav,html body[data-theme] aside .side-foot{position:relative;z-index:1}'
+    /* survol : reflet de verre */
+    +'body[data-theme] #nav .nav-btn:hover{background:rgba(120,170,255,.14) !important;color:#ffffff !important}'
+    +'body[data-theme] #nav .nav-btn:hover .ico{color:#8ec6ff !important;filter:drop-shadow(0 0 6px rgba(90,176,255,.6))}'
+    /* actif : glass Crystal rempli + anneau + halo (au lieu du contour néon) */
+    +'body[data-theme] #nav .nav-btn.active,body[data-theme] #nav .nav-grp-h.has-active{'
+    +'color:#ffffff !important;border:1px solid rgba(140,190,255,.45) !important;'
+    +'background:rgba(30,144,255,.22) !important;'
+    +'box-shadow:inset 0 0 0 1px rgba(140,190,255,.35),0 0 24px -4px rgba(30,144,255,.55) !important;font-weight:600 !important}'
+    +'body[data-theme] #nav .nav-btn.active .ico,body[data-theme] #nav .nav-grp-h.has-active .ico{color:#d6ecff !important;filter:drop-shadow(0 0 7px rgba(90,176,255,.9))}'
+    /* sous-groupe : liseré Crystal conservé */
+    +'body[data-theme] #nav .nav-sub{border-left:2px solid rgba(30,144,255,.42) !important}';
+  try{ var st=document.createElement('style'); st.id='aurora-nav-mod'; st.textContent=css; document.head.appendChild(st); }catch(e){}
+})();
+</script>
+<script id="yada-addon233">
+/* v493 — (1) Barre de recherche de dossiers au-dessus de la liste (écran « Liste des dossiers »)
+   → filtre les lignes par nom / ville / SIREN / activité.  (2) Retrait des MAJUSCULES forcées
+   sur tous les boutons (.btn) : casse normale (1ʳᵉ lettre). 100% additif. */
+(function(){
+  window.dsFilterListe=function(q){
+    try{
+      var box=document.getElementById('ds-liste-scroll'); if(!box) return;
+      var norm=function(s){return (s||'').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');};
+      var needle=norm(q).trim();
+      var rows=box.querySelectorAll('.ds-row'), shown=0;
+      for(var i=0;i<rows.length;i++){ var ok=!needle || norm(rows[i].textContent).indexOf(needle)>=0; rows[i].style.display=ok?'':'none'; if(ok)shown++; }
+      var em=document.getElementById('ds-search-empty'); if(em) em.style.display=(needle && shown===0)?'block':'none';
+      try{ box.dispatchEvent(new Event('scroll')); }catch(e){}   /* repeint l'effet « roue » (addon192) */
+    }catch(e){}
+  };
+  var css=''
+    +'.ds-list-col{display:flex;flex-direction:column;gap:12px;min-height:0}'
+    +'.ds-search{width:100%;box-sizing:border-box;padding:12px 16px;border-radius:12px;border:1px solid rgba(120,170,255,.24);background:rgba(8,16,34,.55);color:#eaf1ff;font-size:14px;outline:none;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:border-color .18s,box-shadow .18s}'
+    +'.ds-search::placeholder{color:#6b7ea6}'
+    +'.ds-search:focus{border-color:#1e90ff;box-shadow:0 0 0 3px rgba(30,144,255,.22)}'
+    +'.ds-search-empty{color:#9fb2d4;font-size:13px;padding:6px 4px}'
+    /* Boutons : plus de MAJUSCULES forcées → casse normale (prime sur addon223, injecté après) */
+    +'html body[data-theme] .btn{text-transform:none !important;letter-spacing:.01em !important}';
+  try{ var s=document.createElement('style'); s.id='ds-search-btncase-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
 })();
 </script>
 </body>
