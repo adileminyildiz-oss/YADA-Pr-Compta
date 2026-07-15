@@ -75,7 +75,7 @@ main{min-width:0;display:flex;flex-direction:column}
 .card-h h2{font-size:12px;margin:0;font-weight:700;color:var(--ink);letter-spacing:.2px}
 .card-h .sub{font-size:11px;color:var(--ink-3)}
 .card-b{padding:11px 13px}
-.grid{display:grid;gap:11px}
+.grid{display:grid;gap:7px}
 .g4{grid-template-columns:repeat(4,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .g2{grid-template-columns:repeat(2,1fr)}
 
 .kpi{position:relative;padding:11px 12px;border-radius:var(--radius);background:var(--card);border:1px solid var(--line-soft);box-shadow:none}
@@ -162,7 +162,7 @@ input[type=checkbox],input[type=radio]{width:auto;accent-color:#7a6e58;cursor:po
 .flow-note{display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:#5a5344;background:var(--paper-2);
   border:1px solid #e6d8b2;border-radius:8px;padding:10px 12px;line-height:1.5}
 .flow-note svg{width:15px;height:15px;flex:none;margin-top:1px}
-.section-t{font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin:20px 0 10px}
+.section-t{font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin:10px 0 5px}
 
 #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(20px);z-index:90;opacity:0;
   background:var(--espresso);color:#f7f2e6;padding:9px 16px;border-radius:9px;font-size:12px;font-weight:600;
@@ -182,13 +182,13 @@ input[type=checkbox],input[type=radio]{width:auto;accent-color:#7a6e58;cursor:po
 
 /* ============ Tableau de bord — compact ============ */
 body[data-page="dash"] .content{max-width:1020px}
-body[data-page="dash"] .grid{gap:10px}
+body[data-page="dash"] .grid{gap:7px}
 body[data-page="dash"] .kpi{padding:11px 12px}
 body[data-page="dash"] .kpi .ic{width:26px;height:26px;border-radius:6px;margin-bottom:6px}
 body[data-page="dash"] .kpi .ic svg{width:14px;height:14px}
 body[data-page="dash"] .kpi .val{font-size:16px}
 body[data-page="dash"] .kpi .lbl{font-size:10.5px}
-body[data-page="dash"] .section-t{margin:16px 0 8px}
+body[data-page="dash"] .section-t{margin:9px 0 5px}
 body[data-page="dash"] .card-h{padding:10px 14px}
 body[data-page="dash"] .card-h h2{font-size:11.5px}
 body[data-page="dash"] .card-b{padding:11px 13px}
@@ -253,7 +253,7 @@ body[data-page="dash"] .grid.g2{margin-top:12px}
 .dem-search svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--ink-3)}
 .dem-tbl td{padding:9px 12px}
 /* Espace — plus compact */
-.esp-top{grid-template-columns:1fr 260px;gap:12px}
+.esp-top{grid-template-columns:1fr 260px;gap:8px}
 .esp-mailcard .card-b,.esp-side .card-b{padding:9px 11px}
 .esp-dlist{padding:7px;gap:5px;max-height:66vh}
 .esp-dl{padding:6px 8px;gap:7px}
@@ -273,12 +273,17 @@ body[data-page="dash"] .grid.g2{margin-top:12px}
 .esp-check .l{font-size:11.5px}
 .esp-fiche-row{display:flex;gap:8px;margin-top:8px}
 .esp-fiche-row .btn{flex:1;justify-content:center;font-size:11px}
-.esp-fp-list{display:flex;flex-direction:column;gap:1px;margin-bottom:4px}
-.esp-fp{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--line-soft)}
+.esp-fp-list{display:flex;flex-direction:column;gap:0;margin-bottom:2px}
+.esp-fp{display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid var(--line-soft);min-height:0}
 .esp-fp:last-child{border-bottom:none}
-.esp-fp input[type=checkbox]{width:auto;flex:none}
-.esp-fp-l{flex:1;font-size:12px;color:var(--ink)}
+.esp-fp input[type=checkbox]{width:auto;flex:none;margin:0}
+.esp-fp-l{flex:1;font-size:11.5px;line-height:1.25;color:var(--ink)}
 .esp-fp.manq .esp-fp-l{font-weight:600}
+.esp-fp .btn-sm{padding:2px 7px;line-height:1.1}
+.esp-fp .tsub{display:inline}
+.esp-req-list{display:flex;flex-direction:column;gap:3px;margin:2px 0 4px}
+.esp-req{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink);cursor:pointer;padding:2px 0}
+.esp-req input[type=checkbox]{width:auto;flex:none;margin:0}
 .mail-att-list{display:flex;flex-direction:column;gap:4px;margin-top:4px}
 .mail-att{display:flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--line-2);border-radius:6px;padding:5px 9px;font-size:12px}
 .mail-att span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -297,7 +302,7 @@ body[data-page="dash"] .grid.g2{margin-top:12px}
 .st-cover{text-align:center;padding:40mm 20mm}
 .st-cover .st-c1{font-weight:700;letter-spacing:2px;font-size:16px;margin-bottom:26px}
 .st-cover .st-c2{font-weight:700;font-size:13px;letter-spacing:1px;margin-bottom:22px}
-.st-cover .st-c3{font-weight:700;font-size:20px;text-transform:uppercase;margin-bottom:18px}
+.st-cover .st-c3{font-weight:700;font-size:20px;text-transform:uppercase;margin-bottom:10px}
 .st-cover .st-c4{font-size:12px;margin:4px 0}
 .st-doc .st-titre{font-weight:700;text-transform:uppercase;text-align:center;font-size:12px;letter-spacing:.5px;margin:20px 0 10px}
 .st-doc .st-art{font-weight:700;margin:14px 0 4px;text-align:left}
@@ -617,7 +622,7 @@ function pageDash(){
   <div class="card"><div class="card-b" style="padding:0">
     ${recent.length?tableDemandes(recent):`<div class="empty">Aucune demande en attente.</div>`}
   </div></div>
-  <div class="grid g2" style="margin-top:20px">
+  <div class="grid g2" style="margin-top:8px">
     <div class="card"><div class="card-h"><h2>Répartition par statut</h2></div><div class="card-b">${statBars()}</div></div>
     <div class="card"><div class="card-h"><h2>Charge par collaborateur</h2></div><div class="card-b">${chargeCollab()}</div></div>
   </div>`;
@@ -869,7 +874,7 @@ function pageDossiers(){
   const view=state.dossView||'kanban';
   let list=DB.dossiers;
   if(state.q)list=list.filter(d=>(d.ref+dossierClients(d)).toLowerCase().includes(state.q));
-  return `<div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+  return `<div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap">
     <button class="btn btn-pri" onclick="modalNewDossier()">${svg(IC.plus)}Ajouter</button>
     <button class="btn ${view==='kanban'?'':'btn-ghost'}" onclick="state.dossView='kanban';render()">Pipeline</button>
     <button class="btn ${view==='list'?'':'btn-ghost'}" onclick="state.dossView='list';render()">Liste</button>
@@ -937,7 +942,7 @@ function delDossier(id){if(!confirm('Supprimer ce dossier ?'))return;const d=DB.
 function pageServices(){
   const fams={};DB.services.forEach(s=>{(fams[s.famille]=fams[s.famille]||[]).push(s);});
   const typeTag=t=>({forfait:'<span class="tag ok">Forfait</span>',debours:'<span class="tag warm">Débours</span>',commission:'<span class="tag blue">Commission</span>'}[t]||'');
-  return `<div style="display:flex;gap:10px;margin-bottom:18px"><button class="btn btn-pri" onclick="modalService()">${svg(IC.plus)}Ajouter</button><span class="tag blue">${DB.services.length} prestations</span><span class="tag mut">Prix indicatifs — modifiables</span></div>
+  return `<div style="display:flex;gap:10px;margin-bottom:10px"><button class="btn btn-pri" onclick="modalService()">${svg(IC.plus)}Ajouter</button><span class="tag blue">${DB.services.length} prestations</span><span class="tag mut">Prix indicatifs — modifiables</span></div>
   ${Object.keys(fams).map(f=>`<div class="section-t">${f}</div>
     <div class="card"><div class="card-b" style="padding:0"><table><thead><tr><th>Prestation</th><th>Type</th><th>Forfait</th><th>Débours</th><th></th></tr></thead><tbody>
     ${fams[f].map(s=>`<tr>
@@ -979,7 +984,7 @@ function pageMarge(){
     ${kpi('card',eur(deb),'Débours refacturés','warm')}
     ${kpi('trend',eur(ca),'Marge honoraires','blue')}
   </div>
-  <div class="card" style="margin-top:20px"><div class="card-h"><h2>Marge par dossier</h2></div><div class="card-b" style="padding:0">
+  <div class="card" style="margin-top:8px"><div class="card-h"><h2>Marge par dossier</h2></div><div class="card-b" style="padding:0">
   <table><thead><tr><th>Réf.</th><th>Client(s)</th><th>Honoraires</th><th>Débours</th><th>Marge</th></tr></thead><tbody>
   ${DB.dossiers.map(d=>{const h=d.serviceIds.reduce((a,id)=>{const v=svcById(id);return a+(v?+v.prix||0:0);},0);
     const b=d.serviceIds.reduce((a,id)=>{const v=svcById(id);return a+(v?+v.debours||0:0);},0);
@@ -1009,7 +1014,7 @@ function pageParams(){
       </div><input type="file" id="imp" accept="application/json" style="display:none" onchange="importDB(this)">
     </div></div>
   </div>
-  <div class="flow-note" style="margin-top:20px">${svg(IC.gear)}<div>Prochains niveaux de la pyramide : <b>Devis auto</b>, <b>facturation & marge complète</b>, <b>signature + paiement</b>, <b>IA de réponse locale</b>, puis <b>stockage lourd, archivage 10 ans, multi-poste & mise en ligne</b>.</div></div>`;
+  <div class="flow-note" style="margin-top:8px">${svg(IC.gear)}<div>Prochains niveaux de la pyramide : <b>Devis auto</b>, <b>facturation & marge complète</b>, <b>signature + paiement</b>, <b>IA de réponse locale</b>, puis <b>stockage lourd, archivage 10 ans, multi-poste & mise en ligne</b>.</div></div>`;
 }
 function modalUser(){openModal('Nouveau collaborateur',`<label>Nom</label><input id="u-nom" placeholder="Prénom N.">
   <label>Couleur</label><input id="u-col" type="color" value="#22b8cf" style="height:44px">`,
@@ -1158,8 +1163,9 @@ function espMailPieces(d){
   var c=clientById((d.clientIds||[])[0])||{};
   var prenom=(c.prenom||dossierClients(d).split(/\s+/)[0]||'').trim();
   var dm=espDemandeDe(d);var objet=dm?IA.objet(dm):'votre dossier';
-  var manq=espPiecesManquantes(d);
-  var liste=manq.map(function(pc){return '- '+pc.l;}).join('\n')||'- (toutes les pièces ont déjà été reçues)';
+  var sel=window._espDemande||{};
+  var manq=espPiecesManquantes(d).filter(function(pc){return sel[pc.k]!==false;});
+  var liste=manq.length?manq.map(function(pc){return '- '+pc.l;}).join('\n'):'- (veuillez sélectionner au moins un document à demander)';
   var corps='Bonjour '+(prenom||'')+',\n\n'
     +'Nous espérons que vous allez bien, et nous vous remercions chaleureusement de la confiance que vous nous accordez pour « '+objet+' ».\n\n'
     +'Afin de poursuivre vos démarches dans les meilleurs délais, il ne nous manque plus que quelques pièces de votre part :\n'
@@ -1182,11 +1188,15 @@ function espFicheModal(id){
       +'<label class="btn btn-sm btn-ghost" style="cursor:pointer">＋<input type="file" style="display:none" onchange="espPieceUploadFiche(\''+d.id+'\',\''+pc.k+'\',this)"></label>'
       +'</div>';
   }).join('');
+  window._espDemande={};manq.forEach(function(pc){window._espDemande[pc.k]=true;});
+  var reqBlock=manq.length?('<div class="section-t">Documents à demander au client</div>'
+    +'<div class="esp-req-list">'+manq.map(function(pc){return '<label class="esp-req"><input type="checkbox" checked onchange="espDemandeToggle(\''+d.id+'\',\''+pc.k+'\',this.checked)"> '+esc(pc.l)+'</label>';}).join('')+'</div>'):'';
   var m=espMailPieces(d);
   var body='<div class="chips" style="margin-bottom:10px"><span class="tag blue">Objet : '+esc(objet)+'</span>'
     +'<span class="tag '+(manq.length?'warm':'ok')+'">'+(manq.length?manq.length+' pièce(s) manquante(s)':'Dossier complet')+'</span></div>'
     +'<div class="section-t" style="margin-top:2px">Documents à fournir par le client</div>'
     +'<div class="esp-fp-list">'+rows+'</div>'
+    +reqBlock
     +'<div class="section-t">Mail au client — documents manquants</div>'
     +'<label>Destinataire</label><input id="ml-to" value="'+esc((dm&&dm.clientEmail)||(clientById((d.clientIds||[])[0])||{}).email||'')+'">'
     +'<label>Objet du mail</label><input id="ml-sujet" value="'+esc(m.sujet)+'">'
@@ -1199,7 +1209,8 @@ function espFicheModal(id){
     +'<button class="btn btn-pri" onclick="demMailEnvoyer()">✉ Générer l\'e-mail</button>');
   setTimeout(mailAttRender,0);
 }
-function espFicheOpen(id){window._mailAtt=[];espFicheModal(id);}
+function espFicheOpen(id){window._mailAtt=[];window._espDemande={};espFicheModal(id);}
+function espDemandeToggle(id,k,v){window._espDemande=window._espDemande||{};window._espDemande[k]=v;var d=espDoss().find(function(x){return x.id===id;});var ta=document.getElementById('ml-corps');if(ta)ta.value=espMailPieces(d).corps;}
 function espPieceToggleFiche(id,k,v){var d=espDoss().find(function(x){return x.id===id;});d.pieces=d.pieces||{};d.pieces[k]=Object.assign(espPieceState(d,k),{recu:v});save();espFicheModal(id);}
 function espPieceUploadFiche(id,k,inp){var f=inp.files[0];if(!f)return;var d=espDoss().find(function(x){return x.id===id;});var r=new FileReader();r.onload=function(e){d.pieces=d.pieces||{};d.pieces[k]=Object.assign(espPieceState(d,k),{recu:true,nom:f.name,data:e.target.result});save();espFicheModal(id);};r.readAsDataURL(f);}
 function espDocsModal(id){
