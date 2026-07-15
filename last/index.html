@@ -682,6 +682,10 @@ function assocRows(){
       <input placeholder="nationalité" value="${esc(a.nationalite||'')}" oninput="_assoc[${i}].nationalite=this.value">
     </div>
     <input class="assoc-adr" placeholder="Adresse de l'associé" value="${esc(a.adresse||'')}" oninput="_assoc[${i}].adresse=this.value">
+    <div class="assoc-civil" style="grid-template-columns:1fr 1fr;margin-top:6px">
+      <input placeholder="Nom du père (filiation)" value="${esc(a.pereNom||'')}" oninput="_assoc[${i}].pereNom=this.value">
+      <input placeholder="Nom de la mère (filiation)" value="${esc(a.mereNom||'')}" oninput="_assoc[${i}].mereNom=this.value">
+    </div>
   </div>`).join('');
 }
 function addAssoc(){window._assoc.push({nom:'',parts:''});document.getElementById('assoc-list').innerHTML=assocRows();}
@@ -988,6 +992,7 @@ function espDocHTML(d,dc){
   if(dc.k==='statuts')return statutsSasHTML(d);
   if(dc.k==='souscripteurs')return souscripteursHTML(d);
   if(dc.k==='pouvoir')return pouvoirHTML(d);
+  if(dc.k==='dnc')return dncHTML(d);
   var s=DB.societe||{}; var c=clientById((d.clientIds||[])[0])||{};
   var cl=((c.prenom?c.prenom+' ':'')+(c.nom||'')).trim();
   var assoc=(c.associes||[]).map(function(a){return '<div>• '+esc(a.nom)+' — '+(esc(a.parts)||'?')+' parts</div>';}).join('')||'<div>—</div>';
@@ -1071,16 +1076,50 @@ function pouvoirHTML(d){
   var mandant=x.president;
   var adrMandant=((x.c.adresse||x.siege)+'').trim()||'«adresse»';
   var qualite=stQualite(x.forme);
-  var repFirm=((s.representant||s.dirigeant||'')+'').trim();
-  var mandataire=esc(s.raison||'AEM CONSEIL')+(repFirm?(' ('+esc(repFirm)+')'):'')
-    +' '+esc(((s.adresse||'')+(s.cp?(' '+s.cp):'')+(s.ville?(' '+s.ville):'')).trim()||'«adresse du mandataire»');
+  var repFirm=((s.representant||s.dirigeant||'')+'').trim()||'«représentant»';
+  var repTit=/^(M\.|Mme|M |Mr|Monsieur|Madame)/i.test(repFirm)?esc(repFirm):'M. '+esc(repFirm);
+  var adrFirm=((s.adresse||'')+(s.cp?(' '+s.cp):'')+(s.ville?(' '+s.ville):'')).trim()||'«adresse du mandataire»';
+  var mandataire=repTit+' dirigeant de la société '+esc(s.raison||'AEM CONSEIL')+' situé au '+esc(adrFirm);
+  var villeFait=((s.ville||x.ville)+'').trim()||'«ville»';
   var moisNom=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'][new Date().getMonth()];
   var dateTxt=new Date().getDate()+' '+moisNom+' '+new Date().getFullYear();
   return '<div class="st-doc"><div class="st-page">'
     +'<div class="st-titre" style="font-size:15px;margin-top:8px">POUVOIR</div>'
-    +'<p style="margin-top:18px">Je soussigné '+esc(mandant)+' demeurant à '+esc(adrMandant)+', agissant en qualité de '+qualite+' de la Société '+esc(x.denom)+' en cours de constitution, donne par les présentes pouvoirs à '+mandataire+' aux fins d\'effectuer toutes démarches relatives aux formalités d\'inscription au Registre du commerce et des sociétés, de signer tous documents à cet effet, et d\'une façon générale, de faire tout ce qui sera nécessaire pour l\'exécution des présentes.</p>'
-    +'<div class="st-fin" style="margin-top:34px"><p>Fait à '+esc(x.ville)+'</p><p>Le '+dateTxt+'</p>'
+    +'<p style="margin-top:18px">Je soussigné '+esc(mandant)+' demeurant à '+esc(adrMandant)+', agissant en qualité de '+qualite+' de la Société '+esc(x.denom)+' en cours de constitution donne par les présentes pouvoirs à '+mandataire+' aux fins d\'effectuer toutes démarches relatives aux formalités d\'inscription au Registre du commerce et des sociétés, de signer tous documents à cet effet, et d\'une façon générale, de faire tout ce qui sera nécessaire pour l\'exécution des présentes.</p>'
+    +'<div class="st-fin" style="margin-top:34px"><p>Fait à '+esc(villeFait)+',</p><p>Le '+dateTxt+'</p>'
     +'<div class="st-sign" style="margin-top:30px"><div class="sg"><b>Le Mandant</b></div><div class="sg"><b>Le Mandataire</b></div></div></div>'
+    +'</div></div>';
+}
+function dncHTML(d){
+  var x=stDossData(d);var c=x.c;
+  var dcl=x.assoc.find(function(a){return (''+(a.nom||'')).trim()===(''+x.president).trim();})||x.assoc[0]||{};
+  var nom=esc((dcl.nom||x.president||'').trim())||'«nom prénom»';
+  var naiss=dcl.naissance?esc(dcl.naissance):'«…»';
+  var lieu=dcl.lieuNaissance?esc(dcl.lieuNaissance):'«lieu»';
+  var pays=dcl.pays?(' en '+esc(dcl.pays)):'';
+  var nat=dcl.nationalite?esc(dcl.nationalite):'«…»';
+  var adr=dcl.adresse?esc(dcl.adresse):(esc(c.adresse||'')||'«adresse»');
+  var pere=((dcl.pereNom||c.pereNom||'')+'').trim();
+  var mere=((dcl.mereNom||c.mereNom||'')+'').trim();
+  var filiation=(pere||mere)?('Déclare être le fils ou la fille de '+esc(pere||'«père»')+' et de '+esc(mere||'«mère»')):'Déclare être le fils ou la fille de «père» et de «mère»';
+  var qualite=stQualite(x.forme);
+  var moisNom=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'][new Date().getMonth()];
+  var dateTxt=new Date().getDate()+' '+moisNom+' '+new Date().getFullYear();
+  var villeFait=((x.ville!=='«ville»'?x.ville:'')||x.s.ville||'').trim()||'«ville»';
+  return '<div class="st-doc"><div class="st-page">'
+    +'<div class="st-titre" style="font-size:14px">DÉCLARATION DE NON-CONDAMNATION</div>'
+    +'<p style="text-align:center;font-size:10px;margin-top:-4px">(Arrêté et Instructions du 9 février 1988 relatif au Registre du commerce et des sociétés)</p>'
+    +'<p style="margin-top:16px">Je soussigné <b>'+nom+'</b></p>'
+    +'<p>né le '+naiss+'</p><p>à '+lieu+pays+'</p><p>de nationalité '+nat+'</p><p>demeurant à '+adr+'</p>'
+    +'<p style="margin-top:10px">'+filiation+'</p>'
+    +'<p style="margin-top:10px">agissant en qualité de '+qualite+' de la Société '+esc(x.denom)+' dont le siège social est à '+esc(x.siege)+(x.ville&&x.ville!=='«ville»'?(' '+esc(x.ville)):'')+'.</p>'
+    +'<p style="margin-top:10px">En conformité des prescriptions de l\'article 20 de l\'arrêté du 24 décembre 1975 et du paragraphe 2-3 de l\'Instruction de même date, relatifs au RCS ainsi que de l\'article 17 de l\'arrêté du 24 septembre 1984 pris à la suite du décret du 31 mai 1984 ;</p>'
+    +'<p>En connaissance des sanctions prévues à l\'article 2 de l\'ordonnance modifiée n° 58-1352 du 27 décembre 1958 réprimant certaines infractions en matière de Registre du commerce ;</p>'
+    +'<p style="margin-top:10px"><b>Certifie et déclare sur l\'honneur</b> n\'avoir fait l\'objet d\'aucune condamnation pénale, ni de sanction civile ou administrative de nature à m\'interdire de gérer, d\'administrer ou de diriger une personne morale, ou d\'exercer une activité commerciale.</p>'
+    +'<p style="margin-top:10px">J\'ai pris connaissance des dispositions du texte ci-dessous — article 2 de l\'ordonnance n° 58-1352 du 27 décembre 1958 :</p>'
+    +'<p style="font-style:italic">Quiconque donne, de mauvaise foi, des indications inexactes ou incomplètes en vue d\'une immatriculation, d\'une radiation ou d\'une mention complémentaire ou rectificative au Registre du commerce et des sociétés est puni d\'une amende de 76,22 à 3048,98 euros et d\'un emprisonnement de dix jours à six mois ou de l\'une de ces deux peines seulement.</p>'
+    +'<div class="st-fin" style="margin-top:26px"><p>Fait à '+esc(villeFait)+'</p><p>Le '+dateTxt+'</p>'
+    +'<div class="st-sign" style="margin-top:24px"><div class="sg"><b>Signature</b></div></div></div>'
     +'</div></div>';
 }
 function statutsSasHTML(d){
