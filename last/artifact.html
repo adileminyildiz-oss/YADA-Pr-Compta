@@ -147,6 +147,11 @@ input[type=checkbox],input[type=radio]{width:auto;accent-color:#7a6e58;cursor:po
 .modal-f{display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--line-soft)}
 .assoc-row{display:grid;grid-template-columns:1fr 110px 30px;gap:7px;margin-bottom:7px;align-items:center}
 .assoc-row .del{background:var(--paper);border:1px solid var(--line-2);border-radius:5px;color:var(--ink-3);cursor:pointer;height:34px}
+.assoc-block{border:1px solid var(--line-2);border-radius:7px;padding:9px;margin-bottom:9px;background:var(--paper)}
+.assoc-block .assoc-row{margin-bottom:6px}
+.assoc-civil{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px}
+.assoc-adr{width:100%}
+@media(max-width:640px){.assoc-civil{grid-template-columns:1fr 1fr}}
 .mini-add{font-size:11px;color:var(--espresso-2);background:var(--paper-2);border:1px dashed #cdbd94;border-radius:5px;padding:7px;width:100%;cursor:pointer;font-weight:600}
 
 /* ============ DIVERS ============ */
@@ -217,6 +222,22 @@ body[data-page="dash"] .grid.g2{margin-top:12px}
 .dg-l{font-size:9.5px;letter-spacing:.5px;text-transform:uppercase;color:#8a7f6c;font-weight:700;margin-bottom:3px}
 .dg-note{background:#f7f0e0;border:1px solid #e6d8b2;border-radius:6px;padding:12px 14px;margin-top:18px;font-size:10px;color:#5a5344}
 .dg-foot{border-top:1px solid #ccc;margin-top:16px;padding-top:8px;font-size:9.5px;color:#888}
+.doc-gen .st-doc{background:#fff;color:#000;font-family:'Times New Roman',Georgia,serif;font-size:11.5px;line-height:1.55;text-align:justify;box-shadow:0 8px 24px rgba(60,45,20,.2)}
+.st-page{background:#fff;padding:24mm 20mm;min-height:auto}
+.st-cover{text-align:center;padding:40mm 20mm}
+.st-cover .st-c1{font-weight:700;letter-spacing:2px;font-size:16px;margin-bottom:26px}
+.st-cover .st-c2{font-weight:700;font-size:13px;letter-spacing:1px;margin-bottom:22px}
+.st-cover .st-c3{font-weight:700;font-size:20px;text-transform:uppercase;margin-bottom:18px}
+.st-cover .st-c4{font-size:12px;margin:4px 0}
+.st-doc .st-titre{font-weight:700;text-transform:uppercase;text-align:center;font-size:12px;letter-spacing:.5px;margin:20px 0 10px}
+.st-doc .st-art{font-weight:700;margin:14px 0 4px;text-align:left}
+.st-doc p{margin:0 0 7px}
+.st-doc .st-den{font-weight:700;text-align:center;font-size:13px;margin:6px 0}
+.st-doc .st-sign{margin-top:26px;display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap}
+.st-doc .st-sign .sg{min-width:200px;text-align:center}
+.st-doc .st-sign .sg b{display:block;margin-bottom:34px}
+.st-doc .st-fin{margin-top:20px}
+@media print{.st-page,.st-cover{page-break-after:always}.st-doc .st-titre{page-break-after:avoid}.st-doc .st-art{page-break-after:avoid}}
 
 /* ============ RESPONSIVE ============ */
 @media(max-width:980px){ .g4{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:1fr} }
@@ -236,6 +257,7 @@ body[data-page="dash"] .grid.g2{margin-top:12px}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
+
 <div id="ambient"><span class="orb a"></span><span class="orb b"></span><span class="orb c"></span></div>
 <div class="scrim" id="scrim" onclick="toggleNav(false)"></div>
 
@@ -608,6 +630,7 @@ function pageClients(){
 function modalClient(id){
   const c=id?DB.clients.find(x=>x.id===id):{prenom:'',nom:'',email:'',tel:'',adresse:'',parts:'',capital:'',activites:[],associes:[]};
   window._assoc=(c.associes||[]).map(a=>({...a}));if(!window._assoc.length)window._assoc=[{nom:'',parts:''}];
+  const FORMES=['SAS','SASU','SARL','EURL','SCI','SA'];
   openModal(id?'Fiche client — '+esc(c.prenom+' '+c.nom):'Nouveau client',`
     <div class="frow"><div><label>Prénom</label><input id="cl-prenom" value="${esc(c.prenom)}"></div><div><label>Nom</label><input id="cl-nom" value="${esc(c.nom)}"></div></div>
     <div class="frow"><div><label>Email</label><input id="cl-mail" type="email" value="${esc(c.email)}"></div><div><label>Téléphone</label><input id="cl-tel" value="${esc(c.tel)}"></div></div>
@@ -615,6 +638,13 @@ function modalClient(id){
     <div class="frow"><div><label>Nombre de parts dans la société</label><input id="cl-parts" type="number" value="${esc(c.parts)}"></div>
       <div><label>Montant du dépôt de capital (€)</label><input id="cl-cap" type="number" value="${esc(c.capital)}"></div></div>
     <label>Activité(s) — séparées par des virgules</label><input id="cl-act" value="${esc((c.activites||[]).join(', '))}" placeholder="Conseil, Formation, Négoce…">
+    <div class="section-t" style="margin-top:14px">Société à créer (formalité)</div>
+    <div class="frow"><div><label>Dénomination sociale</label><input id="cl-denom" value="${esc(c.denomination||'')}" placeholder="Ex. KURUMSAL GROUPE"></div>
+      <div><label>Forme</label><select id="cl-forme">${FORMES.map(f=>`<option ${(c.forme||'SAS')===f?'selected':''}>${f}</option>`).join('')}</select></div></div>
+    <div class="frow"><div><label>Nom commercial (facultatif)</label><input id="cl-nomcom" value="${esc(c.nomCommercial||'')}"></div>
+      <div><label>Président désigné</label><input id="cl-pres" value="${esc(c.president||'')}" placeholder="Nom du 1er Président"></div></div>
+    <div class="frow"><div><label>Siège social (si ≠ adresse)</label><input id="cl-siege" value="${esc(c.siege||'')}" placeholder="Adresse du siège"></div>
+      <div><label>Ville du siège</label><input id="cl-ville" value="${esc(c.ville||'')}"></div></div>
     <label>Associés & répartition des parts / actions</label>
     <div id="assoc-list">${assocRows()}</div>
     <button class="mini-add" onclick="addAssoc()">+ Associé</button>
@@ -623,10 +653,19 @@ function modalClient(id){
      <button class="btn btn-pri" onclick="saveClient('${id||''}')">Enregistrer</button>`);
 }
 function assocRows(){
-  return window._assoc.map((a,i)=>`<div class="assoc-row">
-    <input placeholder="Nom de l'associé" value="${esc(a.nom)}" oninput="_assoc[${i}].nom=this.value">
-    <input type="number" placeholder="Parts" value="${esc(a.parts)}" oninput="_assoc[${i}].parts=this.value">
-    <button class="del" onclick="delAssoc(${i})">×</button></div>`).join('');
+  return window._assoc.map((a,i)=>`<div class="assoc-block">
+    <div class="assoc-row">
+      <input placeholder="Nom Prénom de l'associé" value="${esc(a.nom)}" oninput="_assoc[${i}].nom=this.value">
+      <input type="number" placeholder="Parts" value="${esc(a.parts)}" oninput="_assoc[${i}].parts=this.value">
+      <button class="del" onclick="delAssoc(${i})">×</button></div>
+    <div class="assoc-civil">
+      <input placeholder="Né(e) le (jj/mm/aaaa)" value="${esc(a.naissance||'')}" oninput="_assoc[${i}].naissance=this.value">
+      <input placeholder="à (lieu)" value="${esc(a.lieuNaissance||'')}" oninput="_assoc[${i}].lieuNaissance=this.value">
+      <input placeholder="pays" value="${esc(a.pays||'')}" oninput="_assoc[${i}].pays=this.value">
+      <input placeholder="nationalité" value="${esc(a.nationalite||'')}" oninput="_assoc[${i}].nationalite=this.value">
+    </div>
+    <input class="assoc-adr" placeholder="Adresse de l'associé" value="${esc(a.adresse||'')}" oninput="_assoc[${i}].adresse=this.value">
+  </div>`).join('');
 }
 function addAssoc(){window._assoc.push({nom:'',parts:''});document.getElementById('assoc-list').innerHTML=assocRows();}
 function delAssoc(i){window._assoc.splice(i,1);if(!window._assoc.length)window._assoc=[{nom:'',parts:''}];document.getElementById('assoc-list').innerHTML=assocRows();}
@@ -635,6 +674,9 @@ function saveClient(id){
   const obj={prenom:g('cl-prenom').value.trim(),nom:g('cl-nom').value.trim(),email:g('cl-mail').value.trim(),
     tel:g('cl-tel').value.trim(),adresse:g('cl-adr').value.trim(),parts:g('cl-parts').value,capital:g('cl-cap').value,
     activites:g('cl-act').value.split(',').map(s=>s.trim()).filter(Boolean),
+    denomination:g('cl-denom')?g('cl-denom').value.trim():'',forme:g('cl-forme')?g('cl-forme').value:'SAS',
+    nomCommercial:g('cl-nomcom')?g('cl-nomcom').value.trim():'',president:g('cl-pres')?g('cl-pres').value.trim():'',
+    siege:g('cl-siege')?g('cl-siege').value.trim():'',ville:g('cl-ville')?g('cl-ville').value.trim():'',
     associes:window._assoc.filter(a=>a.nom.trim())};
   if(!obj.nom&&!obj.prenom)return toast('Nom requis');
   if(id){Object.assign(DB.clients.find(x=>x.id===id),obj);}else{DB.clients.push({id:uid('c'),createdAt:today(),...obj});}
@@ -924,6 +966,7 @@ function espDocVoir(id,k){var d=espDoss().find(function(x){return x.id===id;});v
 }
 function espDocPrint(){var el=document.querySelector('#ov .doc-gen');if(!el)return;if(typeof FactureVente!=='undefined'&&FactureVente.injectCSS)FactureVente.injectCSS();var pa=document.getElementById('fv-printarea');if(!pa){pa=document.createElement('div');pa.id='fv-printarea';document.body.appendChild(pa);}pa.innerHTML='<div class="doc-gen">'+el.innerHTML+'</div>';setTimeout(function(){window.print();},120);}
 function espDocHTML(d,dc){
+  if(dc.k==='statuts')return statutsSasHTML(d);
   var s=DB.societe||{}; var c=clientById((d.clientIds||[])[0])||{};
   var cl=((c.prenom?c.prenom+' ':'')+(c.nom||'')).trim();
   var assoc=(c.associes||[]).map(function(a){return '<div>• '+esc(a.nom)+' — '+(esc(a.parts)||'?')+' parts</div>';}).join('')||'<div>—</div>';
@@ -936,6 +979,182 @@ function espDocHTML(d,dc){
    +'<div class="dg-l" style="margin-top:14px">Associés & répartition</div>'+assoc
    +'<div class="dg-note">Document généré par LAST à partir des données du dossier. <b>Le contenu détaillé (clauses, mentions légales) sera produit selon le modèle fourni</b> — champs à compléter/valider avant dépôt.</div>'
    +'<div class="dg-foot">'+esc(s.raison||'AEM CONSEIL')+' — '+esc(s.formeJur||'SAS')+' · accompagnement administratif</div></div>';
+}
+function stNum(n){n=Number(n)||0;try{return n.toLocaleString('fr-FR').replace(/ | |\s/g,'.');}catch(e){return String(n);}}
+function stLettres(n){n=Math.round(Number(n)||0);if(!n)return'zéro';var U=['','un','deux','trois','quatre','cinq','six','sept','huit','neuf','dix','onze','douze','treize','quatorze','quinze','seize','dix-sept','dix-huit','dix-neuf'];var D=['','','vingt','trente','quarante','cinquante','soixante','soixante','quatre-vingt','quatre-vingt'];
+  function c2(x){if(x<20)return U[x];var d=Math.floor(x/10),u=x%10;if(d===7||d===9){var b=(d===7?'soixante':'quatre-vingt');var r=10+u;return b+(r===11&&d===7?'-et-onze':'-'+U[r]);}var s=D[d];if(u===1&&d!==8)s+='-et-un';else if(u)s+='-'+U[u];else if(d===8)s+='s';return s;}
+  function c3(x){var r='';var cent=Math.floor(x/100),rest=x%100;if(cent){r+=(cent>1?U[cent]+' ':'')+'cent'+(cent>1&&!rest?'s':'');if(rest)r+=' ';}if(rest)r+=c2(rest);return r;}
+  var parts=[];var mil=Math.floor(n/1000000),mille=Math.floor((n%1000000)/1000),reste=n%1000;
+  if(mil)parts.push((mil>1?c3(mil)+' ':(mil===1?'':''))+(mil===1?'un million':c3(mil)+' millions'));
+  if(mille)parts.push(mille===1?'mille':c3(mille)+' mille');
+  if(reste)parts.push(c3(reste));
+  var t=parts.join(' ').trim();return t.charAt(0).toUpperCase()+t.slice(1);}
+function stCivil(a,ph){var nom=esc((a&&a.nom||'').trim())||'«nom prénom»';
+  var naiss=(a&&a.naissance)?esc(a.naissance):'«…»';var lieu=(a&&a.lieuNaissance)?esc(a.lieuNaissance):'«lieu»';
+  var pays=(a&&a.pays)?esc(a.pays):'«pays»';var nat=(a&&a.nationalite)?esc(a.nationalite):'«…»';
+  var adr=(a&&a.adresse)?esc(a.adresse):(ph||'«adresse»');
+  return 'M. '+nom+' né le '+naiss+' à '+lieu+' en '+pays+', de nationalité '+nat+', demeurant au '+adr+'.';}
+function statutsSasHTML(d){
+  var s=DB.societe||{};var c=clientById((d.clientIds||[])[0])||{};
+  var denom=((c.denomination||c.raisonProjet||d.denomination||'')+'').trim().toUpperCase()||'«DÉNOMINATION SOCIALE»';
+  var nomCom=((c.nomCommercial||'')+'').trim();
+  var cap=Number(c.capital)||0;var capN=cap?stNum(cap):'«…»';var capL=cap?stLettres(cap):'«…»';
+  var siege=((c.siege||c.siegeAdresse||c.adresse||'')+'').trim()||'«adresse du siège social»';
+  var ville=((c.ville||s.ville||'')+'').trim()||'«ville»';
+  var objet=((c.activites||[]).join(', ')||'').trim()||'«objet social — activités de la société»';
+  var assoc=(c.associes||[]).filter(function(a){return a&&(''+(a.nom||'')).trim();});
+  if(!assoc.length)assoc=[{nom:''}];
+  var totalParts=assoc.reduce(function(n,a){return n+(Number(a.parts)||0);},0);
+  var nominal=(totalParts>0&&cap>0)?(cap/totalParts):100;
+  var nbActions=totalParts>0?totalParts:(nominal>0?Math.round(cap/nominal):0);
+  var president=((c.president||(assoc[0]&&assoc[0].nom)||'')+'').trim()||'«Président»';
+  var annee=new Date().getFullYear();
+  var A=[];
+  // Page de couverture
+  var cover='<div class="st-cover">'
+    +'<div class="st-c1">STATUTS</div>'
+    +'<div class="st-c2">SOCIÉTÉ PAR ACTIONS SIMPLIFIÉE</div>'
+    +'<div class="st-c3">'+esc(denom)+'</div>'
+    +'<div class="st-c4">au capital de '+capN+' Euros</div>'
+    +'<div class="st-c4">Siège social : '+esc(siege)+'</div></div>';
+  // Préambule
+  var soussignes=assoc.map(function(a){return '<p>'+stCivil(a)+'</p>';}).join('');
+  var preambule='<p><b>Les soussignés :</b></p>'+soussignes
+    +'<p>Les soussignés ont établi ainsi qu\'il suit les statuts de la Société par actions simplifiée qu\'ils sont convenus de constituer.</p>';
+  // TITRE I
+  A.push('<div class="st-titre">TITRE I — FORME · DÉNOMINATION · SIÈGE · OBJET · DURÉE</div>');
+  A.push(art('ARTICLE 1 — Forme',
+    ['La Société est une société par actions simplifiée régie par les dispositions légales applicables et par les présents statuts.',
+     'Elle fonctionne indifféremment sous la même forme avec un ou plusieurs associés.',
+     'Elle ne peut faire appel public à l\'épargne sous sa forme actuelle de Société par actions simplifiée.',
+     'Elle peut émettre toutes valeurs mobilières définies à l\'article L 211-2 du Code monétaire et financier, donnant accès au capital ou à l\'attribution de titres de créances, dans les conditions prévues par la loi et les présents statuts.']));
+  A.push('<div class="st-art">ARTICLE 2 — Dénomination sociale</div><p>La dénomination sociale est :</p><p class="st-den">'+esc(denom)+'</p>'
+    +(nomCom?('<p>Nom commercial : '+esc(nomCom)+'</p>'):'')
+    +'<p>Sur tous les actes et documents émanant de la Société, la dénomination sociale doit être précédée ou suivie immédiatement des mots «Société par actions simplifiée» ou des initiales «S.A.S.» et de l\'énonciation du capital social.</p>');
+  A.push(art('ARTICLE 3 — Siège social',
+    ['Le siège social est fixé à '+esc(siege)+'.',
+     'Il ne peut être transféré que par décision collective des associés.']));
+  A.push(art('ARTICLE 4 — Objet',
+    ['La Société a pour objet directement ou indirectement, tant en France qu\'à l\'étranger :',
+     esc(objet)+'.',
+     'la création, l\'acquisition, la prise en location-gérance de tous fonds de commerce, la prise à bail, l\'installation, l\'exploitation de tous établissements, fonds de commerce, usines, ateliers, se rapportant à l\'une ou l\'autre des activités spécifiées ci-dessus ;',
+     'la prise, l\'acquisition, l\'exploitation ou la cession de tous procédés, brevets et droits de propriété intellectuelle concernant lesdites activités ;',
+     'la participation, directe ou indirecte, de la Société dans toutes opérations financières, immobilières ou mobilières ou entreprises commerciales ou industrielles pouvant se rattacher à l\'objet social ou à tout objet similaire ou connexe ;',
+     'toutes opérations quelconques contribuant à la réalisation de cet objet.']));
+  A.push(art('ARTICLE 5 — Durée',
+    ['La Société, sauf prorogation ou dissolution anticipée, a une durée de 99 ans qui commencera à courir à compter du jour de son immatriculation au registre du commerce et des sociétés.',
+     'Les décisions de prorogation de la durée de la Société ou de dissolution anticipée sont prises par décision collective des associés.']));
+  // TITRE II
+  A.push('<div class="st-titre">TITRE II — APPORTS · CAPITAL SOCIAL · FORME DES ACTIONS · DROITS ET OBLIGATIONS ATTACHÉS AUX ACTIONS</div>');
+  var apports=assoc.map(function(a){var p=Number(a.parts)||0;var m=(nominal&&p)?stNum(Math.round(nominal*p)):'«…»';
+    return '<p>- M. '+ (esc((a.nom||'').trim())||'«associé»') +', une somme en numéraire de '+((nominal&&p)?stLettres(Math.round(nominal*p))+' euros':'«…»')+' ci '+m+' euros ;</p>';}).join('');
+  A.push('<div class="st-art">ARTICLE 6 — Apports</div><p>Les soussignés apportent à la société, à savoir :</p>'+apports
+    +'<p>Soit au total la somme de '+capL+' euros, ci '+capN+' euros.</p>'
+    +'<p>Ladite somme correspond à la souscription de '+(nbActions||'«…»')+' actions ordinaires de '+stNum(Math.round(nominal))+' euros et libérées entièrement, ainsi que l\'atteste le certificat de la banque.</p>');
+  A.push(art('ARTICLE 7 — Capital social',
+    ['Le capital social est fixé à la somme de '+capN+' euros.',
+     'Il est divisé en '+(nbActions||'«…»')+' actions de '+stNum(Math.round(nominal))+' euros de valeur nominale chacune, entièrement libérées et de même catégorie.']));
+  A.push(art('ARTICLE 8 — Modifications du capital social',
+    ['1° Le capital ne peut être augmenté ou réduit que par une décision collective des associés statuant sur le rapport du Président.',
+     '2° Les associés peuvent déléguer au Président les pouvoirs nécessaires à l\'effet de réaliser ou de décider, dans les conditions et délais prévus par la loi, l\'augmentation ou la réduction du capital.',
+     '3° En cas d\'augmentation du capital en numéraire ou d\'émission de valeurs mobilières donnant accès au capital ou donnant droit à l\'attribution de titres de créances, les associés ont, proportionnellement au montant de leurs actions, un droit de préférence à la souscription des nouveaux titres émis. Toutefois, les associés peuvent renoncer à titre individuel à leur droit préférentiel de souscription et la décision d\'augmentation du capital peut supprimer ce droit préférentiel dans les conditions prévues par la loi.',
+     '4° Les actions nouvelles de numéraire doivent obligatoirement être libérées lors de la souscription de la quotité du nominal (ou du pair) prévue par la loi et, le cas échéant, de la totalité de la prime d\'émission.']));
+  A.push(art('ARTICLE 9 — Forme des titres de capital de la Société',
+    ['La Société ne pouvant faire appel public à l\'épargne, les valeurs mobilières émises par celle-ci sont obligatoirement nominatives.',
+     'Elles sont inscrites en compte conformément à la réglementation en vigueur et aux usages applicables.',
+     'Tout associé peut demander à la Société la délivrance d\'une attestation d\'inscription en compte.']));
+  A.push(art('ARTICLE 10 — Droits et obligations attachés aux actions',
+    ['1. Toute action donne droit dans les bénéfices et l\'actif social, à une part nette proportionnelle à la quotité de capital qu\'elle représente. Pour y parvenir, il est fait masse, le cas échéant, de toutes exonérations fiscales comme de toutes taxations pouvant être prises en charge par la Société et auxquelles les répartitions au profit des actions pourraient donner lieu.',
+     '2. Les associés ne supportent les pertes qu\'à concurrence de leurs apports.',
+     '3. Les actions sont indivisibles à l\'égard de la Société. Les copropriétaires indivis doivent se faire représenter auprès de la Société par l\'un d\'entre eux ou par un mandataire unique désigné en justice en cas de désaccord.',
+     '4. Le droit de vote attaché aux actions démembrées appartient au nu-propriétaire pour toutes les décisions collectives, sauf pour celles concernant l\'affectation des bénéfices de l\'exercice où il est réservé à l\'usufruitier.',
+     '5. Chaque fois qu\'il est nécessaire de posséder plusieurs actions pour exercer un droit quelconque, les propriétaires de titres isolés ou en nombre inférieur à celui requis ne pourront exercer ce droit qu\'à condition d\'avoir fait leur affaire personnelle du groupement et, éventuellement, de l\'achat ou de la vente du nombre d\'actions ou de titres nécessaires.']));
+  // TITRE III
+  A.push('<div class="st-titre">TITRE III — TRANSMISSION ET LOCATION DES ACTIONS · EXCLUSION D\'ASSOCIÉS</div>');
+  A.push(art('ARTICLE 11 — Dispositions communes applicables aux cessions d\'actions',
+    ['Dans le cadre des présents statuts, les soussignés sont convenus des définitions ci-après :',
+     'a) Cession : signifie toute opération à titre onéreux ou gratuit entraînant le transfert de la pleine propriété, de la nue-propriété ou de l\'usufruit des valeurs mobilières émises par la Société, à savoir : cession, transmission, échange, apport en Société, fusion et opération assimilée, cession judiciaire, constitution de trusts, nantissement, liquidation, transmission universelle de patrimoine.',
+     'b) Action ou Valeur mobilière : signifie les valeurs mobilières émises par la Société donnant accès de façon immédiate ou différée, et de quelque manière que ce soit, à l\'attribution d\'un droit au capital et/ou d\'un droit de vote de la Société, ainsi que les bons et droits de souscription et d\'attribution attachés à ces valeurs mobilières.',
+     'c) Opération de reclassement : signifie toute opération de reclassement simple des actions de la Société intervenant à l\'intérieur de chacun des groupes d\'associés, constitué par chaque Société associée et les sociétés ou entités qu\'elle contrôle directement ou indirectement au sens de l\'article L 233-3 du Code de commerce.',
+     'Modalités de transmission des actions : la transmission des actions émises par la Société s\'opère par un virement de compte à compte sur production d\'un ordre de mouvement. Ce mouvement est inscrit sur le registre des mouvements coté et paraphé.']));
+  A.push(art('ARTICLE 12 — Agrément',
+    ['1. Les actions sont librement cessibles entre associés. Elles ne peuvent être cédées, à titre onéreux ou à titre gratuit, à un cessionnaire n\'ayant déjà la qualité d\'associé et quel que soit son degré de parenté avec le cédant, qu\'avec l\'agrément préalable de la collectivité des associés statuant à la majorité des voix des associés disposant du droit de vote.',
+     '2. La demande d\'agrément doit être notifiée par lettre recommandée avec demande d\'avis de réception adressée au Président de la Société et indiquant le nombre d\'actions dont la cession est envisagée, le prix de la cession, les nom, prénoms, adresse, nationalité de l\'acquéreur ou, s\'il s\'agit d\'une personne morale, son identification complète. Cette demande d\'agrément est transmise par le Président aux associés.',
+     '3. Le Président dispose d\'un délai de trois mois à compter de la réception de la demande d\'agrément pour faire connaître au Cédant la décision de la collectivité des associés. À défaut de réponse dans le délai ci-dessus, l\'agrément sera réputé acquis.',
+     '4. Les décisions d\'agrément ou de refus d\'agrément ne sont pas motivées.',
+     '5. En cas d\'agrément, l\'associé Cédant peut réaliser librement la cession aux conditions notifiées dans sa demande d\'agrément. Le transfert des actions doit être réalisé au plus tard dans les 30 jours de la décision d\'agrément.',
+     '6. En cas de refus d\'agrément, la Société est tenue, dans un délai d\'un mois à compter de la notification du refus, d\'acquérir ou de faire acquérir les actions de l\'associé Cédant par un ou plusieurs tiers agréés. Le prix de rachat est déterminé d\'un commun accord entre les parties ; à défaut d\'accord, à dire d\'expert dans les conditions de l\'article 1843-4 du Code civil.']));
+  A.push(art('ARTICLE 13 — Nullité des cessions d\'actions',
+    ['Toutes les cessions d\'actions effectuées en violation des dispositions des présents statuts sont nulles. Au surplus, une telle cession constitue un juste motif d\'exclusion.']));
+  // TITRE IV
+  A.push('<div class="st-titre">TITRE IV — ADMINISTRATION ET DIRECTION · CONVENTIONS · COMMISSAIRES AUX COMPTES</div>');
+  A.push(art('ARTICLE 14 — Président de la Société',
+    ['La Société est représentée, dirigée et administrée par un Président, personne physique ou morale, associé ou non, de la Société.',
+     'Le premier Président de la Société est désigné aux termes des présents statuts. Le Président est ensuite désigné par décision collective des associés. Lorsque le Président est une personne morale, celle-ci doit obligatoirement désigner un représentant permanent personne physique.',
+     'Durée des fonctions : le Président est nommé sans limitation de durée. Le Président peut être révoqué à tout moment, sans qu\'il soit besoin d\'un juste motif, par décision collective des associés prise à l\'initiative d\'un ou plusieurs associés réunissant au moins 51 % du capital et des droits de vote et statuant à la majorité des voix des associés disposant du droit de vote. Cette révocation n\'ouvre droit à aucune indemnisation.',
+     'La rémunération du Président est fixée chaque année par décision collective des associés. Le Président dirige la Société et la représente à l\'égard des tiers ; il est investi de tous les pouvoirs nécessaires pour agir en toute circonstance au nom de la Société, dans la limite de l\'objet social et des pouvoirs expressément dévolus par les dispositions légales et les présents statuts aux décisions collectives des associés.']));
+  A.push(art('ARTICLE 15 — Conventions entre la Société et ses dirigeants',
+    ['Toute convention intervenant, directement ou par personne interposée, entre la Société et son Président, l\'un de ses dirigeants, l\'un de ses associés disposant d\'une fraction des droits de vote supérieure à 10 % ou, s\'il s\'agit d\'une société associée, la Société la contrôlant au sens de l\'article L 233-3 du Code de commerce, doit être portée à la connaissance des Commissaires aux comptes dans le mois de sa conclusion.',
+     'Les Commissaires aux comptes présentent aux associés un rapport sur la conclusion et l\'exécution des conventions au cours de l\'exercice écoulé. Les associés statuent sur ce rapport lors de la décision collective statuant sur les comptes de cet exercice.']));
+  A.push(art('ARTICLE 16 — Commissaires aux comptes',
+    ['La collectivité des associés désigne, pour la durée, dans les conditions et avec la mission fixée par la loi, un ou plusieurs Commissaires aux comptes titulaires et, le cas échéant, suppléants. Les Commissaires aux comptes doivent être invités à participer à toutes les décisions collectives dans les mêmes conditions que les associés.']));
+  // TITRE V
+  A.push('<div class="st-titre">TITRE V — DÉCISIONS COLLECTIVES DES ASSOCIÉS</div>');
+  A.push(art('ARTICLE 17 — Décisions collectives obligatoires',
+    ['La collectivité des associés est seule compétente pour prendre les décisions suivantes : transformation de la Société ; modification du capital social (augmentation, amortissement et réduction) ; fusion, scission, apport partiel d\'actifs ; dissolution ; nomination des Commissaires aux comptes ; nomination, rémunération, révocation du Président ; approbation des comptes annuels et affectation des résultats ; approbation des conventions conclues entre la Société et ses dirigeants ou associés ; modification des statuts, y compris transfert du siège social ; nomination du Liquidateur et décisions relatives aux opérations de liquidation ; agrément des cessions d\'actions.']));
+  A.push(art('ARTICLE 18 — Règles de majorité',
+    ['Sauf stipulations spécifiques contraires et expresses des présents statuts, les décisions collectives des associés sont adoptées à la majorité des voix des associés disposant du droit de vote, présents ou représentés. Le droit de vote attaché aux actions est proportionnel à la quotité du capital qu\'elles représentent ; chaque action donne droit à une voix au moins.',
+     'Par exception, sont adoptées à l\'unanimité des associés disposant du droit de vote : celles prévues par les dispositions légales ; les décisions ayant pour effet d\'augmenter les engagements des associés ; la prorogation de la Société ; la dissolution de la société ; la transformation de la Société en société d\'une autre forme.']));
+  A.push(art('ARTICLE 19 — Modalités des décisions collectives',
+    ['Les décisions collectives sont prises sur convocation du Président. Elles résultent de la réunion d\'une assemblée ou d\'un procès-verbal signé par tous les associés ; elles peuvent également être prises par tous moyens de télécommunication électronique.',
+     'Tout associé a le droit de participer aux décisions collectives, personnellement ou par mandataire, ou à distance par voie électronique, dans les conditions prévues par la loi et les présents statuts, quel que soit le nombre d\'actions qu\'il possède.']));
+  A.push(art('ARTICLE 20 — Assemblées',
+    ['Les associés se réunissent en assemblée sur convocation du Président au siège social ou en tout autre lieu mentionné dans la convocation. La convocation est effectuée par tous moyens de communication écrite 15 jours au moins avant la date de la réunion et indique l\'ordre du jour. Toutefois, l\'assemblée peut se réunir sans délai si tous les associés y consentent.',
+     'L\'assemblée est présidée par le Président ou, en son absence, par un associé désigné par l\'assemblée. Les associés peuvent se faire représenter par un autre associé ou par un tiers. Le Président de séance établit un procès-verbal des délibérations.']));
+  A.push(art('ARTICLE 21 — Procès-verbaux des décisions collectives',
+    ['Les décisions collectives prises en assemblée doivent être constatées par écrit dans des procès-verbaux établis sur un registre spécial ou sur des feuilles mobiles numérotées. Les procès-verbaux sont signés par le Président de l\'assemblée et par les associés présents et doivent indiquer la date et le lieu de la réunion, l\'identité des associés présents et représentés, un résumé des débats ainsi que le texte des résolutions mises aux voix et le sens du vote de chaque associé.']));
+  A.push(art('ARTICLE 22 — Information préalable des associés',
+    ['Quel que soit le mode de consultation, toute décision des associés doit avoir fait l\'objet d\'une information préalable comprenant tous les documents et informations permettant aux associés de se prononcer en connaissance de cause. Lorsque les décisions collectives doivent être prises sur le ou les rapports du Président et/ou des Commissaires aux comptes, ceux-ci sont communiqués aux associés 15 jours avant la date d\'établissement du procès-verbal.']));
+  // TITRE VI
+  A.push('<div class="st-titre">TITRE VI — EXERCICE SOCIAL · COMPTES ANNUELS · AFFECTATION DES RÉSULTATS</div>');
+  A.push(art('ARTICLE 23 — Exercice social',
+    ['L\'exercice social commence le 1er janvier et se termine le 31 décembre de chaque année.',
+     'Par exception, le premier exercice social sera clos le 31 décembre '+annee+'.']));
+  A.push(art('ARTICLE 24 — Établissement et approbation des comptes annuels',
+    ['Le Président établit les comptes annuels de l\'exercice. Dans les six mois de la clôture de l\'exercice, les associés doivent statuer par décision collective sur les comptes annuels, au vu du rapport de gestion et des rapports du ou des Commissaires aux comptes.']));
+  A.push(art('ARTICLE 25 — Affectation et répartition des résultats',
+    ['1. Toute action donne droit à une part nette proportionnelle à la quote-part du capital qu\'elle représente, dans les bénéfices et réserves ou dans l\'actif social, au cours de l\'existence de la Société comme en cas de liquidation. Chaque action supporte les pertes sociales dans les mêmes proportions.',
+     '2. Après approbation des comptes et constatation de l\'existence d\'un bénéfice distribuable, les associés décident sa distribution, en totalité ou en partie, ou son affectation à un ou plusieurs postes de réserves.',
+     '3. La décision collective des associés ou, à défaut, le Président, fixe les modalités de paiement des dividendes.']));
+  // TITRE VII
+  A.push('<div class="st-titre">TITRE VII — DISSOLUTION · LIQUIDATION DE LA SOCIÉTÉ</div>');
+  A.push(art('ARTICLE 26 — Dissolution · Liquidation de la Société',
+    ['La Société est dissoute dans les cas prévus par la loi ou en cas de dissolution anticipée décidée par décision collective des associés. La décision collective qui constate ou décide la dissolution nomme un ou plusieurs Liquidateurs.',
+     'Le produit net de la liquidation, après apurement du passif, est employé au remboursement intégral du capital libéré et non amorti des actions. Le surplus, s\'il en existe, est réparti entre les associés proportionnellement au nombre d\'actions de chacun d\'eux.',
+     'Si toutes les actions sont réunies en une seule main et que l\'associé unique est une personne morale, la dissolution entraîne la transmission universelle du patrimoine à l\'associé unique, sans liquidation, conformément à l\'article 1844-5 du Code civil.']));
+  // TITRE VIII
+  A.push('<div class="st-titre">TITRE VIII — CONTESTATIONS</div>');
+  A.push(art('ARTICLE 27 — Contestations',
+    ['Les contestations relatives aux affaires sociales, survenant pendant la durée de la Société ou au cours de sa liquidation entre les associés ou entre un associé et la Société, seront soumises au tribunal de commerce du lieu du siège social.']));
+  // TITRE IX
+  A.push('<div class="st-titre">TITRE IX — CONSTITUTION DE LA SOCIÉTÉ</div>');
+  A.push('<div class="st-art">ARTICLE 28 — Nomination des dirigeants</div>'
+    +'<p>Le premier Président de la Société, nommé aux termes des présents statuts sans limitation de durée, est :</p>'
+    +'<p>- '+esc(president)+'.</p>'
+    +'<p>Lequel déclare accepter lesdites fonctions et satisfaire à toutes les conditions requises par la loi et les règlements pour leur exercice. Les Présidents suivants seront nommés par décisions collectives des associés.</p>');
+  A.push(art('ARTICLE 29 — Nomination des premiers Commissaires aux comptes',
+    ['Seules sont tenues de désigner au moins un commissaire aux comptes les SAS dépassant, à la clôture de l\'exercice social, deux des trois seuils fixés par décret, ainsi que les SAS qui contrôlent une ou plusieurs sociétés ou qui sont contrôlées, au sens de l\'article L 233-16 II et III du Code de commerce.']));
+  A.push(art('ARTICLE 30 — Formalités de publicité · Immatriculation',
+    ['Tous pouvoirs sont conférés au porteur d\'un original des présentes à l\'effet d\'accomplir les formalités de publicité, de dépôt et autres nécessaires pour parvenir à l\'immatriculation de la Société au registre du commerce et des sociétés.']));
+  // Clôture
+  var moisNom=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'][new Date().getMonth()];
+  var jour=new Date().getDate();
+  var signs=assoc.map(function(a){return '<div class="sg"><b>'+(esc((a.nom||'').trim())||'«associé»')+'</b>Signature</div>';}).join('');
+  var fin='<div class="st-fin"><p>Fait à '+esc(ville)+',</p><p>Le '+jour+' '+moisNom+' '+annee+',</p>'
+    +'<p>en autant d\'originaux que nécessaire, dont un exemplaire pour l\'enregistrement et deux exemplaires pour le dépôt au greffe du tribunal de commerce.</p>'
+    +'<div class="st-sign">'+signs+'</div></div>';
+  return '<div class="st-doc">'+cover+'<div class="st-page">'+preambule+A.join('')+fin+'</div></div>';
+  function art(titre,paras){return '<div class="st-art">'+titre+'</div>'+paras.map(function(p){return '<p>'+p+'</p>';}).join('');}
 }
 function espStatut(id,dir){var d=espDoss().find(function(x){return x.id===id;});var i=STATUTS.findIndex(function(s){return s.k===d.statut;});var n=Math.max(0,Math.min(STATUTS.length-1,(i<0?0:i)+dir));var ns=STATUTS[n].k;if(ns!==d.statut){d.statut=ns;(d.historique=d.historique||[]).push({d:today(),t:'Statut → '+ns});save();render();}}
 function espFacture(id){var d=espDoss().find(function(x){return x.id===id;});var cid=(d.clientIds||[])[0];if(typeof FactureVente==='undefined')return toast('Module facture indisponible');FactureVente.ouvrir({societe:fvSociete(),clients:fvClients(),numero:fvNextNum(),initial:{clientId:cid},onCreer:fvOnCreer});}
