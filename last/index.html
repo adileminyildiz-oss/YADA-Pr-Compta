@@ -245,6 +245,14 @@ body[data-page="dash"] .grid.g2{margin-top:12px}
 .st-doc .st-sign .sg{min-width:200px;text-align:center}
 .st-doc .st-sign .sg b{display:block;margin-bottom:34px}
 .st-doc .st-fin{margin-top:20px}
+.st-doc .st-hdr{text-align:center;margin-bottom:16px}
+.st-doc .st-hdr b{font-size:14px}
+.st-doc .st-hdr .sub{font-size:10.5px}
+.st-tbl{width:100%;border-collapse:collapse;margin:12px 0;font-size:10.5px}
+.st-tbl th,.st-tbl td{border:1px solid #000;padding:6px 7px;vertical-align:top;text-align:center}
+.st-tbl th{font-weight:700;background:#f2ede3}
+.st-tbl td.al{text-align:left}
+.st-tbl tr.tot td{font-weight:700}
 @media print{.st-page,.st-cover{page-break-after:always}.st-doc .st-titre{page-break-after:avoid}.st-doc .st-art{page-break-after:avoid}}
 
 /* ============ RESPONSIVE ============ */
@@ -919,6 +927,8 @@ const ESP_DOCS=[
   {k:'dnc',l:'Déclaration de non-condamnation'},
   {k:'rbe',l:'Déclaration des bénéficiaires effectifs (RBE)'},
   {k:'m0',l:'Formulaire M0 (constitution)'},
+  {k:'souscripteurs',l:"Liste des souscripteurs d'actions"},
+  {k:'pouvoir',l:'Pouvoir (formalités RCS)'},
   {k:'nomination',l:'Acte de nomination du dirigeant'},
   {k:'annonce',l:"Avis d'annonce légale"}
 ];
@@ -976,6 +986,8 @@ function espDocVoir(id,k){var d=espDoss().find(function(x){return x.id===id;});v
 function espDocPrint(){var el=document.querySelector('#ov .doc-gen');if(!el)return;if(typeof FactureVente!=='undefined'&&FactureVente.injectCSS)FactureVente.injectCSS();var pa=document.getElementById('fv-printarea');if(!pa){pa=document.createElement('div');pa.id='fv-printarea';document.body.appendChild(pa);}pa.innerHTML='<div class="doc-gen">'+el.innerHTML+'</div>';setTimeout(function(){window.print();},120);}
 function espDocHTML(d,dc){
   if(dc.k==='statuts')return statutsSasHTML(d);
+  if(dc.k==='souscripteurs')return souscripteursHTML(d);
+  if(dc.k==='pouvoir')return pouvoirHTML(d);
   var s=DB.societe||{}; var c=clientById((d.clientIds||[])[0])||{};
   var cl=((c.prenom?c.prenom+' ':'')+(c.nom||'')).trim();
   var assoc=(c.associes||[]).map(function(a){return '<div>• '+esc(a.nom)+' — '+(esc(a.parts)||'?')+' parts</div>';}).join('')||'<div>—</div>';
@@ -1003,6 +1015,74 @@ function stCivil(a,ph){var nom=esc((a&&a.nom||'').trim())||'«nom prénom»';
   var pays=(a&&a.pays)?esc(a.pays):'«pays»';var nat=(a&&a.nationalite)?esc(a.nationalite):'«…»';
   var adr=(a&&a.adresse)?esc(a.adresse):(ph||'«adresse»');
   return 'M. '+nom+' né le '+naiss+' à '+lieu+' en '+pays+', de nationalité '+nat+', demeurant au '+adr+'.';}
+function stFormeLabel(f){return {SAS:'Société par actions simplifiée',SASU:'Société par actions simplifiée Unipersonnelle',SARL:'Société à responsabilité limitée',EURL:'Entreprise unipersonnelle à responsabilité limitée',SCI:'Société civile immobilière',SA:'Société anonyme'}[f]||'Société par actions simplifiée';}
+function stQualite(f){return (f==='SARL'||f==='EURL'||f==='SCI')?'gérant':'Président';}
+function stDossData(d){
+  var s=DB.societe||{};var c=clientById((d.clientIds||[])[0])||{};
+  var assoc=(c.associes||[]).filter(function(a){return a&&(''+(a.nom||'')).trim();});
+  if(!assoc.length)assoc=[{nom:''}];
+  var totalParts=assoc.reduce(function(n,a){return n+(Number(a.parts)||0);},0);
+  var cap=Number(c.capital)||0;
+  var nominal=(totalParts>0&&cap>0)?(cap/totalParts):100;
+  var nbActions=totalParts>0?totalParts:(nominal>0?Math.round(cap/nominal):0);
+  return {s:s,c:c,assoc:assoc,totalParts:totalParts,cap:cap,nominal:nominal,nbActions:nbActions,
+    denom:((c.denomination||d.denomination||'')+'').trim().toUpperCase()||'«DÉNOMINATION SOCIALE»',
+    forme:(c.forme||d.forme||'SAS'),
+    siege:((c.siege||c.adresse||'')+'').trim()||'«adresse du siège»',
+    ville:((c.ville||s.ville||'')+'').trim()||'«ville»',
+    president:((c.president||(assoc[0]&&assoc[0].nom)||'')+'').trim()||'«Président»'};
+}
+function souscripteursHTML(d){
+  var x=stDossData(d);
+  var uni=(x.assoc.length<=1);
+  var formeTxt=stFormeLabel(uni&&x.forme==='SAS'?'SASU':x.forme);
+  var capN=x.cap?stNum(x.cap):'«…»';
+  var rcsVille=((x.ville!=='«ville»'?x.ville:'')||x.s.ville||'').trim()||'«ville RCS»';
+  var rows=x.assoc.map(function(a,i){
+    var p=Number(a.parts)||0;var m=(x.nominal&&p)?Math.round(x.nominal*p):0;
+    var mTxt=m?(stNum(m)+' € ('+stLettres(m)+' euros)'):'«…»';
+    var act=p||0;var actTxt=act?(act+' ('+stLettres(act).toLowerCase()+' actions)'):'«…»';
+    return '<tr><td>'+(i+1)+'</td><td class="al">'+stCivil(a)+'</td><td>'+mTxt+'</td><td>'+mTxt+'</td><td>'+actTxt+'</td></tr>';
+  }).join('');
+  var totTxt=x.cap?(stNum(x.cap)+' € ('+stLettres(x.cap)+' euros)'):'«…»';
+  var totAct=x.nbActions?(x.nbActions+' ('+stLettres(x.nbActions).toLowerCase()+' actions)'):'«…»';
+  var moisNom=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'][new Date().getMonth()];
+  var dateTxt=new Date().getDate()+' '+moisNom+' '+new Date().getFullYear();
+  return '<div class="st-doc"><div class="st-page">'
+    +'<div class="st-hdr"><b>'+esc(x.denom)+'</b>'
+    +'<div class="sub">'+esc(formeTxt)+' au capital de '+capN+' euros — RCS de '+esc(rcsVille)+'</div>'
+    +'<div class="sub">Siège social : '+esc(x.siege)+(x.ville?(' '+esc(x.ville)):'')+'</div></div>'
+    +'<div class="st-titre">État des souscriptions et des versements</div>'
+    +'<table class="st-tbl"><thead><tr>'
+    +'<th>N°</th><th>Associé (nom, prénom, adresse ou dénomination, forme, capital, siège, RCS)</th>'
+    +'<th>Montant de l\'apport en euros</th>'
+    +'<th>Montant libéré en euros lors de la création de la société, au moins égal à la moitié de l\'apport en numéraire</th>'
+    +'<th>Nombre d\'actions attribuées en rémunération de l\'apport</th></tr></thead><tbody>'
+    +rows
+    +'<tr class="tot"><td></td><td class="al">TOTAL</td><td>'+totTxt+'</td><td>'+totTxt+'</td><td>'+totAct+'</td></tr>'
+    +'</tbody></table>'
+    +'<p style="margin-top:12px">Le présent état, qui constate la souscription de '+(x.nbActions||'«…»')+' ('+(x.nbActions?stLettres(x.nbActions):'«…»')+') actions de la société '+esc(x.denom)+', ainsi que le versement de la somme de '+totTxt+' correspondant au moins à la moitié du nominal desdites actions, est certifié exact, sincère et véritable par '+esc(x.president)+', associé fondateur et '+stQualite(x.forme)+'.</p>'
+    +'<div class="st-fin"><p>Fait à '+esc(x.ville)+', le '+dateTxt+'</p>'
+    +'<div class="st-sign"><div class="sg"><b>Le '+stQualite(x.forme)+'</b>Signature</div></div></div>'
+    +'</div></div>';
+}
+function pouvoirHTML(d){
+  var x=stDossData(d);var s=x.s;
+  var mandant=x.president;
+  var adrMandant=((x.c.adresse||x.siege)+'').trim()||'«adresse»';
+  var qualite=stQualite(x.forme);
+  var repFirm=((s.representant||s.dirigeant||'')+'').trim();
+  var mandataire=esc(s.raison||'AEM CONSEIL')+(repFirm?(' ('+esc(repFirm)+')'):'')
+    +' '+esc(((s.adresse||'')+(s.cp?(' '+s.cp):'')+(s.ville?(' '+s.ville):'')).trim()||'«adresse du mandataire»');
+  var moisNom=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'][new Date().getMonth()];
+  var dateTxt=new Date().getDate()+' '+moisNom+' '+new Date().getFullYear();
+  return '<div class="st-doc"><div class="st-page">'
+    +'<div class="st-titre" style="font-size:15px;margin-top:8px">POUVOIR</div>'
+    +'<p style="margin-top:18px">Je soussigné '+esc(mandant)+' demeurant à '+esc(adrMandant)+', agissant en qualité de '+qualite+' de la Société '+esc(x.denom)+' en cours de constitution, donne par les présentes pouvoirs à '+mandataire+' aux fins d\'effectuer toutes démarches relatives aux formalités d\'inscription au Registre du commerce et des sociétés, de signer tous documents à cet effet, et d\'une façon générale, de faire tout ce qui sera nécessaire pour l\'exécution des présentes.</p>'
+    +'<div class="st-fin" style="margin-top:34px"><p>Fait à '+esc(x.ville)+'</p><p>Le '+dateTxt+'</p>'
+    +'<div class="st-sign" style="margin-top:30px"><div class="sg"><b>Le Mandant</b></div><div class="sg"><b>Le Mandataire</b></div></div></div>'
+    +'</div></div>';
+}
 function statutsSasHTML(d){
   var s=DB.societe||{};var c=clientById((d.clientIds||[])[0])||{};
   var denom=((c.denomination||c.raisonProjet||d.denomination||'')+'').trim().toUpperCase()||'«DÉNOMINATION SOCIALE»';
@@ -1289,7 +1369,8 @@ document.addEventListener('mousemove',e=>{
 function ensureData(){
   if(!DB.factures)DB.factures=[];
   if(!DB.fournisseurs)DB.fournisseurs=[];
-  if(!DB.societe)DB.societe={raison:'AEM CONSEIL',formeJur:'SAS',siren:'',siret:'',adresse:'12 rue de la République',cp:'75011',ville:'Paris',iban:'',bic:'',banqueBenef:'AEM CONSEIL',tvaCondition:'Sur les encaissements',fraisRecouvrement:40};
+  if(!DB.societe)DB.societe={raison:'AEM CONSEIL',formeJur:'SAS',siren:'',siret:'',adresse:'12 rue de la République',cp:'75011',ville:'Paris',representant:'',iban:'',bic:'',banqueBenef:'AEM CONSEIL',tvaCondition:'Sur les encaissements',fraisRecouvrement:40};
+  else if(DB.societe.representant===undefined)DB.societe.representant='';
   DB.seq=DB.seq||{}; if(!DB.seq.factVente)DB.seq.factVente=1; if(!DB.seq.factAchat)DB.seq.factAchat=1;
   if(!localStorage.getItem('last-seed2')){
     if(DB.fournisseurs.length===0){
