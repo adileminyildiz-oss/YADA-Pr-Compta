@@ -10975,7 +10975,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v490';
+    b.textContent='YADA · v491';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -25797,6 +25797,20 @@ ${lignes}
   }
   function schedule(){ if(scheduled||busy) return; scheduled=true; try{ requestAnimationFrame(run); }catch(e){ setTimeout(run,16); } }
   try{ new MutationObserver(function(){ if(!busy) schedule(); }).observe(document.documentElement,{childList:true,subtree:true}); }catch(e){}
+})();
+</script>
+<script id="yada-addon231">
+/* v491 — Consultation des comptes : aucun trait sur les cases VIDES.
+   Le fond « papier réglé » (repeating-linear-gradient) de la grille dessinait des lignes sur
+   toute la zone, y compris le vide (en thème nuit, le bleu rgba(30,144,255,.18/.12)).
+   On le retire : seules les LIGNES REMPLIES gardent leurs bordures de cellule.
+   100% CSS additif, injecté en dernier (spécificité html body[data-theme] → prime, tous thèmes). */
+(function(){
+  try{
+    var css='html body[data-theme] .sg-grid,html body[data-theme] .sgj-grid{background-image:none !important}'
+      +'html body .sg-grid,html body .sgj-grid{background-image:none !important}';
+    var s=document.createElement('style'); s.id='sg-no-ruled-mod'; s.textContent=css; document.head.appendChild(s);
+  }catch(e){}
 })();
 </script>
 </body>

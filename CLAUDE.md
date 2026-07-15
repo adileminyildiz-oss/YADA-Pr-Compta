@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Facture client : aperçu paginé en feuilles A4 STRICTES (cadre respecté, 2ᵉ page si besoin) — v490
+## 🟢 Dernière mise à jour — Consultation des comptes : aucun trait sur les cases VIDES (traits seulement sur les lignes remplies) — v491
+**Quoi :** dans la **Consultation des comptes**, la grille affichait des **traits horizontaux sur toute la zone**, y compris là où il n'y a **aucune écriture** (en thème nuit, de fins traits bleus). Ces traits venaient d'un **fond « papier réglé »** (`repeating-linear-gradient`) appliqué au conteneur de grille, indépendant des données. Il est **retiré** → **plus aucun trait sur les cases vides** ; seules les **lignes réellement remplies** gardent leurs **bordures de cellule** (`td` border-bottom).
+
+**Comment :** `yada-addon231` (100% CSS additif, `<style id="sg-no-ruled-mod">` injecté en dernier) : `html body[data-theme] .sg-grid,.sgj-grid{background-image:none !important}` (+ variante sans thème) — la spécificité `html body[data-theme]` (0,2,2) prime sur les règles de fond réglé par thème (noir/liquid, 0,2,1) qui posaient `repeating-linear-gradient(... rgba(30,144,255,.18/.12) ...)`. Les bordures `td` des lignes de données (`.sg-tbl`/`.sgj`) sont conservées. Aucune logique modifiée. `sw.js` yada-v83, badge v491, `version.json` 491.
+
+**Validé :** `node --check` (224 scripts, 0 erreur) + `sw.js` OK + filet d'équilibre (achat 600=600 ✅) + Playwright (thème nuit : `.sg-grid` et `.sgj-grid` → `background-image:none` ; style `sg-no-ruled-mod` injecté ; 0 pageerror). Badge → **v491**.
+
+---
+
+## 🟢 MAJ précédente — Facture client : aperçu paginé en feuilles A4 STRICTES (cadre respecté, 2ᵉ page si besoin) — v490
 **Quoi :** à la génération/aperçu d'une **facture client** (fenêtre « Nouvelle facture » `#nf-overlay` + « Voir » `#modal-c`), la facture est désormais **concentrée sur une page A4 stricte (210 × 297 mm)** ; si le contenu **déborde**, une **2ᵉ (puis 3ᵉ…) page A4** est ajoutée automatiquement. Le **cadre A4 n'est plus déformé** (avant : une seule page qui s'étirait en hauteur quand il y avait beaucoup de lignes). Les **lignes du tableau sont réparties** sur les pages, l'**en-tête de colonnes (Description · Qté · PU · TVA · Total HT) est répété** sur chaque page, et les **totaux + RIB + mentions** restent sur la **dernière page**.
 
 **Comment :** `yada-addon230` (100% additif) — `<style id="inv-a4-paginate-mod">` fixe l'aperçu écran à `.inv .inv-page{height:297mm;overflow:hidden}` (cadre A4 exact, jamais déformé) ; `window.invPaginate(inv)` découpe le `.inv-page` source en **feuilles A4 successives** (`.inv-pages`) — mesure de débordement (`scrollHeight > clientHeight`), split du `<tbody>` ligne à ligne avec `thead` cloné, blocs d'en-tête/totaux repositionnés. Un **MutationObserver** (garde anti-boucle `busy`/rAF) pagine tout aperçu **non encore paginé** (`#nf-prev-inner` / `#modal-c`) à chaque mise à jour — les appels internes `nfUpdate→nfApercu` ne passant pas par `window`. **Desktop uniquement** (mobile inchangé). Impression : la pagination native `@page A4` (addon160) reste en place. `sw.js` yada-v82, badge v490, `version.json` 490.
