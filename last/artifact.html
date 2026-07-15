@@ -1718,7 +1718,41 @@ function ensureData(){
   save();
 }
 /* boot */
-load();ensureData();render();
+/* ===== Accès protégé (mot de passe) ===== */
+var LAST_PWD_HASH='afab4393905b6a733139713689265cb550f4749024a49723e675a772a7c85a64';
+function lastBoot(){try{load();ensureData();}catch(e){}render();}
+async function _sha256(s){var b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.prototype.map.call(new Uint8Array(b),function(x){return x.toString(16).padStart(2,'0');}).join('');}
+async function lastGateTry(ev){if(ev&&ev.preventDefault)ev.preventDefault();
+  var inp=document.getElementById('lg-pwd');var err=document.getElementById('lg-err');
+  var h=await _sha256(inp.value||'');
+  if(h===LAST_PWD_HASH){try{localStorage.setItem('last-gate-ok','1');}catch(e){}var g=document.getElementById('last-gate');if(g)g.remove();lastBoot();}
+  else{if(err)err.style.display='block';inp.value='';inp.focus();}
+  return false;}
+function lastGate(){
+  var ok=false;try{ok=localStorage.getItem('last-gate-ok')==='1';}catch(e){}
+  if(ok){lastBoot();return;}
+  var g=document.createElement('div');g.id='last-gate';
+  g.innerHTML='<div class="lg-card">'
+    +'<div class="lg-brand"><span class="brand-mark" aria-label="LAST"><svg viewBox="-12 -2 442 124" fill="currentColor" role="img" shape-rendering="geometricPrecision"><rect x="0" y="10" width="18" height="100"/><rect x="0" y="92" width="66" height="18"/><path d="M92 110 L137 10 L182 110" fill="none" stroke="currentColor" stroke-width="18" stroke-linejoin="miter"/><circle cx="137" cy="84" r="9"/><path d="M280 40 C280 18 214 16 214 46 C214 70 280 60 280 86 C280 110 214 108 214 84" fill="none" stroke="currentColor" stroke-width="18" stroke-linecap="butt"/><rect x="318" y="10" width="100" height="18"/><rect x="359" y="10" width="18" height="100"/></svg></span><div class="lg-sub">AEM CONSEIL · Espace interne</div></div>'
+    +'<form class="lg-form" onsubmit="return lastGateTry(event)"><label>Mot de passe</label>'
+    +'<input id="lg-pwd" type="password" autocomplete="current-password" autofocus placeholder="••••••••">'
+    +'<div id="lg-err" class="lg-err">Mot de passe incorrect.</div>'
+    +'<button class="btn btn-pri" type="submit" style="width:100%;justify-content:center;margin-top:6px">Se connecter</button></form>'
+    +'<div class="lg-note">Accès réservé aux collaborateurs AEM CONSEIL.</div></div>';
+  document.body.appendChild(g);
+  var st=document.createElement('style');st.textContent='#last-gate{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:20px}'
+    +'#last-gate .lg-card{background:var(--card);border:1px solid var(--line-2);border-radius:14px;box-shadow:0 24px 60px -30px rgba(70,55,25,.5);padding:30px 28px;width:100%;max-width:340px}'
+    +'#last-gate .lg-brand{text-align:center;margin-bottom:20px;color:var(--ink)}#last-gate .brand-mark svg{height:34px;width:auto}'
+    +'#last-gate .lg-sub{font-size:9px;letter-spacing:1.4px;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-top:8px}'
+    +'#last-gate label{display:block;font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:5px}'
+    +'#last-gate input{width:100%;padding:10px 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--paper);color:var(--ink);font:inherit;font-size:14px;outline:none}'
+    +'#last-gate input:focus{border-color:#cbbc93;box-shadow:var(--focus)}'
+    +'#last-gate .lg-err{display:none;color:#b0442f;font-size:11.5px;margin-top:7px}'
+    +'#last-gate .lg-note{text-align:center;font-size:10.5px;color:var(--ink-3);margin-top:16px}';
+  document.head.appendChild(st);
+  var i=document.getElementById('lg-pwd');if(i)i.focus();
+}
+lastGate();
 </script>
 
 <!-- ============================================================
