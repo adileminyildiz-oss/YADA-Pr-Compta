@@ -242,7 +242,7 @@ body[data-page="dash"] .grid.g2{margin-top:12px}
 <div class="app">
   <aside id="side">
     <div class="brand">
-      <span class="brand-mark" aria-label="LAST"><svg viewBox="0 0 430 120" fill="currentColor" role="img"><rect x="0" y="10" width="18" height="100"/><rect x="0" y="92" width="66" height="18"/><path d="M92 110 L137 10 L182 110" fill="none" stroke="currentColor" stroke-width="18" stroke-linejoin="miter"/><circle cx="137" cy="84" r="9"/><path d="M280 40 C280 18 214 16 214 46 C214 70 280 60 280 86 C280 110 214 108 214 84" fill="none" stroke="currentColor" stroke-width="18" stroke-linecap="butt"/><rect x="318" y="10" width="100" height="18"/><rect x="359" y="10" width="18" height="100"/></svg></span>
+      <span class="brand-mark" aria-label="LAST"><svg viewBox="-12 -2 442 124" fill="currentColor" role="img" shape-rendering="geometricPrecision"><rect x="0" y="10" width="18" height="100"/><rect x="0" y="92" width="66" height="18"/><path d="M92 110 L137 10 L182 110" fill="none" stroke="currentColor" stroke-width="18" stroke-linejoin="miter"/><circle cx="137" cy="84" r="9"/><path d="M280 40 C280 18 214 16 214 46 C214 70 280 60 280 86 C280 110 214 108 214 84" fill="none" stroke="currentColor" stroke-width="18" stroke-linecap="butt"/><rect x="318" y="10" width="100" height="18"/><rect x="359" y="10" width="18" height="100"/></svg></span>
       <small class="brand-sub">AEM CONSEIL · INTERNE</small>
     </div>
     <div class="nav" id="nav"></div>
@@ -424,7 +424,7 @@ const PAGES=[
   {id:'espace',lbl:'Espace',ic:'espace',sub:'Travail & génération des dossiers'},
   {id:'services',lbl:'Services & prix',ic:'tag',sub:'Catalogue des prestations'},
   {id:'devis',lbl:'Devis',ic:'quote',sub:'Devis automatiques',soon:1},
-  {id:'facturation',lbl:'Facturation',ic:'card',sub:'Client & fournisseur'},
+  {id:'facturation',lbl:'Facturation',ic:'card',sub:'Factures de vente'},
   {id:'marge',lbl:'Marge',ic:'trend',sub:'Rentabilité par dossier',soon:1},
   {id:'params',lbl:'Paramètres',ic:'gear',sub:'Équipe & réglages'}
 ];
@@ -800,15 +800,11 @@ function delUser(id){if(!confirm('Retirer ce collaborateur ?'))return;DB.users=D
 function factStatColor(s){return {'Émise':'#977619','Payée':'#5c7a4c','Impayée':'#a85a34','À payer':'#977619'}[s]||'#8a7f6c';}
 function factNum(t){DB.seq=DB.seq||{};const k=t==='client'?'factVente':'factAchat';const n=DB.seq[k]||1;DB.seq[k]=n+1;return (t==='client'?'FV-':'FA-')+(2600+n);}
 function pageFacturation(){
-  const t=state.factTab||'client';
+  const t='client';
   const list=(DB.factures||[]).filter(f=>f.type===t).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const totTVA=list.reduce((s,f)=>s+(+f.tva||0),0), totTTC=list.reduce((s,f)=>s+(+f.ttc||0),0);
   const du=list.filter(f=>f.statut==='Impayée'||f.statut==='À payer').reduce((s,f)=>s+(+f.ttc||0),0);
   return `
-  <div class="fact-tabs">
-    <button class="ftab ${t==='client'?'on':''}" onclick="state.factTab='client';render()">Client — ventes</button>
-    <button class="ftab ${t==='fournisseur'?'on':''}" onclick="state.factTab='fournisseur';render()">Fournisseur — achats</button>
-  </div>
   <div class="grid g3" style="margin-bottom:14px">
     ${kpi('card',eur(totTTC),'Total TTC — '+(t==='client'?'ventes':'achats'))}
     ${kpi('euro',eur(totTVA),'TVA')}
