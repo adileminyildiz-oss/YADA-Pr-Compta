@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Consultation des comptes : aucun trait sur les cases VIDES (traits seulement sur les lignes remplies) — v491
+## 🟢 Dernière mise à jour — Barre latérale « Aurora Glass » (Spatial UI + Liquid Glass) — v492
+**Quoi :** la **barre latérale de l'Espace Cabinet** adopte le style **Aurora Glass** (choix n°6) : panneau en **verre dépoli translucide** (bleu nuit + outremer + transparence, `backdrop-filter:blur`) avec un **halo bleu MOUVANT** (aurora) qui glisse lentement derrière la navigation, et un **item actif en glass Crystal** (fond translucide `rgba(30,144,255,.22)` + anneau + halo, au lieu du contour néon). Les **icônes filaires Néon** (v484) sont conservées.
+
+**Comment — `yada-addon232` (100% additif, injecté APRÈS le Néon → prime à spécificité égale) :** `<style id="aurora-nav-mod">` — `html body[data-theme] aside{background:linear-gradient(180deg,rgba(16,36,88,.55)…) !important;backdrop-filter:blur(20px) saturate(1.35) !important;overflow:hidden;position:relative}` (prime sur le `#070d18` d'addon226 et le dégradé opaque d'addon160) ; halo `#nav-aurora{position:absolute;radial-gradient(#1e90ff);filter:blur(46px);animation:navAur 13s}` (respecte `prefers-reduced-motion`) ; contenu (`.brand`/`#nav`/`.side-foot`) en `z-index:1` au-dessus du halo ; survol = reflet de verre, actif = glass Crystal + anneau + halo. Un `ensureAurora()` (greffé sur `render` + intervalle 900 ms, idempotent) insère le halo comme 1ᵉʳ enfant de `aside`. `sw.js` yada-v84, badge v492, `version.json` 492.
+
+**Validé :** `node --check` (225 scripts, 0 erreur) + `sw.js` OK + filet d'équilibre (achat 600=600 ✅) + Playwright (thème nuit : `#aurora-nav-mod` injecté, `#nav-aurora` présent + animation `navAur`, `aside` `position:relative` + fond dégradé verre + `backdrop-filter:blur(20px) saturate(1.35)` ; 0 pageerror). Badge → **v492**.
+
+---
+
+## 🟢 MAJ précédente — Consultation des comptes : aucun trait sur les cases VIDES (traits seulement sur les lignes remplies) — v491
 **Quoi :** dans la **Consultation des comptes**, la grille affichait des **traits horizontaux sur toute la zone**, y compris là où il n'y a **aucune écriture** (en thème nuit, de fins traits bleus). Ces traits venaient d'un **fond « papier réglé »** (`repeating-linear-gradient`) appliqué au conteneur de grille, indépendant des données. Il est **retiré** → **plus aucun trait sur les cases vides** ; seules les **lignes réellement remplies** gardent leurs **bordures de cellule** (`td` border-bottom).
 
 **Comment :** `yada-addon231` (100% CSS additif, `<style id="sg-no-ruled-mod">` injecté en dernier) : `html body[data-theme] .sg-grid,.sgj-grid{background-image:none !important}` (+ variante sans thème) — la spécificité `html body[data-theme]` (0,2,2) prime sur les règles de fond réglé par thème (noir/liquid, 0,2,1) qui posaient `repeating-linear-gradient(... rgba(30,144,255,.18/.12) ...)`. Les bordures `td` des lignes de données (`.sg-tbl`/`.sgj`) sont conservées. Aucune logique modifiée. `sw.js` yada-v83, badge v491, `version.json` 491.

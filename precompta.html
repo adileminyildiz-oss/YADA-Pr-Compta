@@ -10975,7 +10975,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v491';
+    b.textContent='YADA · v492';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -25811,6 +25811,53 @@ ${lignes}
       +'html body .sg-grid,html body .sgj-grid{background-image:none !important}';
     var s=document.createElement('style'); s.id='sg-no-ruled-mod'; s.textContent=css; document.head.appendChild(s);
   }catch(e){}
+})();
+</script>
+<script id="yada-addon232">
+/* v492 — Barre latérale « Aurora Glass » (Spatial UI + Liquid Glass).
+   Panneau en verre dépoli translucide (bleu nuit + outremer + transparence) + halo bleu MOUVANT
+   derrière la nav ; item actif en glass Crystal. Conserve les icônes filaires Néon (addon226).
+   100% additif ; injecté APRÈS le Néon → prime à spécificité égale. Cabinet (aside/#nav). */
+(function(){
+  function ensureAurora(){
+    try{
+      var aside=document.querySelector('aside'); if(!aside) return;
+      if(!aside.querySelector('#nav-aurora')){
+        var el=document.createElement('div'); el.id='nav-aurora'; aside.insertBefore(el, aside.firstChild);
+      }
+    }catch(e){}
+  }
+  if(typeof render==='function'){ var _r=render; render=function(){ var r=_r.apply(this,arguments); ensureAurora(); return r; }; }
+  try{ ensureAurora(); }catch(e){}
+  var iv=setInterval(ensureAurora, 900);
+
+  var css=''
+    /* panneau verre dépoli translucide (prime sur addon226 #070d18 et addon160 dégradé) */
+    +'html body[data-theme] aside{'
+    +'background:linear-gradient(180deg,rgba(16,36,88,.55),rgba(8,16,38,.62) 60%,rgba(5,9,20,.66)) !important;'
+    +'background-image:linear-gradient(180deg,rgba(16,36,88,.55),rgba(8,16,38,.62) 60%,rgba(5,9,20,.66)) !important;'
+    +'-webkit-backdrop-filter:blur(20px) saturate(1.35) !important;backdrop-filter:blur(20px) saturate(1.35) !important;'
+    +'border-right:1px solid rgba(130,180,255,.22) !important;overflow:hidden !important;position:relative !important}'
+    /* halo bleu mouvant (aurora) derrière la nav */
+    +'#nav-aurora{position:absolute;left:-56px;top:24%;width:230px;height:230px;border-radius:50%;'
+    +'background:radial-gradient(circle,#1e90ff,rgba(30,144,255,0) 65%);filter:blur(46px);opacity:.5;'
+    +'pointer-events:none;z-index:0;animation:navAur 13s ease-in-out infinite}'
+    +'@keyframes navAur{0%,100%{transform:translateY(0)}50%{transform:translateY(130px)}}'
+    +'@media (prefers-reduced-motion:reduce){#nav-aurora{animation:none}}'
+    /* contenu au-dessus du halo */
+    +'html body[data-theme] aside .brand,html body[data-theme] aside #nav,html body[data-theme] aside .side-foot{position:relative;z-index:1}'
+    /* survol : reflet de verre */
+    +'body[data-theme] #nav .nav-btn:hover{background:rgba(120,170,255,.14) !important;color:#ffffff !important}'
+    +'body[data-theme] #nav .nav-btn:hover .ico{color:#8ec6ff !important;filter:drop-shadow(0 0 6px rgba(90,176,255,.6))}'
+    /* actif : glass Crystal rempli + anneau + halo (au lieu du contour néon) */
+    +'body[data-theme] #nav .nav-btn.active,body[data-theme] #nav .nav-grp-h.has-active{'
+    +'color:#ffffff !important;border:1px solid rgba(140,190,255,.45) !important;'
+    +'background:rgba(30,144,255,.22) !important;'
+    +'box-shadow:inset 0 0 0 1px rgba(140,190,255,.35),0 0 24px -4px rgba(30,144,255,.55) !important;font-weight:600 !important}'
+    +'body[data-theme] #nav .nav-btn.active .ico,body[data-theme] #nav .nav-grp-h.has-active .ico{color:#d6ecff !important;filter:drop-shadow(0 0 7px rgba(90,176,255,.9))}'
+    /* sous-groupe : liseré Crystal conservé */
+    +'body[data-theme] #nav .nav-sub{border-left:2px solid rgba(30,144,255,.42) !important}';
+  try{ var st=document.createElement('style'); st.id='aurora-nav-mod'; st.textContent=css; document.head.appendChild(st); }catch(e){}
 })();
 </script>
 </body>
