@@ -213,6 +213,33 @@ body[data-page="dash"] .grid.g2{margin-top:12px}
 .esp-check:last-child{border-bottom:none}
 .esp-check input[type=checkbox]{width:auto;flex:none}
 .esp-check .l{flex:1;font-size:12px;color:var(--ink)}
+/* Espace — flux mail trié → dossier */
+.esp-top{display:grid;grid-template-columns:1fr 300px;gap:14px;margin-bottom:14px}
+@media(max-width:900px){.esp-top{grid-template-columns:1fr}}
+.esp-side{position:sticky;top:14px}
+.esp-dlist{padding:8px;display:flex;flex-direction:column;gap:6px;max-height:70vh;overflow:auto}
+.esp-dl{display:flex;align-items:center;gap:9px;text-align:left;border:1px solid var(--line-2);background:var(--card);border-radius:8px;padding:8px 10px;cursor:pointer;transition:border-color .15s,background .15s}
+.esp-dl:hover{border-color:#cbbc93}
+.esp-dl.on{border-color:#cbbc93;background:#f3ead6}
+.esp-dl-dot{width:8px;height:8px;border-radius:50%;flex:none}
+.esp-dl-txt{flex:1;min-width:0}
+.esp-dl-txt b{display:block;font-size:12px;color:var(--ink)}
+.esp-dl-txt span{display:block;font-size:10.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.esp-dl-eur{font-size:10.5px;color:var(--ink-3);font-weight:600;flex:none}
+.esp-from{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.esp-mail{border:1px solid var(--line-2);border-radius:8px;background:var(--paper);padding:11px 13px;margin-bottom:6px}
+.esp-mail-obj{font-size:11px;font-weight:700;color:var(--espresso-2);margin-bottom:5px}
+.esp-mail-body{font-size:12px;color:var(--ink);line-height:1.6}
+.esp-notes{display:flex;flex-wrap:wrap;gap:6px}
+.esp-wide{margin-bottom:14px}
+.esp-total{font-size:13px;font-weight:800;color:var(--espresso);background:var(--paper-2);border:1px solid #cdbd94;border-radius:7px;padding:5px 12px}
+.esp-doc-tbl th{font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-3);font-weight:700;text-align:left;padding:9px 12px;border-bottom:1px solid var(--line-2)}
+.esp-doc-tbl td{padding:9px 12px;border-bottom:1px solid var(--line-soft);font-size:12px}
+.esp-doc-tbl input[type=checkbox]{width:auto}
+.esp-doc-off{opacity:.42}
+.esp-banner{margin-top:12px;border-radius:8px;padding:10px 13px;font-size:12px;font-weight:600}
+.esp-banner.ok{background:#eaf4ea;border:1px solid #bcd9bc;color:#3d6b3d}
+.esp-banner.wait{background:#f7f0e0;border:1px solid #e6d8b2;color:#7a6a3a}
 /* documents générés (aperçu papier) */
 .doc-gen .dg-page{background:#fff;color:#1a1a1a;padding:28px 30px;border-radius:6px;font-size:10.5px;line-height:1.8;box-shadow:0 8px 24px rgba(60,45,20,.2)}
 .dg-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #302c24;padding-bottom:10px;margin-bottom:6px}
@@ -918,42 +945,92 @@ const ESP_PIECES=[
   {k:'annonce',l:"Justificatif d'annonce légale"}
 ];
 const ESP_DOCS=[
-  {k:'statuts',l:'Projet de statuts'},
-  {k:'dnc',l:'Déclaration de non-condamnation'},
-  {k:'rbe',l:'Déclaration des bénéficiaires effectifs (RBE)'},
-  {k:'m0',l:'Formulaire M0 (constitution)'},
-  {k:'souscripteurs',l:"Liste des souscripteurs d'actions"},
-  {k:'pouvoir',l:'Pouvoir (formalités RCS)'},
-  {k:'nomination',l:'Acte de nomination du dirigeant'},
-  {k:'annonce',l:"Avis d'annonce légale"}
+  {k:'statuts',l:'Projet de statuts',prix:150},
+  {k:'souscripteurs',l:"Liste des souscripteurs d'actions",prix:40},
+  {k:'pouvoir',l:'Pouvoir (formalités RCS)',prix:40},
+  {k:'dnc',l:'Déclaration de non-condamnation',prix:30},
+  {k:'rbe',l:'Déclaration des bénéficiaires effectifs (RBE)',prix:40},
+  {k:'m0',l:'Formulaire M0 (constitution)',prix:60},
+  {k:'nomination',l:'Acte de nomination du dirigeant',prix:40},
+  {k:'annonce',l:"Avis d'annonce légale",prix:165}
 ];
+function espDocReq(d,k){return !(d.docsExclus&&d.docsExclus[k]);}
+function espDocToggleReq(id,k){var d=espDoss().find(function(x){return x.id===id;});d.docsExclus=d.docsExclus||{};if(d.docsExclus[k])delete d.docsExclus[k];else d.docsExclus[k]=true;save();render();}
+function espDocsTotal(d){return ESP_DOCS.filter(function(dc){return espDocReq(d,dc.k);}).reduce(function(s,dc){return s+(+dc.prix||0);},0);}
+function espDemandeDe(d){return (DB.demandes||[]).find(function(x){return x.dossierId===d.id;});}
 function espDoss(){return (DB.dossiers||[]);}
 function pageEspace(){
   const list=espDoss();
-  if(!list.length) return '<div class="card"><div class="card-b"><div class="empty">Aucun dossier à traiter.<br>Créez un dossier depuis une <b>Demande</b> ou l\'onglet <b>Dossiers</b>.</div></div></div>';
+  if(!list.length) return '<div class="card"><div class="card-b"><div class="empty">Aucun dossier à traiter.<br>Les dossiers sont créés automatiquement après le <b>tri des demandes</b> reçues par mail, ou manuellement depuis l\'onglet <b>Dossiers</b>.</div></div></div>';
   let id=state.espaceDossier; if(!list.find(d=>d.id===id)) id=list[0].id;
   const d=list.find(x=>x.id===id);
-  const sel='<div class="esp-sel">'+list.map(x=>'<button class="esp-doss '+(x.id===id?'on':'')+'" onclick="state.espaceDossier=\''+x.id+'\';render()"><b>'+esc(x.ref)+'</b><span>'+esc(dossierClients(x))+'</span></button>').join('')+'</div>';
-  return sel+espPanel(d);
+  return espPanel(d,list,id);
 }
-function espPanel(d){
-  const idx=STATUTS.findIndex(s=>s.k===d.statut); const cur=idx<0?0:idx;
-  const steps=STATUTS.map(function(s,i){return '<span class="esp-step" style="'+(i===cur?('background:'+s.c+';border-color:'+s.c+';color:#fff'):'')+'">'+s.k+'</span>';}).join('');
-  const svcTags=(d.serviceIds||[]).map(function(id){var v=svcById(id);return v?('<span class="tag">'+esc(v.nom)+'</span>'):'';}).join('')||'<span class="tag mut">Aucune prestation</span>';
-  return '<div class="grid g2" style="align-items:start">'
-   +'<div class="card"><div class="card-h"><h2>'+esc(d.ref)+' — '+esc(dossierClients(d))+'</h2></div><div class="card-b">'
-   +'<div class="chips" style="margin-bottom:10px">'+assigneTag(d)+'<span class="tag blue">'+eur(dossierMontant(d))+'</span></div>'
-   +'<div class="section-t" style="margin-top:2px">Avancement</div><div class="esp-steps">'+steps+'</div>'
-   +'<div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-sm" onclick="espStatut(\''+d.id+'\',-1)">‹ Reculer</button><button class="btn btn-sm btn-pri" onclick="espStatut(\''+d.id+'\',1)">Avancer ›</button></div>'
-   +'<div class="section-t">Prestations</div><div class="chips">'+svcTags+'</div>'
-   +'<div class="section-t">Actions</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm" onclick="espFacture(\''+d.id+'\')">Facture</button><button class="btn btn-sm btn-ghost" onclick="modalDossier(\''+d.id+'\')">Éditer</button></div>'
-   +'</div></div>'
-   +'<div class="card"><div class="card-h"><h2>Pièces à fournir</h2><span class="sub" style="margin-left:auto">'+espPiecesCount(d)+'</span></div><div class="card-b">'
-   +ESP_PIECES.map(function(pc){return espPieceRow(d,pc);}).join('')
-   +'</div></div></div>'
-   +'<div class="card" style="margin-top:14px"><div class="card-h"><h2>Documents à générer</h2><span class="sub" style="margin-left:auto">'+espDocsCount(d)+'</span></div><div class="card-b" style="padding:0">'
-   +'<table><tbody>'+ESP_DOCS.map(function(dc){return espDocRow(d,dc);}).join('')+'</tbody></table>'
+function espDlist(list,id){
+  return '<div class="card esp-side"><div class="card-h"><h2>Dossiers</h2><span class="sub" style="margin-left:auto">'+list.length+'</span></div>'
+   +'<div class="card-b esp-dlist">'
+   +list.map(function(x){var c=statColor(x.statut);
+      return '<button class="esp-dl '+(x.id===id?'on':'')+'" onclick="state.espaceDossier=\''+x.id+'\';render()">'
+        +'<span class="esp-dl-dot" style="background:'+c+'"></span>'
+        +'<span class="esp-dl-txt"><b>'+esc(x.ref)+'</b><span>'+esc(dossierClients(x))+'</span></span>'
+        +'<span class="esp-dl-eur">'+eur(dossierMontant(x))+'</span></button>';
+    }).join('')
    +'</div></div>';
+}
+function espMailCard(d){
+  var dm=espDemandeDe(d);var c=clientById((d.clientIds||[])[0])||{};
+  var email=(dm&&dm.clientEmail)||c.email||'—';
+  var canal=(dm&&dm.canal)||'—';
+  var objet=(dm&&dm.serviceSouhaite)||'—';
+  var corps=(dm&&dm.message)||'<i>Aucun mail lié à ce dossier (créé manuellement).</i>';
+  var q=dm?IA.qualify(dm):null;
+  var notes='';
+  if(q){
+    notes='<div class="section-t">Notes de l\'analyse</div>'
+      +'<div class="esp-notes"><span class="tag '+nivClass(q.niveau)+'">'+(q.niveau==='chaud'?'🔥 Chaud':q.niveau==='tiède'?'🌤️ Tiède':'🧊 Froid')+'</span>'
+      +'<span class="tag">Score '+q.score+'/100</span><span class="tag">Priorité '+esc(q.priorite)+'</span>'
+      +'<span class="tag">Traitement '+esc(q.traitement)+'</span></div>'
+      +'<div class="chips" style="margin-top:6px">'+q.tags.map(function(t){return '<span class="tag '+t.c+'">'+t.t+'</span>';}).join('')+'</div>';
+  }
+  var idx=STATUTS.findIndex(function(s){return s.k===d.statut;});var cur=idx<0?0:idx;
+  var steps=STATUTS.map(function(s,i){return '<span class="esp-step" style="'+(i===cur?('background:'+s.c+';border-color:'+s.c+';color:#fff'):'')+'">'+s.k+'</span>';}).join('');
+  return '<div class="card esp-mailcard"><div class="card-h"><h2>Demande du client</h2><span class="sub" style="margin-left:auto">'+esc(d.ref)+'</span></div><div class="card-b">'
+   +'<div class="esp-from"><span class="av" style="background:linear-gradient(160deg,#4a4034,#2c271f)">'+initials(dossierClients(d))+'</span>'
+   +'<div><div class="tname">'+esc(dossierClients(d))+'</div><div class="tsub">'+esc(email)+' · '+esc(canal)+'</div></div></div>'
+   +'<div class="esp-mail"><div class="esp-mail-obj">Objet : '+esc(objet)+'</div><div class="esp-mail-body">'+corps+'</div></div>'
+   +notes
+   +'<div class="section-t">Avancement</div><div class="esp-steps">'+steps+'</div>'
+   +'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-sm" onclick="espStatut(\''+d.id+'\',-1)">‹ Reculer</button><button class="btn btn-sm btn-pri" onclick="espStatut(\''+d.id+'\',1)">Avancer ›</button>'
+   +'<button class="btn btn-sm btn-ghost" onclick="espFacture(\''+d.id+'\')">Facture</button><button class="btn btn-sm btn-ghost" onclick="modalDossier(\''+d.id+'\')">Éditer</button></div>'
+   +'</div></div>';
+}
+function espDocsCard(d){
+  var total=espDocsTotal(d);
+  var rows=ESP_DOCS.map(function(dc){return espDocRow(d,dc);}).join('');
+  return '<div class="card esp-wide"><div class="card-h"><h2>Documents nécessaires pour la demande</h2>'
+   +'<span class="esp-total" style="margin-left:auto">Total : '+eur(total)+'</span></div>'
+   +'<div class="card-b" style="padding:0"><table class="esp-doc-tbl"><thead><tr>'
+   +'<th style="width:34px">Requis</th><th>Document</th><th style="width:90px;text-align:right">Montant</th><th style="width:120px">Statut</th><th style="width:180px"></th></tr></thead>'
+   +'<tbody>'+rows+'</tbody></table></div></div>';
+}
+function espPiecesCard(d){
+  var got=ESP_PIECES.filter(function(pc){return espPieceState(d,pc.k).recu;}).length;
+  var all=got===ESP_PIECES.length;
+  var banner=all
+    ? '<div class="esp-banner ok">✓ Toutes les pièces sont à jour — la génération des documents peut commencer.</div>'
+    : '<div class="esp-banner wait">⏳ En attente des pièces du client ('+got+'/'+ESP_PIECES.length+') avant de générer les documents.</div>';
+  return '<div class="card esp-wide"><div class="card-h"><h2>Pièces à fournir par le client</h2><span class="sub" style="margin-left:auto">'+got+'/'+ESP_PIECES.length+'</span></div>'
+   +'<div class="card-b"><div class="tsub" style="margin:-2px 0 10px">Nécessaires pour établir les documents (pièce d\'identité, justificatif de domicile — facture loyer/impôts, dépôt de capital…).</div>'
+   +ESP_PIECES.map(function(pc){return espPieceRow(d,pc);}).join('')
+   +banner+'</div></div>';
+}
+function espPanel(d,list,id){
+  return '<div class="grid esp-top" style="align-items:start">'
+   +espMailCard(d)
+   +espDlist(list,id)
+   +'</div>'
+   +espDocsCard(d)
+   +espPiecesCard(d);
 }
 function espPieceState(d,k){d.pieces=d.pieces||{};return d.pieces[k]||{recu:false};}
 function espPiecesCount(d){return ESP_PIECES.filter(function(pc){return espPieceState(d,pc.k).recu;}).length+'/'+ESP_PIECES.length;}
@@ -968,8 +1045,12 @@ function espPieceUpload(id,k,inp){var f=inp.files[0];if(!f)return;var d=espDoss(
 function espPieceDl(id,k){var d=espDoss().find(function(x){return x.id===id;});var st=espPieceState(d,k);if(!st.data)return;var a=document.createElement('a');a.href=st.data;a.download=st.nom||'piece';a.click();}
 function espDocState(d,k){d.docs=d.docs||{};return d.docs[k]||{genere:false};}
 function espDocsCount(d){return ESP_DOCS.filter(function(dc){return espDocState(d,dc.k).genere;}).length+'/'+ESP_DOCS.length;}
-function espDocRow(d,dc){var st=espDocState(d,dc.k);
-  return '<tr><td class="tname">'+esc(dc.l)+'</td><td>'+(st.genere?'<span class="tag ok">Généré</span>':'<span class="tag mut">À générer</span>')+'</td>'
+function espDocRow(d,dc){var st=espDocState(d,dc.k);var req=espDocReq(d,dc.k);
+  return '<tr class="'+(req?'':'esp-doc-off')+'">'
+   +'<td style="text-align:center"><input type="checkbox" '+(req?'checked':'')+' onchange="espDocToggleReq(\''+d.id+'\',\''+dc.k+'\')"></td>'
+   +'<td class="tname">'+esc(dc.l)+'</td>'
+   +'<td style="text-align:right">'+eur(dc.prix||0)+'</td>'
+   +'<td>'+(st.genere?'<span class="tag ok">Généré</span>':'<span class="tag mut">À générer</span>')+'</td>'
    +'<td style="text-align:right">'+(st.genere?'<button class="btn btn-sm btn-ghost" onclick="espDocVoir(\''+d.id+'\',\''+dc.k+'\')">Voir</button> ':'')
    +'<button class="btn btn-sm btn-pri" onclick="espDocGen(\''+d.id+'\',\''+dc.k+'\')">'+(st.genere?'Régénérer':'Générer')+'</button></td></tr>';
 }
