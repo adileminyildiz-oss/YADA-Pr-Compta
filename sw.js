@@ -1,10 +1,11 @@
 /* YADA — Service Worker.
    Stratégie : RÉSEAU D'ABORD pour les pages (toujours la dernière version quand
    on est en ligne), repli sur le cache hors-ligne. Cache-first pour les icônes. */
-var CACHE = 'yada-v85';
+var CACHE = 'yada-v86';
 var ASSETS = [
   './',
   './index.html',
+  './yada-v1.html',
   './precompta.html',
   './manifest.webmanifest',
   './icon-192.png',
