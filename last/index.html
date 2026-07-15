@@ -23,7 +23,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
 body{font-family:var(--sans);color:#3a3428;background:var(--bg);overflow-x:hidden;
-  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;letter-spacing:0;font-size:11.5px}
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;letter-spacing:0;font-size:11px}
 
 #ambient{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none;
   background:radial-gradient(1200px 820px at 50% -12%, #fffdf6, transparent 62%),linear-gradient(180deg,#fbf7ee,#f6f0e2)}
@@ -33,12 +33,12 @@ body{font-family:var(--sans);color:#3a3428;background:var(--bg);overflow-x:hidde
   -webkit-mask-image:linear-gradient(180deg,#000,transparent 72%);mask-image:linear-gradient(180deg,#000,transparent 72%)}
 
 /* ============ LAYOUT ============ */
-.app{display:grid;grid-template-columns:224px 1fr;min-height:100vh}
-aside{position:sticky;top:0;height:100vh;padding:16px 11px 12px;background:var(--bg-side);
+.app{display:grid;grid-template-columns:192px 1fr;min-height:100vh}
+aside{position:sticky;top:0;height:100vh;padding:12px 8px 9px;background:var(--bg-side);
   border-right:1px solid var(--line-2);display:flex;flex-direction:column;gap:1px;z-index:20}
-.brand{display:flex;flex-direction:column;align-items:flex-start;gap:5px;padding:5px 6px 13px;margin-bottom:4px;border-bottom:1px solid var(--line-2)}
+.brand{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:3px 5px 9px;margin-bottom:3px;border-bottom:1px solid var(--line-2)}
 .brand-mark{display:block;color:var(--ink)}
-.brand-mark svg{height:22px;width:auto;display:block}
+.brand-mark svg{height:18px;width:auto;display:block}
 .brand-sub{font-size:8.5px;color:var(--ink-3);letter-spacing:1.3px;font-weight:600;text-transform:uppercase}
 .logo{width:32px;height:32px;border-radius:7px;display:grid;place-items:center;flex:none;background:var(--espresso);
   box-shadow:0 5px 14px -9px rgba(60,48,28,.55)}
@@ -46,34 +46,34 @@ aside{position:sticky;top:0;height:100vh;padding:16px 11px 12px;background:var(-
 .brand h1{font-size:14.5px;margin:0;font-weight:700;letter-spacing:1.5px;color:var(--ink)}
 .brand small{display:block;font-size:8.5px;color:var(--ink-3);letter-spacing:1.1px;font-weight:600;margin-top:2px}
 .nav{display:flex;flex-direction:column;gap:1px;margin-top:1px}
-.nav-lbl{font-size:9px;letter-spacing:1.3px;color:var(--ink-3);font-weight:700;text-transform:uppercase;padding:11px 8px 5px}
-.nav-btn{display:flex;align-items:center;gap:9px;padding:6px 9px;border-radius:var(--radius-sm);border:1px solid transparent;
-  background:none;color:#5a5344;font:inherit;font-size:11.5px;font-weight:600;cursor:pointer;text-align:left;width:100%;
+.nav-lbl{font-size:8.5px;letter-spacing:1.2px;color:var(--ink-3);font-weight:700;text-transform:uppercase;padding:8px 7px 4px}
+.nav-btn{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:var(--radius-sm);border:1px solid transparent;
+  background:none;color:#5a5344;font:inherit;font-size:11px;font-weight:600;cursor:pointer;text-align:left;width:100%;
   position:relative;transition:background .15s,color .15s}
-.nav-btn svg{width:15px;height:15px;opacity:.7;flex:none}
+.nav-btn svg{width:13px;height:13px;opacity:.7;flex:none}
 .nav-btn:hover{background:rgba(95,75,35,.06);color:var(--ink)}
 .nav-btn.on{background:#ece1c8;color:var(--ink);border-color:#ddd0b0}
 .nav-btn.on::before{content:"";position:absolute;left:-1px;top:6px;bottom:6px;width:3px;border-radius:3px;background:var(--espresso)}
 .nav-btn.on svg{opacity:1;color:var(--espresso-2)}
 .nav-badge{margin-left:auto;font-size:10px;font-weight:700;background:var(--espresso);color:#f7f2e6;border-radius:20px;padding:1px 6px}
-.side-foot{margin-top:auto;padding-top:10px;border-top:1px solid var(--line-2)}
-.userchip{display:flex;align-items:center;gap:8px;padding:7px;border-radius:7px;background:var(--paper);border:1px solid var(--line)}
-.av{width:28px;height:28px;border-radius:6px;display:grid;place-items:center;font-weight:700;font-size:10.5px;color:#f7f2e6;flex:none}
+.side-foot{margin-top:auto;padding-top:8px;border-top:1px solid var(--line-2)}
+.userchip{display:flex;align-items:center;gap:7px;padding:6px;border-radius:7px;background:var(--paper);border:1px solid var(--line)}
+.av{width:25px;height:25px;border-radius:6px;display:grid;place-items:center;font-weight:700;font-size:10.5px;color:#f7f2e6;flex:none}
 .userchip b{font-size:11.5px;display:block;color:var(--ink)}
 .userchip span{font-size:10px;color:var(--ink-3)}
 
 main{min-width:0;display:flex;flex-direction:column}
-.topbar{position:sticky;top:0;z-index:15;display:flex;align-items:center;gap:12px;padding:11px 22px;
+.topbar{position:sticky;top:0;z-index:15;display:flex;align-items:center;gap:10px;padding:8px 16px;
   background:rgba(250,246,236,.93);backdrop-filter:blur(8px) saturate(1.05);border-bottom:1px solid var(--line-2)}
 .burger{display:none;background:var(--paper);border:1px solid var(--line-2);border-radius:7px;color:var(--ink);width:34px;height:34px;font-size:16px;cursor:pointer}
-.page-title{font-size:15px;font-weight:700;color:var(--ink);letter-spacing:.2px}
-.page-title small{display:block;font-size:11px;color:var(--ink-3);font-weight:500;letter-spacing:.1px;margin-top:1px}
+.page-title{font-size:13.5px;font-weight:700;color:var(--ink);letter-spacing:.2px}
+.page-title small{display:block;font-size:10px;color:var(--ink-3);font-weight:500;letter-spacing:.1px;margin-top:1px}
 .search{margin-left:auto;position:relative;max-width:270px;flex:1}
 .search input{width:100%;padding:7px 10px 7px 30px;border-radius:7px;border:1px solid var(--line-2);
   background:var(--paper);color:var(--ink);font:inherit;font-size:12px;outline:none}
 .search input:focus{border-color:#cbbc93;box-shadow:var(--focus)}
 .search svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--ink-3)}
-.content{padding:20px 22px 72px;max-width:1280px;width:100%}
+.content{padding:14px 16px 56px;max-width:1120px;width:100%}
 
 /* ============ CARTES FORMELLES ============ */
 .card{position:relative;background:var(--card);border:1px solid var(--line-soft);border-radius:var(--radius);box-shadow:none;overflow:hidden}
@@ -189,7 +189,7 @@ input[type=checkbox],input[type=radio]{width:auto;accent-color:#7a6e58;cursor:po
 .kcard b{font-size:11.5px;color:var(--ink)} .kcard .m{font-size:10px;color:var(--ink-3);margin-top:2px}
 
 /* ============ Tableau de bord — compact ============ */
-body[data-page="dash"] .content{max-width:1120px}
+body[data-page="dash"] .content{max-width:1020px}
 body[data-page="dash"] .grid{gap:10px}
 body[data-page="dash"] .kpi{padding:11px 12px}
 body[data-page="dash"] .kpi .ic{width:26px;height:26px;border-radius:6px;margin-bottom:6px}
@@ -286,7 +286,7 @@ body[data-page="dash"] .grid.g2{margin-top:12px}
 @media(max-width:980px){ .g4{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:1fr} }
 @media(max-width:860px){
   .app{grid-template-columns:1fr}
-  aside{position:fixed;left:0;top:0;width:262px;transform:translateX(-100%);transition:transform .25s;box-shadow:0 20px 60px -20px rgba(70,55,25,.35)}
+  aside{position:fixed;left:0;top:0;width:232px;transform:translateX(-100%);transition:transform .25s;box-shadow:0 20px 60px -20px rgba(70,55,25,.35)}
   aside.open{transform:translateX(0)}
   .burger{display:grid;place-items:center}
   .content{padding:14px 13px 84px}
