@@ -85,13 +85,13 @@ main{min-width:0;display:flex;flex-direction:column}
 .kpi .val.blue{color:var(--espresso)} .kpi .val.ok{color:var(--sage)} .kpi .val.hot{color:var(--terracotta)}
 
 /* ============ BOUTONS ============ */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:var(--radius-sm);border:1px solid var(--line-2);
-  background:var(--paper);color:var(--ink);font:inherit;font-size:11.5px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:var(--radius-sm);border:1px solid var(--line-2);
+  background:var(--paper);color:var(--ink);font:inherit;font-size:11px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s}
 .btn:hover{border-color:#cbbc93;background:var(--paper-2)}
-.btn svg{width:13px;height:13px}
-.btn-pri{border:1px solid var(--espresso);color:#f7f2e6;background:var(--espresso)}
-.btn-pri:hover{background:#2f2920;border-color:#2f2920}
-.btn-sm{padding:4px 8px;font-size:11px;border-radius:5px}
+.btn svg{width:12px;height:12px}
+.btn-pri{border:1px solid #7a6e58;color:#fdfaf3;background:#7a6e58}
+.btn-pri:hover{background:#6a5f4b;border-color:#6a5f4b}
+.btn-sm{padding:3px 7px;font-size:10.5px;border-radius:5px}
 .btn-ghost{background:transparent;border-color:var(--line-2)}
 .btn-danger:hover{border-color:#d9a98c;background:#f6e7df;color:#9a4a2a}
 
@@ -485,7 +485,7 @@ function pageDemandes(){
   if(state.q)list=list.filter(d=>(d.clientNom+d.serviceSouhaite+d.message).toLowerCase().includes(state.q));
   list.sort((a,b)=>IA.qualify(b).score-IA.qualify(a).score);
   return `
-  <div style="display:flex;gap:10px;margin:0 0 18px"><button class="btn btn-pri" onclick="modalDemande()">${svg(IC.plus)}Nouvelle demande</button>
+  <div style="display:flex;gap:10px;margin:0 0 18px"><button class="btn btn-pri" onclick="modalDemande()">${svg(IC.plus)}Ajouter</button>
     <span class="tag blue">${list.length} en attente</span></div>
   <div class="card"><div class="card-b" style="padding:0">
     ${list.length?tableDemandes(list,true):`<div class="empty">Aucune demande — tout est traité 🎉</div>`}
@@ -501,7 +501,7 @@ function tableDemandes(list,full){
       <td class="hide-sm"><div class="chips">${q.tags.slice(0,3).map(t=>`<span class="tag ${t.c}">${t.t}</span>`).join('')}</div></td>
       <td><span class="score"><span class="bar"><i style="width:${q.score}%"></i></span>${q.score}</span></td>
       <td class="hide-sm">${u?`<span class="tag"><span class="av" style="width:20px;height:20px;font-size:9px;background:${u.couleur}">${initials(u.nom)}</span> ${u.nom}</span>`:'<span class="tag mut">—</span>'}</td>
-      ${full?`<td onclick="event.stopPropagation()"><button class="btn btn-sm btn-pri" onclick="creerDossierDepuis('${d.id}')">Créer dossier</button></td>`:''}
+      ${full?`<td onclick="event.stopPropagation()"><button class="btn btn-sm btn-pri" onclick="creerDossierDepuis('${d.id}')">Créer</button></td>`:''}
     </tr>`;}).join('')}
   </tbody></table>`;
 }
@@ -519,8 +519,8 @@ function modalDemandeView(id){
     <label>Assigner à un collaborateur</label>
     <select id="dm-assign">${['<option value="">— Non assigné —</option>'].concat(DB.users.map(u=>`<option value="${u.id}" ${d.assigneA===u.id?'selected':''}>${u.nom}${u.role==='admin'?' (admin)':''}</option>`)).join('')}</select>
   `,`<button class="btn btn-ghost" onclick="closeModal()">Fermer</button>
-     <button class="btn" onclick="assignDemande('${id}')">Enregistrer l'assignation</button>
-     <button class="btn btn-pri" onclick="creerDossierDepuis('${id}')">${svg(IC.folder)}Créer le dossier</button>`);
+     <button class="btn" onclick="assignDemande('${id}')">Assigner</button>
+     <button class="btn btn-pri" onclick="creerDossierDepuis('${id}')">${svg(IC.folder)}Créer</button>`);
 }
 function assignDemande(id){const d=DB.demandes.find(x=>x.id===id);d.assigneA=document.getElementById('dm-assign').value;save();closeModal();toast('Assignation enregistrée');render();}
 function modalDemande(){
@@ -531,7 +531,7 @@ function modalDemande(){
     <label>Demande (service souhaité)</label><input id="nd-svc" placeholder="Ex. Création SAS">
     <label>Message du client</label><textarea id="nd-msg" placeholder="Colle ici le message reçu…"></textarea>
     <label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="nd-docs" style="width:auto"> Documents déjà fournis</label>
-  `,`<button class="btn btn-ghost" onclick="closeModal()">Annuler</button><button class="btn btn-pri" onclick="saveDemande()">Ajouter la demande</button>`);
+  `,`<button class="btn btn-ghost" onclick="closeModal()">Annuler</button><button class="btn btn-pri" onclick="saveDemande()">Ajouter</button>`);
 }
 function saveDemande(){
   const g=id=>document.getElementById(id);
@@ -560,7 +560,7 @@ function creerDossierDepuis(id){
 function pageClients(){
   let list=DB.clients;
   if(state.q)list=list.filter(c=>(c.nom+c.prenom+c.email+(c.activites||[]).join(' ')).toLowerCase().includes(state.q));
-  return `<div style="display:flex;gap:10px;margin-bottom:18px"><button class="btn btn-pri" onclick="modalClient()">${svg(IC.plus)}Nouveau client</button><span class="tag blue">${DB.clients.length} clients</span></div>
+  return `<div style="display:flex;gap:10px;margin-bottom:18px"><button class="btn btn-pri" onclick="modalClient()">${svg(IC.plus)}Ajouter</button><span class="tag blue">${DB.clients.length} clients</span></div>
   <div class="card"><div class="card-b" style="padding:0">
   ${list.length?`<table><thead><tr><th>Client</th><th class="hide-sm">Contact</th><th class="hide-sm">Activité(s)</th><th>Capital</th><th>Dossiers</th><th></th></tr></thead><tbody>
   ${list.map(c=>{const nd=DB.dossiers.filter(d=>d.clientIds.includes(c.id)).length;
@@ -588,7 +588,7 @@ function modalClient(id){
     <label>Activité(s) — séparées par des virgules</label><input id="cl-act" value="${esc((c.activites||[]).join(', '))}" placeholder="Conseil, Formation, Négoce…">
     <label>Associés & répartition des parts / actions</label>
     <div id="assoc-list">${assocRows()}</div>
-    <button class="mini-add" onclick="addAssoc()">+ Ajouter un associé</button>
+    <button class="mini-add" onclick="addAssoc()">+ Associé</button>
   `,`<button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
      ${id?`<button class="btn btn-danger" onclick="delClient('${id}')">Supprimer</button>`:''}
      <button class="btn btn-pri" onclick="saveClient('${id||''}')">Enregistrer</button>`);
@@ -619,9 +619,9 @@ function pageDossiers(){
   let list=DB.dossiers;
   if(state.q)list=list.filter(d=>(d.ref+dossierClients(d)).toLowerCase().includes(state.q));
   return `<div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap">
-    <button class="btn btn-pri" onclick="modalNewDossier()">${svg(IC.plus)}Nouveau dossier</button>
-    <button class="btn ${view==='kanban'?'':'btn-ghost'}" onclick="state.dossView='kanban';render()">Vue pipeline</button>
-    <button class="btn ${view==='list'?'':'btn-ghost'}" onclick="state.dossView='list';render()">Vue liste</button>
+    <button class="btn btn-pri" onclick="modalNewDossier()">${svg(IC.plus)}Ajouter</button>
+    <button class="btn ${view==='kanban'?'':'btn-ghost'}" onclick="state.dossView='kanban';render()">Pipeline</button>
+    <button class="btn ${view==='list'?'':'btn-ghost'}" onclick="state.dossView='list';render()">Liste</button>
     <span class="tag blue" style="margin-left:auto;align-self:center">${DB.dossiers.length} dossiers</span></div>
     ${view==='kanban'?kanban(list):listeDossiers(list)}`;
 }
@@ -686,7 +686,7 @@ function delDossier(id){if(!confirm('Supprimer ce dossier ?'))return;const d=DB.
 function pageServices(){
   const fams={};DB.services.forEach(s=>{(fams[s.famille]=fams[s.famille]||[]).push(s);});
   const typeTag=t=>({forfait:'<span class="tag ok">Forfait</span>',debours:'<span class="tag warm">Débours</span>',commission:'<span class="tag blue">Commission</span>'}[t]||'');
-  return `<div style="display:flex;gap:10px;margin-bottom:18px"><button class="btn btn-pri" onclick="modalService()">${svg(IC.plus)}Nouveau service</button><span class="tag blue">${DB.services.length} prestations</span><span class="tag mut">Prix indicatifs — modifiables</span></div>
+  return `<div style="display:flex;gap:10px;margin-bottom:18px"><button class="btn btn-pri" onclick="modalService()">${svg(IC.plus)}Ajouter</button><span class="tag blue">${DB.services.length} prestations</span><span class="tag mut">Prix indicatifs — modifiables</span></div>
   ${Object.keys(fams).map(f=>`<div class="section-t">${f}</div>
     <div class="card"><div class="card-b" style="padding:0"><table><thead><tr><th>Prestation</th><th>Type</th><th>Forfait</th><th>Débours</th><th></th></tr></thead><tbody>
     ${fams[f].map(s=>`<tr>
@@ -744,7 +744,7 @@ function pageParams(){
         <span class="av" style="background:${u.couleur}">${initials(u.nom)}</span>
         <div style="flex:1"><b style="font-size:13px">${esc(u.nom)}</b><div class="tsub">${u.role==='admin'?'Administrateur':'Collaborateur'}</div></div>
         ${u.role!=='admin'?`<button class="btn btn-sm btn-ghost" onclick="delUser('${u.id}')">Retirer</button>`:'<span class="tag blue">Admin</span>'}</div>`).join('')}
-      <button class="mini-add" style="margin-top:12px" onclick="modalUser()">+ Ajouter un collaborateur</button>
+      <button class="mini-add" style="margin-top:12px" onclick="modalUser()">+ Collaborateur</button>
     </div></div>
     <div class="card"><div class="card-h"><h2>Réglages</h2></div><div class="card-b">
       <label>Nom du cabinet</label><input value="${esc(DB.params.cabinet)}" onchange="DB.params.cabinet=this.value;save();toast('Enregistré')">
@@ -752,7 +752,7 @@ function pageParams(){
       <div class="chips">${STATUTS.map(s=>`<span class="tag" style="border-color:${s.c}55"><span class="dot" style="background:${s.c}"></span>${s.k}</span>`).join('')}</div>
       <div class="section-t">Données</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-sm" onclick="exportDB()">Exporter (JSON)</button>
+        <button class="btn btn-sm" onclick="exportDB()">Exporter</button>
         <button class="btn btn-sm btn-ghost" onclick="document.getElementById('imp').click()">Importer</button>
         <button class="btn btn-sm btn-danger" onclick="if(confirm('Réinitialiser toutes les données de démonstration ?')){localStorage.removeItem(KEY);location.reload();}">Réinitialiser</button>
       </div><input type="file" id="imp" accept="application/json" style="display:none" onchange="importDB(this)">
@@ -785,7 +785,7 @@ function pageFacturation(){
     ${kpi('euro',eur(totTVA),'TVA')}
     ${kpi('trend',eur(du),t==='client'?'Impayé':'Reste à payer',t==='client'?'hot':'')}
   </div>
-  <div style="display:flex;gap:10px;margin-bottom:14px"><button class="btn btn-pri" onclick="factModal()">${svg(IC.plus)}Nouvelle facture ${t==='client'?'client':'fournisseur'}</button>
+  <div style="display:flex;gap:10px;margin-bottom:14px"><button class="btn btn-pri" onclick="factModal()">${svg(IC.plus)}Ajouter</button>
     <span class="tag blue">${list.length} facture(s)</span></div>
   <div class="card"><div class="card-b" style="padding:0">
   ${list.length?`<table><thead><tr><th>N°</th><th>${t==='client'?'Client':'Fournisseur'}</th><th class="hide-sm">Date</th><th>HT</th><th class="hide-sm">TVA</th><th>TTC</th><th>Statut</th><th></th></tr></thead><tbody>
@@ -840,7 +840,7 @@ function pageTiers(){
 function tiersFourn(){
   let list=(DB.fournisseurs||[]);
   if(state.q)list=list.filter(f=>((f.nom||'')+(f.email||'')+(f.prestation||'')).toLowerCase().includes(state.q));
-  return `<div style="display:flex;gap:10px;margin-bottom:14px"><button class="btn btn-pri" onclick="fournModal()">${svg(IC.plus)}Nouveau fournisseur</button><span class="tag blue">${(DB.fournisseurs||[]).length} fournisseur(s)</span></div>
+  return `<div style="display:flex;gap:10px;margin-bottom:14px"><button class="btn btn-pri" onclick="fournModal()">${svg(IC.plus)}Ajouter</button><span class="tag blue">${(DB.fournisseurs||[]).length} fournisseur(s)</span></div>
   <div class="card"><div class="card-b" style="padding:0">
   ${list.length?`<table><thead><tr><th>Fournisseur</th><th class="hide-sm">Contact</th><th class="hide-sm">Prestation</th><th>SIRET</th><th></th></tr></thead><tbody>
   ${list.map(f=>`<tr onclick="fournModal('${f.id}')" style="cursor:pointer">
