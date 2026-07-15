@@ -271,6 +271,14 @@ body[data-page="dash"] .grid.g2{margin-top:12px}
 .esp-total{font-size:12px;padding:4px 10px}
 .esp-check{padding:7px 0}
 .esp-check .l{font-size:11.5px}
+.esp-fiche-row{display:flex;gap:8px;margin-top:8px}
+.esp-fiche-row .btn{flex:1;justify-content:center;font-size:11px}
+.esp-fp-list{display:flex;flex-direction:column;gap:1px;margin-bottom:4px}
+.esp-fp{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--line-soft)}
+.esp-fp:last-child{border-bottom:none}
+.esp-fp input[type=checkbox]{width:auto;flex:none}
+.esp-fp-l{flex:1;font-size:12px;color:var(--ink)}
+.esp-fp.manq .esp-fp-l{font-weight:600}
 /* documents générés (aperçu papier) */
 .doc-gen .dg-page{background:#fff;color:#1a1a1a;padding:28px 30px;border-radius:6px;font-size:10.5px;line-height:1.8;box-shadow:0 8px 24px rgba(60,45,20,.2)}
 .dg-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #302c24;padding-bottom:10px;margin-bottom:6px}
@@ -735,7 +743,7 @@ function creerDossierDepuis(id){
 function pageClients(){
   let list=DB.clients;
   if(state.q)list=list.filter(c=>(c.nom+c.prenom+c.email+(c.activites||[]).join(' ')).toLowerCase().includes(state.q));
-  return `<div style="display:flex;gap:10px;margin-bottom:18px"><button class="btn btn-pri" onclick="modalClient()">${svg(IC.plus)}Ajouter</button><span class="tag blue">${DB.clients.length} clients</span></div>
+  return `<div style="display:flex;gap:10px;margin-bottom:14px;align-items:center"><span class="tag blue">${DB.clients.length} clients</span><span class="tag mut">Ajout automatique depuis les demandes reçues par mail</span></div>
   <div class="card"><div class="card-b" style="padding:0">
   ${list.length?`<table><thead><tr><th>Client</th><th class="hide-sm">Contact</th><th class="hide-sm">Activité(s)</th><th>Capital</th><th>Dossiers</th><th></th></tr></thead><tbody>
   ${list.map(c=>{const nd=DB.dossiers.filter(d=>d.clientIds.includes(c.id)).length;
@@ -1096,9 +1104,75 @@ function espMailCard(d){
    +'<div><div class="tname">'+esc(dossierClients(d))+'</div><div class="tsub">'+esc(email)+' · '+esc(canal)+'</div></div></div>'
    +'<div class="esp-mail"><div class="esp-mail-obj">Objet : '+esc(objet)+'</div><div class="esp-mail-body">'+corps+'</div></div>'
    +'<div class="esp-notes"><span class="tag '+du.c+'">⏱ '+du.lbl+' · '+du.temps+'</span><span class="tag '+fi.c+'">'+fi.lbl+'</span></div>'
-   +'<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn btn-sm btn-ghost" onclick="espFacture(\''+d.id+'\')">Facture</button><button class="btn btn-sm btn-ghost" onclick="modalDossier(\''+d.id+'\')">Éditer</button></div>'
+   +'<div class="esp-fiche-row"><button class="btn btn-sm" onclick="espFicheModal(\''+d.id+'\')">📋 Fiche technique — pièces</button>'
+   +'<button class="btn btn-sm" onclick="espDocsModal(\''+d.id+'\')">📄 Documents à produire</button></div>'
+   +'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-sm btn-ghost" onclick="espFacture(\''+d.id+'\')">Facture</button><button class="btn btn-sm btn-ghost" onclick="modalDossier(\''+d.id+'\')">Éditer</button></div>'
    +'</div></div>';
 }
+function espPiecesManquantes(d){return ESP_PIECES.filter(function(pc){return !espPieceState(d,pc.k).recu;});}
+function espMailPieces(d){
+  var c=clientById((d.clientIds||[])[0])||{};
+  var prenom=(c.prenom||dossierClients(d).split(/\s+/)[0]||'').trim();
+  var dm=espDemandeDe(d);var objet=dm?IA.objet(dm):'votre dossier';
+  var manq=espPiecesManquantes(d);
+  var liste=manq.map(function(pc){return '- '+pc.l;}).join('\n')||'- (toutes les pièces ont déjà été reçues)';
+  var corps='Bonjour '+(prenom||'')+',\n\n'
+    +'Nous espérons que vous allez bien, et nous vous remercions chaleureusement de la confiance que vous nous accordez pour « '+objet+' ».\n\n'
+    +'Afin de poursuivre vos démarches dans les meilleurs délais, il ne nous manque plus que quelques pièces de votre part :\n'
+    +liste+'\n\n'
+    +'Vous pouvez tout simplement répondre à ce message en y joignant les documents, ou nous les transmettre à votre convenance. Nous restons bien entendu à votre entière disposition pour toute question.\n\n'
+    +'En vous remerciant par avance, nous vous souhaitons une très belle journée.\n\n'
+    +'Bien chaleureusement,\nL\'équipe AEM CONSEIL';
+  return {sujet:'AEM CONSEIL — '+objet+' : pièces à fournir', corps:corps};
+}
+function espFicheModal(id){
+  var d=espDoss().find(function(x){return x.id===id;});if(!d)return;
+  var dm=espDemandeDe(d);var objet=dm?IA.objet(dm):'—';
+  var manq=espPiecesManquantes(d);
+  var rows=ESP_PIECES.map(function(pc){var st=espPieceState(d,pc.k);var recu=st.recu;
+    return '<div class="esp-fp '+(recu?'':'manq')+'">'
+      +'<input type="checkbox" '+(recu?'checked':'')+' onchange="espPieceToggleFiche(\''+d.id+'\',\''+pc.k+'\',this.checked)">'
+      +'<span class="esp-fp-l">'+esc(pc.l)+(st.nom?' <span class="tsub">📎 '+esc(st.nom)+'</span>':'')+'</span>'
+      +(recu?'<span class="tag ok">Reçu</span>':'<span class="tag warm">Manquant</span>')
+      +(st.data?'<button class="btn btn-sm btn-ghost" onclick="espPieceDl(\''+d.id+'\',\''+pc.k+'\')">⤓</button>':'')
+      +'<label class="btn btn-sm btn-ghost" style="cursor:pointer">＋<input type="file" style="display:none" onchange="espPieceUploadFiche(\''+d.id+'\',\''+pc.k+'\',this)"></label>'
+      +'</div>';
+  }).join('');
+  var m=espMailPieces(d);
+  var body='<div class="chips" style="margin-bottom:10px"><span class="tag blue">Objet : '+esc(objet)+'</span>'
+    +'<span class="tag '+(manq.length?'warm':'ok')+'">'+(manq.length?manq.length+' pièce(s) manquante(s)':'Dossier complet')+'</span></div>'
+    +'<div class="section-t" style="margin-top:2px">Documents à fournir par le client</div>'
+    +'<div class="esp-fp-list">'+rows+'</div>'
+    +'<div class="section-t">Mail au client — documents manquants</div>'
+    +'<label>Destinataire</label><input id="ml-to" value="'+esc((dm&&dm.clientEmail)||(clientById((d.clientIds||[])[0])||{}).email||'')+'">'
+    +'<label>Objet du mail</label><input id="ml-sujet" value="'+esc(m.sujet)+'">'
+    +'<label>Message</label><textarea id="ml-corps" style="min-height:240px">'+esc(m.corps)+'</textarea>'
+    +'<div class="hint" style="margin-top:6px;font-size:11px">Message chaleureux généré automatiquement selon les pièces manquantes du dossier. Modifiable avant envoi.</div>';
+  openModal('Fiche technique — '+esc(dossierClients(d)),body,
+    '<button class="btn btn-ghost" onclick="closeModal()">Fermer</button>'
+    +'<button class="btn" onclick="demMailCopier()">Copier</button>'
+    +'<button class="btn btn-pri" onclick="demMailEnvoyer()">✉ Envoyer au client</button>');
+}
+function espPieceToggleFiche(id,k,v){var d=espDoss().find(function(x){return x.id===id;});d.pieces=d.pieces||{};d.pieces[k]=Object.assign(espPieceState(d,k),{recu:v});save();espFicheModal(id);}
+function espPieceUploadFiche(id,k,inp){var f=inp.files[0];if(!f)return;var d=espDoss().find(function(x){return x.id===id;});var r=new FileReader();r.onload=function(e){d.pieces=d.pieces||{};d.pieces[k]=Object.assign(espPieceState(d,k),{recu:true,nom:f.name,data:e.target.result});save();espFicheModal(id);};r.readAsDataURL(f);}
+function espDocsModal(id){
+  var d=espDoss().find(function(x){return x.id===id;});if(!d)return;
+  var total=espDocsTotal(d);
+  var rows=ESP_DOCS.map(function(dc){var st=espDocState(d,dc.k);var req=espDocReq(d,dc.k);
+    return '<tr class="'+(req?'':'esp-doc-off')+'">'
+     +'<td style="text-align:center"><input type="checkbox" '+(req?'checked':'')+' onchange="espDocToggleReqM(\''+d.id+'\',\''+dc.k+'\')"></td>'
+     +'<td class="tname">'+esc(dc.l)+'</td>'
+     +'<td style="text-align:right">'+eur(dc.prix||0)+'</td>'
+     +'<td>'+(st.genere?'<span class="tag ok">Généré</span>':'<span class="tag mut">À générer</span>')+'</td>'
+     +'<td style="text-align:right">'+(st.genere?'<button class="btn btn-sm btn-ghost" onclick="espDocVoir(\''+d.id+'\',\''+dc.k+'\')">Voir</button> ':'')
+     +'<button class="btn btn-sm btn-pri" onclick="espDocGen(\''+d.id+'\',\''+dc.k+'\')">'+(st.genere?'Régénérer':'Générer')+'</button></td></tr>';
+  }).join('');
+  var body='<div class="chips" style="margin-bottom:10px;align-items:center"><span class="tag blue">Documents nécessaires pour la demande</span><span class="esp-total" style="margin-left:auto">Total : '+eur(total)+'</span></div>'
+    +'<table class="esp-doc-tbl"><thead><tr><th style="width:34px">Requis</th><th>Document</th><th style="width:80px;text-align:right">Montant</th><th style="width:96px">Statut</th><th style="width:150px"></th></tr></thead><tbody>'+rows+'</tbody></table>';
+  openModal('Documents à produire — '+esc(dossierClients(d)),body,
+    '<button class="btn btn-ghost" onclick="closeModal()">Fermer</button>');
+}
+function espDocToggleReqM(id,k){var d=espDoss().find(function(x){return x.id===id;});d.docsExclus=d.docsExclus||{};if(d.docsExclus[k])delete d.docsExclus[k];else d.docsExclus[k]=true;save();espDocsModal(id);}
 function espDocsCard(d){
   var total=espDocsTotal(d);
   var rows=ESP_DOCS.map(function(dc){return espDocRow(d,dc);}).join('');
@@ -1123,9 +1197,7 @@ function espPanel(d,list,id){
   return '<div class="grid esp-top" style="align-items:start">'
    +espMailCard(d)
    +espDlist(list,id)
-   +'</div>'
-   +espDocsCard(d)
-   +espPiecesCard(d);
+   +'</div>';
 }
 function espPieceState(d,k){d.pieces=d.pieces||{};return d.pieces[k]||{recu:false};}
 function espPiecesCount(d){return ESP_PIECES.filter(function(pc){return espPieceState(d,pc.k).recu;}).length+'/'+ESP_PIECES.length;}
