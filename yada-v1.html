@@ -15364,7 +15364,7 @@ ${lignes}
 })();
 </script>
 
-<!-- yada-addon103 (auto-update) retiré pour la V1 -->
+<!-- yada-addon103 (auto-update) retire pour la V1 -->
 
 <script id="yada-addon104">
 /* ============================================================
@@ -17733,7 +17733,7 @@ ${lignes}
   try{ if(typeof save==='function') save(); }catch(e){}
 })();
 </script>
-<!-- yada-addon133 (verrou de version) retiré pour la V1 -->
+<!-- yada-addon133 (verrou de version) retire pour la V1 -->
 <script id="yada-addon134">
 /* Journal comptable — barre d'ONGLETS par journal (BQ/HA/VT/OD/ODP/ODC/ODTVA).
    Regroupe les écritures du journal sélectionné. 100% additif (style ; le markup
@@ -25790,14 +25790,16 @@ ${lignes}
 })();
 </script>
 <script id="yada-v1-restrict">
-/* YADA — Version 1 : espaces Cabinet + Client, uniquement les modules
-   Client (facturation), Fournisseurs (achats) et Tiers. Compta & Admin retirés de la navigation. */
+/* YADA — Version 1 : espaces Cabinet + Client. Modules conserves : Client (facturation),
+   Fournisseurs (achats), Tiers, et Societes (portefeuille) + creation/import de dossier.
+   Toute la comptabilite et l'Admin sont retires de la navigation. */
 (function(){
-  var BLOCK={dash:1,societe:1,compta:1,chargespaie:1,journal:1,ia:1,tva:1,editions:1,analytique:1,
+  var BLOCK={dash:1,compta:1,chargespaie:1,journal:1,ia:1,tva:1,editions:1,analytique:1,
     banque:1,saisiebq:1,rappro:1,reglements:1,immos:1,infosociete:1,coffre:1,parametrage:1,
     plancomptable:1,fec:1,fraiskm:1,pilotage:1,salarie:1};
-  function ensureRub(){ try{ if(window.RUBRIQUES && !window.RUBRIQUES.__v1){
-    window.RUBRIQUES.__v1={titre:'Facturation & Tiers',desc:'Clients · Fournisseurs · Tiers',mods:['facturation','achats','tiers']}; } }catch(e){} }
+  var MODS=['facturation','achats','tiers','societe'];
+  function ensureRub(){ try{ if(window.RUBRIQUES && (!window.RUBRIQUES.__v1 || (window.RUBRIQUES.__v1.mods||[]).length!==MODS.length)){
+    window.RUBRIQUES.__v1={titre:'Facturation & Tiers',desc:'Client - Fournisseurs - Tiers - Societes',mods:MODS.slice()}; } }catch(e){} }
   ensureRub();
   if(typeof window.dsSelectionner==='function'){ var _ds=window.dsSelectionner; window.dsSelectionner=function(id){
     ensureRub(); window.dsSel=id; window.dsListe=false; window.dsHub=false;
