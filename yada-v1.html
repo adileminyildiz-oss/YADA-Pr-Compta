@@ -8598,6 +8598,15 @@ function docStatutFac(d){
   return {l:'Émise',c:'t-part'};
 }
 function faListeGo(n){ window.faListePage=n; render(); }
+/* Taux de TVA d'une facture : taux distincts des lignes (ex. « 20 % » ou « 20 % · 10 % ») ; repli sur TVA/HT. */
+function docTauxTVA(d){
+  const taux=[];
+  (d.lignes||[]).forEach(function(l){ if(l&&l.taux!=null && l.taux!==''){ const v=r2(+l.taux); if(taux.indexOf(v)<0) taux.push(v); } });
+  if(!taux.length){ const b=Math.abs(d.ht||0); if(b>0.005){ taux.push(r2(Math.abs(d.tva||0)/b*100)); } }
+  if(!taux.length) return '<span class="mini">—</span>';
+  taux.sort(function(a,b){return b-a;});
+  return taux.map(function(v){ return String(v).replace('.',',')+' %'; }).join(' · ');
+}
 function factureListe(){
   const docs=(db.docs||[]).slice().sort((a,b)=> a.date<b.date?1:(a.date>b.date?-1:((a.numero||'')<(b.numero||'')?1:-1)));
   const per=25; const pages=Math.max(1,Math.ceil(docs.length/per));
@@ -8606,6 +8615,7 @@ function factureListe(){
   const rows=slice.map(d=>{ const c=db.tiers.find(x=>x.id===d.clientId); const st=docStatutFac(d);
     return `<tr class="${d.id===window.faDocSel?'fa-sel-row':''}">
       <td><b>${d.numero}</b></td><td>${c?c.nom:'<span class="mini">—</span>'}</td>
+      <td class="num">${docTauxTVA(d)}</td>
       <td class="num">${frDate(d.date)}</td><td class="num">${frDate(d.echeance||d.date)}</td>
       <td><span class="tag ${st.c}">${st.l}</span></td>
       <td class="r num">${eur(d.ht)}</td><td class="r num">${eur(d.tva)}</td><td class="r num"><b>${eur(d.ttc)}</b></td>
@@ -8622,9 +8632,9 @@ function factureListe(){
   return `<div class="card"><h2>Factures</h2>
     <div class="sub">${docs.length} pièce(s). Brouillon = créée mais non comptabilisée (PDF téléchargeable). « Générer » comptabilise après autorisation — numéro définitif, TVA transmise au module TVA.</div>
     <div style="overflow-x:auto"><table class="fa-table"><thead><tr>
-      <th>NUMÉRO</th><th>CLIENT</th><th>DATE</th><th>ÉCHÉANCE</th><th>STATUT</th>
+      <th>NUMÉRO</th><th>CLIENT</th><th>TAUX TVA</th><th>DATE</th><th>ÉCHÉANCE</th><th>STATUT</th>
       <th class="r">MONTANT HT</th><th class="r">TVA</th><th class="r">MONTANT TTC</th><th>DATE D'ENVOI</th><th class="r">ACTIONS</th>
-    </tr></thead><tbody>${rows||'<tr><td colspan=10 class=empty>Aucune facture — cliquez sur « + Nouveau ».</td></tr>'}</tbody></table></div>
+    </tr></thead><tbody>${rows||'<tr><td colspan=11 class=empty>Aucune facture — cliquez sur « + Nouveau ».</td></tr>'}</tbody></table></div>
     ${docs.length>per?pag:''}</div>`;
 }
 
@@ -10975,7 +10985,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v493';
+    b.textContent='YADA · v494';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
