@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Liste des dossiers : barre de recherche + boutons sans MAJUSCULES forcées — v493
+## 🟢 Dernière mise à jour — Facturation (Cabinet) : colonne TAUX TVA dans la liste des factures + V1 rebâtie — v494
+**Quoi :** dans le **module Facturation** de l'**Espace Cabinet** (et donc dans la **Version 1** qui le conserve), la **liste des factures** (« Factures ») affiche désormais, en plus du **numéro**, du **client** et des montants (HT / TVA / TTC), une nouvelle colonne **« TAUX TVA »** montrant le(s) **taux de TVA** utilisé(s) sur la facture (ex. « 20 % », ou « 20 % · 10 % » si plusieurs taux). Répond à la demande : générer des factures + liste des factures + numéros + clients + **leur taux de TVA**. La génération de factures (bouton « Nouveau » → fenêtre A4) et le suivi existaient déjà.
+
+**Comment — 1 helper + 2 éditions chirurgicales de `factureListe()` :** `docTauxTVA(d)` = taux distincts des `d.lignes[].taux` (repli sur `|TVA|/|HT|·100` si aucune ligne typée), triés décroissants, format « NN % » joint par « · ». Colonne **`<th>TAUX TVA</th>`** ajoutée après CLIENT ; cellule **`<td>${docTauxTVA(d)}</td>`** ; `colspan` de la ligne vide 10 → 11. Les factures stockent bien le taux par ligne (formulaire `emettre`/faLignes ET fenêtre `nfCreer`/nfState). **V1 rebâtie** (`yada-v1.html`) depuis ce `precompta.html` (retrait addon103/133 + addon de restriction). `sw.js` yada-v89, badge v494, `version.json` 494.
+
+**Validé :** `node --check` (226 scripts, 0 erreur) + `node --check sw.js` OK + filet d'équilibre + Playwright (liste des factures : en-tête « TAUX TVA » présent, factures démo affichent leur taux ; V1 rebâtie sans verrou de version ; 0 pageerror). Badge → **v494**.
+
+---
+
+## 🟢 MAJ précédente — Liste des dossiers : barre de recherche + boutons sans MAJUSCULES forcées — v493
 **Quoi :** deux ajustements.
 1. **Barre de recherche de dossiers** : sur l'écran **« Liste des dossiers »**, un champ **« Rechercher un dossier (nom, ville, SIREN…) »** est ajouté **juste au-dessus de la liste** → il **filtre les lignes en direct** (par nom, ville, SIREN, activité — insensible à la casse et aux accents). Message « Aucun dossier ne correspond » si rien ne matche.
 2. **Boutons sans MAJUSCULES forcées** : tous les boutons (`.btn`) étaient rendus **EN MAJUSCULES** (addon223/v477, `text-transform:uppercase`). C'est retiré → **casse normale** (1ʳᵉ lettre en majuscule seulement, ex. « Créer un dossier », « Espace Admin », « Déconnexion »).
