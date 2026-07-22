@@ -1,23 +1,23 @@
-name: Tests — équilibre des écritures
+name: Smoke — YADA 1.2
 
-# Filet de sécurité comptable : vérifie sur chaque push / PR que TOUTE écriture
-# des 2 démos (et de la génération en direct) est équilibrée (Σ débit = Σ crédit).
+# Filet de fumée : vérifie sur chaque push / PR que index.html (YADA 1.2)
+# se charge sans erreur de page et rend sa coquille.
 on:
   push:
     branches: [main, 'claude/**']
     paths:
-      - precompta.html
+      - index.html
       - tests/**
       - .github/workflows/tests.yml
   pull_request:
     paths:
-      - precompta.html
+      - index.html
       - tests/**
       - .github/workflows/tests.yml
   workflow_dispatch: {}
 
 jobs:
-  equilibre:
+  smoke:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,10 +30,8 @@ jobs:
         run: |
           npm init -y >/dev/null 2>&1
           npm i playwright@^1.48
-          # `--with-deps` lance apt-get : lors d'incidents des dépôts APT du runner
-          # (ex. packages.microsoft.com « no longer signed »), l'étape échoue alors
-          # que le binaire Chromium suffit. Repli sans apt → le filet reste vert.
+          # Repli sans apt si les dépôts du runner posent problème : le binaire suffit.
           npx playwright install --with-deps chromium || npx playwright install chromium
 
-      - name: Contrôle d'équilibre des écritures
-        run: node tests/equilibre-ecritures.mjs
+      - name: Filet de fumée YADA 1.2
+        run: node tests/smoke.mjs

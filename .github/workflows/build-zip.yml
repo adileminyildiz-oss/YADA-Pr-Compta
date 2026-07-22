@@ -1,21 +1,18 @@
-name: Archive ZIP du squelette
+name: Archive ZIP de YADA 1.2
 
-# Régénère automatiquement yada-precompta-github.zip à chaque mise à jour
-# du logiciel sur main (nouvelle version), puis le recommite.
+# Régénère automatiquement yada-1.2.zip à chaque mise à jour du logiciel sur main,
+# et aligne version.json sur la version déclarée dans index.html.
 on:
   push:
     branches: [main]
     paths:
-      - precompta.html
+      - index.html
       - sw.js
       - manifest.webmanifest
       - icon-192.png
       - icon-512.png
-      - index.html
       - CLAUDE.md
-      - ROADMAP.md
       - README.md
-      - PASSATION-YADA-Precompta.md
   workflow_dispatch: {}
 
 permissions:
@@ -31,11 +28,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Générer version.json depuis le badge de version
+      - name: Générer version.json depuis index.html
         run: |
-          # Badge actuel : « YADA · vNNN » (l'ancien motif « vNNN · noir & bleu » n'existe plus).
-          # `|| true` : sous bash -e, une assignation dont la substitution échoue tue le job.
-          V=$(grep -oE "YADA · v[0-9]+" precompta.html | head -1 | grep -oE "[0-9]+" || true)
+          # Version déclarée dans <meta name="yada-version" content="X.Y.Z">.
+          # `|| true` : sous bash -e, une substitution qui échoue ne doit pas tuer le job.
+          V=$(grep -oE 'name="yada-version" content="[^"]+"' index.html | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)
           if [ -n "$V" ]; then
             echo "{\"version\":\"$V\"}" > version.json
             echo "version.json → $V"
@@ -45,21 +42,21 @@ jobs:
 
       - name: Construire l'archive
         run: |
-          rm -f yada-precompta-github.zip
-          zip -q yada-precompta-github.zip \
-            precompta.html sw.js manifest.webmanifest \
-            icon-192.png icon-512.png index.html version.json \
-            CLAUDE.md ROADMAP.md README.md PASSATION-YADA-Precompta.md
-          echo "Contenu :" && unzip -l yada-precompta-github.zip
+          rm -f yada-1.2.zip
+          zip -q yada-1.2.zip \
+            index.html sw.js manifest.webmanifest \
+            icon-192.png icon-512.png version.json \
+            CLAUDE.md README.md
+          echo "Contenu :" && unzip -l yada-1.2.zip
 
       - name: Recommiter si quelque chose a changé
         run: |
-          if git diff --quiet -- yada-precompta-github.zip version.json; then
+          if git diff --quiet -- yada-1.2.zip version.json; then
             echo "Rien à committer."
           else
             git config user.name  "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add yada-precompta-github.zip version.json
+            git add yada-1.2.zip version.json
             git commit -m "chore: régénération auto archive ZIP + version.json [skip ci]"
             git push
           fi
