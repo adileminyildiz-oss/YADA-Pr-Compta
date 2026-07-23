@@ -1,0 +1,33 @@
+name: Smoke — YADA PRO
+
+# Filet de fumée : vérifie que index.html (YADA PRO) se charge sans erreur et
+# qu'une facture de vente peut être créée et rendue dans chaque thème.
+on:
+  push:
+    branches: [main, 'claude/**']
+    paths:
+      - index.html
+      - tests/**
+      - .github/workflows/tests.yml
+  pull_request:
+    paths:
+      - index.html
+      - tests/**
+      - .github/workflows/tests.yml
+  workflow_dispatch: {}
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Installer Playwright (Chromium)
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm i playwright@^1.48
+          npx playwright install --with-deps chromium || npx playwright install chromium
+      - name: Filet de fumée YADA PRO
+        run: node tests/smoke.mjs
