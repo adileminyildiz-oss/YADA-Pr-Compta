@@ -1,7 +1,7 @@
 /* YADA PRO — Service Worker.
    Réseau d'abord pour les pages (dernière version en ligne), repli cache hors-ligne.
    Cache-first pour icônes / manifeste. */
-var CACHE = 'yada-pro-v3';
+var CACHE = 'yada-pro-v4';
 var ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', function (e) {
