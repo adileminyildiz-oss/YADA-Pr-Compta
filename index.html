@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1120">
-<meta name="yada-version" content="0.3.0">
+<meta name="yada-version" content="0.4.0">
 <title>YADA PRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -56,6 +56,12 @@ main{padding:30px clamp(16px,3.5vw,48px); min-width:0}
 .t-draft{color:var(--faint)} .t-sent{color:var(--good); border-color:rgba(36,209,122,.4); background:rgba(36,209,122,.10)}
 .t-todo{color:var(--warn); border-color:rgba(244,183,64,.4); background:rgba(244,183,64,.10)}
 .t-done{color:var(--good); border-color:rgba(36,209,122,.4); background:rgba(36,209,122,.10)}
+.t-late{color:var(--bad); border-color:rgba(255,107,107,.45); background:rgba(255,107,107,.10)}
+.t-att{color:var(--accent2); border-color:var(--line2); background:rgba(47,143,255,.08)}
+.filters{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px}
+.filt{padding:7px 13px; border-radius:999px; border:1px solid var(--line2); background:transparent; color:var(--muted); cursor:pointer; font-size:13px}
+.filt:hover{border-color:var(--accent); color:var(--txt)}
+.filt.active{border-color:var(--accent); background:rgba(47,143,255,.14); color:#fff}
 
 .grid{display:grid; gap:16px}
 .g3{grid-template-columns:repeat(3,1fr)} .g2{grid-template-columns:repeat(2,1fr)}
@@ -181,11 +187,11 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 <div class="app" id="app"></div>
 <div id="print-area"></div>
 <div id="toast"></div>
-<span id="yada-ver">YADA PRO · v0.3</span>
+<span id="yada-ver">YADA PRO · v0.4</span>
 
 <script>
 'use strict';
-var VERSION='0.3.0';
+var VERSION='0.4.0';
 
 /* ---------- Données (localStorage) ---------- */
 function seed(){ return { societes:[], societeActive:null, contacts:[], emises:[], recues:[], seq:{fac:0} }; }
@@ -242,6 +248,7 @@ function yadaMark(px){ px=px||36; var id='g'+uid();
 var NAV=[
   {id:'dash', ico:'▦', label:'Tableau de bord'},
   {id:'emises', ico:'➤', label:'Envoyer'},
+  {id:'suivi', ico:'⏱', label:'Suivi'},
   {id:'recues', ico:'⇩', label:'Réceptionner'},
   {id:'contacts', ico:'☰', label:'Contacts'},
   {id:'societes', ico:'🏢', label:'Sociétés'}
@@ -268,22 +275,30 @@ function sidebar(){
 /* ---------- Tableau de bord ---------- */
 function pageDash(){
   var em=emisesActives(), envoyees=em.filter(function(f){return f.statut==='envoyee';});
-  var totTTC=em.reduce(function(a,f){return a+ (f.ttc||0);},0);
+  var totTTC=r2(em.reduce(function(a,f){return a+ (f.ttc||0);},0));
+  var enc=r2(em.reduce(function(a,f){return a+factRegle(f);},0));
+  var reste=r2(em.reduce(function(a,f){return a+factReste(f);},0));
+  var retard=em.filter(function(f){return factPaie(f).key==='retard';});
   var recuesTodo=db.recues.filter(function(r){return r.statut!=='traitee';});
-  var recuesTot=db.recues.reduce(function(a,r){return a+(+r.montant||0);},0);
-  return '<main>'+ph('Tableau de bord')
+  var soc=societeActiveObj()||{};
+  return '<main>'+ph('Tableau de bord', '<span class="badge">'+esc(soc.nom||'')+'</span>')
     +'<div class="grid g3">'
-    +kpi('Factures émises', em.length+'', 'blue', envoyees.length+' envoyée(s)')
-    +kpi('Total émis (TTC)', eur(totTTC), '', '')
-    +kpi('Factures reçues', db.recues.length+'', 'warn', recuesTodo.length+' à traiter')
+    +kpi('CA facturé (TTC)', eur(totTTC), 'blue', em.length+' facture(s)')
+    +kpi('Encaissé', eur(enc), 'good', '')
+    +kpi('Reste dû', eur(reste), (reste>0?'warn':''), (retard.length?retard.length+' en retard':'à jour ✓'))
     +'</div>'
     +'<div class="grid g2" style="margin-top:16px">'
-    +'<div class="card"><h2>Dernières factures envoyées</h2>'+miniListEmises(envoyees.slice(-5).reverse())+'</div>'
-    +'<div class="card"><h2>À traiter (reçues)</h2>'+miniListRecues(recuesTodo.slice(-5).reverse())+'</div>'
+    +'<div class="card"><h2>À encaisser en priorité</h2>'+miniListReste(em)+'</div>'
+    +'<div class="card"><h2>À traiter (reçues) — '+recuesTodo.length+'</h2>'+miniListRecues(recuesTodo.slice(-5).reverse())+'</div>'
     +'</div>'
-    +'<div class="right" style="margin-top:16px"><button class="btn" onclick="go(\'recues\')">⇩ Réceptionner</button><button class="btn btn-pri" onclick="go(\'emises\')">➤ Envoyer une facture</button></div>'
+    +'<div class="right" style="margin-top:16px"><button class="btn" onclick="go(\'suivi\')">⏱ Suivi</button><button class="btn btn-pri" onclick="go(\'emises\')">➤ Envoyer une facture</button></div>'
     +'</main>';
 }
+function miniListReste(em){ var due=em.map(function(f){return {f:f,p:factPaie(f)};}).filter(function(o){return o.p.reste>0.005;})
+    .sort(function(a,b){ if(a.p.key==='retard'&&b.p.key!=='retard')return -1; if(b.p.key==='retard'&&a.p.key!=='retard')return 1; return (a.f.ech||'')<(b.f.ech||'')?-1:1; }).slice(0,5);
+  if(!due.length) return '<div class="empty">Tout est encaissé. 👍</div>';
+  return '<table><tbody>'+due.map(function(o){ var c=contact(o.f.contactId);
+    return '<tr><td><b>'+esc(o.f.numero)+'</b></td><td>'+esc(c?c.nom:'—')+'</td><td>'+(o.p.key==='retard'?'<span class="tag t-late">en retard</span>':'<span class="mini">éch. '+frDate(o.f.ech)+'</span>')+'</td><td class="r num">'+eur(o.p.reste)+'</td></tr>';}).join('')+'</tbody></table>'; }
 function kpi(l,v,cls,sub){ return '<div class="card kpi"><div class="lbl">'+l+'</div><div class="val '+cls+'">'+v+'</div>'+(sub?'<div class="mini" style="margin-top:4px">'+sub+'</div>':'')+'</div>'; }
 function miniListEmises(list){ if(!list.length) return '<div class="empty">Aucune facture envoyée.</div>';
   return '<table><tbody>'+list.map(function(f){ var c=contact(f.contactId);
@@ -292,6 +307,64 @@ function miniListRecues(list){ if(!list.length) return '<div class="empty">Rien 
   return '<table><tbody>'+list.map(function(r){ return '<tr><td>'+esc(r.fournisseur||'—')+'</td><td class="mini">'+frDate(r.date)+'</td><td class="r num">'+eur(r.montant)+'</td></tr>';}).join('')+'</tbody></table>'; }
 
 function ph(t,right){ return '<div class="page-head"><h1>'+t+'</h1><div class="spacer"></div>'+(right||'')+'</div>'; }
+
+/* ============================================================
+   SUIVI — statut de paiement, encaissements, relances
+   ============================================================ */
+function factRegle(f){ return r2((f.encaissements||[]).reduce(function(a,e){return a+(+e.montant||0);},0)); }
+function factReste(f){ return r2((f.ttc||0)-factRegle(f)); }
+function factPaie(f){ var regle=factRegle(f), reste=factReste(f);
+  if(reste<=0.005) return {key:'paye', regle:regle, reste:0, label:'payée', cls:'t-done'};
+  if(f.statut==='envoyee' && f.ech && todayStr()>f.ech) return {key:'retard', regle:regle, reste:reste, label:'en retard', cls:'t-late'};
+  if(regle>0.005) return {key:'partiel', regle:regle, reste:reste, label:'partielle', cls:'t-todo'};
+  return {key:'attente', regle:regle, reste:reste, label:'à encaisser', cls:'t-att'};
+}
+function suiviFiltrer(k){ window.suiviFiltre=k; render(); }
+function pageSuivi(){
+  var filt=window.suiviFiltre||'tous';
+  var all=emisesActives().map(function(f){return {f:f,p:factPaie(f)};})
+    .sort(function(a,b){ if(a.p.key==='retard'&&b.p.key!=='retard')return -1; if(b.p.key==='retard'&&a.p.key!=='retard')return 1; return (a.f.ech||'')<(b.f.ech||'')?-1:1; });
+  var kFact=r2(all.reduce(function(a,o){return a+(o.f.ttc||0);},0));
+  var kEnc=r2(all.reduce(function(a,o){return a+o.p.regle;},0));
+  var kReste=r2(all.reduce(function(a,o){return a+o.p.reste;},0));
+  var kRetard=all.filter(function(o){return o.p.key==='retard';}).length;
+  var counts={tous:all.length, attente:all.filter(function(o){return o.p.key==='attente'||o.p.key==='partiel';}).length, retard:kRetard, paye:all.filter(function(o){return o.p.key==='paye';}).length};
+  var shown=all.filter(function(o){ if(filt==='tous')return true; if(filt==='retard')return o.p.key==='retard'; if(filt==='attente')return o.p.key==='attente'||o.p.key==='partiel'; if(filt==='paye')return o.p.key==='paye'; return true; });
+  var rows=shown.map(function(o){ var f=o.f, p=o.p, c=contact(f.contactId);
+    var act='<button class="btn btn-ghost btn-sm" onclick="emApercu(\''+f.id+'\')">Aperçu</button> ';
+    if(p.reste>0.005) act+='<button class="btn btn-pri btn-sm" onclick="factEncaisser(\''+f.id+'\')">Encaisser</button> ';
+    if(p.key==='retard') act+='<button class="btn btn-sm" title="Relancer par e-mail" onclick="factRelance(\''+f.id+'\')">Relancer</button>';
+    return '<tr><td><b>'+esc(f.numero)+'</b></td><td>'+esc(c?c.nom:'—')+'</td><td class="num">'+frDate(f.ech)+'</td>'
+      +'<td class="r num">'+eur(f.ttc)+'</td><td class="r num">'+eur(p.regle)+'</td><td class="r num"><b>'+eur(p.reste)+'</b></td>'
+      +'<td><span class="tag '+p.cls+'">'+p.label+'</span></td><td class="r" style="white-space:nowrap">'+act+'</td></tr>'; }).join('');
+  var chip=function(k,l){ return '<button class="filt'+(filt===k?' active':'')+'" onclick="suiviFiltrer(\''+k+'\')">'+l+' ('+counts[k]+')</button>'; };
+  return '<main>'+ph('Suivi des paiements', '<span class="badge">'+esc((societeActiveObj()||{}).nom||'')+'</span>')
+    +'<div class="grid g3">'
+    +kpi('Facturé (TTC)', eur(kFact), 'blue', '')
+    +kpi('Encaissé', eur(kEnc), 'good', '')
+    +kpi('Reste dû', eur(kReste), (kReste>0?'warn':''), (kRetard?kRetard+' en retard':'à jour ✓'))
+    +'</div>'
+    +'<div class="card" style="margin-top:16px">'
+    +'<div class="filters">'+chip('tous','Toutes')+chip('attente','À encaisser')+chip('retard','En retard')+chip('paye','Payées')+'</div>'
+    +'<div style="overflow-x:auto"><table><thead><tr><th>Numéro</th><th>Client</th><th>Échéance</th><th class="r">TTC</th><th class="r">Réglé</th><th class="r">Reste</th><th>Statut</th><th class="r">Actions</th></tr></thead>'
+    +'<tbody>'+(rows||'<tr><td colspan="8" class="empty">Aucune facture'+(filt!=='tous'?' dans ce filtre':'')+'.</td></tr>')+'</tbody></table></div></div>'
+    +'</main>';
+}
+function factEncaisser(id){ var f=db.emises.filter(function(x){return x.id===id;})[0]; if(!f)return; var reste=factReste(f);
+  openModal('Encaisser — '+esc(f.numero),
+    '<div class="mini" style="margin-bottom:10px">Reste dû : <b>'+eur(reste)+'</b> sur '+eur(f.ttc)+'.</div>'
+    +'<div class="row c2"><div class="field"><label>Montant reçu (€)</label><input id="enc-mont" type="number" step="any" value="'+reste+'"></div>'
+    +'<div class="field"><label>Date</label><input id="enc-date" type="date" value="'+todayStr()+'"></div></div>',
+    '<button class="btn btn-sm" onclick="closeModal()">Annuler</button><button class="btn btn-pri btn-sm" onclick="factAjoutEnc(\''+id+'\')">Enregistrer l\'encaissement</button>'); }
+function factAjoutEnc(id){ var f=db.emises.filter(function(x){return x.id===id;})[0]; if(!f)return;
+  var m=+document.getElementById('enc-mont').value||0; if(m<=0) return toast('Montant invalide.');
+  if(!f.encaissements) f.encaissements=[]; f.encaissements.push({ montant:r2(m), date:document.getElementById('enc-date').value||todayStr() });
+  save(); closeModal(); render(); var p=factPaie(f); toast('Encaissement de '+eur(m)+' — '+(p.key==='paye'?'facture soldée ✓':'reste '+eur(p.reste))); }
+function factRelance(id){ var f=db.emises.filter(function(x){return x.id===id;})[0]; if(!f)return; var c=contact(f.contactId)||{}; var reste=factReste(f);
+  var sujet='Relance — facture '+f.numero;
+  var corps='Bonjour '+(c.nom||'')+',%0D%0A%0D%0ASauf erreur de notre part, la facture '+f.numero+' (échéance du '+frDate(f.ech)+') demeure impayée pour un montant de '+eur(reste).replace('€','EUR')+'.%0D%0ANous vous remercions de bien vouloir procéder à son règlement.%0D%0A%0D%0ACordialement,';
+  if(!c.email) toast('Ce client n\'a pas d\'e-mail (onglet Contacts).');
+  window.location.href='mailto:'+encodeURIComponent(c.email||'')+'?subject='+encodeURIComponent(sujet)+'&body='+corps; }
 
 /* ============================================================
    ENVOYER — création + liste des factures émises
@@ -364,7 +437,7 @@ function emCreer(){ emSync();
   var t=emTotaux(); if(t.ht<=0) return toast('Renseignez au moins une ligne.');
   var f={ id:uid(), numero:nextNum(), societeId:db.societeActive, contactId:emDraft.contactId, date:emDraft.date, ech:emDraft.ech,
     lignes:JSON.parse(JSON.stringify(emDraft.lignes)).filter(function(l){return (l.desc&&String(l.desc).trim())||r2((+l.qte||0)*(+l.pu||0))!==0;}),
-    cond:emDraft.cond, theme:emDraft.theme||'classique', ht:t.ht, tva:t.tva, ttc:t.ttc, statut:'brouillon', cree:Date.now(), dateEnvoi:null };
+    cond:emDraft.cond, theme:emDraft.theme||'classique', ht:t.ht, tva:t.tva, ttc:t.ttc, encaissements:[], statut:'brouillon', cree:Date.now(), dateEnvoi:null };
   db.emises.push(f); save(); emResetDraft(); render();
   toast('Facture '+f.numero+' créée. Aperçu / envoi disponibles ci-dessous.');
 }
@@ -625,7 +698,7 @@ function openModal(title,body,actions){ var bg=document.createElement('div'); bg
 function closeModal(){ var m=document.getElementById('modal-bg'); if(m)m.remove(); }
 
 /* ---------- Rendu ---------- */
-var PAGES={ dash:pageDash, emises:pageEmises, recues:pageRecues, contacts:pageContacts, societes:pageSocietes };
+var PAGES={ dash:pageDash, emises:pageEmises, suivi:pageSuivi, recues:pageRecues, contacts:pageContacts, societes:pageSocietes };
 function render(){ document.getElementById('app').innerHTML=sidebar()+(PAGES[current]||pageDash)(); if(current==='recues') bindDrop(); }
 
 if('serviceWorker' in navigator){ window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
