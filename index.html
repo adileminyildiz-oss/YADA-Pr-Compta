@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1120">
-<meta name="yada-version" content="1.5.0">
+<meta name="yada-version" content="1.6.0">
 <title>YADA PRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -214,11 +214,11 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 <div class="app" id="app"></div>
 <div id="print-area"></div>
 <div id="toast"></div>
-<span id="yada-ver">YADA PRO · v1.5</span>
+<span id="yada-ver">YADA PRO · v1.6</span>
 
 <script>
 'use strict';
-var VERSION='1.5.0';
+var VERSION='1.6.0';
 
 /* ---------- Données (localStorage) ---------- */
 function seed(){ return { societes:[], societeActive:null, contacts:[], emises:[], recues:[], catalogue:[], seq:{fac:0} }; }
@@ -727,7 +727,21 @@ function ficheClient(id){ var c=db.contacts.filter(function(x){return x.id===id;
   var body='<div style="margin-bottom:12px">'+(info||'<span class="mini">Aucune coordonnée.</span>')+'</div>'
     +'<div class="grid g3" style="margin-bottom:12px">'+kpi('Facturé',eur(fac),'blue','')+kpi('Encaissé',eur(enc),'good','')+kpi('Reste dû',eur(reste),(reste>0?'warn':''),'')+'</div>'
     +'<div style="overflow-x:auto"><table><thead><tr><th>Numéro</th><th>Date</th><th class="r">TTC</th><th class="r">Reste</th><th>Statut</th></tr></thead><tbody>'+(rows||'<tr><td colspan="5" class="empty">Aucune facture pour ce client.</td></tr>')+'</tbody></table></div>';
-  openModal('Fiche — '+esc(c.nom), body, '<button class="btn btn-sm" onclick="closeModal()">Fermer</button>'); }
+  openModal('Fiche — '+esc(c.nom), body, '<button class="btn btn-sm" onclick="releveImprimer(\''+id+'\')">🖨️ Relevé PDF</button><button class="btn btn-sm" onclick="closeModal()">Fermer</button>'); }
+function releveClientHTML(id){ var c=db.contacts.filter(function(x){return x.id===id;})[0]||{}; var soc=societeActiveObj()||{};
+  var facs=emisesActives().filter(function(f){return f.contactId===id && (f.type||'facture')==='facture';}).sort(function(a,b){return (a.date<b.date)?-1:1;});
+  var fac=r2(facs.reduce(function(a,f){return a+(f.ttc||0);},0)), enc=r2(facs.reduce(function(a,f){return a+factRegle(f);},0)), reste=r2(facs.reduce(function(a,f){return a+factReste(f);},0));
+  var rows=facs.map(function(f){ var p=factPaie(f); return '<tr><td>'+esc(f.numero)+'</td><td class="r num">'+frDate(f.date)+'</td><td class="r num">'+frDate(f.ech||f.date)+'</td><td class="r num">'+money(f.ttc,f.devise)+'</td><td class="r num">'+money(p.regle,f.devise)+'</td><td class="r num">'+money(p.reste,f.devise)+'</td><td>'+p.label+'</td></tr>'; }).join('');
+  var infoSoc=[soc.adresse, soc.siret?'SIRET '+soc.siret:'', soc.tva?'TVA '+soc.tva:''].filter(Boolean).map(function(x){return '<div class="mini">'+esc(x).replace(/\n/g,'<br>')+'</div>';}).join('');
+  var infoCli=[c.adresse, c.siren?'SIREN '+c.siren:'', c.email].filter(Boolean).map(function(x){return '<div class="mini">'+esc(x).replace(/\n/g,'<br>')+'</div>';}).join('');
+  var titre = soc.logo ? '<img src="'+soc.logo+'" alt="" style="max-height:48px;max-width:190px">' : '<div class="co">'+esc(soc.nom||'YADA PRO')+'</div>';
+  return '<div class="inv th-classique"><div class="h"><div>'+titre+'</div><div class="ti"><div class="big">RELEVÉ DE COMPTE</div><div class="mini">au '+frDate(todayStr())+'</div></div></div>'
+    +'<div class="body"><div class="parties"><div><div class="b">Émetteur</div><div><b>'+esc(soc.nom||'YADA PRO')+'</b></div>'+infoSoc+'</div>'
+    +'<div style="text-align:right"><div class="b">Client</div><div><b>'+esc(c.nom||'—')+'</b></div>'+infoCli+'</div></div>'
+    +'<table><thead><tr><th>Numéro</th><th class="r">Date</th><th class="r">Échéance</th><th class="r">TTC</th><th class="r">Réglé</th><th class="r">Reste</th><th>Statut</th></tr></thead><tbody>'+(rows||'<tr><td colspan="7">Aucune facture.</td></tr>')+'</tbody></table>'
+    +'<div class="tot"><div class="l"><span>Total facturé</span><span class="num">'+eur(fac)+'</span></div><div class="l"><span>Encaissé</span><span class="num">'+eur(enc)+'</span></div><div class="l big"><span>Reste dû</span><span class="num">'+eur(reste)+'</span></div></div>'
+    +'<div class="foot">Relevé de compte au '+frDate(todayStr())+' — '+esc(soc.nom||'')+'. Montants en euros (base).</div></div></div>'; }
+function releveImprimer(id){ document.getElementById('print-area').innerHTML=releveClientHTML(id); window.print(); }
 function pageContacts(){
   var rows=db.contacts.slice().sort(function(a,b){return (a.nom||'').localeCompare(b.nom||'');}).map(function(c){
     return '<tr><td><b>'+esc(c.nom)+'</b>'+(c.siren?'<div class="mini">SIREN '+esc(c.siren)+'</div>':'')+'</td><td>'+(c.type==='fournisseur'?'Fournisseur':'Client')+'</td><td>'+esc(c.email||'—')+'</td><td class="mini">'+esc(c.tel||'')+'</td>'
