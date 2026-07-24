@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1120">
-<meta name="yada-version" content="1.1.0">
+<meta name="yada-version" content="1.2.0">
 <title>YADA PRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -46,6 +46,7 @@ aside{position:sticky; top:0; height:100dvh; overflow:auto; display:flex; flex-d
 .nav-btn.active{background:linear-gradient(180deg,rgba(47,143,255,.22),rgba(47,143,255,.10)); border-color:rgba(47,143,255,.5); color:#fff; box-shadow:0 0 18px rgba(47,143,255,.22);}
 .nav-btn .ico{width:18px; text-align:center}
 .nav-btn .badge{margin-left:auto; font-size:11px; font-weight:700; background:rgba(47,143,255,.18); color:var(--accent2); border-radius:999px; padding:1px 8px}
+.nav-list{display:flex; flex-direction:column; gap:4px}
 .side-foot{margin-top:auto; padding-top:12px; border-top:1px solid var(--line); color:var(--faint); font-size:11.5px}
 
 main{padding:30px clamp(16px,3.5vw,48px); min-width:0}
@@ -154,9 +155,20 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 
 @media(max-width:820px){
   .app{grid-template-columns:1fr}
-  aside{position:static; height:auto; flex-direction:row; align-items:center; overflow-x:auto; padding:10px 12px}
-  aside .nav-sec,aside .side-foot{display:none}
-  main{padding:20px 14px 70px}
+  aside{position:sticky; top:0; z-index:30; height:auto; flex-direction:column; gap:8px; padding:9px 12px 8px; border-right:none; border-bottom:1px solid var(--line)}
+  .side-top{display:flex; align-items:center; justify-content:space-between; gap:12px}
+  .brand{padding:0}
+  .side-top .soc-wrap{flex:0 1 55%; min-width:0}
+  .soc-wrap .nav-sec{display:none}
+  .soc-active{margin:0}
+  .nav-sec-fac,.side-foot{display:none}
+  .nav-list{flex-direction:row; overflow-x:auto; gap:6px; padding-bottom:2px; -webkit-overflow-scrolling:touch}
+  .nav-btn{flex:0 0 auto; white-space:nowrap; padding:8px 13px}
+  main{padding:18px 13px 46px}
+  .card{padding:16px 15px}
+  .page-head h1{font-size:21px}
+  .em-prev .inv{zoom:.46}
+  .em-prev{max-height:none}
 }
 
 /* ---- Zone d'impression (facture PDF) ---- */
@@ -201,11 +213,11 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 <div class="app" id="app"></div>
 <div id="print-area"></div>
 <div id="toast"></div>
-<span id="yada-ver">YADA PRO · v1.1</span>
+<span id="yada-ver">YADA PRO · v1.2</span>
 
 <script>
 'use strict';
-var VERSION='1.1.0';
+var VERSION='1.2.0';
 
 /* ---------- Données (localStorage) ---------- */
 function seed(){ return { societes:[], societeActive:null, contacts:[], emises:[], recues:[], catalogue:[], seq:{fac:0} }; }
@@ -284,9 +296,11 @@ function sidebar(){
   var socBox = (db.societes||[]).length>1
     ? '<select class="soc-select" onchange="setSocieteActive(this.value)">'+db.societes.map(function(s){return '<option value="'+s.id+'"'+(soc&&s.id===soc.id?' selected':'')+'>'+esc(s.nom)+'</option>';}).join('')+'</select>'
     : '<div class="soc-name">'+esc(soc?soc.nom:'—')+'</div>';
-  return '<aside><div class="brand">'+yadaMark(36)+'<div><span class="name">YADA</span><span class="sub">PRO</span></div></div>'
-    +'<div class="nav-sec">Société active</div><div class="soc-active">'+socBox+'</div>'
-    +'<div class="nav-sec">Factures</div>'+nav
+  return '<aside>'
+    +'<div class="side-top"><div class="brand">'+yadaMark(36)+'<div><span class="name">YADA</span><span class="sub">PRO</span></div></div>'
+    +'<div class="soc-wrap"><div class="nav-sec">Société active</div><div class="soc-active">'+socBox+'</div></div></div>'
+    +'<div class="nav-sec nav-sec-fac">Factures</div>'
+    +'<div class="nav-list">'+nav+'</div>'
     +'<div class="side-foot">Hub de factures · <b>v'+VERSION+'</b><br>Multi-société.</div></aside>';
 }
 
