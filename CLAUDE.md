@@ -26,12 +26,12 @@ Nouveau départ, sans lien de code avec l'ancien « Précompta ». L'ancienne ap
   - numérotation auto `FAC-AAAA-NNNN` ; **liste** des factures émises avec **recherche** (n°/client), colonne **Thème**, **Dupliquer** et **Supprimer** ;
   - **Aperçu** (modale, thème changeable à la volée), **PDF** (impression via `@media print`), **Envoyer** (e-mail `mailto` pré-rempli, statut « envoyée »).
 - **Données** : **export CSV** des ventes et des encaissements (société active, séparateur « ; », BOM Excel — `exportVentesCSV`/`exportEncaissementsCSV`), **sauvegarde JSON** (`sauvegardeJSON`) et **restauration** (`restaurerJSON`, remplace `db`, re-migration).
-- **Réceptionner** *(différé, mais présent)* : dépôt/import d'une facture reçue (PDF/photo, glisser-déposer), fournisseur/date/montant/statut, boîte de réception.
+- **Réceptionner (achats/dépenses)** : dépôt/import d'une facture reçue (PDF/photo, glisser-déposer), fournisseur/date/**montant TTC**/**dont TVA**/**catégorie**/statut, boîte de réception. Résumé achats (total dépenses, TVA déductible). Le **tableau de bord** affiche une carte **TVA & dépenses** (TVA collectée sur ventes − TVA déductible sur achats = à reverser).
 - **PWA** : `manifest.webmanifest` + `sw.js` (cache `yada-pro-v1`, réseau d'abord), installable.
 - Badge `YADA PRO · v0.1` ; `<meta name="yada-version" content="0.1.0">`.
 
 ### Modèle de données (localStorage clé `yadapro`)
-`{ societes:[{id,nom,adresse,siret,tva,email,tel,iban,logo,theme,customFormat,seq}], societeActive, contacts:[{id,nom,type,email}], emises:[{id,type('facture'|'devis'|'avoir'),numero,societeId,contactId,date,ech,cond,theme,lignes,remiseType,remiseVal,htBrut,remise,ht,tva,ttc,acompte,net,encaissements:[{montant,date}],statut,dateEnvoi,transformeEn}], recues:[{id,fournisseur,date,montant,statut,nomFichier,fichier}], catalogue:[{id,desc,unite,pu,taux}], seq:{fac} }`
+`{ societes:[{id,nom,adresse,siret,tva,email,tel,iban,logo,theme,customFormat,seq}], societeActive, contacts:[{id,nom,type,email}], emises:[{id,type('facture'|'devis'|'avoir'),numero,societeId,contactId,date,ech,cond,theme,lignes,remiseType,remiseVal,htBrut,remise,ht,tva,ttc,acompte,net,encaissements:[{montant,date}],statut,dateEnvoi,transformeEn}], recues:[{id,fournisseur,date,montant,tva,categorie,statut,nomFichier,fichier}], catalogue:[{id,desc,unite,pu,taux}], seq:{fac} }`
 Migration au chargement : `ensureSocietes()` crée une société par défaut si besoin et rattache les factures orphelines à la société active.
 
 ## Thèmes de facture

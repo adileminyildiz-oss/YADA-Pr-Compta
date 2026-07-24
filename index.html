@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1120">
-<meta name="yada-version" content="0.7.0">
+<meta name="yada-version" content="0.8.0">
 <title>YADA PRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -190,11 +190,11 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 <div class="app" id="app"></div>
 <div id="print-area"></div>
 <div id="toast"></div>
-<span id="yada-ver">YADA PRO · v0.7</span>
+<span id="yada-ver">YADA PRO · v0.8</span>
 
 <script>
 'use strict';
-var VERSION='0.7.0';
+var VERSION='0.8.0';
 
 /* ---------- Données (localStorage) ---------- */
 function seed(){ return { societes:[], societeActive:null, contacts:[], emises:[], recues:[], catalogue:[], seq:{fac:0} }; }
@@ -286,6 +286,10 @@ function pageDash(){
   var reste=r2(em.reduce(function(a,f){return a+factReste(f);},0));
   var retard=em.filter(function(f){return factPaie(f).key==='retard';});
   var recuesTodo=db.recues.filter(function(r){return r.statut!=='traitee';});
+  var depenses=r2(db.recues.reduce(function(a,x){return a+(+x.montant||0);},0));
+  var tvaCol=r2(em.reduce(function(a,f){return a+(+f.tva||0);},0));
+  var tvaDed=r2(db.recues.reduce(function(a,x){return a+(+x.tva||0);},0));
+  var tvaSolde=r2(tvaCol-tvaDed);
   var soc=societeActiveObj()||{};
   return '<main>'+ph('Tableau de bord', '<span class="badge">'+esc(soc.nom||'')+'</span>')
     +'<div class="grid g3">'
@@ -296,6 +300,12 @@ function pageDash(){
     +'<div class="grid g2" style="margin-top:16px">'
     +'<div class="card"><h2>À encaisser en priorité</h2>'+miniListReste(em)+'</div>'
     +'<div class="card"><h2>À traiter (reçues) — '+recuesTodo.length+'</h2>'+miniListRecues(recuesTodo.slice(-5).reverse())+'</div>'
+    +'</div>'
+    +'<div class="card" style="margin-top:16px"><h2>TVA &amp; dépenses <span class="mini">(indicatif)</span></h2>'
+    +kpiInline('TVA collectée (ventes)', eur(tvaCol))
+    +kpiInline('TVA déductible (achats)', eur(tvaDed))
+    +kpiInline('TVA à reverser (solde)', eur(tvaSolde))
+    +kpiInline('Total dépenses (TTC)', eur(depenses))
     +'</div>'
     +'<div class="right" style="margin-top:16px"><button class="btn" onclick="go(\'suivi\')">⏱ Suivi</button><button class="btn btn-pri" onclick="go(\'emises\')">➤ Envoyer une facture</button></div>'
     +'</main>';
@@ -576,7 +586,8 @@ function pageRecues(){
     var mark = r.statut==='traitee' ? '<button class="btn btn-ghost btn-sm" onclick="recStatut(\''+r.id+'\',\'todo\')">Rouvrir</button>'
                                     : '<button class="btn btn-pri btn-sm" onclick="recStatut(\''+r.id+'\',\'traitee\')">Marquer traitée</button>';
     return '<tr><td>'+esc(r.fournisseur||'—')+(r.nomFichier?'<div class="mini">'+esc(r.nomFichier)+'</div>':'')+'</td>'
-      +'<td class="num">'+frDate(r.date)+'</td><td class="r num">'+eur(r.montant)+'</td><td>'+tg+'</td>'
+      +'<td class="mini">'+esc(r.categorie||'—')+'</td>'
+      +'<td class="num">'+frDate(r.date)+'</td><td class="r num">'+eur(r.montant)+'</td><td class="r num">'+eur(r.tva||0)+'</td><td>'+tg+'</td>'
       +'<td class="r" style="white-space:nowrap">'+voir+mark+' <button class="btn btn-ghost btn-sm btn-danger" onclick="recSuppr(\''+r.id+'\')">✕</button></td></tr>'; }).join('');
   return '<main>'+ph('Réceptionner une facture')
     +'<div class="grid g2">'
@@ -585,16 +596,19 @@ function pageRecues(){
     +'<input id="rec-file" type="file" accept="application/pdf,image/*" style="display:none" onchange="recFichier(this)">'
     +'<div class="row c2" style="margin-top:12px"><div class="field"><label>Fournisseur</label><input id="rec-four" placeholder="Nom du fournisseur"></div>'
     +'<div class="field"><label>Date</label><input id="rec-date" type="date" value="'+todayStr()+'"></div></div>'
-    +'<div class="field"><label>Montant TTC (€)</label><input id="rec-mont" type="number" step="any" placeholder="0,00"></div>'
+    +'<div class="row c3"><div class="field"><label>Montant TTC (€)</label><input id="rec-mont" type="number" step="any" placeholder="0,00"></div>'
+    +'<div class="field"><label>dont TVA (€)</label><input id="rec-tva" type="number" step="any" placeholder="0,00"></div>'
+    +'<div class="field"><label>Catégorie</label><select id="rec-cat">'+CATS_ACHAT.map(function(x){return '<option>'+x+'</option>';}).join('')+'</select></div></div>'
     +'<div class="mini" id="rec-fname" style="margin-bottom:8px"></div>'
     +'<div class="right"><button class="btn btn-pri" onclick="recAjouter()">Réceptionner</button></div></div>'
-    +'<div class="card"><h2>Résumé</h2>'
-    +kpiInline('Reçues', db.recues.length)+kpiInline('À traiter', db.recues.filter(function(x){return x.statut!=='traitee';}).length)
-    +kpiInline('Total TTC reçu', eur(db.recues.reduce(function(a,x){return a+(+x.montant||0);},0)))
+    +'<div class="card"><h2>Résumé des achats</h2>'
+    +kpiInline('Factures reçues', db.recues.length)+kpiInline('À traiter', db.recues.filter(function(x){return x.statut!=='traitee';}).length)
+    +kpiInline('Total dépenses TTC', eur(db.recues.reduce(function(a,x){return a+(+x.montant||0);},0)))
+    +kpiInline('TVA déductible', eur(db.recues.reduce(function(a,x){return a+(+x.tva||0);},0)))
     +'</div></div>'
     +'<div class="card" style="margin-top:16px"><h2>Boîte de réception ('+list.length+')</h2>'
-    +'<div style="overflow-x:auto"><table><thead><tr><th>Fournisseur</th><th>Date</th><th class="r">TTC</th><th>Statut</th><th class="r">Actions</th></tr></thead>'
-    +'<tbody>'+(rows||'<tr><td colspan="5" class="empty">Aucune facture reçue.</td></tr>')+'</tbody></table></div></div>'
+    +'<div style="overflow-x:auto"><table><thead><tr><th>Fournisseur</th><th>Catégorie</th><th>Date</th><th class="r">TTC</th><th class="r">dont TVA</th><th>Statut</th><th class="r">Actions</th></tr></thead>'
+    +'<tbody>'+(rows||'<tr><td colspan="7" class="empty">Aucune facture reçue.</td></tr>')+'</tbody></table></div></div>'
     +'</main>';
 }
 function kpiInline(l,v){ return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)"><span class="mini">'+l+'</span><b class="num">'+v+'</b></div>'; }
@@ -607,12 +621,15 @@ function recFichier(input){ var file=input.files&&input.files[0]; if(!file)retur
   rd.onerror=function(){ recPending={ nomFichier:file.name, fichier:null }; fn.textContent='Fichier : '+file.name+' (aperçu indisponible)'; };
   rd.readAsDataURL(file);
 }
+var CATS_ACHAT=['Achats','Sous-traitance','Frais généraux','Matériel','Déplacements','Autre'];
 function recAjouter(){
   var four=(document.getElementById('rec-four').value||'').trim();
   var date=document.getElementById('rec-date').value||todayStr();
   var mont=+document.getElementById('rec-mont').value||0;
+  var tva=+document.getElementById('rec-tva').value||0;
+  var cat=(document.getElementById('rec-cat')||{}).value||'Autre';
   if(!four && !recPending) return toast('Indiquez au moins un fournisseur ou un fichier.');
-  var r={ id:uid(), fournisseur:four, date:date, montant:r2(mont), statut:'todo', cree:Date.now(),
+  var r={ id:uid(), fournisseur:four, date:date, montant:r2(mont), tva:r2(tva), categorie:cat, statut:'todo', cree:Date.now(),
     nomFichier:recPending?recPending.nomFichier:null, fichier:recPending?recPending.fichier:null };
   db.recues.push(r);
   if(!save()){ r.fichier=null; save(); toast('Enregistré, mais le fichier était trop volumineux pour le stockage local.'); }
