@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1120">
-<meta name="yada-version" content="0.2.0">
+<meta name="yada-version" content="0.3.0">
 <title>YADA PRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -93,6 +93,12 @@ input:focus,select:focus,textarea:focus{outline:none; border-color:var(--accent)
 @media(max-width:1050px){.emwrap{grid-template-columns:1fr}}
 .em-prev{background:#fff; border-radius:10px; overflow:auto; max-height:660px}
 .em-prev .inv{zoom:.66}
+.em-prev .inv-custom{zoom:.66}
+.soc-active{margin:0 6px 6px}
+.soc-select{width:100%; padding:8px 10px; border-radius:var(--radius-s); border:1px solid var(--line2); background:#0b1526; color:var(--txt); font-size:13.5px}
+.soc-name{font-weight:700; font-size:15px; padding:6px 6px}
+.soc-row-act td{background:rgba(47,143,255,.06)}
+textarea{resize:vertical; min-height:54px}
 
 table{width:100%; border-collapse:collapse; font-size:13.5px}
 th{text-align:left; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); padding:9px 10px; border-bottom:1px solid var(--line2)}
@@ -175,14 +181,14 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 <div class="app" id="app"></div>
 <div id="print-area"></div>
 <div id="toast"></div>
-<span id="yada-ver">YADA PRO · v0.2</span>
+<span id="yada-ver">YADA PRO · v0.3</span>
 
 <script>
 'use strict';
-var VERSION='0.2.0';
+var VERSION='0.3.0';
 
 /* ---------- Données (localStorage) ---------- */
-function seed(){ return { contacts:[], emises:[], recues:[], seq:{fac:0} }; }
+function seed(){ return { societes:[], societeActive:null, contacts:[], emises:[], recues:[], seq:{fac:0} }; }
 var db = load() || seed();
 function load(){ try{ return JSON.parse(localStorage.getItem('yadapro')||'null'); }catch(e){ return null; } }
 function save(){ try{ localStorage.setItem('yadapro', JSON.stringify(db)); return true; }catch(e){ return false; } }
@@ -195,8 +201,22 @@ function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMo
 function frDate(s){ if(!s) return '—'; var p=String(s).split('-'); return p.length===3? p[2]+'/'+p[1]+'/'+p[0] : s; }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(function(){ t.classList.remove('show'); },2600); }
-function nextNum(){ db.seq.fac=(db.seq.fac||0)+1; return 'FAC-'+new Date().getFullYear()+'-'+String(db.seq.fac).padStart(4,'0'); }
+function nextNum(soc){ soc=soc||societeActiveObj(); if(!soc) return 'FAC-'+new Date().getFullYear()+'-0001'; soc.seq=(soc.seq||0)+1; return 'FAC-'+new Date().getFullYear()+'-'+String(soc.seq).padStart(4,'0'); }
 function contact(id){ return db.contacts.find(function(c){ return c.id===id; }); }
+
+/* ---------- Sociétés (multi-société) ---------- */
+function societeActiveObj(){ return (db.societes||[]).filter(function(s){return s.id===db.societeActive;})[0] || (db.societes||[])[0] || null; }
+function societeOf(f){ return (db.societes||[]).filter(function(s){return s.id===f.societeId;})[0] || societeActiveObj(); }
+function emisesActives(){ return db.emises.filter(function(f){ return f.societeId===db.societeActive; }); }
+function ensureSocietes(){
+  if(!db.societes) db.societes=[];
+  if(!db.societes.length){ db.societes.push({ id:uid(), nom:'Ma société', adresse:'', siret:'', tva:'', email:'', tel:'', iban:'', logo:'', theme:'classique', customFormat:'', seq:(db.seq&&db.seq.fac)||0 }); }
+  db.societes.forEach(function(s){ if(s.seq==null) s.seq=0; if(!s.theme) s.theme='classique'; });
+  if(!db.societeActive || !societeActiveObj()) db.societeActive=db.societes[0].id;
+  /* rattacher les factures existantes (sans société) à la société active */
+  db.emises.forEach(function(f){ if(!f.societeId) f.societeId=db.societeActive; });
+}
+function setSocieteActive(id){ db.societeActive=id; emResetDraft(); save(); render(); toast('Société active : '+((societeActiveObj()||{}).nom||'')); }
 
 /* Thèmes d'habillage de la facture de vente */
 var THEMES=[
@@ -223,10 +243,11 @@ var NAV=[
   {id:'dash', ico:'▦', label:'Tableau de bord'},
   {id:'emises', ico:'➤', label:'Envoyer'},
   {id:'recues', ico:'⇩', label:'Réceptionner'},
-  {id:'contacts', ico:'☰', label:'Contacts'}
+  {id:'contacts', ico:'☰', label:'Contacts'},
+  {id:'societes', ico:'🏢', label:'Sociétés'}
 ];
 var current='dash';
-function go(id){ current=id; if(id==='emises') emResetDraft(); render(); }
+function go(id){ current=id; if(id!=='societes') socEdit=null; if(id==='emises') emResetDraft(); render(); }
 
 function sidebar(){
   var nRecuesTodo=db.recues.filter(function(r){ return r.statut!=='traitee'; }).length;
@@ -234,14 +255,19 @@ function sidebar(){
     var badge = m.id==='recues' && nRecuesTodo ? '<span class="badge">'+nRecuesTodo+'</span>' : '';
     return '<button class="nav-btn'+(m.id===current?' active':'')+'" onclick="go(\''+m.id+'\')"><span class="ico">'+m.ico+'</span>'+m.label+badge+'</button>';
   }).join('');
+  var soc=societeActiveObj();
+  var socBox = (db.societes||[]).length>1
+    ? '<select class="soc-select" onchange="setSocieteActive(this.value)">'+db.societes.map(function(s){return '<option value="'+s.id+'"'+(soc&&s.id===soc.id?' selected':'')+'>'+esc(s.nom)+'</option>';}).join('')+'</select>'
+    : '<div class="soc-name">'+esc(soc?soc.nom:'—')+'</div>';
   return '<aside><div class="brand">'+yadaMark(36)+'<div><span class="name">YADA</span><span class="sub">PRO</span></div></div>'
+    +'<div class="nav-sec">Société active</div><div class="soc-active">'+socBox+'</div>'
     +'<div class="nav-sec">Factures</div>'+nav
-    +'<div class="side-foot">Hub de factures · <b>v'+VERSION+'</b><br>Envoyer &amp; réceptionner.</div></aside>';
+    +'<div class="side-foot">Hub de factures · <b>v'+VERSION+'</b><br>Multi-société.</div></aside>';
 }
 
 /* ---------- Tableau de bord ---------- */
 function pageDash(){
-  var em=db.emises, envoyees=em.filter(function(f){return f.statut==='envoyee';});
+  var em=emisesActives(), envoyees=em.filter(function(f){return f.statut==='envoyee';});
   var totTTC=em.reduce(function(a,f){return a+ (f.ttc||0);},0);
   var recuesTodo=db.recues.filter(function(r){return r.statut!=='traitee';});
   var recuesTot=db.recues.reduce(function(a,r){return a+(+r.montant||0);},0);
@@ -271,7 +297,7 @@ function ph(t,right){ return '<div class="page-head"><h1>'+t+'</h1><div class="s
    ENVOYER — création + liste des factures émises
    ============================================================ */
 var emDraft=null;
-function emResetDraft(){ var d=todayStr(); emDraft={ contactId:(db.contacts.find(function(c){return c.type!=='fournisseur';})||{}).id||'', date:d, cond:'30', ech:addDays(d,30), theme:'classique', lignes:[{desc:'',qte:1,pu:0,taux:20}] }; }
+function emResetDraft(){ var d=todayStr(); emDraft={ contactId:(db.contacts.find(function(c){return c.type!=='fournisseur';})||{}).id||'', date:d, cond:'30', ech:addDays(d,30), theme:((societeActiveObj()||{}).theme)||'classique', lignes:[{desc:'',qte:1,pu:0,taux:20}] }; }
 function emSetTheme(id){ emSync(); emDraft.theme=id; render(); }
 function addDays(d,n){ var p=String(d).split('-'); if(p.length!==3) return d; var dt=new Date(+p[0],+p[1]-1,+p[2]); dt.setDate(dt.getDate()+(+n||0)); return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); }
 function emEcheance(){ emSync(); var c=document.getElementById('em-cond'); if(c)emDraft.cond=c.value; emDraft.ech=addDays(emDraft.date,emDraft.cond); var e=document.getElementById('em-ech'); if(e)e.value=emDraft.ech; emPreview(); }
@@ -336,7 +362,7 @@ function pageEmises(){
 function emCreer(){ emSync();
   if(!emDraft.contactId) return toast('Sélectionnez un client (onglet Contacts).');
   var t=emTotaux(); if(t.ht<=0) return toast('Renseignez au moins une ligne.');
-  var f={ id:uid(), numero:nextNum(), contactId:emDraft.contactId, date:emDraft.date, ech:emDraft.ech,
+  var f={ id:uid(), numero:nextNum(), societeId:db.societeActive, contactId:emDraft.contactId, date:emDraft.date, ech:emDraft.ech,
     lignes:JSON.parse(JSON.stringify(emDraft.lignes)).filter(function(l){return (l.desc&&String(l.desc).trim())||r2((+l.qte||0)*(+l.pu||0))!==0;}),
     cond:emDraft.cond, theme:emDraft.theme||'classique', ht:t.ht, tva:t.tva, ttc:t.ttc, statut:'brouillon', cree:Date.now(), dateEnvoi:null };
   db.emises.push(f); save(); emResetDraft(); render();
@@ -344,7 +370,7 @@ function emCreer(){ emSync();
 }
 function emListe(){
   var q=(window.emQuery||'').toLowerCase().trim();
-  var all=db.emises.slice().sort(function(a,b){return b.cree-a.cree;});
+  var all=emisesActives().slice().sort(function(a,b){return b.cree-a.cree;});
   var list=all.filter(function(f){ if(!q)return true; var c=contact(f.contactId); return (f.numero||'').toLowerCase().indexOf(q)>=0 || (c&&(c.nom||'').toLowerCase().indexOf(q)>=0); });
   var rows=list.map(function(f){ var c=contact(f.contactId);
     var tg = f.statut==='envoyee' ? '<span class="tag t-sent">envoyée</span>' : '<span class="tag t-draft">brouillon</span>';
@@ -366,20 +392,36 @@ function emListe(){
 }
 
 /* Facture imprimable (aperçu / PDF) */
-function factureHTML(f){ var c=contact(f.contactId)||{}; var th=f.theme||'classique';
+function factureHTML(f){ var c=contact(f.contactId)||{}; var soc=societeOf(f)||{}; var th=f.theme||soc.theme||'classique';
+  if(soc.customFormat){ return renderCustomFormat(soc.customFormat, f, soc, c); }
   var lignes=(f.lignes||[]).map(function(l){ var b=r2((+l.qte||0)*(+l.pu||0));
     return '<tr><td>'+esc(l.desc||'')+'</td><td class="r num">'+(l.qte||'')+'</td><td class="r num">'+eur(l.pu)+'</td><td class="r num">'+(l.taux||0)+' %</td><td class="r num">'+eur(b)+'</td></tr>'; }).join('');
-  return '<div class="inv th-'+th+'"><div class="h"><div class="co">YADA PRO</div>'
+  var titre = soc.logo ? '<img src="'+soc.logo+'" alt="" style="max-height:48px;max-width:190px">' : '<div class="co">'+esc(soc.nom||'YADA PRO')+'</div>';
+  var infos = [soc.adresse, soc.siret?'SIRET '+soc.siret:'', soc.tva?'TVA '+soc.tva:'', soc.tel, soc.email].filter(Boolean)
+    .map(function(x){ return '<div class="mini">'+esc(x).replace(/\n/g,'<br>')+'</div>'; }).join('');
+  return '<div class="inv th-'+th+'"><div class="h"><div>'+titre+'</div>'
     +'<div class="ti"><div class="big">FACTURE</div><div>'+esc(f.numero)+'</div><div class="mini">Date : '+frDate(f.date)+'</div><div class="mini">Échéance : '+frDate(f.ech)+'</div></div></div>'
     +'<div class="body">'
-    +'<div class="parties"><div><div class="b">Émetteur</div><div><b>YADA PRO</b></div></div>'
+    +'<div class="parties"><div><div class="b">Émetteur</div><div><b>'+esc(soc.nom||'YADA PRO')+'</b></div>'+infos+'</div>'
     +'<div style="text-align:right"><div class="b">Client</div><div><b>'+esc(c.nom||'—')+'</b></div>'+(c.email?'<div class="mini">'+esc(c.email)+'</div>':'')+'</div></div>'
     +'<table><thead><tr><th>Désignation</th><th class="r">Qté</th><th class="r">PU HT</th><th class="r">TVA</th><th class="r">Total HT</th></tr></thead><tbody>'+lignes+'</tbody></table>'
     +'<div class="tot"><div class="l"><span>Total HT</span><span class="num">'+eur(f.ht)+'</span></div>'
     +'<div class="l"><span>TVA</span><span class="num">'+eur(f.tva)+'</span></div>'
     +'<div class="l big"><span>Total TTC</span><span class="num">'+eur(f.ttc)+'</span></div></div>'
-    +'<div class="foot">Facture générée par YADA PRO — thème « '+esc(THEME_NOM[th]||th)+' ». Merci de votre confiance.</div>'
+    +'<div class="foot">'+(soc.iban?'IBAN : '+esc(soc.iban)+' — ':'')+'Facture '+esc(f.numero)+' — thème « '+esc(THEME_NOM[th]||th)+' ».</div>'
     +'</div></div>';
+}
+/* Format importé : remplace les balises {{...}} par les données du site */
+function renderCustomFormat(tpl, f, soc, c){
+  var rows=(f.lignes||[]).map(function(l){ var b=r2((+l.qte||0)*(+l.pu||0));
+    return '<tr><td>'+esc(l.desc||'')+'</td><td style="text-align:right">'+(l.qte||'')+'</td><td style="text-align:right">'+eur(l.pu)+'</td><td style="text-align:right">'+(l.taux||0)+' %</td><td style="text-align:right">'+eur(b)+'</td></tr>'; }).join('');
+  var map={ '{{societe}}':esc(soc.nom||''), '{{adresse}}':esc(soc.adresse||'').replace(/\n/g,'<br>'), '{{siret}}':esc(soc.siret||''),
+    '{{tva}}':esc(soc.tva||''), '{{iban}}':esc(soc.iban||''), '{{email}}':esc(soc.email||''), '{{tel}}':esc(soc.tel||''),
+    '{{logo}}': soc.logo?'<img src="'+soc.logo+'" style="max-height:64px">':'', '{{numero}}':esc(f.numero||''),
+    '{{date}}':frDate(f.date), '{{echeance}}':frDate(f.ech), '{{client}}':esc(c.nom||''), '{{client_email}}':esc(c.email||''),
+    '{{ht}}':eur(f.ht), '{{tva_montant}}':eur(f.tva), '{{ttc}}':eur(f.ttc), '{{lignes}}':rows };
+  var out=String(tpl); Object.keys(map).forEach(function(k){ out=out.split(k).join(map[k]); });
+  return '<div class="inv-custom" style="background:#fff;color:#0b1220">'+out+'</div>';
 }
 function emApercu(id){ var f=db.emises.find(function(x){return x.id===id;}); if(!f)return;
   var bar='<div class="field"><label>Thème</label><div class="themes">'+THEMES.map(function(t){
@@ -489,6 +531,90 @@ function contactAjouter(){ var nom=(document.getElementById('ct-nom').value||'')
 }
 function contactSuppr(id){ db.contacts=db.contacts.filter(function(c){return c.id!==id;}); save(); render(); }
 
+/* ============================================================
+   SOCIÉTÉS — enregistrement, édition, format (thème ou modèle importé)
+   ============================================================ */
+var socEdit=null;
+function socNouvelle(){ socEdit={ id:uid(), nom:'', adresse:'', siret:'', tva:'', email:'', tel:'', iban:'', logo:'', theme:'classique', customFormat:'', seq:0, _new:true }; render(); }
+function socEditer(id){ var s=db.societes.filter(function(x){return x.id===id;})[0]; if(!s)return; socEdit=JSON.parse(JSON.stringify(s)); render(); }
+function socAnnuler(){ socEdit=null; render(); }
+function socSync(){ if(!socEdit)return; ['nom','adresse','siret','tva','email','tel','iban'].forEach(function(k){ var el=document.getElementById('sc-'+k); if(el) socEdit[k]=el.value; }); }
+function socSetTheme(id){ socSync(); socEdit.theme=id; render(); }
+function socLogo(input){ var file=input.files&&input.files[0]; if(!file)return; socSync(); var rd=new FileReader(); rd.onload=function(){ socEdit.logo=rd.result; render(); }; rd.readAsDataURL(file); }
+function socRetirerLogo(){ socSync(); socEdit.logo=''; render(); }
+function socImporterFormat(input){ var file=input.files&&input.files[0]; if(!file)return; socSync(); var rd=new FileReader(); rd.onload=function(){ socEdit.customFormat=String(rd.result); render(); toast('Format importé — utilisé pour les factures de cette société.'); }; rd.readAsText(file); }
+function socRetirerFormat(){ socSync(); socEdit.customFormat=''; render(); toast('Format personnalisé retiré (retour aux thèmes).'); }
+function socEnregistrer(){ socSync(); if(!(socEdit.nom||'').trim()) return toast('Indiquez le nom de la société.');
+  var clean=JSON.parse(JSON.stringify(socEdit)); delete clean._new;
+  var i=db.societes.map(function(s){return s.id;}).indexOf(clean.id);
+  if(i>=0) db.societes[i]=clean; else db.societes.push(clean);
+  if(!db.societeActive) db.societeActive=clean.id;
+  save(); socEdit=null; render(); toast('Société « '+clean.nom+' » enregistrée.'); }
+function socSupprimer(id){ var s=db.societes.filter(function(x){return x.id===id;})[0]; if(!s)return;
+  if(db.societes.length<=1) return toast('Impossible de supprimer la dernière société.');
+  if(!confirm('Supprimer « '+s.nom+' » ?'))return;
+  db.societes=db.societes.filter(function(x){return x.id!==id;});
+  if(db.societeActive===id) db.societeActive=db.societes[0].id;
+  save(); render(); toast('Société supprimée.'); }
+function socModeleExemple(){
+  var tpl='<!-- Modele de facture YADA PRO : les balises {{...}} sont remplacees automatiquement -->\n'
+   +'<div style="font-family:Arial,sans-serif;padding:32px;color:#111">\n'
+   +'  <table style="width:100%"><tr>\n'
+   +'    <td>{{logo}}<h1 style="margin:6px 0;color:#0a64d6">{{societe}}</h1><div>{{adresse}}</div><div>SIRET {{siret}} - TVA {{tva}}</div></td>\n'
+   +'    <td style="text-align:right"><h2>FACTURE {{numero}}</h2><div>Date : {{date}}</div><div>Echeance : {{echeance}}</div></td>\n'
+   +'  </tr></table>\n'
+   +'  <p><b>Client :</b> {{client}} ({{client_email}})</p>\n'
+   +'  <table style="width:100%;border-collapse:collapse" border="1" cellpadding="6">\n'
+   +'    <thead><tr><th>Designation</th><th>Qte</th><th>PU HT</th><th>TVA</th><th>Total HT</th></tr></thead>\n'
+   +'    <tbody>{{lignes}}</tbody>\n'
+   +'  </table>\n'
+   +'  <p style="text-align:right">Total HT : {{ht}}<br>TVA : {{tva_montant}}<br><b>Total TTC : {{ttc}}</b></p>\n'
+   +'  <p>IBAN : {{iban}}</p>\n'
+   +'</div>\n';
+  var blob=new Blob([tpl],{type:'text/html'}); var url=URL.createObjectURL(blob);
+  var a=document.createElement('a'); a.href=url; a.download='modele-facture-yada.html'; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); },1500);
+}
+function pageSocietes(){
+  var rows=(db.societes||[]).map(function(s){ var act=s.id===db.societeActive;
+    return '<tr class="'+(act?'soc-row-act':'')+'"><td><b>'+esc(s.nom)+'</b>'+(act?' <span class="tag t-sent">active</span>':'')+(s.customFormat?' <span class="tag t-todo">format importé</span>':'')+'</td>'
+      +'<td class="mini">'+esc(s.siret||'—')+'</td>'
+      +'<td class="r" style="white-space:nowrap">'+(act?'':'<button class="btn btn-ghost btn-sm" onclick="setSocieteActive(\''+s.id+'\')">Activer</button> ')
+      +'<button class="btn btn-sm" onclick="socEditer(\''+s.id+'\')">Modifier</button> '
+      +'<button class="btn btn-ghost btn-sm btn-danger" onclick="socSupprimer(\''+s.id+'\')">✕</button></td></tr>'; }).join('');
+  var liste='<div class="card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><h2 style="margin:0">Mes sociétés ('+db.societes.length+')</h2><div style="flex:1"></div><button class="btn btn-pri btn-sm" onclick="socNouvelle()">+ Nouvelle société</button></div>'
+    +'<div style="overflow-x:auto"><table><thead><tr><th>Nom</th><th>SIRET</th><th class="r">Actions</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+  var editor;
+  if(socEdit){
+    editor='<div class="card"><h2>'+(socEdit._new?'Nouvelle société':'Modifier « '+esc(socEdit.nom||'')+' »')+'</h2>'
+      +'<div class="row c2"><div class="field"><label>Nom / raison sociale *</label><input id="sc-nom" value="'+esc(socEdit.nom)+'"></div>'
+      +'<div class="field"><label>SIRET</label><input id="sc-siret" value="'+esc(socEdit.siret)+'"></div></div>'
+      +'<div class="field"><label>Adresse</label><textarea id="sc-adresse" rows="2">'+esc(socEdit.adresse)+'</textarea></div>'
+      +'<div class="row c2"><div class="field"><label>TVA intracom.</label><input id="sc-tva" value="'+esc(socEdit.tva)+'"></div>'
+      +'<div class="field"><label>IBAN</label><input id="sc-iban" value="'+esc(socEdit.iban)+'"></div></div>'
+      +'<div class="row c2"><div class="field"><label>E-mail</label><input id="sc-email" value="'+esc(socEdit.email)+'"></div>'
+      +'<div class="field"><label>Téléphone</label><input id="sc-tel" value="'+esc(socEdit.tel)+'"></div></div>'
+      +'<div class="field"><label>Logo</label><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'
+        +(socEdit.logo?'<img src="'+socEdit.logo+'" style="max-height:44px;max-width:130px;background:#fff;border-radius:6px;padding:3px"><button class="btn btn-ghost btn-sm" onclick="socRetirerLogo()">Retirer</button>':'<button class="btn btn-sm" onclick="document.getElementById(\'sc-logo\').click()">Importer un logo</button>')
+        +'<input id="sc-logo" type="file" accept="image/*" style="display:none" onchange="socLogo(this)"></div></div>'
+      +'<div class="field"><label>Format de facture par défaut</label>'+themeChips(socEdit.theme||'classique','socSetTheme')+'</div>'
+      +'<div class="field"><label>Format personnalisé (importé)</label>'
+        +'<div class="mini" style="margin-bottom:6px">Importez un modèle HTML avec des balises <code>{{numero}}</code>, <code>{{client}}</code>, <code>{{lignes}}</code>, <code>{{ttc}}</code>… remplies automatiquement. Défini, il remplace le thème.</div>'
+        +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+        +'<button class="btn btn-sm" onclick="document.getElementById(\'sc-format\').click()">Importer un format</button>'
+        +'<button class="btn btn-ghost btn-sm" onclick="socModeleExemple()">Modèle d\'exemple</button>'
+        +(socEdit.customFormat?'<button class="btn btn-ghost btn-sm btn-danger" onclick="socRetirerFormat()">Retirer le format</button>':'')
+        +'<input id="sc-format" type="file" accept=".html,.htm,text/html" style="display:none" onchange="socImporterFormat(this)"></div>'
+        +(socEdit.customFormat?'<div class="mini" style="margin-top:6px;color:var(--good)">✓ Format importé ('+socEdit.customFormat.length+' caractères).</div>':'')+'</div>'
+      +'<div class="right"><button class="btn btn-ghost" onclick="socAnnuler()">Annuler</button><button class="btn btn-pri" onclick="socEnregistrer()">Enregistrer</button></div>'
+      +'</div>';
+  } else {
+    editor='<div class="card"><h2>Facturation par société</h2><p>Chaque société a ses <b>propres factures</b> (numérotation dédiée), son <b>format</b> (thème ou modèle importé), son <b>logo</b> et ses coordonnées d\'émetteur.</p><p class="mini">Choisissez la <b>société active</b> dans la barre latérale : l\'onglet <b>Envoyer</b> facture en son nom, avec son émetteur et son format.</p>'
+      +'<div class="right"><button class="btn btn-pri btn-sm" onclick="socNouvelle()">+ Nouvelle société</button></div></div>';
+  }
+  return '<main>'+ph('Sociétés')+'<div class="grid g2" style="align-items:start">'+liste+editor+'</div></main>';
+}
+
 /* ---------- Modale ---------- */
 function openModal(title,body,actions){ var bg=document.createElement('div'); bg.className='modal-bg'; bg.id='modal-bg';
   bg.onclick=function(e){ if(e.target===bg) closeModal(); };
@@ -499,11 +625,11 @@ function openModal(title,body,actions){ var bg=document.createElement('div'); bg
 function closeModal(){ var m=document.getElementById('modal-bg'); if(m)m.remove(); }
 
 /* ---------- Rendu ---------- */
-var PAGES={ dash:pageDash, emises:pageEmises, recues:pageRecues, contacts:pageContacts };
+var PAGES={ dash:pageDash, emises:pageEmises, recues:pageRecues, contacts:pageContacts, societes:pageSocietes };
 function render(){ document.getElementById('app').innerHTML=sidebar()+(PAGES[current]||pageDash)(); if(current==='recues') bindDrop(); }
 
 if('serviceWorker' in navigator){ window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
-save(); render();
+ensureSocietes(); save(); render();
 </script>
 </body>
 </html>
