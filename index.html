@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1120">
-<meta name="yada-version" content="0.8.0">
+<meta name="yada-version" content="0.9.0">
 <title>YADA PRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -190,11 +190,11 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 <div class="app" id="app"></div>
 <div id="print-area"></div>
 <div id="toast"></div>
-<span id="yada-ver">YADA PRO · v0.8</span>
+<span id="yada-ver">YADA PRO · v0.9</span>
 
 <script>
 'use strict';
-var VERSION='0.8.0';
+var VERSION='0.9.0';
 
 /* ---------- Données (localStorage) ---------- */
 function seed(){ return { societes:[], societeActive:null, contacts:[], emises:[], recues:[], catalogue:[], seq:{fac:0} }; }
@@ -260,7 +260,7 @@ var NAV=[
   {id:'donnees', ico:'💾', label:'Données'}
 ];
 var current='dash';
-function go(id){ current=id; if(id!=='societes') socEdit=null; if(id==='emises') emResetDraft(); render(); }
+function go(id){ current=id; if(id!=='societes') socEdit=null; if(id!=='contacts') ctEdit=null; if(id==='emises') emResetDraft(); render(); }
 
 function sidebar(){
   var nRecuesTodo=db.recues.filter(function(r){ return r.statut!=='traitee'; }).length;
@@ -534,7 +534,7 @@ function factureHTML(f){ var c=contact(f.contactId)||{}; var soc=societeOf(f)||{
     +'<div class="ti"><div class="big">'+typeLabel+'</div><div>'+esc(f.numero)+'</div><div class="mini">Date : '+frDate(f.date)+'</div><div class="mini">'+(f.type==='devis'?'Validité : ':'Échéance : ')+frDate(f.ech)+'</div></div></div>'
     +'<div class="body">'
     +'<div class="parties"><div><div class="b">Émetteur</div><div><b>'+esc(soc.nom||'YADA PRO')+'</b></div>'+infos+'</div>'
-    +'<div style="text-align:right"><div class="b">Client</div><div><b>'+esc(c.nom||'—')+'</b></div>'+(c.email?'<div class="mini">'+esc(c.email)+'</div>':'')+'</div></div>'
+    +'<div style="text-align:right"><div class="b">Client</div><div><b>'+esc(c.nom||'—')+'</b></div>'+(c.adresse?'<div class="mini">'+esc(c.adresse).replace(/\n/g,'<br>')+'</div>':'')+(c.siren?'<div class="mini">SIREN '+esc(c.siren)+'</div>':'')+(c.email?'<div class="mini">'+esc(c.email)+'</div>':'')+'</div></div>'
     +'<table><thead><tr><th>Désignation</th><th class="r">Qté</th><th class="r">PU HT</th><th class="r">TVA</th><th class="r">Total HT</th></tr></thead><tbody>'+lignes+'</tbody></table>'
     +'<div class="tot">'
     +((f.remise&&Math.abs(f.remise)>0.005)?'<div class="l"><span>Brut HT</span><span class="num">'+eur(f.htBrut)+'</span></div><div class="l"><span>Remise</span><span class="num">-'+eur(Math.abs(f.remise))+'</span></div>':'')
@@ -650,28 +650,49 @@ function bindDrop(){ var d=document.getElementById('drop'); if(!d)return;
 /* ============================================================
    CONTACTS
    ============================================================ */
+var ctEdit=null;
+function contactNouveau(){ ctEdit={id:uid(), nom:'', type:'client', email:'', tel:'', siren:'', adresse:'', _new:true}; render(); }
+function contactEditer(id){ var c=db.contacts.filter(function(x){return x.id===id;})[0]; if(!c)return; ctEdit=JSON.parse(JSON.stringify(c)); render(); }
+function contactAnnuler(){ ctEdit=null; render(); }
+function contactSync(){ if(!ctEdit)return; ['nom','email','tel','siren','adresse'].forEach(function(k){ var el=document.getElementById('ct-'+k); if(el)ctEdit[k]=el.value; }); var t=document.getElementById('ct-type'); if(t)ctEdit.type=t.value; }
+function contactEnregistrer(){ contactSync(); if(!(ctEdit.nom||'').trim()) return toast('Indiquez un nom.');
+  var clean=JSON.parse(JSON.stringify(ctEdit)); delete clean._new;
+  var i=db.contacts.map(function(c){return c.id;}).indexOf(clean.id);
+  if(i>=0) db.contacts[i]=clean; else db.contacts.push(clean);
+  save(); ctEdit=null; render(); toast('Contact enregistré.'); }
+function contactSuppr(id){ if(!confirm('Supprimer ce contact ?'))return; db.contacts=db.contacts.filter(function(c){return c.id!==id;}); save(); render(); }
+function ficheClient(id){ var c=db.contacts.filter(function(x){return x.id===id;})[0]; if(!c)return;
+  var facs=emisesActives().filter(function(f){return f.contactId===id && (f.type||'facture')==='facture';}).sort(function(a,b){return (a.date<b.date)?1:-1;});
+  var fac=r2(facs.reduce(function(a,f){return a+(f.ttc||0);},0)), enc=r2(facs.reduce(function(a,f){return a+factRegle(f);},0)), reste=r2(facs.reduce(function(a,f){return a+factReste(f);},0));
+  var rows=facs.map(function(f){ var p=factPaie(f); return '<tr><td><b>'+esc(f.numero)+'</b></td><td class="num">'+frDate(f.date)+'</td><td class="r num">'+eur(f.ttc)+'</td><td class="r num">'+eur(p.reste)+'</td><td><span class="tag '+p.cls+'">'+p.label+'</span></td></tr>'; }).join('');
+  var info=[c.adresse, c.siren?'SIREN '+c.siren:'', c.tel, c.email].filter(Boolean).map(function(x){return '<div class="mini">'+esc(x).replace(/\n/g,'<br>')+'</div>';}).join('');
+  var body='<div style="margin-bottom:12px">'+(info||'<span class="mini">Aucune coordonnée.</span>')+'</div>'
+    +'<div class="grid g3" style="margin-bottom:12px">'+kpi('Facturé',eur(fac),'blue','')+kpi('Encaissé',eur(enc),'good','')+kpi('Reste dû',eur(reste),(reste>0?'warn':''),'')+'</div>'
+    +'<div style="overflow-x:auto"><table><thead><tr><th>Numéro</th><th>Date</th><th class="r">TTC</th><th class="r">Reste</th><th>Statut</th></tr></thead><tbody>'+(rows||'<tr><td colspan="5" class="empty">Aucune facture pour ce client.</td></tr>')+'</tbody></table></div>';
+  openModal('Fiche — '+esc(c.nom), body, '<button class="btn btn-sm" onclick="closeModal()">Fermer</button>'); }
 function pageContacts(){
   var rows=db.contacts.slice().sort(function(a,b){return (a.nom||'').localeCompare(b.nom||'');}).map(function(c){
-    return '<tr><td><b>'+esc(c.nom)+'</b></td><td>'+(c.type==='fournisseur'?'Fournisseur':'Client')+'</td><td>'+esc(c.email||'—')+'</td>'
-      +'<td class="r"><button class="btn btn-ghost btn-sm btn-danger" onclick="contactSuppr(\''+c.id+'\')">✕</button></td></tr>'; }).join('');
+    return '<tr><td><b>'+esc(c.nom)+'</b>'+(c.siren?'<div class="mini">SIREN '+esc(c.siren)+'</div>':'')+'</td><td>'+(c.type==='fournisseur'?'Fournisseur':'Client')+'</td><td>'+esc(c.email||'—')+'</td><td class="mini">'+esc(c.tel||'')+'</td>'
+      +'<td class="r" style="white-space:nowrap">'+(c.type!=='fournisseur'?'<button class="btn btn-ghost btn-sm" onclick="ficheClient(\''+c.id+'\')">Fiche</button> ':'')
+      +'<button class="btn btn-sm" onclick="contactEditer(\''+c.id+'\')">Modifier</button> '
+      +'<button class="btn btn-ghost btn-sm btn-danger" onclick="contactSuppr(\''+c.id+'\')">✕</button></td></tr>'; }).join('');
+  var e=ctEdit, form;
+  if(e){ form='<div class="card"><h2>'+(e._new?'Nouveau contact':'Modifier « '+esc(e.nom||'')+' »')+'</h2>'
+    +'<div class="row c2"><div class="field"><label>Nom / raison sociale *</label><input id="ct-nom" value="'+esc(e.nom)+'"></div>'
+    +'<div class="field"><label>Type</label><select id="ct-type"><option value="client"'+(e.type!=='fournisseur'?' selected':'')+'>Client (à qui j\'envoie)</option><option value="fournisseur"'+(e.type==='fournisseur'?' selected':'')+'>Fournisseur (de qui je reçois)</option></select></div></div>'
+    +'<div class="row c2"><div class="field"><label>E-mail</label><input id="ct-email" type="email" value="'+esc(e.email)+'"></div>'
+    +'<div class="field"><label>Téléphone</label><input id="ct-tel" value="'+esc(e.tel)+'"></div></div>'
+    +'<div class="field"><label>SIREN / SIRET</label><input id="ct-siren" value="'+esc(e.siren)+'"></div>'
+    +'<div class="field"><label>Adresse</label><textarea id="ct-adresse" rows="2">'+esc(e.adresse)+'</textarea></div>'
+    +'<div class="right"><button class="btn btn-ghost" onclick="contactAnnuler()">Annuler</button><button class="btn btn-pri" onclick="contactEnregistrer()">Enregistrer</button></div></div>';
+  } else { form='<div class="card"><h2>Répertoire</h2><p class="mini">Clients (à qui vous facturez) et fournisseurs. Sur un client : <b>Fiche</b> affiche son historique de factures et son reste dû.</p><div class="right"><button class="btn btn-pri btn-sm" onclick="contactNouveau()">+ Nouveau contact</button></div></div>'; }
   return '<main>'+ph('Contacts')
-    +'<div class="grid g2">'
-    +'<div class="card"><h2>Ajouter un contact</h2>'
-    +'<div class="field"><label>Nom</label><input id="ct-nom" placeholder="Nom / raison sociale"></div>'
-    +'<div class="row c2"><div class="field"><label>Type</label><select id="ct-type"><option value="client">Client (à qui j\'envoie)</option><option value="fournisseur">Fournisseur (de qui je reçois)</option></select></div>'
-    +'<div class="field"><label>E-mail</label><input id="ct-mail" type="email" placeholder="email@exemple.fr"></div></div>'
-    +'<div class="right"><button class="btn btn-pri" onclick="contactAjouter()">Ajouter</button></div></div>'
+    +'<div class="grid g2" style="align-items:start">'+form
     +'<div class="card"><h2>Répertoire ('+db.contacts.length+')</h2>'
-    +'<div style="overflow-x:auto"><table><thead><tr><th>Nom</th><th>Type</th><th>E-mail</th><th></th></tr></thead>'
-    +'<tbody>'+(rows||'<tr><td colspan="4" class="empty">Aucun contact.</td></tr>')+'</tbody></table></div></div>'
+    +'<div style="overflow-x:auto"><table><thead><tr><th>Nom</th><th>Type</th><th>E-mail</th><th>Tél</th><th class="r">Actions</th></tr></thead>'
+    +'<tbody>'+(rows||'<tr><td colspan="5" class="empty">Aucun contact.</td></tr>')+'</tbody></table></div></div>'
     +'</div></main>';
 }
-function contactAjouter(){ var nom=(document.getElementById('ct-nom').value||'').trim();
-  if(!nom) return toast('Indiquez un nom.');
-  db.contacts.push({ id:uid(), nom:nom, type:document.getElementById('ct-type').value, email:(document.getElementById('ct-mail').value||'').trim() });
-  save(); render(); toast('Contact ajouté.');
-}
-function contactSuppr(id){ db.contacts=db.contacts.filter(function(c){return c.id!==id;}); save(); render(); }
 
 /* ============================================================
    CATALOGUE — articles / prestations réutilisables
