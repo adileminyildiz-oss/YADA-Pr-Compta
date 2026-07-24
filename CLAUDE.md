@@ -16,6 +16,7 @@ Nouveau départ, sans lien de code avec l'ancien « Précompta ». L'ancienne ap
 - **Coquille** : barre latérale (**sélecteur de société active** + Tableau de bord · Envoyer · Réceptionner · Contacts · Sociétés) + contenu, responsive. Thème bleu nuit + Crystal.
 - **Sociétés (multi-société)** : enregistrer/éditer plusieurs sociétés (nom, adresse, SIRET, TVA, e-mail, tél, IBAN, **logo**), **société active** (bascule). Chaque société a **sa propre facturation** (numérotation dédiée `soc.seq`), son **émetteur** (affiché sur la facture), son **format par défaut** (thème) et un éventuel **format importé** (modèle HTML avec balises `{{…}}` remplies par `renderCustomFormat`, modèle d'exemple téléchargeable). `factureHTML(f)` utilise la société de la facture (`societeOf(f)`).
 - **Suivi (paiements)** : par société, statut de paiement par facture (**à encaisser / partielle / payée / en retard** si échéance dépassée — `factPaie(f)`), **encaissements** (montant + date, `factEncaisser`), **reste dû**, **relance** e-mail (`factRelance`), filtres (toutes/à encaisser/en retard/payées), KPIs facturé/encaissé/reste dû. Tableau de bord enrichi (CA facturé, encaissé, reste dû, en retard).
+- **Catalogue d'articles** : produits/prestations réutilisables (désignation, unité, PU HT, TVA). Insertion d'une ligne de facture en 1 clic depuis « Envoyer » → « Depuis le catalogue » (`emCatalogue`/`emAjoutCat`) ; enregistrement des lignes saisies vers le catalogue (`emLignesToCat`).
 - **Contacts** : ajout de clients / fournisseurs (nom, type, e-mail), répertoire.
 - **Envoyer (factures de vente)** :
   - **type de document** : **facture / devis / avoir** (numérotation `FAC`/`DEV`/`AV`, avoir en négatif) ; **devis → facture** en un clic (`transformerDevis`) ;
@@ -29,7 +30,7 @@ Nouveau départ, sans lien de code avec l'ancien « Précompta ». L'ancienne ap
 - Badge `YADA PRO · v0.1` ; `<meta name="yada-version" content="0.1.0">`.
 
 ### Modèle de données (localStorage clé `yadapro`)
-`{ societes:[{id,nom,adresse,siret,tva,email,tel,iban,logo,theme,customFormat,seq}], societeActive, contacts:[{id,nom,type,email}], emises:[{id,type('facture'|'devis'|'avoir'),numero,societeId,contactId,date,ech,cond,theme,lignes,remiseType,remiseVal,htBrut,remise,ht,tva,ttc,acompte,net,encaissements:[{montant,date}],statut,dateEnvoi,transformeEn}], recues:[{id,fournisseur,date,montant,statut,nomFichier,fichier}], seq:{fac} }`
+`{ societes:[{id,nom,adresse,siret,tva,email,tel,iban,logo,theme,customFormat,seq}], societeActive, contacts:[{id,nom,type,email}], emises:[{id,type('facture'|'devis'|'avoir'),numero,societeId,contactId,date,ech,cond,theme,lignes,remiseType,remiseVal,htBrut,remise,ht,tva,ttc,acompte,net,encaissements:[{montant,date}],statut,dateEnvoi,transformeEn}], recues:[{id,fournisseur,date,montant,statut,nomFichier,fichier}], catalogue:[{id,desc,unite,pu,taux}], seq:{fac} }`
 Migration au chargement : `ensureSocietes()` crée une société par défaut si besoin et rattache les factures orphelines à la société active.
 
 ## Thèmes de facture
