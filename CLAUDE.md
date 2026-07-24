@@ -23,11 +23,11 @@ Nouveau départ, sans lien de code avec l'ancien « Précompta ». L'ancienne ap
   - formulaire : client (+ **ajout rapide** de client), date, **conditions** (comptant/30/45/60 j) → **échéance auto**, **lignes** (désignation, qté, PU HT, TVA %), **devise** (€/$/£/CHF/$CA), **remise** (€/%), **acompte** → **net à payer**, **moyen de règlement** + **note/commentaire** (affichés sur la facture), totaux en direct ;
   - **sélecteur de thème** : `Classique`, `Bandeau`, `Émeraude`, `Indigo`, `Minimal` (modèles visuels distincts) ;
   - **Aperçu en direct** de la facture dans le thème choisi (panneau à côté du formulaire, `#em-preview`, `zoom` CSS) ;
-  - numérotation auto `FAC-AAAA-NNNN` ; **liste** des factures émises avec **recherche** (n°/client), colonne **Thème**, **Dupliquer** et **Supprimer** ;
+  - numérotation auto `FAC-AAAA-NNNN` ; **liste** des factures émises avec **recherche** (n°/client), **filtres de statut** (tous/brouillons/envoyées/payées, `docStatutFilt`), colonne **Thème**, **Dupliquer** et **Supprimer** ;
   - **Aperçu** (modale, thème changeable à la volée), **PDF** (impression via `@media print`), **Envoyer** (e-mail `mailto` pré-rempli, statut « envoyée »).
 - **Statistiques** : par société, KPIs (CA total, encaissé, panier moyen), **CA des 12 derniers mois** (histogramme CSS), **top clients** (barres horizontales). `pageStats`/`moisDerniers`.
 - **Données** : **export CSV** des ventes et des encaissements (société active, séparateur « ; », BOM Excel — `exportVentesCSV`/`exportEncaissementsCSV`), **sauvegarde JSON** (`sauvegardeJSON`) et **restauration** (`restaurerJSON`, remplace `db`, re-migration).
-- **Réceptionner (achats/dépenses)** : dépôt/import d'une facture reçue (PDF/photo, glisser-déposer), fournisseur/date/**montant TTC**/**dont TVA**/**catégorie**/statut, boîte de réception. Résumé achats (total dépenses, TVA déductible). Le **tableau de bord** affiche une carte **TVA & dépenses** (TVA collectée sur ventes − TVA déductible sur achats = à reverser).
+- **Réceptionner (achats/dépenses)** : dépôt/import d'une facture reçue (PDF/photo, glisser-déposer), fournisseur/date/**montant TTC**/**dont TVA**/**catégorie**/statut, boîte de réception (`recListe` : recherche fournisseur + filtre par catégorie). Résumé achats (total dépenses, TVA déductible). Le **tableau de bord** affiche une carte **TVA & dépenses** (TVA collectée sur ventes − TVA déductible sur achats = à reverser).
 - **PWA** : `manifest.webmanifest` + `sw.js` (cache `yada-pro-v1`, réseau d'abord), installable.
 - Badge `YADA PRO · v0.1` ; `<meta name="yada-version" content="0.1.0">`.
 
