@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1120">
-<meta name="yada-version" content="0.6.0">
+<meta name="yada-version" content="0.7.0">
 <title>YADA PRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -190,11 +190,11 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 <div class="app" id="app"></div>
 <div id="print-area"></div>
 <div id="toast"></div>
-<span id="yada-ver">YADA PRO · v0.6</span>
+<span id="yada-ver">YADA PRO · v0.7</span>
 
 <script>
 'use strict';
-var VERSION='0.6.0';
+var VERSION='0.7.0';
 
 /* ---------- Données (localStorage) ---------- */
 function seed(){ return { societes:[], societeActive:null, contacts:[], emises:[], recues:[], catalogue:[], seq:{fac:0} }; }
@@ -256,7 +256,8 @@ var NAV=[
   {id:'recues', ico:'⇩', label:'Réceptionner'},
   {id:'contacts', ico:'☰', label:'Contacts'},
   {id:'catalogue', ico:'▤', label:'Catalogue'},
-  {id:'societes', ico:'🏢', label:'Sociétés'}
+  {id:'societes', ico:'🏢', label:'Sociétés'},
+  {id:'donnees', ico:'💾', label:'Données'}
 ];
 var current='dash';
 function go(id){ current=id; if(id!=='societes') socEdit=null; if(id==='emises') emResetDraft(); render(); }
@@ -677,6 +678,47 @@ function catAjouter(){ var d=(document.getElementById('cat-desc').value||'').tri
   db.catalogue.push({ id:uid(), desc:d, unite:(document.getElementById('cat-unite').value||'').trim(), pu:r2(+document.getElementById('cat-pu').value||0), taux:+document.getElementById('cat-taux').value||20 });
   save(); render(); toast('Article ajouté au catalogue.'); }
 function catSupprimer(id){ db.catalogue=db.catalogue.filter(function(a){return a.id!==id;}); save(); render(); }
+
+/* ============================================================
+   DONNÉES — export comptable (CSV) + sauvegarde/restauration (JSON)
+   ============================================================ */
+function numfr(x){ return String(r2(x)).replace('.',','); }
+function csvCell(v){ v=String(v==null?'':v); if(/[";\n]/.test(v)) v='"'+v.replace(/"/g,'""')+'"'; return v; }
+function toCSV(rows){ return rows.map(function(r){ return r.map(csvCell).join(';'); }).join('\r\n'); }
+function dlFichier(name, content, mime){ var blob=new Blob(['﻿'+content],{type:(mime||'text/plain')+';charset=utf-8'});
+  var url=URL.createObjectURL(blob); var a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); },1500); }
+function slug(s){ return String(s||'societe').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)||'societe'; }
+function exportVentesCSV(){ var soc=societeActiveObj()||{}; var list=emisesActives().slice().sort(function(a,b){return (a.date||'')<(b.date||'')?-1:1;});
+  var rows=[['Numéro','Type','Date','Échéance','Client','HT','TVA','TTC','Réglé','Reste dû','Statut']];
+  list.forEach(function(f){ var c=contact(f.contactId)||{}; var p=factPaie(f);
+    rows.push([f.numero, (f.type||'facture'), f.date, f.ech||'', c.nom||'', numfr(f.ht), numfr(f.tva), numfr(f.ttc), numfr(p.regle), numfr(p.reste), p.label]); });
+  dlFichier('ventes-'+slug(soc.nom)+'.csv', toCSV(rows), 'text/csv'); toast(list.length+' document(s) exporté(s) en CSV.'); }
+function exportEncaissementsCSV(){ var soc=societeActiveObj()||{}; var rows=[['Facture','Client','Date','Montant','Nature']]; var n=0;
+  emisesActives().forEach(function(f){ var c=contact(f.contactId)||{};
+    if((+f.acompte||0)>0.005){ rows.push([f.numero, c.nom||'', f.date, numfr(f.acompte), 'acompte']); n++; }
+    (f.encaissements||[]).forEach(function(e){ rows.push([f.numero, c.nom||'', e.date||'', numfr(e.montant), 'encaissement']); n++; }); });
+  dlFichier('encaissements-'+slug(soc.nom)+'.csv', toCSV(rows), 'text/csv'); toast(n+' encaissement(s) exporté(s).'); }
+function sauvegardeJSON(){ dlFichier('yada-pro-sauvegarde-'+todayStr()+'.json', JSON.stringify(db), 'application/json'); toast('Sauvegarde téléchargée.'); }
+function restaurerJSON(input){ var file=input.files&&input.files[0]; if(!file)return; var rd=new FileReader();
+  rd.onload=function(){ var data; try{ data=JSON.parse(rd.result); }catch(e){ return toast('Fichier invalide (JSON illisible).'); }
+    if(!data || typeof data!=='object' || !('emises' in data) || !('societes' in data)) return toast('Ce fichier n\'est pas une sauvegarde YADA PRO.');
+    if(!confirm('Restaurer cette sauvegarde ? Les données actuelles seront remplacées.'))return;
+    db=data; ensureSocietes(); save(); render(); toast('Sauvegarde restaurée.'); };
+  rd.onerror=function(){ toast('Lecture impossible.'); }; rd.readAsText(file); }
+function pageDonnees(){ var soc=societeActiveObj()||{};
+  return '<main>'+ph('Données', '<span class="badge">'+esc(soc.nom||'')+'</span>')
+    +'<div class="grid g2" style="align-items:start">'
+    +'<div class="card"><h2>Export comptable (CSV)</h2><p class="mini">Exporte les données de la société active, exploitables dans un tableur ou par votre comptable (séparateur « ; », compatible Excel FR).</p>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-pri" onclick="exportVentesCSV()">⬇ Ventes (factures)</button>'
+    +'<button class="btn" onclick="exportEncaissementsCSV()">⬇ Encaissements</button></div></div>'
+    +'<div class="card"><h2>Sauvegarde &amp; restauration</h2><p class="mini">Toutes vos données sont stockées sur cet appareil. Téléchargez une sauvegarde (JSON) pour les sécuriser ou les transférer, puis restaurez-la au besoin.</p>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-pri" onclick="sauvegardeJSON()">⬇ Télécharger la sauvegarde</button>'
+    +'<button class="btn" onclick="document.getElementById(\'restore-file\').click()">⬆ Restaurer une sauvegarde</button>'
+    +'<input id="restore-file" type="file" accept="application/json,.json" style="display:none" onchange="restaurerJSON(this)"></div>'
+    +'<div class="mini" style="margin-top:8px;color:var(--warn)">La restauration remplace toutes les données actuelles.</div></div>'
+    +'</div></main>';
+}
 function pageCatalogue(){
   var rows=(db.catalogue||[]).slice().sort(function(a,b){return (a.desc||'').localeCompare(b.desc||'');}).map(function(a){
     return '<tr><td><b>'+esc(a.desc)+'</b>'+(a.unite?' <span class="mini">('+esc(a.unite)+')</span>':'')+'</td><td class="r num">'+eur(a.pu)+'</td><td>'+(a.taux||0)+' %</td>'
@@ -789,7 +831,7 @@ function openModal(title,body,actions){ var bg=document.createElement('div'); bg
 function closeModal(){ var m=document.getElementById('modal-bg'); if(m)m.remove(); }
 
 /* ---------- Rendu ---------- */
-var PAGES={ dash:pageDash, emises:pageEmises, suivi:pageSuivi, recues:pageRecues, contacts:pageContacts, catalogue:pageCatalogue, societes:pageSocietes };
+var PAGES={ dash:pageDash, emises:pageEmises, suivi:pageSuivi, recues:pageRecues, contacts:pageContacts, catalogue:pageCatalogue, societes:pageSocietes, donnees:pageDonnees };
 function render(){ document.getElementById('app').innerHTML=sidebar()+(PAGES[current]||pageDash)(); if(current==='recues') bindDrop(); }
 
 if('serviceWorker' in navigator){ window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
