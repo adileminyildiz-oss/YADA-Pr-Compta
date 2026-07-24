@@ -23,7 +23,7 @@ Nouveau départ, sans lien de code avec l'ancien « Précompta ». L'ancienne ap
   - formulaire : client (+ **ajout rapide** de client), date, **conditions** (comptant/30/45/60 j) → **échéance auto**, **lignes** (désignation, qté, PU HT, TVA %), **devise** (€/$/£/CHF/$CA), **remise** (€/%), **acompte** → **net à payer**, **moyen de règlement** + **note/commentaire** (affichés sur la facture), totaux en direct ;
   - **sélecteur de thème** : `Classique`, `Bandeau`, `Émeraude`, `Indigo`, `Minimal` (modèles visuels distincts) ;
   - **Aperçu en direct** de la facture dans le thème choisi (panneau à côté du formulaire, `#em-preview`, `zoom` CSS) ;
-  - numérotation auto `FAC-AAAA-NNNN` ; **liste** des factures émises avec **recherche** (n°/client), **filtres de statut** (tous/brouillons/envoyées/payées, `docStatutFilt`), colonne **Thème**, **Dupliquer** et **Supprimer** ;
+  - numérotation auto `FAC-AAAA-NNNN` ; **liste** des factures émises avec **recherche** (n°/client), **filtres de statut** (tous/brouillons/envoyées/payées/**archivées**, `docStatutFilt`), **tri par colonne** (numéro/client/date/TTC, `emSortSet`), colonne **Thème**, **Dupliquer**, **Archiver** (`emArchiver`) et **Supprimer** ;
   - **Aperçu** (modale, thème changeable à la volée), **PDF** (impression via `@media print`), **Envoyer** (e-mail `mailto` pré-rempli, statut « envoyée »).
 - **Statistiques** : par société, KPIs (CA total, encaissé, panier moyen), **CA des 12 derniers mois** (histogramme CSS), **top clients** (barres horizontales). `pageStats`/`moisDerniers`.
 - **Données** : **export CSV** des ventes et des encaissements (société active, séparateur « ; », BOM Excel — `exportVentesCSV`/`exportEncaissementsCSV`), **sauvegarde JSON** (`sauvegardeJSON`) et **restauration** (`restaurerJSON`, remplace `db`, re-migration).
@@ -32,7 +32,7 @@ Nouveau départ, sans lien de code avec l'ancien « Précompta ». L'ancienne ap
 - Badge `YADA PRO · v0.1` ; `<meta name="yada-version" content="0.1.0">`.
 
 ### Modèle de données (localStorage clé `yadapro`)
-`{ societes:[{id,nom,adresse,siret,tva,email,tel,iban,prefixe,mentions,condDefaut,devise,logo,theme,customFormat,seq}], societeActive, contacts:[{id,nom,type,email,tel,siren,adresse}], emises:[{id,type('facture'|'devis'|'avoir'),numero,societeId,contactId,date,ech,cond,theme,devise,moyen,note,lignes,remiseType,remiseVal,htBrut,remise,ht,tva,ttc,acompte,net,encaissements:[{montant,date}],statut,dateEnvoi,transformeEn}], recues:[{id,fournisseur,date,montant,tva,categorie,statut,nomFichier,fichier}], catalogue:[{id,desc,unite,pu,taux}], seq:{fac} }`
+`{ societes:[{id,nom,adresse,siret,tva,email,tel,iban,prefixe,mentions,condDefaut,devise,logo,theme,customFormat,seq}], societeActive, contacts:[{id,nom,type,email,tel,siren,adresse}], emises:[{id,type('facture'|'devis'|'avoir'),numero,societeId,contactId,date,ech,cond,theme,devise,moyen,note,lignes,remiseType,remiseVal,htBrut,remise,ht,tva,ttc,acompte,net,encaissements:[{montant,date}],statut,archive,dateEnvoi,transformeEn}], recues:[{id,fournisseur,date,montant,tva,categorie,statut,nomFichier,fichier}], catalogue:[{id,desc,unite,pu,taux}], seq:{fac} }`
 Migration au chargement : `ensureSocietes()` crée une société par défaut si besoin et rattache les factures orphelines à la société active.
 
 ## Thèmes de facture
