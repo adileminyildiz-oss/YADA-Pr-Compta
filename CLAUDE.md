@@ -20,7 +20,7 @@ Nouveau départ, sans lien de code avec l'ancien « Précompta ». L'ancienne ap
 - **Contacts (fiche enrichie)** : clients / fournisseurs (nom, type, e-mail, **tél, SIREN, adresse**), ajout/**édition** (`ctEdit`), répertoire. **Fiche client** (`ficheClient`) = coordonnées + **historique des factures** (facturé/encaissé/reste dû + tableau). L'**adresse + SIREN** du client apparaissent sur la facture.
 - **Envoyer (factures de vente)** :
   - **type de document** : **facture / devis / avoir** (numérotation `FAC`/`DEV`/`AV`, avoir en négatif) ; **devis → facture** en un clic (`transformerDevis`) ;
-  - formulaire : client (+ **ajout rapide** de client), date, **conditions** (comptant/30/45/60 j) → **échéance auto**, **lignes** (désignation, qté, PU HT, TVA %), **devise** (€/$/£/CHF/$CA), **remise** (€/%), **acompte** → **net à payer**, totaux en direct ;
+  - formulaire : client (+ **ajout rapide** de client), date, **conditions** (comptant/30/45/60 j) → **échéance auto**, **lignes** (désignation, qté, PU HT, TVA %), **devise** (€/$/£/CHF/$CA), **remise** (€/%), **acompte** → **net à payer**, **moyen de règlement** + **note/commentaire** (affichés sur la facture), totaux en direct ;
   - **sélecteur de thème** : `Classique`, `Bandeau`, `Émeraude`, `Indigo`, `Minimal` (modèles visuels distincts) ;
   - **Aperçu en direct** de la facture dans le thème choisi (panneau à côté du formulaire, `#em-preview`, `zoom` CSS) ;
   - numérotation auto `FAC-AAAA-NNNN` ; **liste** des factures émises avec **recherche** (n°/client), colonne **Thème**, **Dupliquer** et **Supprimer** ;
@@ -32,7 +32,7 @@ Nouveau départ, sans lien de code avec l'ancien « Précompta ». L'ancienne ap
 - Badge `YADA PRO · v0.1` ; `<meta name="yada-version" content="0.1.0">`.
 
 ### Modèle de données (localStorage clé `yadapro`)
-`{ societes:[{id,nom,adresse,siret,tva,email,tel,iban,prefixe,mentions,condDefaut,devise,logo,theme,customFormat,seq}], societeActive, contacts:[{id,nom,type,email,tel,siren,adresse}], emises:[{id,type('facture'|'devis'|'avoir'),numero,societeId,contactId,date,ech,cond,theme,devise,lignes,remiseType,remiseVal,htBrut,remise,ht,tva,ttc,acompte,net,encaissements:[{montant,date}],statut,dateEnvoi,transformeEn}], recues:[{id,fournisseur,date,montant,tva,categorie,statut,nomFichier,fichier}], catalogue:[{id,desc,unite,pu,taux}], seq:{fac} }`
+`{ societes:[{id,nom,adresse,siret,tva,email,tel,iban,prefixe,mentions,condDefaut,devise,logo,theme,customFormat,seq}], societeActive, contacts:[{id,nom,type,email,tel,siren,adresse}], emises:[{id,type('facture'|'devis'|'avoir'),numero,societeId,contactId,date,ech,cond,theme,devise,moyen,note,lignes,remiseType,remiseVal,htBrut,remise,ht,tva,ttc,acompte,net,encaissements:[{montant,date}],statut,dateEnvoi,transformeEn}], recues:[{id,fournisseur,date,montant,tva,categorie,statut,nomFichier,fichier}], catalogue:[{id,desc,unite,pu,taux}], seq:{fac} }`
 Migration au chargement : `ensureSocietes()` crée une société par défaut si besoin et rattache les factures orphelines à la société active.
 
 ## Thèmes de facture
