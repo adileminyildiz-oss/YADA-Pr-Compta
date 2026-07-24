@@ -25,6 +25,7 @@ Nouveau départ, sans lien de code avec l'ancien « Précompta ». L'ancienne ap
   - **Aperçu en direct** de la facture dans le thème choisi (panneau à côté du formulaire, `#em-preview`, `zoom` CSS) ;
   - numérotation auto `FAC-AAAA-NNNN` ; **liste** des factures émises avec **recherche** (n°/client), colonne **Thème**, **Dupliquer** et **Supprimer** ;
   - **Aperçu** (modale, thème changeable à la volée), **PDF** (impression via `@media print`), **Envoyer** (e-mail `mailto` pré-rempli, statut « envoyée »).
+- **Statistiques** : par société, KPIs (CA total, encaissé, panier moyen), **CA des 12 derniers mois** (histogramme CSS), **top clients** (barres horizontales). `pageStats`/`moisDerniers`.
 - **Données** : **export CSV** des ventes et des encaissements (société active, séparateur « ; », BOM Excel — `exportVentesCSV`/`exportEncaissementsCSV`), **sauvegarde JSON** (`sauvegardeJSON`) et **restauration** (`restaurerJSON`, remplace `db`, re-migration).
 - **Réceptionner (achats/dépenses)** : dépôt/import d'une facture reçue (PDF/photo, glisser-déposer), fournisseur/date/**montant TTC**/**dont TVA**/**catégorie**/statut, boîte de réception. Résumé achats (total dépenses, TVA déductible). Le **tableau de bord** affiche une carte **TVA & dépenses** (TVA collectée sur ventes − TVA déductible sur achats = à reverser).
 - **PWA** : `manifest.webmanifest` + `sw.js` (cache `yada-pro-v1`, réseau d'abord), installable.
@@ -53,4 +54,4 @@ facture avec la classe du thème `f.theme`. Ajouter un thème = 1 entrée `THEME
 
 ## À venir (idées)
 Envoi/réception e-mail réellement automatiques (nécessite un service externe/backend), dépenses/achats
-(activer le module Réceptionner), export FEC, statistiques de vente.
+(activer le module Réceptionner), export FEC.
