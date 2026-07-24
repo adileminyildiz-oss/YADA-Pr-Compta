@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1120">
-<meta name="yada-version" content="0.5.0">
+<meta name="yada-version" content="0.6.0">
 <title>YADA PRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -190,14 +190,14 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 <div class="app" id="app"></div>
 <div id="print-area"></div>
 <div id="toast"></div>
-<span id="yada-ver">YADA PRO · v0.5</span>
+<span id="yada-ver">YADA PRO · v0.6</span>
 
 <script>
 'use strict';
-var VERSION='0.5.0';
+var VERSION='0.6.0';
 
 /* ---------- Données (localStorage) ---------- */
-function seed(){ return { societes:[], societeActive:null, contacts:[], emises:[], recues:[], seq:{fac:0} }; }
+function seed(){ return { societes:[], societeActive:null, contacts:[], emises:[], recues:[], catalogue:[], seq:{fac:0} }; }
 var db = load() || seed();
 function load(){ try{ return JSON.parse(localStorage.getItem('yadapro')||'null'); }catch(e){ return null; } }
 function save(){ try{ localStorage.setItem('yadapro', JSON.stringify(db)); return true; }catch(e){ return false; } }
@@ -218,6 +218,7 @@ function societeActiveObj(){ return (db.societes||[]).filter(function(s){return 
 function societeOf(f){ return (db.societes||[]).filter(function(s){return s.id===f.societeId;})[0] || societeActiveObj(); }
 function emisesActives(){ return db.emises.filter(function(f){ return f.societeId===db.societeActive; }); }
 function ensureSocietes(){
+  if(!db.catalogue) db.catalogue=[];
   if(!db.societes) db.societes=[];
   if(!db.societes.length){ db.societes.push({ id:uid(), nom:'Ma société', adresse:'', siret:'', tva:'', email:'', tel:'', iban:'', logo:'', theme:'classique', customFormat:'', seq:(db.seq&&db.seq.fac)||0 }); }
   db.societes.forEach(function(s){ if(s.seq==null) s.seq=0; if(!s.theme) s.theme='classique'; });
@@ -254,6 +255,7 @@ var NAV=[
   {id:'suivi', ico:'⏱', label:'Suivi'},
   {id:'recues', ico:'⇩', label:'Réceptionner'},
   {id:'contacts', ico:'☰', label:'Contacts'},
+  {id:'catalogue', ico:'▤', label:'Catalogue'},
   {id:'societes', ico:'🏢', label:'Sociétés'}
 ];
 var current='dash';
@@ -447,7 +449,9 @@ function pageEmises(){
     +(clients.length?'':'<div class="mini" style="color:var(--warn);margin-bottom:8px">Aucun client : utilisez <b>+ Client</b> ci-dessus ou l\'onglet <b>Contacts</b>.</div>')
     +'<div class="field"><label>Thème de la facture</label>'+themeChips(emDraft.theme||'classique','emSetTheme')+'</div>'
     +'<label>Lignes</label><div class="lignes"><div class="li-row head"><div>Désignation</div><div>Qté</div><div>PU HT</div><div>TVA %</div><div style="text-align:right">Total HT</div><div></div></div>'+lignes+'</div>'
-    +'<div style="margin-top:8px"><button class="btn btn-sm" onclick="emAddLigne()">+ Ajouter une ligne</button></div>'
+    +'<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm" onclick="emAddLigne()">+ Ajouter une ligne</button>'
+    +'<button class="btn btn-sm" onclick="emCatalogue()">▤ Depuis le catalogue</button>'
+    +'<button class="btn btn-ghost btn-sm" title="Enregistrer les lignes saisies dans le catalogue" onclick="emLignesToCat()">Enregistrer au catalogue</button></div>'
     +'<div class="row c3" style="margin-top:12px"><div class="field"><label>Remise</label><div style="display:flex;gap:6px"><input id="em-remval" type="number" step="any" value="'+esc(emDraft.remiseVal||0)+'" oninput="emMaj()" style="flex:1"><select id="em-remtype" onchange="emMaj()" style="width:72px"><option value="montant"'+(emDraft.remiseType==='montant'?' selected':'')+'>€</option><option value="percent"'+(emDraft.remiseType==='percent'?' selected':'')+'>%</option></select></div></div>'
     +(ty==='facture'?'<div class="field"><label>Acompte déjà versé (€)</label><input id="em-acompte" type="number" step="any" value="'+esc(emDraft.acompte||0)+'" oninput="emMaj()"></div>':'<div></div>')
     +'<div></div></div>'
@@ -652,6 +656,46 @@ function contactAjouter(){ var nom=(document.getElementById('ct-nom').value||'')
 function contactSuppr(id){ db.contacts=db.contacts.filter(function(c){return c.id!==id;}); save(); render(); }
 
 /* ============================================================
+   CATALOGUE — articles / prestations réutilisables
+   ============================================================ */
+function emCatalogue(){ emSync();
+  var items=db.catalogue||[];
+  var body = items.length ? '<div style="overflow-x:auto"><table><thead><tr><th>Désignation</th><th class="r">PU HT</th><th>TVA</th><th></th></tr></thead><tbody>'
+    + items.slice().sort(function(a,b){return (a.desc||'').localeCompare(b.desc||'');}).map(function(a){ return '<tr><td>'+esc(a.desc)+(a.unite?' <span class="mini">('+esc(a.unite)+')</span>':'')+'</td><td class="r num">'+eur(a.pu)+'</td><td>'+(a.taux||0)+' %</td><td class="r"><button class="btn btn-pri btn-sm" onclick="emAjoutCat(\''+a.id+'\')">Ajouter</button></td></tr>'; }).join('')
+    + '</tbody></table></div>'
+    : '<div class="empty">Catalogue vide — ajoutez des articles dans l\'onglet <b>Catalogue</b>.</div>';
+  openModal('Insérer depuis le catalogue', body, '<button class="btn btn-sm" onclick="closeModal()">Fermer</button>'); }
+function emAjoutCat(id){ var a=(db.catalogue||[]).filter(function(x){return x.id===id;})[0]; if(!a)return; emSync();
+  if(emDraft.lignes.length===1 && !String(emDraft.lignes[0].desc||'').trim() && !(+emDraft.lignes[0].pu)) emDraft.lignes=[];
+  emDraft.lignes.push({desc:a.desc, qte:1, pu:a.pu, taux:a.taux}); closeModal(); render(); toast('« '+a.desc+' » ajouté.'); }
+function emLignesToCat(){ emSync(); var n=0;
+  (emDraft.lignes||[]).forEach(function(l){ var d=String(l.desc||'').trim(); if(!d)return;
+    var exists=(db.catalogue||[]).some(function(a){return a.desc===d && r2(a.pu)===r2(+l.pu||0);});
+    if(!exists){ db.catalogue.push({id:uid(), desc:d, pu:r2(+l.pu||0), taux:+l.taux||20, unite:''}); n++; } });
+  save(); render(); toast(n?('+'+n+' article(s) enregistré(s) au catalogue.'):'Rien de nouveau à enregistrer.'); }
+function catAjouter(){ var d=(document.getElementById('cat-desc').value||'').trim(); if(!d) return toast('Indiquez une désignation.');
+  db.catalogue.push({ id:uid(), desc:d, unite:(document.getElementById('cat-unite').value||'').trim(), pu:r2(+document.getElementById('cat-pu').value||0), taux:+document.getElementById('cat-taux').value||20 });
+  save(); render(); toast('Article ajouté au catalogue.'); }
+function catSupprimer(id){ db.catalogue=db.catalogue.filter(function(a){return a.id!==id;}); save(); render(); }
+function pageCatalogue(){
+  var rows=(db.catalogue||[]).slice().sort(function(a,b){return (a.desc||'').localeCompare(b.desc||'');}).map(function(a){
+    return '<tr><td><b>'+esc(a.desc)+'</b>'+(a.unite?' <span class="mini">('+esc(a.unite)+')</span>':'')+'</td><td class="r num">'+eur(a.pu)+'</td><td>'+(a.taux||0)+' %</td>'
+      +'<td class="r"><button class="btn btn-ghost btn-sm btn-danger" onclick="catSupprimer(\''+a.id+'\')">✕</button></td></tr>'; }).join('');
+  return '<main>'+ph('Catalogue d\'articles')
+    +'<div class="grid g2" style="align-items:start">'
+    +'<div class="card"><h2>Ajouter un article</h2>'
+    +'<div class="field"><label>Désignation</label><input id="cat-desc" placeholder="Produit / prestation"></div>'
+    +'<div class="row c3"><div class="field"><label>Unité</label><input id="cat-unite" placeholder="h, j, pièce…"></div>'
+    +'<div class="field"><label>PU HT (€)</label><input id="cat-pu" type="number" step="any" placeholder="0,00"></div>'
+    +'<div class="field"><label>TVA %</label><select id="cat-taux">'+[20,10,5.5,0].map(function(x){return '<option>'+x+'</option>';}).join('')+'</select></div></div>'
+    +'<div class="right"><button class="btn btn-pri" onclick="catAjouter()">Ajouter</button></div></div>'
+    +'<div class="card"><h2>Articles ('+(db.catalogue||[]).length+')</h2><p class="mini">Réutilisez-les en 1 clic depuis <b>Envoyer</b> → « Depuis le catalogue ».</p>'
+    +'<div style="overflow-x:auto"><table><thead><tr><th>Désignation</th><th class="r">PU HT</th><th>TVA</th><th></th></tr></thead>'
+    +'<tbody>'+(rows||'<tr><td colspan="4" class="empty">Catalogue vide.</td></tr>')+'</tbody></table></div></div>'
+    +'</div></main>';
+}
+
+/* ============================================================
    SOCIÉTÉS — enregistrement, édition, format (thème ou modèle importé)
    ============================================================ */
 var socEdit=null;
@@ -745,7 +789,7 @@ function openModal(title,body,actions){ var bg=document.createElement('div'); bg
 function closeModal(){ var m=document.getElementById('modal-bg'); if(m)m.remove(); }
 
 /* ---------- Rendu ---------- */
-var PAGES={ dash:pageDash, emises:pageEmises, suivi:pageSuivi, recues:pageRecues, contacts:pageContacts, societes:pageSocietes };
+var PAGES={ dash:pageDash, emises:pageEmises, suivi:pageSuivi, recues:pageRecues, contacts:pageContacts, catalogue:pageCatalogue, societes:pageSocietes };
 function render(){ document.getElementById('app').innerHTML=sidebar()+(PAGES[current]||pageDash)(); if(current==='recues') bindDrop(); }
 
 if('serviceWorker' in navigator){ window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
