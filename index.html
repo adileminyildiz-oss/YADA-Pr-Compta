@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1120">
-<meta name="yada-version" content="0.1.0">
+<meta name="yada-version" content="0.2.0">
 <title>YADA PRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -87,6 +87,12 @@ input:focus,select:focus,textarea:focus{outline:none; border-color:var(--accent)
 .theme-chip:hover{border-color:var(--accent); color:var(--txt)}
 .theme-chip.active{border-color:var(--accent); background:rgba(47,143,255,.14); color:#fff}
 .theme-chip .sw{width:13px; height:13px; border-radius:4px; display:inline-block}
+.theme-tag{display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--muted)}
+.theme-tag .sw{width:12px; height:12px; border-radius:4px; display:inline-block}
+.emwrap{display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start}
+@media(max-width:1050px){.emwrap{grid-template-columns:1fr}}
+.em-prev{background:#fff; border-radius:10px; overflow:auto; max-height:660px}
+.em-prev .inv{zoom:.66}
 
 table{width:100%; border-collapse:collapse; font-size:13.5px}
 th{text-align:left; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); padding:9px 10px; border-bottom:1px solid var(--line2)}
@@ -169,11 +175,11 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 <div class="app" id="app"></div>
 <div id="print-area"></div>
 <div id="toast"></div>
-<span id="yada-ver">YADA PRO · v0.1</span>
+<span id="yada-ver">YADA PRO · v0.2</span>
 
 <script>
 'use strict';
-var VERSION='0.1.0';
+var VERSION='0.2.0';
 
 /* ---------- Données (localStorage) ---------- */
 function seed(){ return { contacts:[], emises:[], recues:[], seq:{fac:0} }; }
@@ -265,8 +271,17 @@ function ph(t,right){ return '<div class="page-head"><h1>'+t+'</h1><div class="s
    ENVOYER — création + liste des factures émises
    ============================================================ */
 var emDraft=null;
-function emResetDraft(){ emDraft={ contactId:(db.contacts.find(function(c){return c.type!=='fournisseur';})||{}).id||'', date:todayStr(), ech:todayStr(), theme:'classique', lignes:[{desc:'',qte:1,pu:0,taux:20}] }; }
+function emResetDraft(){ var d=todayStr(); emDraft={ contactId:(db.contacts.find(function(c){return c.type!=='fournisseur';})||{}).id||'', date:d, cond:'30', ech:addDays(d,30), theme:'classique', lignes:[{desc:'',qte:1,pu:0,taux:20}] }; }
 function emSetTheme(id){ emSync(); emDraft.theme=id; render(); }
+function addDays(d,n){ var p=String(d).split('-'); if(p.length!==3) return d; var dt=new Date(+p[0],+p[1]-1,+p[2]); dt.setDate(dt.getDate()+(+n||0)); return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); }
+function emEcheance(){ emSync(); var c=document.getElementById('em-cond'); if(c)emDraft.cond=c.value; emDraft.ech=addDays(emDraft.date,emDraft.cond); var e=document.getElementById('em-ech'); if(e)e.value=emDraft.ech; emPreview(); }
+function emDraftFacture(){ var t=emTotaux(); return { numero:'(brouillon)', contactId:emDraft.contactId, date:emDraft.date, ech:emDraft.ech, theme:emDraft.theme||'classique', lignes:emDraft.lignes, ht:t.ht, tva:t.tva, ttc:t.ttc }; }
+function emPreview(){ var el=document.getElementById('em-preview'); if(el) el.innerHTML=factureHTML(emDraftFacture()); }
+function emNouveauClient(){ openModal('Nouveau client', '<div class="field"><label>Nom / société</label><input id="qc-nom" placeholder="Nom du client"></div><div class="field"><label>E-mail</label><input id="qc-mail" type="email" placeholder="email@exemple.fr"></div>', '<button class="btn btn-sm" onclick="closeModal()">Annuler</button><button class="btn btn-pri btn-sm" onclick="emAjouterClientRapide()">Ajouter</button>'); }
+function emAjouterClientRapide(){ var nom=(document.getElementById('qc-nom').value||'').trim(); if(!nom) return toast('Indiquez un nom.'); emSync(); var c={id:uid(),nom:nom,type:'client',email:(document.getElementById('qc-mail').value||'').trim()}; db.contacts.push(c); emDraft.contactId=c.id; save(); closeModal(); render(); toast('Client « '+nom+' » ajouté et sélectionné.'); }
+function emFiltrer(v){ window.emQuery=v; var w=document.getElementById('em-liste-wrap'); if(w){ w.innerHTML=emListe(); var s=document.getElementById('em-search'); if(s){ s.focus(); try{ s.setSelectionRange(v.length,v.length); }catch(e){} } } }
+function emDupliquer(id){ var f=db.emises.find(function(x){return x.id===id;}); if(!f)return; var n=JSON.parse(JSON.stringify(f)); n.id=uid(); n.numero=nextNum(); n.statut='brouillon'; n.dateEnvoi=null; n.cree=Date.now(); db.emises.push(n); save(); render(); toast('Facture dupliquée → '+n.numero); }
+function emSupprimer(id){ var f=db.emises.find(function(x){return x.id===id;}); if(!f)return; if(!confirm('Supprimer la facture '+f.numero+' ?'))return; db.emises=db.emises.filter(function(x){return x.id!==id;}); save(); render(); toast('Facture supprimée.'); }
 function emTotaux(){ var ht=0,tva=0; (emDraft.lignes||[]).forEach(function(l){ var b=r2((+l.qte||0)*(+l.pu||0)); ht+=b; tva+=b*(+l.taux||0)/100; }); ht=r2(ht); tva=r2(tva); return {ht:ht,tva:tva,ttc:r2(ht+tva)}; }
 function emSync(){ (emDraft.lignes||[]).forEach(function(l,i){
   var d=document.getElementById('em-desc-'+i), q=document.getElementById('em-qte-'+i), p=document.getElementById('em-pu-'+i), t=document.getElementById('em-taux-'+i);
@@ -275,7 +290,7 @@ function emSync(){ (emDraft.lignes||[]).forEach(function(l,i){
   if(ci)emDraft.contactId=ci.value; if(dt)emDraft.date=dt.value; if(ec)emDraft.ech=ec.value; }
 function emMaj(){ emSync(); var t=emTotaux();
   (emDraft.lignes||[]).forEach(function(l,i){ var el=document.getElementById('em-lt-'+i); if(el) el.textContent=eur(r2((+l.qte||0)*(+l.pu||0))); });
-  var box=document.getElementById('em-totals'); if(box) box.innerHTML=emTotalsHTML(t); }
+  var box=document.getElementById('em-totals'); if(box) box.innerHTML=emTotalsHTML(t); emPreview(); }
 function emAddLigne(){ emSync(); emDraft.lignes.push({desc:'',qte:1,pu:0,taux:20}); render(); }
 function emDelLigne(i){ emSync(); emDraft.lignes.splice(i,1); if(!emDraft.lignes.length) emDraft.lignes.push({desc:'',qte:1,pu:0,taux:20}); render(); }
 function emTotalsHTML(t){ return '<div class="l"><span>Total HT</span><span class="num">'+eur(t.ht)+'</span></div>'
@@ -296,44 +311,58 @@ function pageEmises(){
     +'<div class="num" id="em-lt-'+i+'" style="text-align:right;color:var(--muted)">'+eur(r2((+l.qte||0)*(+l.pu||0)))+'</div>'
     +'<button class="btn btn-ghost btn-sm" title="Retirer" onclick="emDelLigne('+i+')">✕</button></div>'; }).join('');
 
+  var conds=[['0','Comptant'],['30','30 jours'],['45','45 jours'],['60','60 jours']];
+  var condOpts=conds.map(function(x){return '<option value="'+x[0]+'"'+(x[0]===String(emDraft.cond)?' selected':'')+'>'+x[1]+'</option>';}).join('');
   var form='<div class="card"><h2>Nouvelle facture à envoyer</h2>'
+    +'<div class="field"><label>Client destinataire</label><div style="display:flex;gap:8px"><select id="em-contact" style="flex:1" onchange="emMaj()">'+opts+'</select><button class="btn btn-sm" title="Créer un client" onclick="emNouveauClient()">+ Client</button></div></div>'
     +'<div class="row c3">'
-    +'<div class="field"><label>Client destinataire</label><select id="em-contact">'+opts+'</select></div>'
-    +'<div class="field"><label>Date</label><input id="em-date" type="date" value="'+esc(emDraft.date)+'"></div>'
-    +'<div class="field"><label>Échéance</label><input id="em-ech" type="date" value="'+esc(emDraft.ech)+'"></div>'
+    +'<div class="field"><label>Date</label><input id="em-date" type="date" value="'+esc(emDraft.date)+'" onchange="emEcheance()"></div>'
+    +'<div class="field"><label>Conditions</label><select id="em-cond" onchange="emEcheance()">'+condOpts+'</select></div>'
+    +'<div class="field"><label>Échéance (auto)</label><input id="em-ech" type="date" value="'+esc(emDraft.ech)+'" onchange="emMaj()"></div>'
     +'</div>'
-    +(clients.length?'':'<div class="mini" style="color:var(--warn);margin-bottom:8px">Ajoutez d\'abord un client dans <b>Contacts</b>.</div>')
+    +(clients.length?'':'<div class="mini" style="color:var(--warn);margin-bottom:8px">Aucun client : utilisez <b>+ Client</b> ci-dessus ou l\'onglet <b>Contacts</b>.</div>')
     +'<div class="field"><label>Thème de la facture</label>'+themeChips(emDraft.theme||'classique','emSetTheme')+'</div>'
     +'<label>Lignes</label><div class="lignes"><div class="li-row head"><div>Désignation</div><div>Qté</div><div>PU HT</div><div>TVA %</div><div style="text-align:right">Total HT</div><div></div></div>'+lignes+'</div>'
     +'<div style="margin-top:8px"><button class="btn btn-sm" onclick="emAddLigne()">+ Ajouter une ligne</button></div>'
     +'<div class="totals" id="em-totals">'+emTotalsHTML(t)+'</div>'
     +'<div class="right"><button class="btn btn-pri" onclick="emCreer()">Créer la facture</button></div>'
     +'</div>';
+  var preview='<div class="card"><h2>Aperçu en direct</h2>'
+    +'<div class="mini" style="margin-bottom:10px">Thème « '+esc(THEME_NOM[emDraft.theme||'classique'])+' » — se met à jour pendant la saisie.</div>'
+    +'<div id="em-preview" class="em-prev">'+factureHTML(emDraftFacture())+'</div></div>';
 
-  return '<main>'+ph('Envoyer une facture')+ form + emListe() +'</main>';
+  return '<main>'+ph('Envoyer une facture')+'<div class="emwrap">'+form+preview+'</div><div id="em-liste-wrap">'+emListe()+'</div></main>';
 }
 function emCreer(){ emSync();
   if(!emDraft.contactId) return toast('Sélectionnez un client (onglet Contacts).');
   var t=emTotaux(); if(t.ht<=0) return toast('Renseignez au moins une ligne.');
   var f={ id:uid(), numero:nextNum(), contactId:emDraft.contactId, date:emDraft.date, ech:emDraft.ech,
     lignes:JSON.parse(JSON.stringify(emDraft.lignes)).filter(function(l){return (l.desc&&String(l.desc).trim())||r2((+l.qte||0)*(+l.pu||0))!==0;}),
-    theme:emDraft.theme||'classique', ht:t.ht, tva:t.tva, ttc:t.ttc, statut:'brouillon', cree:Date.now(), dateEnvoi:null };
+    cond:emDraft.cond, theme:emDraft.theme||'classique', ht:t.ht, tva:t.tva, ttc:t.ttc, statut:'brouillon', cree:Date.now(), dateEnvoi:null };
   db.emises.push(f); save(); emResetDraft(); render();
   toast('Facture '+f.numero+' créée. Aperçu / envoi disponibles ci-dessous.');
 }
 function emListe(){
-  var list=db.emises.slice().sort(function(a,b){return b.cree-a.cree;});
+  var q=(window.emQuery||'').toLowerCase().trim();
+  var all=db.emises.slice().sort(function(a,b){return b.cree-a.cree;});
+  var list=all.filter(function(f){ if(!q)return true; var c=contact(f.contactId); return (f.numero||'').toLowerCase().indexOf(q)>=0 || (c&&(c.nom||'').toLowerCase().indexOf(q)>=0); });
   var rows=list.map(function(f){ var c=contact(f.contactId);
     var tg = f.statut==='envoyee' ? '<span class="tag t-sent">envoyée</span>' : '<span class="tag t-draft">brouillon</span>';
-    return '<tr><td><b>'+esc(f.numero)+'</b></td><td>'+esc(c?c.nom:'—')+'</td><td class="num">'+frDate(f.date)+'</td>'
-      +'<td class="r num">'+eur(f.ttc)+'</td><td>'+tg+(f.dateEnvoi?' <span class="mini">'+frDate(f.dateEnvoi)+'</span>':'')+'</td>'
+    var thm=THEMES.filter(function(x){return x.id===(f.theme||'classique');})[0]||{nom:(f.theme||'—'),col:'#8899bb'};
+    return '<tr><td><b>'+esc(f.numero)+'</b></td><td>'+esc(c?c.nom:'—')+'</td>'
+      +'<td><span class="theme-tag"><span class="sw" style="background:'+thm.col+'"></span>'+esc(thm.nom)+'</span></td>'
+      +'<td class="num">'+frDate(f.date)+'</td><td class="r num">'+eur(f.ttc)+'</td>'
+      +'<td>'+tg+(f.dateEnvoi?' <span class="mini">'+frDate(f.dateEnvoi)+'</span>':'')+'</td>'
       +'<td class="r" style="white-space:nowrap">'
       +'<button class="btn btn-ghost btn-sm" onclick="emApercu(\''+f.id+'\')">Aperçu</button> '
       +'<button class="btn btn-sm" onclick="emImprimer(\''+f.id+'\')">PDF</button> '
-      +'<button class="btn btn-pri btn-sm" onclick="emEnvoyer(\''+f.id+'\')">✉ Envoyer</button></td></tr>'; }).join('');
-  return '<div class="card" style="margin-top:16px"><h2>Factures émises ('+list.length+')</h2>'
-    +'<div style="overflow-x:auto"><table><thead><tr><th>Numéro</th><th>Client</th><th>Date</th><th class="r">TTC</th><th>Statut</th><th class="r">Actions</th></tr></thead>'
-    +'<tbody>'+(rows||'<tr><td colspan="6" class="empty">Aucune facture émise.</td></tr>')+'</tbody></table></div></div>';
+      +'<button class="btn btn-pri btn-sm" title="Envoyer par e-mail" onclick="emEnvoyer(\''+f.id+'\')">✉</button> '
+      +'<button class="btn btn-ghost btn-sm" title="Dupliquer" onclick="emDupliquer(\''+f.id+'\')">⧉</button> '
+      +'<button class="btn btn-ghost btn-sm btn-danger" title="Supprimer" onclick="emSupprimer(\''+f.id+'\')">✕</button></td></tr>'; }).join('');
+  var search='<input id="em-search" placeholder="Rechercher (numéro, client)…" value="'+esc(window.emQuery||'')+'" oninput="emFiltrer(this.value)" style="max-width:280px">';
+  return '<div class="card" style="margin-top:16px"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px"><h2 style="margin:0">Factures émises ('+all.length+')</h2><div style="flex:1"></div>'+search+'</div>'
+    +'<div style="overflow-x:auto"><table><thead><tr><th>Numéro</th><th>Client</th><th>Thème</th><th>Date</th><th class="r">TTC</th><th>Statut</th><th class="r">Actions</th></tr></thead>'
+    +'<tbody>'+(rows||'<tr><td colspan="7" class="empty">'+(q?'Aucun résultat.':'Aucune facture émise.')+'</td></tr>')+'</tbody></table></div></div>';
 }
 
 /* Facture imprimable (aperçu / PDF) */

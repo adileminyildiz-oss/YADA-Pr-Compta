@@ -17,9 +17,10 @@ thèmes d'habillage**.
 - **Coquille** : barre latérale (Tableau de bord · Envoyer · Réceptionner · Contacts) + contenu, responsive. Thème bleu nuit + Crystal.
 - **Contacts** : ajout de clients / fournisseurs (nom, type, e-mail), répertoire.
 - **Envoyer (factures de vente)** :
-  - formulaire : client, date, échéance, **lignes** (désignation, qté, PU HT, TVA %), totaux HT/TVA/TTC en direct ;
+  - formulaire : client (+ **ajout rapide** de client), date, **conditions** (comptant/30/45/60 j) → **échéance auto**, **lignes** (désignation, qté, PU HT, TVA %), totaux HT/TVA/TTC en direct ;
   - **sélecteur de thème** : `Classique`, `Bandeau`, `Émeraude`, `Indigo`, `Minimal` (modèles visuels distincts) ;
-  - numérotation auto `FAC-AAAA-NNNN` ; liste des factures émises ;
+  - **Aperçu en direct** de la facture dans le thème choisi (panneau à côté du formulaire, `#em-preview`, `zoom` CSS) ;
+  - numérotation auto `FAC-AAAA-NNNN` ; **liste** des factures émises avec **recherche** (n°/client), colonne **Thème**, **Dupliquer** et **Supprimer** ;
   - **Aperçu** (modale, thème changeable à la volée), **PDF** (impression via `@media print`), **Envoyer** (e-mail `mailto` pré-rempli, statut « envoyée »).
 - **Réceptionner** *(différé, mais présent)* : dépôt/import d'une facture reçue (PDF/photo, glisser-déposer), fournisseur/date/montant/statut, boîte de réception.
 - **PWA** : `manifest.webmanifest` + `sw.js` (cache `yada-pro-v1`, réseau d'abord), installable.
