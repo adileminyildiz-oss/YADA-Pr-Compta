@@ -18,7 +18,8 @@ Nouveau départ, sans lien de code avec l'ancien « Précompta ». L'ancienne ap
 - **Suivi (paiements)** : par société, statut de paiement par facture (**à encaisser / partielle / payée / en retard** si échéance dépassée — `factPaie(f)`), **encaissements** (montant + date, `factEncaisser`), **reste dû**, **relance** e-mail (`factRelance`), filtres (toutes/à encaisser/en retard/payées), KPIs facturé/encaissé/reste dû. Tableau de bord enrichi (CA facturé, encaissé, reste dû, en retard).
 - **Contacts** : ajout de clients / fournisseurs (nom, type, e-mail), répertoire.
 - **Envoyer (factures de vente)** :
-  - formulaire : client (+ **ajout rapide** de client), date, **conditions** (comptant/30/45/60 j) → **échéance auto**, **lignes** (désignation, qté, PU HT, TVA %), totaux HT/TVA/TTC en direct ;
+  - **type de document** : **facture / devis / avoir** (numérotation `FAC`/`DEV`/`AV`, avoir en négatif) ; **devis → facture** en un clic (`transformerDevis`) ;
+  - formulaire : client (+ **ajout rapide** de client), date, **conditions** (comptant/30/45/60 j) → **échéance auto**, **lignes** (désignation, qté, PU HT, TVA %), **remise** (€/%), **acompte** → **net à payer**, totaux en direct ;
   - **sélecteur de thème** : `Classique`, `Bandeau`, `Émeraude`, `Indigo`, `Minimal` (modèles visuels distincts) ;
   - **Aperçu en direct** de la facture dans le thème choisi (panneau à côté du formulaire, `#em-preview`, `zoom` CSS) ;
   - numérotation auto `FAC-AAAA-NNNN` ; **liste** des factures émises avec **recherche** (n°/client), colonne **Thème**, **Dupliquer** et **Supprimer** ;
@@ -28,7 +29,7 @@ Nouveau départ, sans lien de code avec l'ancien « Précompta ». L'ancienne ap
 - Badge `YADA PRO · v0.1` ; `<meta name="yada-version" content="0.1.0">`.
 
 ### Modèle de données (localStorage clé `yadapro`)
-`{ societes:[{id,nom,adresse,siret,tva,email,tel,iban,logo,theme,customFormat,seq}], societeActive, contacts:[{id,nom,type,email}], emises:[{id,numero,societeId,contactId,date,ech,cond,theme,lignes,ht,tva,ttc,encaissements:[{montant,date}],statut,dateEnvoi}], recues:[{id,fournisseur,date,montant,statut,nomFichier,fichier}], seq:{fac} }`
+`{ societes:[{id,nom,adresse,siret,tva,email,tel,iban,logo,theme,customFormat,seq}], societeActive, contacts:[{id,nom,type,email}], emises:[{id,type('facture'|'devis'|'avoir'),numero,societeId,contactId,date,ech,cond,theme,lignes,remiseType,remiseVal,htBrut,remise,ht,tva,ttc,acompte,net,encaissements:[{montant,date}],statut,dateEnvoi,transformeEn}], recues:[{id,fournisseur,date,montant,statut,nomFichier,fichier}], seq:{fac} }`
 Migration au chargement : `ensureSocietes()` crée une société par défaut si besoin et rattache les factures orphelines à la société active.
 
 ## Thèmes de facture
