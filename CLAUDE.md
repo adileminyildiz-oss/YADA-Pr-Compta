@@ -10,11 +10,11 @@
 Nouveau départ, sans lien de code avec l'ancien « Précompta ». L'ancienne application complète
 (494 versions) reste sauvegardée sur la branche **`archive/yada-v494`** (récupérable).
 
-**YADA PRO = hub de factures.** Priorité actuelle : **créer des factures de vente avec plusieurs
-thèmes d'habillage**.
+**YADA PRO = hub de factures multi-société** (Facturation · Suivi · Gestion de société).
 
 ### Ce qui fonctionne (`index.html`)
-- **Coquille** : barre latérale (Tableau de bord · Envoyer · Réceptionner · Contacts) + contenu, responsive. Thème bleu nuit + Crystal.
+- **Coquille** : barre latérale (**sélecteur de société active** + Tableau de bord · Envoyer · Réceptionner · Contacts · Sociétés) + contenu, responsive. Thème bleu nuit + Crystal.
+- **Sociétés (multi-société)** : enregistrer/éditer plusieurs sociétés (nom, adresse, SIRET, TVA, e-mail, tél, IBAN, **logo**), **société active** (bascule). Chaque société a **sa propre facturation** (numérotation dédiée `soc.seq`), son **émetteur** (affiché sur la facture), son **format par défaut** (thème) et un éventuel **format importé** (modèle HTML avec balises `{{…}}` remplies par `renderCustomFormat`, modèle d'exemple téléchargeable). `factureHTML(f)` utilise la société de la facture (`societeOf(f)`).
 - **Contacts** : ajout de clients / fournisseurs (nom, type, e-mail), répertoire.
 - **Envoyer (factures de vente)** :
   - formulaire : client (+ **ajout rapide** de client), date, **conditions** (comptant/30/45/60 j) → **échéance auto**, **lignes** (désignation, qté, PU HT, TVA %), totaux HT/TVA/TTC en direct ;
@@ -27,7 +27,8 @@ thèmes d'habillage**.
 - Badge `YADA PRO · v0.1` ; `<meta name="yada-version" content="0.1.0">`.
 
 ### Modèle de données (localStorage clé `yadapro`)
-`{ contacts:[{id,nom,type,email}], emises:[{id,numero,contactId,date,ech,theme,lignes,ht,tva,ttc,statut,dateEnvoi}], recues:[{id,fournisseur,date,montant,statut,nomFichier,fichier}], seq:{fac} }`
+`{ societes:[{id,nom,adresse,siret,tva,email,tel,iban,logo,theme,customFormat,seq}], societeActive, contacts:[{id,nom,type,email}], emises:[{id,numero,societeId,contactId,date,ech,cond,theme,lignes,ht,tva,ttc,statut,dateEnvoi}], recues:[{id,fournisseur,date,montant,statut,nomFichier,fichier}], seq:{fac} }`
+Migration au chargement : `ensureSocietes()` crée une société par défaut si besoin et rattache les factures orphelines à la société active.
 
 ## Thèmes de facture
 Définis dans `THEMES` (JS). Chaque thème = une classe `.inv.th-<id>` qui surcharge des variables CSS
