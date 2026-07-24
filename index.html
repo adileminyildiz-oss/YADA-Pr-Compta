@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1120">
-<meta name="yada-version" content="1.3.0">
+<meta name="yada-version" content="1.4.0">
 <title>YADA PRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -194,6 +194,7 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 .inv .tot .l{display:flex; justify-content:space-between; padding:4px 0}
 .inv .tot .l.big{border-top:2px solid var(--ia); margin-top:5px; padding-top:8px; font-weight:800; font-size:15px}
 .inv .foot{margin-top:26px; font-size:11px; color:#5a6b86; border-top:1px solid #e3e9f2; padding-top:10px}
+.inv .inv-note{margin-top:16px; font-size:11.5px; color:#334155; border-left:3px solid var(--ia); padding-left:11px}
 
 /* Thèmes de facture */
 .inv.th-emeraude{--ia:#059669; --ihbg:#e7f6ef; --ihtx:#1c6b50; --ico:#059669}
@@ -213,11 +214,11 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 <div class="app" id="app"></div>
 <div id="print-area"></div>
 <div id="toast"></div>
-<span id="yada-ver">YADA PRO · v1.3</span>
+<span id="yada-ver">YADA PRO · v1.4</span>
 
 <script>
 'use strict';
-var VERSION='1.3.0';
+var VERSION='1.4.0';
 
 /* ---------- Données (localStorage) ---------- */
 function seed(){ return { societes:[], societeActive:null, contacts:[], emises:[], recues:[], catalogue:[], seq:{fac:0} }; }
@@ -416,13 +417,14 @@ function factRelance(id){ var f=db.emises.filter(function(x){return x.id===id;})
    ENVOYER — création + liste des factures émises
    ============================================================ */
 var emDraft=null;
-function emResetDraft(){ var d=todayStr(); var soc=societeActiveObj()||{}; var cd=soc.condDefaut||'30'; emDraft={ type:'facture', contactId:(db.contacts.find(function(c){return c.type!=='fournisseur';})||{}).id||'', date:d, cond:cd, ech:addDays(d,cd), theme:(soc.theme)||'classique', devise:(soc.devise||'EUR'), remiseType:'montant', remiseVal:0, acompte:0, lignes:[{desc:'',qte:1,pu:0,taux:20}] }; }
+var MOYENS=['Virement','Chèque','Espèces','Carte','Prélèvement'];
+function emResetDraft(){ var d=todayStr(); var soc=societeActiveObj()||{}; var cd=soc.condDefaut||'30'; emDraft={ type:'facture', contactId:(db.contacts.find(function(c){return c.type!=='fournisseur';})||{}).id||'', date:d, cond:cd, ech:addDays(d,cd), theme:(soc.theme)||'classique', devise:(soc.devise||'EUR'), remiseType:'montant', remiseVal:0, acompte:0, moyen:'Virement', note:'', lignes:[{desc:'',qte:1,pu:0,taux:20}] }; }
 function emTypeChange(){ emSync(); render(); }
 function emSetTheme(id){ emSync(); emDraft.theme=id; render(); }
 function addDays(d,n){ var p=String(d).split('-'); if(p.length!==3) return d; var dt=new Date(+p[0],+p[1]-1,+p[2]); dt.setDate(dt.getDate()+(+n||0)); return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); }
 function emEcheance(){ emSync(); var c=document.getElementById('em-cond'); if(c)emDraft.cond=c.value; emDraft.ech=addDays(emDraft.date,emDraft.cond); var e=document.getElementById('em-ech'); if(e)e.value=emDraft.ech; emPreview(); }
 function emDraftFacture(){ var t=emTotaux(); var lbl=emDraft.type==='devis'?'(devis)':emDraft.type==='avoir'?'(avoir)':'(brouillon)';
-  return { type:emDraft.type, numero:lbl, contactId:emDraft.contactId, date:emDraft.date, ech:emDraft.ech, theme:emDraft.theme||'classique', devise:emDraft.devise||'EUR', lignes:emDraft.lignes, htBrut:t.htBrut, remise:t.remise, ht:t.ht, tva:t.tva, ttc:t.ttc, acompte:t.acompte, net:t.net }; }
+  return { type:emDraft.type, numero:lbl, contactId:emDraft.contactId, date:emDraft.date, ech:emDraft.ech, theme:emDraft.theme||'classique', devise:emDraft.devise||'EUR', moyen:emDraft.moyen, note:emDraft.note, lignes:emDraft.lignes, htBrut:t.htBrut, remise:t.remise, ht:t.ht, tva:t.tva, ttc:t.ttc, acompte:t.acompte, net:t.net }; }
 function emPreview(){ var el=document.getElementById('em-preview'); if(el) el.innerHTML=factureHTML(emDraftFacture()); }
 function emNouveauClient(){ openModal('Nouveau client', '<div class="field"><label>Nom / société</label><input id="qc-nom" placeholder="Nom du client"></div><div class="field"><label>E-mail</label><input id="qc-mail" type="email" placeholder="email@exemple.fr"></div>', '<button class="btn btn-sm" onclick="closeModal()">Annuler</button><button class="btn btn-pri btn-sm" onclick="emAjouterClientRapide()">Ajouter</button>'); }
 function emAjouterClientRapide(){ var nom=(document.getElementById('qc-nom').value||'').trim(); if(!nom) return toast('Indiquez un nom.'); emSync(); var c={id:uid(),nom:nom,type:'client',email:(document.getElementById('qc-mail').value||'').trim()}; db.contacts.push(c); emDraft.contactId=c.id; save(); closeModal(); render(); toast('Client « '+nom+' » ajouté et sélectionné.'); }
@@ -444,6 +446,8 @@ function emSync(){ (emDraft.lignes||[]).forEach(function(l,i){
   if(ci)emDraft.contactId=ci.value; if(dt)emDraft.date=dt.value; if(ec)emDraft.ech=ec.value;
   var ty=document.getElementById('em-type'); if(ty)emDraft.type=ty.value;
   var dv=document.getElementById('em-devise'); if(dv)emDraft.devise=dv.value;
+  var mo=document.getElementById('em-moyen'); if(mo)emDraft.moyen=mo.value;
+  var no=document.getElementById('em-note'); if(no)emDraft.note=no.value;
   var rt=document.getElementById('em-remtype'); if(rt)emDraft.remiseType=rt.value;
   var rv=document.getElementById('em-remval'); if(rv)emDraft.remiseVal=rv.value;
   var ac=document.getElementById('em-acompte'); if(ac)emDraft.acompte=ac.value; }
@@ -497,7 +501,8 @@ function pageEmises(){
     +'<button class="btn btn-ghost btn-sm" title="Enregistrer les lignes saisies dans le catalogue" onclick="emLignesToCat()">Enregistrer au catalogue</button></div>'
     +'<div class="row c3" style="margin-top:12px"><div class="field"><label>Remise</label><div style="display:flex;gap:6px"><input id="em-remval" type="number" step="any" value="'+esc(emDraft.remiseVal||0)+'" oninput="emMaj()" style="flex:1"><select id="em-remtype" onchange="emMaj()" style="width:72px"><option value="montant"'+(emDraft.remiseType==='montant'?' selected':'')+'>€</option><option value="percent"'+(emDraft.remiseType==='percent'?' selected':'')+'>%</option></select></div></div>'
     +(ty==='facture'?'<div class="field"><label>Acompte déjà versé (€)</label><input id="em-acompte" type="number" step="any" value="'+esc(emDraft.acompte||0)+'" oninput="emMaj()"></div>':'<div></div>')
-    +'<div></div></div>'
+    +'<div class="field"><label>Moyen de règlement</label><select id="em-moyen" onchange="emMaj()">'+MOYENS.map(function(x){return '<option'+((emDraft.moyen||'Virement')===x?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div></div>'
+    +'<div class="field"><label>Note / commentaire (affiché sur la facture)</label><textarea id="em-note" rows="2" placeholder="Merci de votre confiance · conditions particulières…" oninput="emMaj()">'+esc(emDraft.note||'')+'</textarea></div>'
     +'<div class="totals" id="em-totals">'+emTotalsHTML(t)+'</div>'
     +'<div class="right"><button class="btn btn-pri" onclick="emCreer()">'+btnLbl+'</button></div>'
     +'</div>';
@@ -515,7 +520,7 @@ function emCreer(){ emSync();
     lignes:JSON.parse(JSON.stringify(emDraft.lignes)).filter(function(l){return (l.desc&&String(l.desc).trim())||r2((+l.qte||0)*(+l.pu||0))!==0;}),
     cond:emDraft.cond, theme:emDraft.theme||'classique', devise:emDraft.devise||'EUR', remiseType:emDraft.remiseType, remiseVal:+emDraft.remiseVal||0,
     htBrut:t.htBrut, remise:t.remise, ht:t.ht, tva:t.tva, ttc:t.ttc, acompte:t.acompte, net:t.net,
-    encaissements:[], statut:'brouillon', cree:Date.now(), dateEnvoi:null, transformeEn:null };
+    moyen:emDraft.moyen, note:emDraft.note, encaissements:[], statut:'brouillon', cree:Date.now(), dateEnvoi:null, transformeEn:null };
   db.emises.push(f); save(); emResetDraft(); render();
   var nom=ty==='devis'?'Devis':ty==='avoir'?'Avoir':'Facture';
   toast(nom+' '+f.numero+' créé'+(ty==='facture'?'e':'')+'. Aperçu / envoi disponibles ci-dessous.');
@@ -576,6 +581,7 @@ function factureHTML(f){ var c=contact(f.contactId)||{}; var soc=societeOf(f)||{
     +'<div class="l big"><span>Total TTC</span><span class="num">'+money(f.ttc,dv)+'</span></div>'
     +((f.acompte&&Math.abs(f.acompte)>0.005)?'<div class="l"><span>Acompte versé</span><span class="num">-'+money(f.acompte,dv)+'</span></div><div class="l big"><span>Net à payer</span><span class="num">'+money(f.net,dv)+'</span></div>':'')
     +'</div>'
+    +((f.moyen||f.note)?'<div class="inv-note">'+(f.moyen?'<div><b>Règlement :</b> '+esc(f.moyen)+'</div>':'')+(f.note?'<div'+(f.moyen?' style="margin-top:4px"':'')+'>'+esc(f.note).replace(/\n/g,'<br>')+'</div>':'')+'</div>':'')
     +'<div class="foot">'+(soc.mentions?esc(soc.mentions).replace(/\n/g,'<br>')+'<br>':'')+(soc.iban?'IBAN : '+esc(soc.iban)+' — ':'')+esc(f.numero)+'.</div>'
     +'</div></div>';
 }
@@ -587,7 +593,8 @@ function renderCustomFormat(tpl, f, soc, c){ var dv=f.devise||'EUR';
     '{{tva}}':esc(soc.tva||''), '{{iban}}':esc(soc.iban||''), '{{email}}':esc(soc.email||''), '{{tel}}':esc(soc.tel||''),
     '{{logo}}': soc.logo?'<img src="'+soc.logo+'" style="max-height:64px">':'', '{{numero}}':esc(f.numero||''),
     '{{date}}':frDate(f.date), '{{echeance}}':frDate(f.ech), '{{client}}':esc(c.nom||''), '{{client_email}}':esc(c.email||''),
-    '{{ht}}':money(f.ht,dv), '{{tva_montant}}':money(f.tva,dv), '{{ttc}}':money(f.ttc,dv), '{{lignes}}':rows };
+    '{{ht}}':money(f.ht,dv), '{{tva_montant}}':money(f.tva,dv), '{{ttc}}':money(f.ttc,dv), '{{lignes}}':rows,
+    '{{note}}':esc(f.note||'').replace(/\n/g,'<br>'), '{{moyen}}':esc(f.moyen||'') };
   var out=String(tpl); Object.keys(map).forEach(function(k){ out=out.split(k).join(map[k]); });
   return '<div class="inv-custom" style="background:#fff;color:#0b1220">'+out+'</div>';
 }
