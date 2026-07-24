@@ -25,6 +25,7 @@ Nouveau départ, sans lien de code avec l'ancien « Précompta ». L'ancienne ap
   - **Aperçu en direct** de la facture dans le thème choisi (panneau à côté du formulaire, `#em-preview`, `zoom` CSS) ;
   - numérotation auto `FAC-AAAA-NNNN` ; **liste** des factures émises avec **recherche** (n°/client), colonne **Thème**, **Dupliquer** et **Supprimer** ;
   - **Aperçu** (modale, thème changeable à la volée), **PDF** (impression via `@media print`), **Envoyer** (e-mail `mailto` pré-rempli, statut « envoyée »).
+- **Données** : **export CSV** des ventes et des encaissements (société active, séparateur « ; », BOM Excel — `exportVentesCSV`/`exportEncaissementsCSV`), **sauvegarde JSON** (`sauvegardeJSON`) et **restauration** (`restaurerJSON`, remplace `db`, re-migration).
 - **Réceptionner** *(différé, mais présent)* : dépôt/import d'une facture reçue (PDF/photo, glisser-déposer), fournisseur/date/montant/statut, boîte de réception.
 - **PWA** : `manifest.webmanifest` + `sw.js` (cache `yada-pro-v1`, réseau d'abord), installable.
 - Badge `YADA PRO · v0.1` ; `<meta name="yada-version" content="0.1.0">`.
@@ -51,5 +52,5 @@ facture avec la classe du thème `f.theme`. Ajouter un thème = 1 entrée `THEME
 4. Versionner : incrémenter le build (badge `#yada-ver` + `<meta name="yada-version">`).
 
 ## À venir (idées)
-Envoi/réception e-mail réellement automatiques (nécessite un service externe/backend), catalogue
-d'articles, remises/acomptes, devis→facture, export comptable, informations émetteur paramétrables.
+Envoi/réception e-mail réellement automatiques (nécessite un service externe/backend), dépenses/achats
+(activer le module Réceptionner), fiche client enrichie (adresse, historique), export FEC, statistiques de vente.
