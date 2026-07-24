@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1120">
-<meta name="yada-version" content="1.2.0">
+<meta name="yada-version" content="1.3.0">
 <title>YADA PRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -213,11 +213,11 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 <div class="app" id="app"></div>
 <div id="print-area"></div>
 <div id="toast"></div>
-<span id="yada-ver">YADA PRO · v1.2</span>
+<span id="yada-ver">YADA PRO · v1.3</span>
 
 <script>
 'use strict';
-var VERSION='1.2.0';
+var VERSION='1.3.0';
 
 /* ---------- Données (localStorage) ---------- */
 function seed(){ return { societes:[], societeActive:null, contacts:[], emises:[], recues:[], catalogue:[], seq:{fac:0} }; }
@@ -229,6 +229,9 @@ function save(){ try{ localStorage.setItem('yadapro', JSON.stringify(db)); retur
 function uid(){ return 'x'+Math.random().toString(36).slice(2,10); }
 function r2(n){ return Math.round((+n||0)*100)/100; }
 function eur(n){ return (r2(n)).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
+var DEVISES=[{code:'EUR',sym:'€'},{code:'USD',sym:'$'},{code:'GBP',sym:'£'},{code:'CHF',sym:'CHF'},{code:'CAD',sym:'$CA'}];
+function devSym(code){ var d=DEVISES.filter(function(x){return x.code===code;})[0]; return d?d.sym:'€'; }
+function money(n, code){ return (r2(n)).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' '+devSym(code||'EUR'); }
 function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function frDate(s){ if(!s) return '—'; var p=String(s).split('-'); return p.length===3? p[2]+'/'+p[1]+'/'+p[0] : s; }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -344,7 +347,7 @@ function miniListReste(em){ var due=em.map(function(f){return {f:f,p:factPaie(f)
 function kpi(l,v,cls,sub){ return '<div class="card kpi"><div class="lbl">'+l+'</div><div class="val '+cls+'">'+v+'</div>'+(sub?'<div class="mini" style="margin-top:4px">'+sub+'</div>':'')+'</div>'; }
 function miniListEmises(list){ if(!list.length) return '<div class="empty">Aucune facture envoyée.</div>';
   return '<table><tbody>'+list.map(function(f){ var c=contact(f.contactId);
-    return '<tr><td><b>'+esc(f.numero)+'</b></td><td>'+esc(c?c.nom:'—')+'</td><td class="r num">'+eur(f.ttc)+'</td></tr>';}).join('')+'</tbody></table>'; }
+    return '<tr><td><b>'+esc(f.numero)+'</b></td><td>'+esc(c?c.nom:'—')+'</td><td class="r num">'+money(f.ttc,f.devise)+'</td></tr>';}).join('')+'</tbody></table>'; }
 function miniListRecues(list){ if(!list.length) return '<div class="empty">Rien à traiter. 👍</div>';
   return '<table><tbody>'+list.map(function(r){ return '<tr><td>'+esc(r.fournisseur||'—')+'</td><td class="mini">'+frDate(r.date)+'</td><td class="r num">'+eur(r.montant)+'</td></tr>';}).join('')+'</tbody></table>'; }
 
@@ -378,7 +381,7 @@ function pageSuivi(){
     if(p.reste>0.005) act+='<button class="btn btn-pri btn-sm" onclick="factEncaisser(\''+f.id+'\')">Encaisser</button> ';
     if(p.key==='retard') act+='<button class="btn btn-sm" title="Relancer par e-mail" onclick="factRelance(\''+f.id+'\')">Relancer</button>';
     return '<tr><td><b>'+esc(f.numero)+'</b></td><td>'+esc(c?c.nom:'—')+'</td><td class="num">'+frDate(f.ech)+'</td>'
-      +'<td class="r num">'+eur(f.ttc)+'</td><td class="r num">'+eur(p.regle)+'</td><td class="r num"><b>'+eur(p.reste)+'</b></td>'
+      +'<td class="r num">'+money(f.ttc,f.devise)+'</td><td class="r num">'+money(p.regle,f.devise)+'</td><td class="r num"><b>'+money(p.reste,f.devise)+'</b></td>'
       +'<td><span class="tag '+p.cls+'">'+p.label+'</span></td><td class="r" style="white-space:nowrap">'+act+'</td></tr>'; }).join('');
   var chip=function(k,l){ return '<button class="filt'+(filt===k?' active':'')+'" onclick="suiviFiltrer(\''+k+'\')">'+l+' ('+counts[k]+')</button>'; };
   return '<main>'+ph('Suivi des paiements', '<span class="badge">'+esc((societeActiveObj()||{}).nom||'')+'</span>')
@@ -395,7 +398,7 @@ function pageSuivi(){
 }
 function factEncaisser(id){ var f=db.emises.filter(function(x){return x.id===id;})[0]; if(!f)return; var reste=factReste(f);
   openModal('Encaisser — '+esc(f.numero),
-    '<div class="mini" style="margin-bottom:10px">Reste dû : <b>'+eur(reste)+'</b> sur '+eur(f.ttc)+'.</div>'
+    '<div class="mini" style="margin-bottom:10px">Reste dû : <b>'+money(reste,f.devise)+'</b> sur '+money(f.ttc,f.devise)+'.</div>'
     +'<div class="row c2"><div class="field"><label>Montant reçu (€)</label><input id="enc-mont" type="number" step="any" value="'+reste+'"></div>'
     +'<div class="field"><label>Date</label><input id="enc-date" type="date" value="'+todayStr()+'"></div></div>',
     '<button class="btn btn-sm" onclick="closeModal()">Annuler</button><button class="btn btn-pri btn-sm" onclick="factAjoutEnc(\''+id+'\')">Enregistrer l\'encaissement</button>'); }
@@ -405,7 +408,7 @@ function factAjoutEnc(id){ var f=db.emises.filter(function(x){return x.id===id;}
   save(); closeModal(); render(); var p=factPaie(f); toast('Encaissement de '+eur(m)+' — '+(p.key==='paye'?'facture soldée ✓':'reste '+eur(p.reste))); }
 function factRelance(id){ var f=db.emises.filter(function(x){return x.id===id;})[0]; if(!f)return; var c=contact(f.contactId)||{}; var reste=factReste(f);
   var sujet='Relance — facture '+f.numero;
-  var corps='Bonjour '+(c.nom||'')+',%0D%0A%0D%0ASauf erreur de notre part, la facture '+f.numero+' (échéance du '+frDate(f.ech)+') demeure impayée pour un montant de '+eur(reste).replace('€','EUR')+'.%0D%0ANous vous remercions de bien vouloir procéder à son règlement.%0D%0A%0D%0ACordialement,';
+  var corps='Bonjour '+(c.nom||'')+',%0D%0A%0D%0ASauf erreur de notre part, la facture '+f.numero+' (échéance du '+frDate(f.ech)+') demeure impayée pour un montant de '+money(reste,f.devise).replace('€','EUR')+'.%0D%0ANous vous remercions de bien vouloir procéder à son règlement.%0D%0A%0D%0ACordialement,';
   if(!c.email) toast('Ce client n\'a pas d\'e-mail (onglet Contacts).');
   window.location.href='mailto:'+encodeURIComponent(c.email||'')+'?subject='+encodeURIComponent(sujet)+'&body='+corps; }
 
@@ -413,13 +416,13 @@ function factRelance(id){ var f=db.emises.filter(function(x){return x.id===id;})
    ENVOYER — création + liste des factures émises
    ============================================================ */
 var emDraft=null;
-function emResetDraft(){ var d=todayStr(); var soc=societeActiveObj()||{}; var cd=soc.condDefaut||'30'; emDraft={ type:'facture', contactId:(db.contacts.find(function(c){return c.type!=='fournisseur';})||{}).id||'', date:d, cond:cd, ech:addDays(d,cd), theme:(soc.theme)||'classique', remiseType:'montant', remiseVal:0, acompte:0, lignes:[{desc:'',qte:1,pu:0,taux:20}] }; }
+function emResetDraft(){ var d=todayStr(); var soc=societeActiveObj()||{}; var cd=soc.condDefaut||'30'; emDraft={ type:'facture', contactId:(db.contacts.find(function(c){return c.type!=='fournisseur';})||{}).id||'', date:d, cond:cd, ech:addDays(d,cd), theme:(soc.theme)||'classique', devise:(soc.devise||'EUR'), remiseType:'montant', remiseVal:0, acompte:0, lignes:[{desc:'',qte:1,pu:0,taux:20}] }; }
 function emTypeChange(){ emSync(); render(); }
 function emSetTheme(id){ emSync(); emDraft.theme=id; render(); }
 function addDays(d,n){ var p=String(d).split('-'); if(p.length!==3) return d; var dt=new Date(+p[0],+p[1]-1,+p[2]); dt.setDate(dt.getDate()+(+n||0)); return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); }
 function emEcheance(){ emSync(); var c=document.getElementById('em-cond'); if(c)emDraft.cond=c.value; emDraft.ech=addDays(emDraft.date,emDraft.cond); var e=document.getElementById('em-ech'); if(e)e.value=emDraft.ech; emPreview(); }
 function emDraftFacture(){ var t=emTotaux(); var lbl=emDraft.type==='devis'?'(devis)':emDraft.type==='avoir'?'(avoir)':'(brouillon)';
-  return { type:emDraft.type, numero:lbl, contactId:emDraft.contactId, date:emDraft.date, ech:emDraft.ech, theme:emDraft.theme||'classique', lignes:emDraft.lignes, htBrut:t.htBrut, remise:t.remise, ht:t.ht, tva:t.tva, ttc:t.ttc, acompte:t.acompte, net:t.net }; }
+  return { type:emDraft.type, numero:lbl, contactId:emDraft.contactId, date:emDraft.date, ech:emDraft.ech, theme:emDraft.theme||'classique', devise:emDraft.devise||'EUR', lignes:emDraft.lignes, htBrut:t.htBrut, remise:t.remise, ht:t.ht, tva:t.tva, ttc:t.ttc, acompte:t.acompte, net:t.net }; }
 function emPreview(){ var el=document.getElementById('em-preview'); if(el) el.innerHTML=factureHTML(emDraftFacture()); }
 function emNouveauClient(){ openModal('Nouveau client', '<div class="field"><label>Nom / société</label><input id="qc-nom" placeholder="Nom du client"></div><div class="field"><label>E-mail</label><input id="qc-mail" type="email" placeholder="email@exemple.fr"></div>', '<button class="btn btn-sm" onclick="closeModal()">Annuler</button><button class="btn btn-pri btn-sm" onclick="emAjouterClientRapide()">Ajouter</button>'); }
 function emAjouterClientRapide(){ var nom=(document.getElementById('qc-nom').value||'').trim(); if(!nom) return toast('Indiquez un nom.'); emSync(); var c={id:uid(),nom:nom,type:'client',email:(document.getElementById('qc-mail').value||'').trim()}; db.contacts.push(c); emDraft.contactId=c.id; save(); closeModal(); render(); toast('Client « '+nom+' » ajouté et sélectionné.'); }
@@ -440,6 +443,7 @@ function emSync(){ (emDraft.lignes||[]).forEach(function(l,i){
   var ci=document.getElementById('em-contact'), dt=document.getElementById('em-date'), ec=document.getElementById('em-ech');
   if(ci)emDraft.contactId=ci.value; if(dt)emDraft.date=dt.value; if(ec)emDraft.ech=ec.value;
   var ty=document.getElementById('em-type'); if(ty)emDraft.type=ty.value;
+  var dv=document.getElementById('em-devise'); if(dv)emDraft.devise=dv.value;
   var rt=document.getElementById('em-remtype'); if(rt)emDraft.remiseType=rt.value;
   var rv=document.getElementById('em-remval'); if(rv)emDraft.remiseVal=rv.value;
   var ac=document.getElementById('em-acompte'); if(ac)emDraft.acompte=ac.value; }
@@ -449,11 +453,12 @@ function emMaj(){ emSync(); var t=emTotaux();
 function emAddLigne(){ emSync(); emDraft.lignes.push({desc:'',qte:1,pu:0,taux:20}); render(); }
 function emDelLigne(i){ emSync(); emDraft.lignes.splice(i,1); if(!emDraft.lignes.length) emDraft.lignes.push({desc:'',qte:1,pu:0,taux:20}); render(); }
 function emTotalsHTML(t){ var s='';
-  if(Math.abs(t.remise)>0.005) s+='<div class="l"><span>Total brut HT</span><span class="num">'+eur(t.htBrut)+'</span></div><div class="l"><span>Remise</span><span class="num">-'+eur(Math.abs(t.remise))+'</span></div>';
-  s+='<div class="l"><span>Total HT</span><span class="num">'+eur(t.ht)+'</span></div>'
-   +'<div class="l"><span>TVA</span><span class="num">'+eur(t.tva)+'</span></div>'
-   +'<div class="l big"><span>Total TTC</span><span class="num">'+eur(t.ttc)+'</span></div>';
-  if(Math.abs(t.acompte)>0.005) s+='<div class="l"><span>Acompte versé</span><span class="num">-'+eur(t.acompte)+'</span></div><div class="l big"><span>Net à payer</span><span class="num">'+eur(t.net)+'</span></div>';
+  var dv=emDraft.devise||'EUR';
+  if(Math.abs(t.remise)>0.005) s+='<div class="l"><span>Total brut HT</span><span class="num">'+money(t.htBrut,dv)+'</span></div><div class="l"><span>Remise</span><span class="num">-'+money(Math.abs(t.remise),dv)+'</span></div>';
+  s+='<div class="l"><span>Total HT</span><span class="num">'+money(t.ht,dv)+'</span></div>'
+   +'<div class="l"><span>TVA</span><span class="num">'+money(t.tva,dv)+'</span></div>'
+   +'<div class="l big"><span>Total TTC</span><span class="num">'+money(t.ttc,dv)+'</span></div>';
+  if(Math.abs(t.acompte)>0.005) s+='<div class="l"><span>Acompte versé</span><span class="num">-'+money(t.acompte,dv)+'</span></div><div class="l big"><span>Net à payer</span><span class="num">'+money(t.net,dv)+'</span></div>';
   return s; }
 
 function pageEmises(){
@@ -476,7 +481,8 @@ function pageEmises(){
   var titre = ty==='devis'?'Nouveau devis':ty==='avoir'?'Nouvel avoir':'Nouvelle facture à envoyer';
   var btnLbl = ty==='devis'?'Créer le devis':ty==='avoir'?'Créer l\'avoir':'Créer la facture';
   var form='<div class="card"><h2>'+titre+'</h2>'
-    +'<div class="row c2"><div class="field"><label>Type de document</label><select id="em-type" onchange="emTypeChange()"><option value="facture"'+(ty==='facture'?' selected':'')+'>Facture</option><option value="devis"'+(ty==='devis'?' selected':'')+'>Devis</option><option value="avoir"'+(ty==='avoir'?' selected':'')+'>Avoir (remboursement)</option></select></div>'
+    +'<div class="row c3"><div class="field"><label>Type de document</label><select id="em-type" onchange="emTypeChange()"><option value="facture"'+(ty==='facture'?' selected':'')+'>Facture</option><option value="devis"'+(ty==='devis'?' selected':'')+'>Devis</option><option value="avoir"'+(ty==='avoir'?' selected':'')+'>Avoir (remboursement)</option></select></div>'
+    +'<div class="field"><label>Devise</label><select id="em-devise" onchange="emMaj()">'+DEVISES.map(function(x){return '<option value="'+x.code+'"'+((emDraft.devise||'EUR')===x.code?' selected':'')+'>'+x.code+' ('+x.sym+')</option>';}).join('')+'</select></div>'
     +'<div class="field"><label>Client destinataire</label><div style="display:flex;gap:8px"><select id="em-contact" style="flex:1" onchange="emMaj()">'+opts+'</select><button class="btn btn-sm" title="Créer un client" onclick="emNouveauClient()">+ Client</button></div></div></div>'
     +'<div class="row c3">'
     +'<div class="field"><label>Date</label><input id="em-date" type="date" value="'+esc(emDraft.date)+'" onchange="emEcheance()"></div>'
@@ -507,7 +513,7 @@ function emCreer(){ emSync();
   var ty=emDraft.type||'facture';
   var f={ id:uid(), type:ty, numero:nextNum(null,ty), societeId:db.societeActive, contactId:emDraft.contactId, date:emDraft.date, ech:emDraft.ech,
     lignes:JSON.parse(JSON.stringify(emDraft.lignes)).filter(function(l){return (l.desc&&String(l.desc).trim())||r2((+l.qte||0)*(+l.pu||0))!==0;}),
-    cond:emDraft.cond, theme:emDraft.theme||'classique', remiseType:emDraft.remiseType, remiseVal:+emDraft.remiseVal||0,
+    cond:emDraft.cond, theme:emDraft.theme||'classique', devise:emDraft.devise||'EUR', remiseType:emDraft.remiseType, remiseVal:+emDraft.remiseVal||0,
     htBrut:t.htBrut, remise:t.remise, ht:t.ht, tva:t.tva, ttc:t.ttc, acompte:t.acompte, net:t.net,
     encaissements:[], statut:'brouillon', cree:Date.now(), dateEnvoi:null, transformeEn:null };
   db.emises.push(f); save(); emResetDraft(); render();
@@ -532,7 +538,7 @@ function emListe(){
     var thm=THEMES.filter(function(x){return x.id===(f.theme||'classique');})[0]||{nom:(f.theme||'—'),col:'#8899bb'};
     return '<tr><td><b>'+esc(f.numero)+'</b></td><td>'+tpTag+'</td><td>'+esc(c?c.nom:'—')+'</td>'
       +'<td><span class="theme-tag"><span class="sw" style="background:'+thm.col+'"></span>'+esc(thm.nom)+'</span></td>'
-      +'<td class="num">'+frDate(f.date)+'</td><td class="r num">'+eur(f.ttc)+'</td>'
+      +'<td class="num">'+frDate(f.date)+'</td><td class="r num">'+money(f.ttc,f.devise)+'</td>'
       +'<td>'+tg+(f.dateEnvoi?' <span class="mini">'+frDate(f.dateEnvoi)+'</span>':'')+'</td>'
       +'<td class="r" style="white-space:nowrap">'
       +(tp==='devis'&&!transf?'<button class="btn btn-sm" title="Transformer en facture" onclick="transformerDevis(\''+f.id+'\')">→ Facture</button> ':'')
@@ -550,9 +556,10 @@ function emListe(){
 /* Facture imprimable (aperçu / PDF) */
 function factureHTML(f){ var c=contact(f.contactId)||{}; var soc=societeOf(f)||{}; var th=f.theme||soc.theme||'classique';
   var typeLabel=(f.type==='devis')?'DEVIS':(f.type==='avoir')?'AVOIR':'FACTURE';
+  var dv=f.devise||'EUR';
   if(soc.customFormat){ return renderCustomFormat(soc.customFormat, f, soc, c); }
   var lignes=(f.lignes||[]).map(function(l){ var b=r2((+l.qte||0)*(+l.pu||0));
-    return '<tr><td>'+esc(l.desc||'')+'</td><td class="r num">'+(l.qte||'')+'</td><td class="r num">'+eur(l.pu)+'</td><td class="r num">'+(l.taux||0)+' %</td><td class="r num">'+eur(b)+'</td></tr>'; }).join('');
+    return '<tr><td>'+esc(l.desc||'')+'</td><td class="r num">'+(l.qte||'')+'</td><td class="r num">'+money(l.pu,dv)+'</td><td class="r num">'+(l.taux||0)+' %</td><td class="r num">'+money(b,dv)+'</td></tr>'; }).join('');
   var titre = soc.logo ? '<img src="'+soc.logo+'" alt="" style="max-height:48px;max-width:190px">' : '<div class="co">'+esc(soc.nom||'YADA PRO')+'</div>';
   var infos = [soc.adresse, soc.siret?'SIRET '+soc.siret:'', soc.tva?'TVA '+soc.tva:'', soc.tel, soc.email].filter(Boolean)
     .map(function(x){ return '<div class="mini">'+esc(x).replace(/\n/g,'<br>')+'</div>'; }).join('');
@@ -563,24 +570,24 @@ function factureHTML(f){ var c=contact(f.contactId)||{}; var soc=societeOf(f)||{
     +'<div style="text-align:right"><div class="b">Client</div><div><b>'+esc(c.nom||'—')+'</b></div>'+(c.adresse?'<div class="mini">'+esc(c.adresse).replace(/\n/g,'<br>')+'</div>':'')+(c.siren?'<div class="mini">SIREN '+esc(c.siren)+'</div>':'')+(c.email?'<div class="mini">'+esc(c.email)+'</div>':'')+'</div></div>'
     +'<table><thead><tr><th>Désignation</th><th class="r">Qté</th><th class="r">PU HT</th><th class="r">TVA</th><th class="r">Total HT</th></tr></thead><tbody>'+lignes+'</tbody></table>'
     +'<div class="tot">'
-    +((f.remise&&Math.abs(f.remise)>0.005)?'<div class="l"><span>Brut HT</span><span class="num">'+eur(f.htBrut)+'</span></div><div class="l"><span>Remise</span><span class="num">-'+eur(Math.abs(f.remise))+'</span></div>':'')
-    +'<div class="l"><span>Total HT</span><span class="num">'+eur(f.ht)+'</span></div>'
-    +'<div class="l"><span>TVA</span><span class="num">'+eur(f.tva)+'</span></div>'
-    +'<div class="l big"><span>Total TTC</span><span class="num">'+eur(f.ttc)+'</span></div>'
-    +((f.acompte&&Math.abs(f.acompte)>0.005)?'<div class="l"><span>Acompte versé</span><span class="num">-'+eur(f.acompte)+'</span></div><div class="l big"><span>Net à payer</span><span class="num">'+eur(f.net)+'</span></div>':'')
+    +((f.remise&&Math.abs(f.remise)>0.005)?'<div class="l"><span>Brut HT</span><span class="num">'+money(f.htBrut,dv)+'</span></div><div class="l"><span>Remise</span><span class="num">-'+money(Math.abs(f.remise),dv)+'</span></div>':'')
+    +'<div class="l"><span>Total HT</span><span class="num">'+money(f.ht,dv)+'</span></div>'
+    +'<div class="l"><span>TVA</span><span class="num">'+money(f.tva,dv)+'</span></div>'
+    +'<div class="l big"><span>Total TTC</span><span class="num">'+money(f.ttc,dv)+'</span></div>'
+    +((f.acompte&&Math.abs(f.acompte)>0.005)?'<div class="l"><span>Acompte versé</span><span class="num">-'+money(f.acompte,dv)+'</span></div><div class="l big"><span>Net à payer</span><span class="num">'+money(f.net,dv)+'</span></div>':'')
     +'</div>'
     +'<div class="foot">'+(soc.mentions?esc(soc.mentions).replace(/\n/g,'<br>')+'<br>':'')+(soc.iban?'IBAN : '+esc(soc.iban)+' — ':'')+esc(f.numero)+'.</div>'
     +'</div></div>';
 }
 /* Format importé : remplace les balises {{...}} par les données du site */
-function renderCustomFormat(tpl, f, soc, c){
+function renderCustomFormat(tpl, f, soc, c){ var dv=f.devise||'EUR';
   var rows=(f.lignes||[]).map(function(l){ var b=r2((+l.qte||0)*(+l.pu||0));
-    return '<tr><td>'+esc(l.desc||'')+'</td><td style="text-align:right">'+(l.qte||'')+'</td><td style="text-align:right">'+eur(l.pu)+'</td><td style="text-align:right">'+(l.taux||0)+' %</td><td style="text-align:right">'+eur(b)+'</td></tr>'; }).join('');
+    return '<tr><td>'+esc(l.desc||'')+'</td><td style="text-align:right">'+(l.qte||'')+'</td><td style="text-align:right">'+money(l.pu,dv)+'</td><td style="text-align:right">'+(l.taux||0)+' %</td><td style="text-align:right">'+money(b,dv)+'</td></tr>'; }).join('');
   var map={ '{{societe}}':esc(soc.nom||''), '{{adresse}}':esc(soc.adresse||'').replace(/\n/g,'<br>'), '{{siret}}':esc(soc.siret||''),
     '{{tva}}':esc(soc.tva||''), '{{iban}}':esc(soc.iban||''), '{{email}}':esc(soc.email||''), '{{tel}}':esc(soc.tel||''),
     '{{logo}}': soc.logo?'<img src="'+soc.logo+'" style="max-height:64px">':'', '{{numero}}':esc(f.numero||''),
     '{{date}}':frDate(f.date), '{{echeance}}':frDate(f.ech), '{{client}}':esc(c.nom||''), '{{client_email}}':esc(c.email||''),
-    '{{ht}}':eur(f.ht), '{{tva_montant}}':eur(f.tva), '{{ttc}}':eur(f.ttc), '{{lignes}}':rows };
+    '{{ht}}':money(f.ht,dv), '{{tva_montant}}':money(f.tva,dv), '{{ttc}}':money(f.ttc,dv), '{{lignes}}':rows };
   var out=String(tpl); Object.keys(map).forEach(function(k){ out=out.split(k).join(map[k]); });
   return '<div class="inv-custom" style="background:#fff;color:#0b1220">'+out+'</div>';
 }
@@ -594,8 +601,8 @@ function emImprimer(id){ var f=db.emises.find(function(x){return x.id===id;}); i
   document.getElementById('print-area').innerHTML=factureHTML(f); window.print(); }
 function emEnvoyer(id){ var f=db.emises.find(function(x){return x.id===id;}); if(!f)return; var c=contact(f.contactId)||{};
   if(!c.email){ toast('Ce client n\'a pas d\'e-mail (onglet Contacts).'); }
-  var sujet='Facture '+f.numero+' — '+eur(f.ttc);
-  var corps='Bonjour '+(c.nom||'')+',%0D%0A%0D%0AVeuillez trouver la facture '+f.numero+' d\'un montant de '+eur(f.ttc).replace('€','EUR')+'.%0D%0A(Pensez à joindre le PDF : bouton « PDF » dans YADA PRO.)%0D%0A%0D%0ACordialement,';
+  var sujet='Facture '+f.numero+' — '+money(f.ttc,f.devise);
+  var corps='Bonjour '+(c.nom||'')+',%0D%0A%0D%0AVeuillez trouver la facture '+f.numero+' d\'un montant de '+money(f.ttc,f.devise).replace('€','EUR')+'.%0D%0A(Pensez à joindre le PDF : bouton « PDF » dans YADA PRO.)%0D%0A%0D%0ACordialement,';
   f.statut='envoyee'; f.dateEnvoi=todayStr(); save();
   window.location.href='mailto:'+encodeURIComponent(c.email||'')+'?subject='+encodeURIComponent(sujet)+'&body='+corps;
   closeModal(); render(); toast('Facture '+f.numero+' marquée envoyée — e-mail ouvert.');
@@ -690,7 +697,7 @@ function contactSuppr(id){ if(!confirm('Supprimer ce contact ?'))return; db.cont
 function ficheClient(id){ var c=db.contacts.filter(function(x){return x.id===id;})[0]; if(!c)return;
   var facs=emisesActives().filter(function(f){return f.contactId===id && (f.type||'facture')==='facture';}).sort(function(a,b){return (a.date<b.date)?1:-1;});
   var fac=r2(facs.reduce(function(a,f){return a+(f.ttc||0);},0)), enc=r2(facs.reduce(function(a,f){return a+factRegle(f);},0)), reste=r2(facs.reduce(function(a,f){return a+factReste(f);},0));
-  var rows=facs.map(function(f){ var p=factPaie(f); return '<tr><td><b>'+esc(f.numero)+'</b></td><td class="num">'+frDate(f.date)+'</td><td class="r num">'+eur(f.ttc)+'</td><td class="r num">'+eur(p.reste)+'</td><td><span class="tag '+p.cls+'">'+p.label+'</span></td></tr>'; }).join('');
+  var rows=facs.map(function(f){ var p=factPaie(f); return '<tr><td><b>'+esc(f.numero)+'</b></td><td class="num">'+frDate(f.date)+'</td><td class="r num">'+money(f.ttc,f.devise)+'</td><td class="r num">'+money(p.reste,f.devise)+'</td><td><span class="tag '+p.cls+'">'+p.label+'</span></td></tr>'; }).join('');
   var info=[c.adresse, c.siren?'SIREN '+c.siren:'', c.tel, c.email].filter(Boolean).map(function(x){return '<div class="mini">'+esc(x).replace(/\n/g,'<br>')+'</div>';}).join('');
   var body='<div style="margin-bottom:12px">'+(info||'<span class="mini">Aucune coordonnée.</span>')+'</div>'
     +'<div class="grid g3" style="margin-bottom:12px">'+kpi('Facturé',eur(fac),'blue','')+kpi('Encaissé',eur(enc),'good','')+kpi('Reste dû',eur(reste),(reste>0?'warn':''),'')+'</div>'
@@ -805,10 +812,11 @@ function pageCatalogue(){
    SOCIÉTÉS — enregistrement, édition, format (thème ou modèle importé)
    ============================================================ */
 var socEdit=null;
-function socNouvelle(){ socEdit={ id:uid(), nom:'', adresse:'', siret:'', tva:'', email:'', tel:'', iban:'', prefixe:'', mentions:'', condDefaut:'30', logo:'', theme:'classique', customFormat:'', seq:0, _new:true }; render(); }
+function socNouvelle(){ socEdit={ id:uid(), nom:'', adresse:'', siret:'', tva:'', email:'', tel:'', iban:'', prefixe:'', mentions:'', condDefaut:'30', devise:'EUR', logo:'', theme:'classique', customFormat:'', seq:0, _new:true }; render(); }
+function socDupliquer(id){ var s=db.societes.filter(function(x){return x.id===id;})[0]; if(!s)return; var n=JSON.parse(JSON.stringify(s)); n.id=uid(); n.nom=(s.nom||'Société')+' (copie)'; n.seq=0; db.societes.push(n); save(); render(); toast('Société dupliquée : '+n.nom); }
 function socEditer(id){ var s=db.societes.filter(function(x){return x.id===id;})[0]; if(!s)return; socEdit=JSON.parse(JSON.stringify(s)); render(); }
 function socAnnuler(){ socEdit=null; render(); }
-function socSync(){ if(!socEdit)return; ['nom','adresse','siret','tva','email','tel','iban','prefixe','mentions'].forEach(function(k){ var el=document.getElementById('sc-'+k); if(el) socEdit[k]=el.value; }); var cd=document.getElementById('sc-conddefaut'); if(cd) socEdit.condDefaut=cd.value; }
+function socSync(){ if(!socEdit)return; ['nom','adresse','siret','tva','email','tel','iban','prefixe','mentions'].forEach(function(k){ var el=document.getElementById('sc-'+k); if(el) socEdit[k]=el.value; }); var cd=document.getElementById('sc-conddefaut'); if(cd) socEdit.condDefaut=cd.value; var dv=document.getElementById('sc-devise'); if(dv) socEdit.devise=dv.value; }
 function socSetTheme(id){ socSync(); socEdit.theme=id; render(); }
 function socLogo(input){ var file=input.files&&input.files[0]; if(!file)return; socSync(); var rd=new FileReader(); rd.onload=function(){ socEdit.logo=rd.result; render(); }; rd.readAsDataURL(file); }
 function socRetirerLogo(){ socSync(); socEdit.logo=''; render(); }
@@ -851,6 +859,7 @@ function pageSocietes(){
       +'<td class="mini">'+esc(s.siret||'—')+'</td>'
       +'<td class="r" style="white-space:nowrap">'+(act?'':'<button class="btn btn-ghost btn-sm" onclick="setSocieteActive(\''+s.id+'\')">Activer</button> ')
       +'<button class="btn btn-sm" onclick="socEditer(\''+s.id+'\')">Modifier</button> '
+      +'<button class="btn btn-ghost btn-sm" title="Dupliquer" onclick="socDupliquer(\''+s.id+'\')">⧉</button> '
       +'<button class="btn btn-ghost btn-sm btn-danger" onclick="socSupprimer(\''+s.id+'\')">✕</button></td></tr>'; }).join('');
   var liste='<div class="card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><h2 style="margin:0">Mes sociétés ('+db.societes.length+')</h2><div style="flex:1"></div><button class="btn btn-pri btn-sm" onclick="socNouvelle()">+ Nouvelle société</button></div>'
     +'<div style="overflow-x:auto"><table><thead><tr><th>Nom</th><th>SIRET</th><th class="r">Actions</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
@@ -870,6 +879,7 @@ function pageSocietes(){
       +'<div class="row c2"><div class="field"><label>Préfixe de numérotation</label><input id="sc-prefixe" value="'+esc(socEdit.prefixe||'')+'" placeholder="ex. AMA → AMA-FAC-2026-0001"></div>'
       +'<div class="field"><label>Conditions de paiement par défaut</label><select id="sc-conddefaut">'+[['0','Comptant'],['30','30 jours'],['45','45 jours'],['60','60 jours']].map(function(x){return '<option value="'+x[0]+'"'+(String(socEdit.condDefaut||'30')===x[0]?' selected':'')+'>'+x[1]+'</option>';}).join('')+'</select></div></div>'
       +'<div class="field"><label>Mentions légales (pied de facture)</label><textarea id="sc-mentions" rows="2" placeholder="TVA non applicable, art. 293 B du CGI · Pénalités de retard… ">'+esc(socEdit.mentions||'')+'</textarea></div>'
+      +'<div class="field"><label>Devise</label><select id="sc-devise">'+DEVISES.map(function(x){return '<option value="'+x.code+'"'+((socEdit.devise||'EUR')===x.code?' selected':'')+'>'+x.code+' ('+x.sym+')</option>';}).join('')+'</select></div>'
       +'<div class="field"><label>Format de facture par défaut</label>'+themeChips(socEdit.theme||'classique','socSetTheme')+'</div>'
       +'<div class="field"><label>Format personnalisé (importé)</label>'
         +'<div class="mini" style="margin-bottom:6px">Importez un modèle HTML avec des balises <code>{{numero}}</code>, <code>{{client}}</code>, <code>{{lignes}}</code>, <code>{{ttc}}</code>… remplies automatiquement. Défini, il remplace le thème.</div>'
