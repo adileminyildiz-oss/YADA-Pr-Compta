@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1120">
-<meta name="yada-version" content="1.8.0">
+<meta name="yada-version" content="1.9.0">
 <title>YADA PRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -59,6 +59,7 @@ main{padding:30px clamp(16px,3.5vw,48px); min-width:0}
 .t-done{color:var(--good); border-color:rgba(36,209,122,.4); background:rgba(36,209,122,.10)}
 .t-late{color:var(--bad); border-color:rgba(255,107,107,.45); background:rgba(255,107,107,.10)}
 .t-att{color:var(--accent2); border-color:var(--line2); background:rgba(47,143,255,.08)}
+.t-soon{color:var(--warn); border-color:rgba(244,183,64,.4); background:rgba(244,183,64,.12)}
 .t-ven{color:var(--accent2); border-color:var(--line2); background:rgba(47,143,255,.08)}
 .t-devis{color:var(--warn); border-color:rgba(244,183,64,.4); background:rgba(244,183,64,.10)}
 .t-avoir{color:#c084fc; border-color:rgba(192,132,252,.4); background:rgba(192,132,252,.10)}
@@ -214,11 +215,11 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 <div class="app" id="app"></div>
 <div id="print-area"></div>
 <div id="toast"></div>
-<span id="yada-ver">YADA PRO · v1.8</span>
+<span id="yada-ver">YADA PRO · v1.9</span>
 
 <script>
 'use strict';
-var VERSION='1.8.0';
+var VERSION='1.9.0';
 
 /* ---------- Données (localStorage) ---------- */
 function seed(){ return { societes:[], societeActive:null, contacts:[], emises:[], recues:[], catalogue:[], seq:{fac:0} }; }
@@ -367,6 +368,7 @@ function factPaie(f){ var regle=factRegle(f), reste=factReste(f);
   return {key:'attente', regle:regle, reste:reste, label:'à encaisser', cls:'t-att'};
 }
 function suiviFiltrer(k){ window.suiviFiltre=k; render(); }
+function joursEch(f){ if(!f.ech) return null; var p=String(f.ech).split('-'), t=todayStr().split('-'); if(p.length!==3) return null; var d1=new Date(+p[0],+p[1]-1,+p[2]), d0=new Date(+t[0],+t[1]-1,+t[2]); return Math.round((d1-d0)/86400000); }
 function pageSuivi(){
   var filt=window.suiviFiltre||'tous';
   var all=emFactures().map(function(f){return {f:f,p:factPaie(f)};})
@@ -375,13 +377,16 @@ function pageSuivi(){
   var kEnc=r2(all.reduce(function(a,o){return a+o.p.regle;},0));
   var kReste=r2(all.reduce(function(a,o){return a+o.p.reste;},0));
   var kRetard=all.filter(function(o){return o.p.key==='retard';}).length;
-  var counts={tous:all.length, attente:all.filter(function(o){return o.p.key==='attente'||o.p.key==='partiel';}).length, retard:kRetard, paye:all.filter(function(o){return o.p.key==='paye';}).length};
-  var shown=all.filter(function(o){ if(filt==='tous')return true; if(filt==='retard')return o.p.key==='retard'; if(filt==='attente')return o.p.key==='attente'||o.p.key==='partiel'; if(filt==='paye')return o.p.key==='paye'; return true; });
+  var estEcheant=function(o){ var j=joursEch(o.f); return o.p.reste>0.005 && j!=null && j>=0 && j<=7; };
+  var counts={tous:all.length, attente:all.filter(function(o){return o.p.key==='attente'||o.p.key==='partiel';}).length, echeant:all.filter(estEcheant).length, retard:kRetard, paye:all.filter(function(o){return o.p.key==='paye';}).length};
+  var shown=all.filter(function(o){ if(filt==='tous')return true; if(filt==='retard')return o.p.key==='retard'; if(filt==='attente')return o.p.key==='attente'||o.p.key==='partiel'; if(filt==='echeant')return estEcheant(o); if(filt==='paye')return o.p.key==='paye'; return true; });
   var rows=shown.map(function(o){ var f=o.f, p=o.p, c=contact(f.contactId);
+    var j=joursEch(f); var echInd='';
+    if(p.reste>0.005 && j!=null){ if(j<0) echInd=' <span class="tag t-late">'+(-j)+' j</span>'; else if(j<=7) echInd=' <span class="tag t-soon">dans '+j+' j</span>'; }
     var act='<button class="btn btn-ghost btn-sm" onclick="emApercu(\''+f.id+'\')">Aperçu</button> ';
     if(p.reste>0.005) act+='<button class="btn btn-pri btn-sm" onclick="factEncaisser(\''+f.id+'\')">Encaisser</button> ';
     if(p.key==='retard') act+='<button class="btn btn-sm" title="Relancer par e-mail" onclick="factRelance(\''+f.id+'\')">Relancer</button>';
-    return '<tr><td><b>'+esc(f.numero)+'</b></td><td>'+esc(c?c.nom:'—')+'</td><td class="num">'+frDate(f.ech)+'</td>'
+    return '<tr><td><b>'+esc(f.numero)+'</b></td><td>'+esc(c?c.nom:'—')+'</td><td class="num">'+frDate(f.ech)+echInd+'</td>'
       +'<td class="r num">'+money(f.ttc,f.devise)+'</td><td class="r num">'+money(p.regle,f.devise)+'</td><td class="r num"><b>'+money(p.reste,f.devise)+'</b></td>'
       +'<td><span class="tag '+p.cls+'">'+p.label+'</span></td><td class="r" style="white-space:nowrap">'+act+'</td></tr>'; }).join('');
   var chip=function(k,l){ return '<button class="filt'+(filt===k?' active':'')+'" onclick="suiviFiltrer(\''+k+'\')">'+l+' ('+counts[k]+')</button>'; };
@@ -392,7 +397,7 @@ function pageSuivi(){
     +kpi('Reste dû', eur(kReste), (kReste>0?'warn':''), (kRetard?kRetard+' en retard':'à jour ✓'))
     +'</div>'
     +'<div class="card" style="margin-top:16px">'
-    +'<div class="filters">'+chip('tous','Toutes')+chip('attente','À encaisser')+chip('retard','En retard')+chip('paye','Payées')+'</div>'
+    +'<div class="filters">'+chip('tous','Toutes')+chip('attente','À encaisser')+chip('echeant','À échoir ≤7j')+chip('retard','En retard')+chip('paye','Payées')+'</div>'
     +'<div style="overflow-x:auto"><table><thead><tr><th>Numéro</th><th>Client</th><th>Échéance</th><th class="r">TTC</th><th class="r">Réglé</th><th class="r">Reste</th><th>Statut</th><th class="r">Actions</th></tr></thead>'
     +'<tbody>'+(rows||'<tr><td colspan="8" class="empty">Aucune facture'+(filt!=='tous'?' dans ce filtre':'')+'.</td></tr>')+'</tbody></table></div></div>'
     +'</main>';
