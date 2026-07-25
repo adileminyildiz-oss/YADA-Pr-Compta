@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1120">
-<meta name="yada-version" content="1.7.0">
+<meta name="yada-version" content="1.8.0">
 <title>YADA PRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -214,11 +214,11 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 <div class="app" id="app"></div>
 <div id="print-area"></div>
 <div id="toast"></div>
-<span id="yada-ver">YADA PRO · v1.7</span>
+<span id="yada-ver">YADA PRO · v1.8</span>
 
 <script>
 'use strict';
-var VERSION='1.7.0';
+var VERSION='1.8.0';
 
 /* ---------- Données (localStorage) ---------- */
 function seed(){ return { societes:[], societeActive:null, contacts:[], emises:[], recues:[], catalogue:[], seq:{fac:0} }; }
@@ -454,7 +454,7 @@ function emSync(){ (emDraft.lignes||[]).forEach(function(l,i){
 function emMaj(){ emSync(); var t=emTotaux();
   (emDraft.lignes||[]).forEach(function(l,i){ var el=document.getElementById('em-lt-'+i); if(el) el.textContent=eur(r2((+l.qte||0)*(+l.pu||0))); });
   var box=document.getElementById('em-totals'); if(box) box.innerHTML=emTotalsHTML(t); emPreview(); }
-function emAddLigne(){ emSync(); emDraft.lignes.push({desc:'',qte:1,pu:0,taux:20}); render(); }
+function emAddLigne(){ emSync(); emDraft.lignes.push({desc:'',qte:1,pu:0,taux:20}); render(); var i=emDraft.lignes.length-1; var el=document.getElementById('em-desc-'+i); if(el){ el.focus(); } }
 function emDelLigne(i){ emSync(); emDraft.lignes.splice(i,1); if(!emDraft.lignes.length) emDraft.lignes.push({desc:'',qte:1,pu:0,taux:20}); render(); }
 function emTotalsHTML(t){ var s='';
   var dv=emDraft.devise||'EUR';
@@ -472,7 +472,7 @@ function pageEmises(){
   var opts = clients.length ? clients.map(function(c){return '<option value="'+c.id+'"'+(c.id===emDraft.contactId?' selected':'')+'>'+esc(c.nom)+'</option>';}).join('')
     : '<option value="">— aucun client —</option>';
   var lignes=(emDraft.lignes||[]).map(function(l,i){ return '<div class="li-row">'
-    +'<input id="em-desc-'+i+'" value="'+esc(l.desc)+'" placeholder="Désignation" oninput="emMaj()">'
+    +'<input id="em-desc-'+i+'" value="'+esc(l.desc)+'" placeholder="Désignation" oninput="emMaj()" onkeydown="if(event.key===\'Enter\'){event.preventDefault();emAddLigne();}">'
     +'<input id="em-qte-'+i+'" type="number" step="any" value="'+esc(l.qte)+'" oninput="emMaj()">'
     +'<input id="em-pu-'+i+'" type="number" step="any" value="'+esc(l.pu)+'" placeholder="PU HT" oninput="emMaj()">'
     +'<select id="em-taux-'+i+'" onchange="emMaj()">'+[20,10,5.5,0].map(function(x){return '<option'+(x==l.taux?' selected':'')+'>'+x+'</option>';}).join('')+'</select>'
@@ -800,6 +800,7 @@ function catAjouter(){ var d=(document.getElementById('cat-desc').value||'').tri
   db.catalogue.push({ id:uid(), desc:d, unite:(document.getElementById('cat-unite').value||'').trim(), pu:r2(+document.getElementById('cat-pu').value||0), taux:+document.getElementById('cat-taux').value||20 });
   save(); render(); toast('Article ajouté au catalogue.'); }
 function catSupprimer(id){ db.catalogue=db.catalogue.filter(function(a){return a.id!==id;}); save(); render(); }
+function catDupliquer(id){ var a=db.catalogue.filter(function(x){return x.id===id;})[0]; if(!a)return; var n=JSON.parse(JSON.stringify(a)); n.id=uid(); n.desc=(a.desc||'Article')+' (copie)'; db.catalogue.push(n); save(); render(); toast('Article dupliqué.'); }
 
 /* ============================================================
    DONNÉES — export comptable (CSV) + sauvegarde/restauration (JSON)
@@ -844,7 +845,7 @@ function pageDonnees(){ var soc=societeActiveObj()||{};
 function pageCatalogue(){
   var rows=(db.catalogue||[]).slice().sort(function(a,b){return (a.desc||'').localeCompare(b.desc||'');}).map(function(a){
     return '<tr><td><b>'+esc(a.desc)+'</b>'+(a.unite?' <span class="mini">('+esc(a.unite)+')</span>':'')+'</td><td class="r num">'+eur(a.pu)+'</td><td>'+(a.taux||0)+' %</td>'
-      +'<td class="r"><button class="btn btn-ghost btn-sm btn-danger" onclick="catSupprimer(\''+a.id+'\')">✕</button></td></tr>'; }).join('');
+      +'<td class="r" style="white-space:nowrap"><button class="btn btn-ghost btn-sm" title="Dupliquer" onclick="catDupliquer(\''+a.id+'\')">⧉</button> <button class="btn btn-ghost btn-sm btn-danger" onclick="catSupprimer(\''+a.id+'\')">✕</button></td></tr>'; }).join('');
   return '<main>'+ph('Catalogue d\'articles')
     +'<div class="grid g2" style="align-items:start">'
     +'<div class="card"><h2>Ajouter un article</h2>'
