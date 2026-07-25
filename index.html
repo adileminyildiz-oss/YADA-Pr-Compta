@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1120">
-<meta name="yada-version" content="1.9.0">
+<meta name="yada-version" content="2.0.0">
 <title>YADA PRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -215,11 +215,11 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 <div class="app" id="app"></div>
 <div id="print-area"></div>
 <div id="toast"></div>
-<span id="yada-ver">YADA PRO · v1.9</span>
+<span id="yada-ver">YADA PRO · v2.0</span>
 
 <script>
 'use strict';
-var VERSION='1.9.0';
+var VERSION='2.0.0';
 
 /* ---------- Données (localStorage) ---------- */
 function seed(){ return { societes:[], societeActive:null, contacts:[], emises:[], recues:[], catalogue:[], seq:{fac:0} }; }
@@ -316,6 +316,7 @@ function pageDash(){
   var enc=r2(em.reduce(function(a,f){return a+factRegle(f);},0));
   var reste=r2(em.reduce(function(a,f){return a+factReste(f);},0));
   var retard=em.filter(function(f){return factPaie(f).key==='retard';});
+  var ech7=em.filter(function(f){ var j=joursEch(f); return factReste(f)>0.005 && j!=null && j>=0 && j<=7; });
   var recuesTodo=db.recues.filter(function(r){return r.statut!=='traitee';});
   var depenses=r2(db.recues.reduce(function(a,x){return a+(+x.montant||0);},0));
   var tvaCol=r2(em.reduce(function(a,f){return a+(+f.tva||0);},0));
@@ -326,7 +327,7 @@ function pageDash(){
     +'<div class="grid g3">'
     +kpi('CA facturé (TTC)', eur(totTTC), 'blue', em.length+' facture(s)')
     +kpi('Encaissé', eur(enc), 'good', '')
-    +kpi('Reste dû', eur(reste), (reste>0?'warn':''), (retard.length?retard.length+' en retard':'à jour ✓'))
+    +kpi('Reste dû', eur(reste), (reste>0?'warn':''), (retard.length?retard.length+' en retard':'à jour ✓')+(ech7.length?' · '+ech7.length+' à échoir ≤7j':''))
     +'</div>'
     +'<div class="grid g2" style="margin-top:16px">'
     +'<div class="card"><h2>À encaisser en priorité</h2>'+miniListReste(em)+'</div>'
@@ -344,8 +345,9 @@ function pageDash(){
 function miniListReste(em){ var due=em.map(function(f){return {f:f,p:factPaie(f)};}).filter(function(o){return o.p.reste>0.005;})
     .sort(function(a,b){ if(a.p.key==='retard'&&b.p.key!=='retard')return -1; if(b.p.key==='retard'&&a.p.key!=='retard')return 1; return (a.f.ech||'')<(b.f.ech||'')?-1:1; }).slice(0,5);
   if(!due.length) return '<div class="empty">Tout est encaissé. 👍</div>';
-  return '<table><tbody>'+due.map(function(o){ var c=contact(o.f.contactId);
-    return '<tr><td><b>'+esc(o.f.numero)+'</b></td><td>'+esc(c?c.nom:'—')+'</td><td>'+(o.p.key==='retard'?'<span class="tag t-late">en retard</span>':'<span class="mini">éch. '+frDate(o.f.ech)+'</span>')+'</td><td class="r num">'+eur(o.p.reste)+'</td></tr>';}).join('')+'</tbody></table>'; }
+  return '<table><tbody>'+due.map(function(o){ var c=contact(o.f.contactId); var j=joursEch(o.f);
+    var badge = o.p.key==='retard' ? '<span class="tag t-late">'+(j!=null?(-j)+' j retard':'en retard')+'</span>' : (j!=null&&j<=7?'<span class="tag t-soon">dans '+j+' j</span>':'<span class="mini">éch. '+frDate(o.f.ech)+'</span>');
+    return '<tr><td><b>'+esc(o.f.numero)+'</b></td><td>'+esc(c?c.nom:'—')+'</td><td>'+badge+'</td><td class="r num">'+money(o.p.reste,o.f.devise)+'</td></tr>';}).join('')+'</tbody></table>'; }
 function kpi(l,v,cls,sub){ return '<div class="card kpi"><div class="lbl">'+l+'</div><div class="val '+cls+'">'+v+'</div>'+(sub?'<div class="mini" style="margin-top:4px">'+sub+'</div>':'')+'</div>'; }
 function miniListEmises(list){ if(!list.length) return '<div class="empty">Aucune facture envoyée.</div>';
   return '<table><tbody>'+list.map(function(f){ var c=contact(f.contactId);
