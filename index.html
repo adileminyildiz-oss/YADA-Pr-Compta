@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1120">
-<meta name="yada-version" content="2.1.0">
+<meta name="yada-version" content="2.2.0">
 <title>YADA PRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -215,11 +215,11 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 <div class="app" id="app"></div>
 <div id="print-area"></div>
 <div id="toast"></div>
-<span id="yada-ver">YADA PRO · v2.1</span>
+<span id="yada-ver">YADA PRO · v2.2</span>
 
 <script>
 'use strict';
-var VERSION='2.1.0';
+var VERSION='2.2.0';
 
 /* ---------- Données (localStorage) ---------- */
 function seed(){ return { societes:[], societeActive:null, contacts:[], emises:[], recues:[], catalogue:[], seq:{fac:0} }; }
@@ -419,11 +419,18 @@ function factAjoutEnc(id){ var f=db.emises.filter(function(x){return x.id===id;}
   var m=+document.getElementById('enc-mont').value||0; if(m<=0) return toast('Montant invalide.');
   if(!f.encaissements) f.encaissements=[]; f.encaissements.push({ montant:r2(m), date:document.getElementById('enc-date').value||todayStr() });
   save(); closeModal(); render(); var p=factPaie(f); toast('Encaissement de '+eur(m)+' — '+(p.key==='paye'?'facture soldée ✓':'reste '+eur(p.reste))); }
-function factRelance(id){ var f=db.emises.filter(function(x){return x.id===id;})[0]; if(!f)return; var c=contact(f.contactId)||{}; var reste=factReste(f);
-  var sujet='Relance — facture '+f.numero;
-  var corps='Bonjour '+(c.nom||'')+',%0D%0A%0D%0ASauf erreur de notre part, la facture '+f.numero+' (échéance du '+frDate(f.ech)+') demeure impayée pour un montant de '+money(reste,f.devise).replace('€','EUR')+'.%0D%0ANous vous remercions de bien vouloir procéder à son règlement.%0D%0A%0D%0ACordialement,';
+var RELANCE_SUJET_DEF='Relance — facture {{numero}}';
+var RELANCE_CORPS_DEF='Bonjour {{client}},\n\nSauf erreur de notre part, la facture {{numero}} (échéance du {{echeance}}) demeure impayée pour un montant de {{reste}}.\nNous vous remercions de bien vouloir procéder à son règlement.\n\nCordialement,\n{{societe}}';
+function relanceVars(f){ var c=contact(f.contactId)||{}; var soc=societeOf(f)||{}; var reste=factReste(f); var jr=joursEch(f);
+  return { '{{client}}':c.nom||'', '{{numero}}':f.numero||'', '{{echeance}}':frDate(f.ech)||'', '{{reste}}':money(reste,f.devise).replace('€','EUR'),
+    '{{ttc}}':money(f.ttc,f.devise).replace('€','EUR'), '{{societe}}':soc.nom||'', '{{jours}}':String(Math.abs(jr||0)) }; }
+function relanceRemplir(tpl,vars){ return String(tpl||'').replace(/\{\{\w+\}\}/g,function(t){ return (t in vars)?vars[t]:t; }); }
+function factRelance(id){ var f=db.emises.filter(function(x){return x.id===id;})[0]; if(!f)return; var c=contact(f.contactId)||{}; var soc=societeOf(f)||{};
+  var v=relanceVars(f);
+  var sujet=relanceRemplir((soc.relanceSujet||'').trim()||RELANCE_SUJET_DEF, v);
+  var corps=relanceRemplir((soc.relanceModele||'').trim()||RELANCE_CORPS_DEF, v);
   if(!c.email) toast('Ce client n\'a pas d\'e-mail (onglet Contacts).');
-  window.location.href='mailto:'+encodeURIComponent(c.email||'')+'?subject='+encodeURIComponent(sujet)+'&body='+corps; }
+  window.location.href='mailto:'+encodeURIComponent(c.email||'')+'?subject='+encodeURIComponent(sujet)+'&body='+encodeURIComponent(corps); }
 
 /* ============================================================
    ENVOYER — création + liste des factures émises
@@ -876,11 +883,11 @@ function pageCatalogue(){
    SOCIÉTÉS — enregistrement, édition, format (thème ou modèle importé)
    ============================================================ */
 var socEdit=null;
-function socNouvelle(){ socEdit={ id:uid(), nom:'', adresse:'', siret:'', tva:'', email:'', tel:'', iban:'', prefixe:'', mentions:'', condDefaut:'30', devise:'EUR', logo:'', theme:'classique', customFormat:'', seq:0, _new:true }; render(); }
+function socNouvelle(){ socEdit={ id:uid(), nom:'', adresse:'', siret:'', tva:'', email:'', tel:'', iban:'', prefixe:'', mentions:'', condDefaut:'30', devise:'EUR', logo:'', theme:'classique', customFormat:'', relanceSujet:'', relanceModele:'', seq:0, _new:true }; render(); }
 function socDupliquer(id){ var s=db.societes.filter(function(x){return x.id===id;})[0]; if(!s)return; var n=JSON.parse(JSON.stringify(s)); n.id=uid(); n.nom=(s.nom||'Société')+' (copie)'; n.seq=0; db.societes.push(n); save(); render(); toast('Société dupliquée : '+n.nom); }
 function socEditer(id){ var s=db.societes.filter(function(x){return x.id===id;})[0]; if(!s)return; socEdit=JSON.parse(JSON.stringify(s)); render(); }
 function socAnnuler(){ socEdit=null; render(); }
-function socSync(){ if(!socEdit)return; ['nom','adresse','siret','tva','email','tel','iban','prefixe','mentions'].forEach(function(k){ var el=document.getElementById('sc-'+k); if(el) socEdit[k]=el.value; }); var cd=document.getElementById('sc-conddefaut'); if(cd) socEdit.condDefaut=cd.value; var dv=document.getElementById('sc-devise'); if(dv) socEdit.devise=dv.value; }
+function socSync(){ if(!socEdit)return; ['nom','adresse','siret','tva','email','tel','iban','prefixe','mentions','relancesujet','relancemodele'].forEach(function(k){ var el=document.getElementById('sc-'+k); if(el){ var prop=k==='relancesujet'?'relanceSujet':k==='relancemodele'?'relanceModele':k; socEdit[prop]=el.value; } }); var cd=document.getElementById('sc-conddefaut'); if(cd) socEdit.condDefaut=cd.value; var dv=document.getElementById('sc-devise'); if(dv) socEdit.devise=dv.value; }
 function socSetTheme(id){ socSync(); socEdit.theme=id; render(); }
 function socLogo(input){ var file=input.files&&input.files[0]; if(!file)return; socSync(); var rd=new FileReader(); rd.onload=function(){ socEdit.logo=rd.result; render(); }; rd.readAsDataURL(file); }
 function socRetirerLogo(){ socSync(); socEdit.logo=''; render(); }
@@ -943,6 +950,9 @@ function pageSocietes(){
       +'<div class="row c2"><div class="field"><label>Préfixe de numérotation</label><input id="sc-prefixe" value="'+esc(socEdit.prefixe||'')+'" placeholder="ex. AMA → AMA-FAC-2026-0001"></div>'
       +'<div class="field"><label>Conditions de paiement par défaut</label><select id="sc-conddefaut">'+[['0','Comptant'],['30','30 jours'],['45','45 jours'],['60','60 jours']].map(function(x){return '<option value="'+x[0]+'"'+(String(socEdit.condDefaut||'30')===x[0]?' selected':'')+'>'+x[1]+'</option>';}).join('')+'</select></div></div>'
       +'<div class="field"><label>Mentions légales (pied de facture)</label><textarea id="sc-mentions" rows="2" placeholder="TVA non applicable, art. 293 B du CGI · Pénalités de retard… ">'+esc(socEdit.mentions||'')+'</textarea></div>'
+      +'<div class="field"><label>E-mail de relance — objet</label><input id="sc-relancesujet" value="'+esc(socEdit.relanceSujet||'')+'" placeholder="'+esc(RELANCE_SUJET_DEF)+'"></div>'
+      +'<div class="field"><label>E-mail de relance — modèle</label><textarea id="sc-relancemodele" rows="6" placeholder="'+esc(RELANCE_CORPS_DEF)+'">'+esc(socEdit.relanceModele||'')+'</textarea>'
+        +'<div class="mini" style="margin-top:6px">Balises : <code>{{client}}</code> <code>{{numero}}</code> <code>{{echeance}}</code> <code>{{reste}}</code> <code>{{ttc}}</code> <code>{{societe}}</code> <code>{{jours}}</code>. Laissé vide, le modèle standard est utilisé.</div></div>'
       +'<div class="field"><label>Devise</label><select id="sc-devise">'+DEVISES.map(function(x){return '<option value="'+x.code+'"'+((socEdit.devise||'EUR')===x.code?' selected':'')+'>'+x.code+' ('+x.sym+')</option>';}).join('')+'</select></div>'
       +'<div class="field"><label>Format de facture par défaut</label>'+themeChips(socEdit.theme||'classique','socSetTheme')+'</div>'
       +'<div class="field"><label>Format personnalisé (importé)</label>'
