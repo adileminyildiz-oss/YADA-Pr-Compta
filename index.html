@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1120">
-<meta name="yada-version" content="2.0.0">
+<meta name="yada-version" content="2.1.0">
 <title>YADA PRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -215,11 +215,11 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 <div class="app" id="app"></div>
 <div id="print-area"></div>
 <div id="toast"></div>
-<span id="yada-ver">YADA PRO · v2.0</span>
+<span id="yada-ver">YADA PRO · v2.1</span>
 
 <script>
 'use strict';
-var VERSION='2.0.0';
+var VERSION='2.1.0';
 
 /* ---------- Données (localStorage) ---------- */
 function seed(){ return { societes:[], societeActive:null, contacts:[], emises:[], recues:[], catalogue:[], seq:{fac:0} }; }
@@ -238,7 +238,12 @@ function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMo
 function frDate(s){ if(!s) return '—'; var p=String(s).split('-'); return p.length===3? p[2]+'/'+p[1]+'/'+p[0] : s; }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(function(){ t.classList.remove('show'); },2600); }
-function nextNum(soc, type){ soc=soc||societeActiveObj(); var base=type==='devis'?'DEV':type==='avoir'?'AV':'FAC'; var code=(soc&&soc.prefixe)?String(soc.prefixe).trim().toUpperCase().replace(/[^A-Z0-9]/g,'')+'-':''; if(!soc) return code+base+'-'+new Date().getFullYear()+'-0001'; soc.seq=(soc.seq||0)+1; return code+base+'-'+new Date().getFullYear()+'-'+String(soc.seq).padStart(4,'0'); }
+function nextNum(soc, type){ soc=soc||societeActiveObj(); var base=type==='devis'?'DEV':type==='avoir'?'AV':'FAC';
+  var code=(soc&&soc.prefixe)?String(soc.prefixe).trim().toUpperCase().replace(/[^A-Z0-9]/g,'')+'-':'';
+  var year=new Date().getFullYear();
+  var max=0; (db.emises||[]).forEach(function(f){ if(soc && f.societeId!==soc.id) return; var m=String(f.numero||'').match(/-(\d{4})-(\d+)$/); if(m && +m[1]===year){ var n=+m[2]; if(n>max) max=n; } });
+  var n=max+1; if(soc) soc.seq=Math.max(soc.seq||0, n);
+  return code+base+'-'+year+'-'+String(n).padStart(4,'0'); }
 function contact(id){ return db.contacts.find(function(c){ return c.id===id; }); }
 
 /* ---------- Sociétés (multi-société) ---------- */
