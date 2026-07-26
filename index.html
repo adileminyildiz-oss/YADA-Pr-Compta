@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1120">
-<meta name="yada-version" content="2.2.0">
+<meta name="yada-version" content="2.3.0">
 <title>YADA PRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -178,6 +178,8 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
   body{background:#fff}
   .app,#toast,#yada-ver,.modal-bg{display:none !important}
   #print-area{display:block !important}
+  #print-area .inv-break{page-break-after:always}
+  #print-area .inv-break.inv-last{page-break-after:auto}
 }
 .inv{--ia:#0a64d6; --ihbg:#eef4ff; --ihtx:#33507a; --iband:transparent; --ico:#0a64d6;
   color:#0b1220; font-size:13px; max-width:780px; margin:0 auto; padding:36px 40px; background:#fff; font-family:var(--sans)}
@@ -215,11 +217,11 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 <div class="app" id="app"></div>
 <div id="print-area"></div>
 <div id="toast"></div>
-<span id="yada-ver">YADA PRO · v2.2</span>
+<span id="yada-ver">YADA PRO · v2.3</span>
 
 <script>
 'use strict';
-var VERSION='2.2.0';
+var VERSION='2.3.0';
 
 /* ---------- Données (localStorage) ---------- */
 function seed(){ return { societes:[], societeActive:null, contacts:[], emises:[], recues:[], catalogue:[], seq:{fac:0} }; }
@@ -555,11 +557,9 @@ function docStatutFilt(f){ if((f.type||'facture')==='facture' && factRegle(f)>0.
 function emStatutSet(k){ window.emStatut=k; var w=document.getElementById('em-liste-wrap'); if(w) w.innerHTML=emListe(); }
 function emSortSet(k){ var s=window.emSort||{key:'cree',dir:-1}; if(s.key===k){ s.dir=-s.dir; } else { s={key:k, dir:(k==='date'||k==='ttc'||k==='cree')?-1:1}; } window.emSort=s; var w=document.getElementById('em-liste-wrap'); if(w) w.innerHTML=emListe(); }
 function emArchiver(id){ var f=db.emises.find(function(x){return x.id===id;}); if(!f)return; f.archive=!f.archive; save(); var w=document.getElementById('em-liste-wrap'); if(w) w.innerHTML=emListe(); toast(f.archive?'Document archivé.':'Document désarchivé.'); }
-function emListe(){
+function emListeFiltree(){
   var q=(window.emQuery||'').toLowerCase().trim(); var st=window.emStatut||'tous'; var sort=window.emSort||{key:'cree',dir:-1};
   var all=emisesActives().slice(); var actifs=all.filter(function(f){return !f.archive;});
-  var counts={tous:actifs.length, brouillon:0, envoyee:0, payee:0, archive:all.length-actifs.length};
-  actifs.forEach(function(f){ var s=docStatutFilt(f); if(counts[s]!=null)counts[s]++; });
   var base = st==='archive' ? all.filter(function(f){return f.archive;}) : actifs;
   var list=base.filter(function(f){ if(st!=='tous' && st!=='archive' && docStatutFilt(f)!==st) return false;
     if(!q)return true; var c=contact(f.contactId); return (f.numero||'').toLowerCase().indexOf(q)>=0 || (c&&(c.nom||'').toLowerCase().indexOf(q)>=0); });
@@ -569,6 +569,18 @@ function emListe(){
       case 'date': va=(a.date||''); vb=(b.date||''); break; case 'ttc': va=a.ttc||0; vb=b.ttc||0; break;
       default: va=a.cree||0; vb=b.cree||0; }
     if(va<vb)return -sort.dir; if(va>vb)return sort.dir; return 0; });
+  return list;
+}
+function emImprimerListe(){ var list=emListeFiltree();
+  if(!list.length) return toast('Aucun document à imprimer dans cette vue.');
+  var html=list.map(function(f,i){ return '<div class="inv-break'+(i===list.length-1?' inv-last':'')+'">'+factureHTML(f)+'</div>'; }).join('');
+  document.getElementById('print-area').innerHTML=html; window.print(); }
+function emListe(){
+  var q=(window.emQuery||'').toLowerCase().trim(); var st=window.emStatut||'tous'; var sort=window.emSort||{key:'cree',dir:-1};
+  var all=emisesActives().slice(); var actifs=all.filter(function(f){return !f.archive;});
+  var counts={tous:actifs.length, brouillon:0, envoyee:0, payee:0, archive:all.length-actifs.length};
+  actifs.forEach(function(f){ var s=docStatutFilt(f); if(counts[s]!=null)counts[s]++; });
+  var list=emListeFiltree();
   var rows=list.map(function(f){ var c=contact(f.contactId); var tp=f.type||'facture';
     var tpTag = tp==='devis'?'<span class="tag t-devis">devis</span>':tp==='avoir'?'<span class="tag t-avoir">avoir</span>':'<span class="tag t-ven">facture</span>';
     var transf = f.transformeEn && db.emises.some(function(x){return x.id===f.transformeEn;});
@@ -590,7 +602,8 @@ function emListe(){
   var chip=function(k,l){ return '<button class="filt'+(st===k?' active':'')+'" onclick="emStatutSet(\''+k+'\')">'+l+' ('+counts[k]+')</button>'; };
   var arrow=function(k){ return sort.key===k?(sort.dir>0?' ▲':' ▼'):''; };
   var thS=function(k,l,cls){ return '<th'+(cls?' class="'+cls+'"':'')+' style="cursor:pointer;user-select:none" onclick="emSortSet(\''+k+'\')">'+l+arrow(k)+'</th>'; };
-  return '<div class="card" style="margin-top:16px"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px"><h2 style="margin:0">Documents émis ('+actifs.length+')</h2><div style="flex:1"></div>'+search+'</div>'
+  var btnPrint=list.length?'<button class="btn btn-sm" title="Imprimer tous les documents de cette vue en un seul PDF" onclick="emImprimerListe()">🖨 Imprimer la vue ('+list.length+')</button>':'';
+  return '<div class="card" style="margin-top:16px"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px"><h2 style="margin:0">Documents émis ('+actifs.length+')</h2><div style="flex:1"></div>'+btnPrint+search+'</div>'
     +'<div class="filters">'+chip('tous','Tous')+chip('brouillon','Brouillons')+chip('envoyee','Envoyées')+chip('payee','Payées')+(counts.archive?chip('archive','Archivées'):'')+'</div>'
     +'<div style="overflow-x:auto"><table><thead><tr>'+thS('numero','Numéro')+'<th>Type</th>'+thS('client','Client')+'<th>Thème</th>'+thS('date','Date')+thS('ttc','TTC','r')+'<th>Statut</th><th class="r">Actions</th></tr></thead>'
     +'<tbody>'+(rows||'<tr><td colspan="8" class="empty">'+(q||st!=='tous'?'Aucun résultat.':'Aucun document émis.')+'</td></tr>')+'</tbody></table></div></div>';
