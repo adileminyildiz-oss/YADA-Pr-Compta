@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1120">
-<meta name="yada-version" content="2.3.0">
+<meta name="yada-version" content="2.4.0">
 <title>YADA PRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -217,11 +217,11 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 <div class="app" id="app"></div>
 <div id="print-area"></div>
 <div id="toast"></div>
-<span id="yada-ver">YADA PRO · v2.3</span>
+<span id="yada-ver">YADA PRO · v2.4</span>
 
 <script>
 'use strict';
-var VERSION='2.3.0';
+var VERSION='2.4.0';
 
 /* ---------- Données (localStorage) ---------- */
 function seed(){ return { societes:[], societeActive:null, contacts:[], emises:[], recues:[], catalogue:[], seq:{fac:0} }; }
@@ -855,6 +855,13 @@ function exportEncaissementsCSV(){ var soc=societeActiveObj()||{}; var rows=[['F
     (f.encaissements||[]).forEach(function(e){ rows.push([f.numero, c.nom||'', e.date||'', numfr(e.montant), 'encaissement']); n++; }); });
   dlFichier('encaissements-'+slug(soc.nom)+'.csv', toCSV(rows), 'text/csv'); toast(n+' encaissement(s) exporté(s).'); }
 function sauvegardeJSON(){ dlFichier('yada-pro-sauvegarde-'+todayStr()+'.json', JSON.stringify(db), 'application/json'); toast('Sauvegarde téléchargée.'); }
+function telechargerApp(){
+  var fallback=function(){ dlFichier('YADA-PRO.html', '<!DOCTYPE html>\n'+document.documentElement.outerHTML, 'text/html'); toast('Application téléchargée (YADA-PRO.html) — double-cliquez pour l\'ouvrir sur votre PC.'); };
+  var url=(location.href||'').split('#')[0];
+  if(url.indexOf('http')!==0) return fallback();
+  fetch(url,{cache:'no-store'}).then(function(r){ if(!r.ok) throw 0; return r.text(); })
+    .then(function(html){ dlFichier('YADA-PRO.html', html, 'text/html'); toast('Application téléchargée — ouvrez YADA-PRO.html sur votre PC, elle fonctionne hors-ligne.'); })
+    .catch(fallback); }
 function restaurerJSON(input){ var file=input.files&&input.files[0]; if(!file)return; var rd=new FileReader();
   rd.onload=function(){ var data; try{ data=JSON.parse(rd.result); }catch(e){ return toast('Fichier invalide (JSON illisible).'); }
     if(!data || typeof data!=='object' || !('emises' in data) || !('societes' in data)) return toast('Ce fichier n\'est pas une sauvegarde YADA PRO.');
@@ -872,6 +879,10 @@ function pageDonnees(){ var soc=societeActiveObj()||{};
     +'<button class="btn" onclick="document.getElementById(\'restore-file\').click()">⬆ Restaurer une sauvegarde</button>'
     +'<input id="restore-file" type="file" accept="application/json,.json" style="display:none" onchange="restaurerJSON(this)"></div>'
     +'<div class="mini" style="margin-top:8px;color:var(--warn)">La restauration remplace toutes les données actuelles.</div></div>'
+    +'<div class="card"><h2>Installer sur votre PC</h2><p class="mini">YADA PRO fonctionne <b>hors-ligne</b>. Téléchargez l\'application en un seul fichier : enregistrez-le sur votre PC et <b>double-cliquez</b> dessus pour l\'ouvrir — sans connexion ni installation.</p>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-pri" onclick="telechargerApp()">⬇ Télécharger l\'application (PC)</button></div>'
+    +'<div class="mini" style="margin-top:8px">Astuce : dans Chrome ou Edge, le menu <b>⋮ → « Installer YADA PRO »</b> (ou l\'icône Installer de la barre d\'adresse) l\'ajoute directement à votre bureau.</div>'
+    +'<div class="mini" style="margin-top:6px;color:var(--warn)">Vos données restent sur l\'appareil où vous les avez saisies : pour les transférer sur le fichier PC, utilisez la <b>sauvegarde JSON</b> ci-dessus, puis restaurez-la.</div></div>'
     +'</div></main>';
 }
 function pageCatalogue(){
