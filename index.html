@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1120">
-<meta name="yada-version" content="3.1.0">
+<meta name="yada-version" content="3.2.0">
 <title>YADA PRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -223,11 +223,11 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 <div class="app" id="app"></div>
 <div id="print-area"></div>
 <div id="toast"></div>
-<span id="yada-ver">YADA PRO · v3.1</span>
+<span id="yada-ver">YADA PRO · v3.2</span>
 
 <script>
 'use strict';
-var VERSION='3.1.0';
+var VERSION='3.2.0';
 
 /* ---------- Données (localStorage) ---------- */
 function seed(){ return { societes:[], societeActive:null, contacts:[], emises:[], recues:[], catalogue:[], seq:{fac:0} }; }
@@ -323,30 +323,44 @@ function sidebar(){
 }
 
 /* ---------- Tableau de bord ---------- */
+function dansPeriode(dateStr, per){ if(!per||per==='tout') return true; if(!dateStr) return false;
+  var d=String(dateStr).split('-'); if(d.length<2) return false; var y=+d[0], m=+d[1];
+  var t=todayStr().split('-'); var ty=+t[0], tm=+t[1];
+  if(per==='annee') return y===ty;
+  if(per==='mois') return y===ty && m===tm;
+  if(per==='trimestre') return y===ty && Math.ceil(m/3)===Math.ceil(tm/3);
+  return true; }
+function periodeLabel(per){ return per==='annee'?'année en cours':per==='trimestre'?'trimestre en cours':per==='mois'?'mois en cours':'toutes périodes'; }
+function dashSetPeriode(v){ window.dashPeriode=v; render(); }
 function pageDash(){
-  var em=emFactures(), envoyees=em.filter(function(f){return f.statut==='envoyee';});
+  var per=window.dashPeriode||'tout';
+  var emAll=emFactures();
+  var em=emAll.filter(function(f){return dansPeriode(f.date,per);});
+  var recues=db.recues.filter(function(x){return dansPeriode(x.date,per);});
   var totTTC=r2(em.reduce(function(a,f){return a+ (f.ttc||0);},0));
   var enc=r2(em.reduce(function(a,f){return a+factRegle(f);},0));
   var reste=r2(em.reduce(function(a,f){return a+factReste(f);},0));
   var retard=em.filter(function(f){return factPaie(f).key==='retard';});
   var ech7=em.filter(function(f){ var j=joursEch(f); return factReste(f)>0.005 && j!=null && j>=0 && j<=7; });
   var recuesTodo=db.recues.filter(function(r){return r.statut!=='traitee';});
-  var depenses=r2(db.recues.reduce(function(a,x){return a+(+x.montant||0);},0));
+  var depenses=r2(recues.reduce(function(a,x){return a+(+x.montant||0);},0));
   var tvaCol=r2(em.reduce(function(a,f){return a+(+f.tva||0);},0));
-  var tvaDed=r2(db.recues.reduce(function(a,x){return a+(+x.tva||0);},0));
+  var tvaDed=r2(recues.reduce(function(a,x){return a+(+x.tva||0);},0));
   var tvaSolde=r2(tvaCol-tvaDed);
   var soc=societeActiveObj()||{};
-  return '<main>'+ph('Tableau de bord', '<span class="badge">'+esc(soc.nom||'')+'</span>')
+  var perOpts=[['tout','Tout'],['annee','Année en cours'],['trimestre','Trimestre en cours'],['mois','Mois en cours']];
+  var perSel='<select onchange="dashSetPeriode(this.value)" title="Période des indicateurs" style="width:auto;min-width:170px">'+perOpts.map(function(o){return '<option value="'+o[0]+'"'+(per===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';
+  return '<main>'+ph('Tableau de bord', '<span class="badge">'+esc(soc.nom||'')+'</span>'+perSel)
     +'<div class="grid g3">'
-    +kpi('CA facturé (TTC)', eur(totTTC), 'blue', em.length+' facture(s)')
+    +kpi('CA facturé (TTC)', eur(totTTC), 'blue', em.length+' facture(s) · '+periodeLabel(per))
     +kpi('Encaissé', eur(enc), 'good', '')
     +kpi('Reste dû', eur(reste), (reste>0?'warn':''), (retard.length?retard.length+' en retard':'à jour ✓')+(ech7.length?' · '+ech7.length+' à échoir ≤7j':''))
     +'</div>'
     +'<div class="grid g2" style="margin-top:16px">'
-    +'<div class="card"><h2>À encaisser en priorité</h2>'+miniListReste(em)+'</div>'
+    +'<div class="card"><h2>À encaisser en priorité</h2>'+miniListReste(emAll)+'</div>'
     +'<div class="card"><h2>À traiter (reçues) — '+recuesTodo.length+'</h2>'+miniListRecues(recuesTodo.slice(-5).reverse())+'</div>'
     +'</div>'
-    +'<div class="card" style="margin-top:16px"><h2>TVA &amp; dépenses <span class="mini">(indicatif)</span></h2>'
+    +'<div class="card" style="margin-top:16px"><h2>TVA &amp; dépenses <span class="mini">('+periodeLabel(per)+', indicatif)</span></h2>'
     +kpiInline('TVA collectée (ventes)', eur(tvaCol))
     +kpiInline('TVA déductible (achats)', eur(tvaDed))
     +kpiInline('TVA à reverser (solde)', eur(tvaSolde))
