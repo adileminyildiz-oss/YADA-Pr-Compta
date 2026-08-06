@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1120">
-<meta name="yada-version" content="3.5.0">
+<meta name="yada-version" content="3.5.1">
 <title>YADA PRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -221,11 +221,11 @@ td.r,th.r{text-align:right} .num{font-variant-numeric:tabular-nums}
 <div class="app" id="app"></div>
 <div id="print-area"></div>
 <div id="toast"></div>
-<span id="yada-ver">YADA PRO · v3.5</span>
+<span id="yada-ver">YADA PRO · v3.5.1</span>
 
 <script>
 'use strict';
-var VERSION='3.5.0';
+var VERSION='3.5.1';
 
 /* ---------- Données (localStorage) ---------- */
 function seed(){ return { societes:[], societeActive:null, contacts:[], emises:[], recues:[], catalogue:[], seq:{fac:0} }; }
@@ -317,7 +317,7 @@ function sidebar(){
     +'<div class="soc-wrap"><div class="nav-sec">Société active</div><div class="soc-active">'+socBox+'</div></div></div>'
     +'<div class="nav-sec nav-sec-fac">Factures</div>'
     +'<div class="nav-list">'+nav+'</div>'
-    +'<div class="side-foot">Hub de factures · <b>v'+VERSION+'</b><br>Multi-société.</div></aside>';
+    +'<div class="side-foot"><button class="btn btn-sm" style="width:100%;justify-content:center;margin-bottom:10px" title="Télécharger l\'application pour l\'utiliser hors-ligne sur votre PC" onclick="telechargerApp()">⬇ Installer l\'app</button>Hub de factures · <b>v'+VERSION+'</b><br>Multi-société.</div></aside>';
 }
 
 /* ---------- Tableau de bord ---------- */
