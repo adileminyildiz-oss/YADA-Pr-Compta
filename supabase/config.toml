@@ -1,0 +1,4 @@
+# Configuration Supabase (CLI). L'auth applicative est gérée par YADA,
+# pas par un JWT Supabase → la fonction de synchro doit être publique.
+[functions.yada-sync]
+verify_jwt = false
