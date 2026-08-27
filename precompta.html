@@ -4656,6 +4656,28 @@ function adrLignes(adresse, cp, ville){
   return [adr];
 }
 /* ----- rendu HTML de la facture (modèle type YADA) ----- */
+/* Pied de facture — mentions légales FR complètes (dénomination, forme, capital,
+   RCS + ville, SIRET, APE, N° TVA intracom), assemblées depuis les champs société. */
+function mentionsSocieteFooter(s){
+  s=s||{}; var parts=[];
+  var t1=(s.raison||'')+(s.formeJur?(', '+s.formeJur):'');
+  if(s.capitalSocial){ var cap=String(s.capitalSocial).trim(); if(cap && /^[\d\s.,]+$/.test(cap)) cap=cap+' €'; if(cap) t1+=' au capital de '+cap; }
+  if(t1.trim()) parts.push(t1.trim());
+  var rcsV=s.rcsVille||s.ville||''; if(s.siren||rcsV) parts.push('RCS '+(rcsV?(rcsV+' '):'')+(s.siren||''));
+  if(s.siret) parts.push('SIRET '+s.siret);
+  if(s.codeAPE) parts.push('APE '+s.codeAPE);
+  if(s.tvaIntra) parts.push('N° TVA '+s.tvaIntra);
+  return parts.join(' — ');
+}
+/* Mention conditionnelle d'exonération / autoliquidation de TVA. */
+function mentionsExoTVA(s,d,c){
+  s=s||{}; d=d||{}; c=c||{};
+  if(d.exonerationTVA==='293b' || (s.tvaRegime||'')==='franchise' || s.franchiseTVA) return 'TVA non applicable, art. 293 B du CGI.';
+  if(d.exonerationTVA==='autoliq') return 'Autoliquidation de la TVA par le preneur (art. 283-2 du CGI).';
+  if(d.exonerationTVA==='intracom' || (Math.abs(+d.tva||0)<0.005 && c && c.tvaIntra))
+    return 'Exonération de TVA — opération intracommunautaire, autoliquidation par le preneur (art. 262 ter I / 283-2 du CGI)'+(c&&c.tvaIntra?(' — N° TVA du preneur : '+c.tvaIntra):'')+'.';
+  return '';
+}
 function docHTML(d){
   const c=db.tiers.find(x=>x.id===d.clientId); const s=db.societe;
   const titre=d.type==='devis'?'Devis':d.type==='avoir'?'Avoir':'Facture';
@@ -4695,6 +4717,7 @@ function docHTML(d){
       Type de transaction : ${d.moyen||s.moyenDefaut||'Virement'}<br>Conditions de paiement de la TVA : ${d.tvaCondition||s.tvaCondition||'Sur les encaissements'}<br>
       ${d.conditions?('Conditions de paiement : '+d.conditions+'<br>'):''}
       ${(function(){var e=(d.escompte!=null?d.escompte:s.escompteDefaut)||0; var dl=(d.escompteDelai!=null?d.escompteDelai:s.escompteDelaiDefaut)||''; return (+e>0)?('Escompte pour paiement anticipé : '+e+' %'+(dl?(' (sous '+dl+' jours)'):'')+'<br>'):'Pas d\'escompte accordé pour le paiement anticipé.<br>';})()}
+      ${(function(){var m=mentionsExoTVA(s,d,c);return m?('<b>'+m+'</b><br>'):'';})()}
       En cas de non-paiement à la date d'échéance, des pénalités calculées à trois fois le taux d'intérêt légal seront appliquées.<br>
       Tout retard de paiement entraînera une indemnité forfaitaire pour frais de recouvrement de ${(s.fraisRecouvrement!=null?s.fraisRecouvrement:40)} €.
     </div>
@@ -4704,7 +4727,7 @@ function docHTML(d){
         <span>IBAN</span><span>${s.iban||'—'}</span>
         <span>Référence</span><span>${d.numero}</span></div>
     </div>
-    <div class="inv-foot-line">${s.raison||'AMA'}, ${s.formeJur||'SAS'}${s.siren?(' — SIREN : '+s.siren):''}</div>
+    <div class="inv-foot-line">${mentionsSocieteFooter(s)||((s.raison||'AMA')+', '+(s.formeJur||'SAS'))}</div>
   </div>`;
 }
 function voirDoc(id){ const d=db.docs.find(x=>x.id===id); if(!d)return;
@@ -10979,7 +11002,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v496';
+    b.textContent='YADA · v497';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }

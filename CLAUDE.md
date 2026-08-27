@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Facturation (Création) : correction du champ « Conditions de paiement » en double (id `nf-cond` dupliqué) — v496
+## 🟢 Dernière mise à jour — Facture (PDF) : mentions légales FR complètes + exonérations / autoliquidation conditionnelles — v497
+**Quoi :** la **facture A4** (aperçu + PDF) affiche désormais un **pied de mentions légales complet** — **Dénomination, Forme, Capital social, RCS + ville, SIRET, Code APE, N° TVA intracommunautaire** — assemblé automatiquement depuis les champs **Informations société** (`is-*`). Une **mention conditionnelle d'exonération / autoliquidation de TVA** s'ajoute au bloc conditions : **« TVA non applicable, art. 293 B du CGI »** (régime **franchise** ou champ `exonerationTVA:'293b'`), **autoliquidation art. 283-2** (`'autoliq'`), ou **exonération intracommunautaire (art. 262 ter I / 283-2)** avec le **n° TVA du preneur** (facture à TVA nulle pour un client disposant d'un n° TVA intracom, ou `'intracom'`). Les pénalités de retard (3× taux légal) + **indemnité forfaitaire 40 €** étaient déjà présentes.
+
+**Comment — édition chirurgicale de `docHTML` (precompta + build V1) + 2 helpers :** `mentionsSocieteFooter(s)` (assemble le pied légal, n'affiche que les champs renseignés, « € » ajouté si capital numérique) remplace l'ancienne ligne `raison, forme — SIREN` ; `mentionsExoTVA(s,d,c)` (mention conditionnelle) insérée dans `.inv-cond` avant les pénalités. Aucune logique comptable modifiée (affichage uniquement). `sw.js` yada-v92, badge v497, `version.json` 497.
+
+**Validé :** `node --check` (precompta 227 / V1 226, 0 erreur) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + Playwright (facture d'une SARL au capital de 10 000 € : pied **RCS AMIENS 812345678 · SIRET · APE 4332A · N° TVA FR… · capital 10 000 €** ; régime franchise → **« 293 B du CGI »** affiché ; 0 pageerror). Badge → **v497**.
+
+---
+
+## 🟢 MAJ précédente — Facturation (Création) : correction du champ « Conditions de paiement » en double (id `nf-cond` dupliqué) — v496
 **Quoi :** dans la **fenêtre « Nouvelle facture »** (`#nf-overlay`), le champ **« Conditions de paiement » apparaissait DEUX FOIS** : une **liste déroulante** (en haut, sous la date — celle qui pilote l'**échéance automatique** via `nfEcheanceAuto`) **et** un **champ texte redondant** (plus bas, à côté de « Moyen de paiement »). Les deux portaient le **même `id="nf-cond"`** → **id HTML dupliqué** (invalide) et champ inutile prêtant à confusion. Le **champ texte redondant est retiré** ; seule la **liste déroulante** (avec calcul d'échéance) reste. « Moyen de paiement » devient un champ pleine largeur à sa place.
 
 **Comment — édition chirurgicale (2 définitions de `nfFormHTML`, precompta + build V1) :** le bloc `.row g2` « Moyen de paiement + `<input id="nf-cond">` » est remplacé par le seul champ « Moyen de paiement » (`<select id="nf-moyen">`). Le `<select id="nf-cond">` d'origine (options `faCondOptions`, `onchange="nfEcheanceAuto()"`) est conservé ; `nfSync`/`nfUpdate` lisent toujours `nf-cond` (désormais unique). Aucune logique comptable modifiée. `sw.js` yada-v91, badge v496, `version.json` 496.
