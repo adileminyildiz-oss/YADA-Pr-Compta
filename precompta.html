@@ -10985,7 +10985,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v494';
+    b.textContent='YADA · v495';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -25895,6 +25895,155 @@ ${lignes}
     /* Boutons : plus de MAJUSCULES forcées → casse normale (prime sur addon223, injecté après) */
     +'html body[data-theme] .btn{text-transform:none !important;letter-spacing:.01em !important}';
   try{ var s=document.createElement('style'); s.id='ds-search-btncase-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
+})();
+</script>
+<script id="yada-addon234">
+/* v495 — Facturation « Liste & suivi » : barre d'outils sur la liste des factures.
+   Recherche (numéro / client), filtres (statut · année), tri par colonne (clic),
+   export CSV du résultat filtré. 100% additif : override de factureListe().
+   Réutilise docStatutFac / docTauxTVA / voirDoc / genererEcritureDoc / transformerDevis.
+   La barre reste hors du conteneur repeint → le champ de recherche garde le focus. */
+(function(){
+  function norm(s){ return String(s==null?'':s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+  function clientNom(d){ var c=(db.tiers||[]).find(function(x){return x.id===d.clientId;}); return c?c.nom:''; }
+  function anneeDe(d){ return (d.date||'').slice(0,4); }
+
+  /* Ensemble des documents après recherche + filtres + tri (toutes pages). */
+  function faListeDocs(){
+    var q=norm(window.faQuery||'').trim();
+    var stf=window.faStatut||''; var an=window.faAnnee||'';
+    var arr=(db.docs||[]).filter(function(d){
+      if(an && anneeDe(d)!==an) return false;
+      if(stf && (docStatutFac(d).l||'')!==stf) return false;
+      if(q){
+        var hay=norm((d.numero||'')+' '+clientNom(d));
+        if(hay.indexOf(q)<0) return false;
+      }
+      return true;
+    });
+    var key=window.faSortKey||'date', dir=window.faSortDir==='asc'?1:-1;
+    function val(d){
+      switch(key){
+        case 'numero': return norm(d.numero||'');
+        case 'client': return norm(clientNom(d));
+        case 'date': return d.date||'';
+        case 'echeance': return d.echeance||d.date||'';
+        case 'statut': return norm(docStatutFac(d).l||'');
+        case 'ht': return +d.ht||0;
+        case 'tva': return +d.tva||0;
+        case 'ttc': return +d.ttc||0;
+        case 'envoi': return d.dateEnvoi||'';
+        default: return d.date||'';
+      }
+    }
+    arr.sort(function(a,b){
+      var va=val(a), vb=val(b);
+      if(va<vb) return -1*dir; if(va>vb) return 1*dir;
+      /* départage stable par numéro décroissant */
+      return (a.numero||'')<(b.numero||'')?1:((a.numero||'')>(b.numero||'')?-1:0);
+    });
+    return arr;
+  }
+
+  window.faListeSort=function(k){
+    if(window.faSortKey===k){ window.faSortDir=(window.faSortDir==='asc'?'desc':'asc'); }
+    else { window.faSortKey=k; window.faSortDir=(k==='date'||k==='echeance'||k==='envoi')?'desc':'asc'; }
+    window.faListePage=1; faListeRepaint();
+  };
+  window.faListeSearch=function(v){ window.faQuery=v; window.faListePage=1; faListeRepaint(); };
+  window.faListeFiltre=function(champ,v){ if(champ==='statut')window.faStatut=v; else if(champ==='annee')window.faAnnee=v; window.faListePage=1; faListeRepaint(); };
+  window.faListeReset=function(){ window.faQuery='';window.faStatut='';window.faAnnee='';window.faSortKey='date';window.faSortDir='desc';window.faListePage=1;
+    var inp=document.getElementById('fa-search'); if(inp)inp.value=''; render(); };
+
+  window.faListeExportCSV=function(){
+    var docs=faListeDocs();
+    var sep=';', nl='\r\n';
+    function cell(x){ x=String(x==null?'':x); if(/[";\r\n]/.test(x)) x='"'+x.replace(/"/g,'""')+'"'; return x; }
+    function n2(x){ return (Math.round((+x||0)*100)/100).toFixed(2).replace('.',','); }
+    var head=['Numéro','Client','Taux TVA','Date','Échéance','Statut','Montant HT','TVA','Montant TTC','Date d\'envoi'];
+    var lines=[head.map(cell).join(sep)];
+    docs.forEach(function(d){
+      var tx=(d.lignes||[]).map(function(l){return l&&l.taux!=null&&l.taux!==''?r2(+l.taux):null;}).filter(function(v,i,a){return v!=null&&a.indexOf(v)===i;}).sort(function(a,b){return b-a;}).map(function(v){return String(v).replace('.',',')+' %';}).join(' · ');
+      lines.push([ d.numero||'', clientNom(d), tx, frDate(d.date), frDate(d.echeance||d.date), docStatutFac(d).l||'', n2(d.ht), n2(d.tva), n2(d.ttc), d.dateEnvoi?frDate(d.dateEnvoi):'' ].map(cell).join(sep));
+    });
+    var csv='﻿'+lines.join(nl);   /* BOM → accents corrects dans Excel */
+    try{
+      var b=new Blob([csv],{type:'text/csv;charset=utf-8'}); var u=URL.createObjectURL(b);
+      var soc=(db.societe&&db.societe.raison?db.societe.raison:'yada').toLowerCase().normalize('NFD').replace(/[^a-z0-9]/g,'').slice(0,20)||'yada';
+      var a=document.createElement('a'); a.href=u; a.download='factures-'+soc+'-'+todayStr()+'.csv'; document.body.appendChild(a); a.click();
+      setTimeout(function(){ try{URL.revokeObjectURL(u);a.remove();}catch(e){} },150);
+      if(typeof toast==='function') toast('Export CSV — '+docs.length+' facture(s).');
+    }catch(e){ if(typeof toast==='function') toast('Export impossible.'); }
+  };
+
+  /* Contenu repeint (tableau + pagination), hors barre d'outils. */
+  window.faListeInnerHTML=function(){
+    var per=25, docs=faListeDocs();
+    var pages=Math.max(1,Math.ceil(docs.length/per));
+    var page=window.faListePage||1; if(page>pages)page=pages; if(page<1)page=1; window.faListePage=page;
+    var slice=docs.slice((page-1)*per,page*per);
+    var arrow=function(k){ if(window.faSortKey!==k) return '<span class="fa-sar"> ⇅</span>'; return '<span class="fa-sar on">'+(window.faSortDir==='asc'?' ▲':' ▼')+'</span>'; };
+    var th=function(k,lbl,cls){ return '<th class="fa-ths '+(cls||'')+'" onclick="faListeSort(\''+k+'\')" title="Trier">'+lbl+arrow(k)+'</th>'; };
+    var rows=slice.map(function(d){ var c=(db.tiers||[]).find(function(x){return x.id===d.clientId;}); var st=docStatutFac(d);
+      return '<tr class="'+(d.id===window.faDocSel?'fa-sel-row':'')+'">'
+        +'<td><b>'+d.numero+'</b></td><td>'+(c?c.nom:'<span class="mini">—</span>')+'</td>'
+        +'<td class="num">'+docTauxTVA(d)+'</td>'
+        +'<td class="num">'+frDate(d.date)+'</td><td class="num">'+frDate(d.echeance||d.date)+'</td>'
+        +'<td><span class="tag '+st.c+'">'+st.l+'</span></td>'
+        +'<td class="r num">'+eur(d.ht)+'</td><td class="r num">'+eur(d.tva)+'</td><td class="r num"><b>'+eur(d.ttc)+'</b></td>'
+        +'<td class="num">'+(d.dateEnvoi?frDate(d.dateEnvoi):'—')+'</td>'
+        +'<td class="r" style="white-space:nowrap">'
+        +'<button class="btn btn-ghost btn-sm" onclick="voirDoc(\''+d.id+'\')" title="Voir la facture">Voir</button>'
+        +(d.type==='facture'&&!d.ecritureId?'<button class="btn btn-gold btn-sm" onclick="genererEcritureDoc(\''+d.id+'\')" title="Générer l\'écriture (autorisation requise)">⚙️ Générer</button>':'')
+        +(d.type==='devis'&&d.statut==='valide'&&!d.transformeEn?'<button class="btn btn-ghost btn-sm" onclick="transformerDevis(\''+d.id+'\')">→ Facture</button>':'')
+        +'</td></tr>';
+    }).join('');
+    var pag='<div class="fa-pag"><span>Page '+page+' sur '+pages+'</span>'
+      +'<div style="display:flex;gap:8px">'
+      +'<button class="btn btn-ghost btn-sm" '+(page<=1?'disabled':'')+' onclick="faListeGo('+(page-1)+')">‹ Précédent</button>'
+      +'<button class="btn btn-ghost btn-sm" '+(page>=pages?'disabled':'')+' onclick="faListeGo('+(page+1)+')">Suivant ›</button></div></div>';
+    return '<div class="fa-count">'+docs.length+' pièce(s)'+((window.faQuery||window.faStatut||window.faAnnee)?' filtrée(s)':'')+'.</div>'
+      +'<div style="overflow-x:auto"><table class="fa-table"><thead><tr>'
+      +th('numero','NUMÉRO')+th('client','CLIENT')+'<th>TAUX TVA</th>'+th('date','DATE')+th('echeance','ÉCHÉANCE')+th('statut','STATUT')
+      +th('ht','MONTANT HT','r')+th('tva','TVA','r')+th('ttc','MONTANT TTC','r')+th('envoi','DATE D\'ENVOI')+'<th class="r">ACTIONS</th>'
+      +'</tr></thead><tbody>'+(rows||'<tr><td colspan=11 class=empty>'+((window.faQuery||window.faStatut||window.faAnnee)?'Aucune facture ne correspond à la recherche.':'Aucune facture — cliquez sur « + Nouveau ».')+'</td></tr>')+'</tbody></table></div>'
+      +(docs.length>per?pag:'');
+  };
+
+  window.faListeRepaint=function(){ var el=document.getElementById('fa-liste-inner'); if(el){ el.innerHTML=faListeInnerHTML(); } else { render(); } };
+
+  factureListe=function(){
+    var annees=[]; (db.docs||[]).forEach(function(d){ var y=anneeDe(d); if(y && annees.indexOf(y)<0)annees.push(y); }); annees.sort(function(a,b){return b<a?-1:1;});
+    var statuts=[]; (db.docs||[]).forEach(function(d){ var l=docStatutFac(d).l; if(l && statuts.indexOf(l)<0)statuts.push(l); });
+    var qv=(window.faQuery||'').replace(/"/g,'&quot;');
+    var optStatut='<option value="">Tous les statuts</option>'+statuts.map(function(s){return '<option value="'+s+'"'+(window.faStatut===s?' selected':'')+'>'+s+'</option>';}).join('');
+    var optAnnee='<option value="">Toutes les années</option>'+annees.map(function(y){return '<option value="'+y+'"'+(window.faAnnee===y?' selected':'')+'>'+y+'</option>';}).join('');
+    var actif=(window.faQuery||window.faStatut||window.faAnnee);
+    var toolbar='<div class="fa-toolbar">'
+      +'<input id="fa-search" class="fa-search" type="search" placeholder="🔎 Rechercher un numéro ou un client…" value="'+qv+'" oninput="faListeSearch(this.value)">'
+      +'<select class="fa-fsel" onchange="faListeFiltre(\'statut\',this.value)">'+optStatut+'</select>'
+      +'<select class="fa-fsel" onchange="faListeFiltre(\'annee\',this.value)">'+optAnnee+'</select>'
+      +'<button class="btn btn-ghost btn-sm" onclick="faListeExportCSV()" title="Exporter le résultat filtré en CSV">⤓ Export CSV</button>'
+      +(actif?'<button class="btn btn-ghost btn-sm" onclick="faListeReset()" title="Réinitialiser la recherche et les filtres">↺ Réinitialiser</button>':'')
+      +'</div>';
+    return '<div class="card"><h2>Factures</h2>'
+      +'<div class="sub">Recherchez, filtrez (statut · année) et triez (clic sur une colonne). « Générer » comptabilise après autorisation — numéro définitif, TVA transmise au module TVA.</div>'
+      +toolbar
+      +'<div id="fa-liste-inner">'+faListeInnerHTML()+'</div></div>';
+  };
+
+  var css=''
+    +'.fa-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:6px 0 14px}'
+    +'.fa-search{flex:1 1 260px;min-width:200px;box-sizing:border-box;padding:10px 14px;border-radius:11px;border:1px solid rgba(120,170,255,.24);background:rgba(8,16,34,.55);color:#eaf1ff;font-size:14px;outline:none;transition:border-color .18s,box-shadow .18s}'
+    +'.fa-search::placeholder{color:#6b7ea6}'
+    +'.fa-search:focus{border-color:#1e90ff;box-shadow:0 0 0 3px rgba(30,144,255,.22)}'
+    +'.fa-fsel{padding:9px 12px;border-radius:11px;border:1px solid rgba(120,170,255,.24);background:rgba(8,16,34,.55);color:#eaf1ff;font-size:13.5px;outline:none;cursor:pointer}'
+    +'.fa-fsel:focus{border-color:#1e90ff;box-shadow:0 0 0 3px rgba(30,144,255,.18)}'
+    +'.fa-count{color:#9fb2d4;font-size:12.5px;margin:0 2px 8px}'
+    +'.fa-ths{cursor:pointer;user-select:none;white-space:nowrap}'
+    +'.fa-ths:hover{color:#5ab0ff}'
+    +'.fa-sar{opacity:.35;font-size:11px}.fa-sar.on{opacity:1;color:#5ab0ff}';
+  try{ var s=document.createElement('style'); s.id='fa-liste-tools-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
 })();
 </script>
 </body>
