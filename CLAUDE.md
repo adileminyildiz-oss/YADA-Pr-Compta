@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Facture (PDF) : mentions légales FR complètes + exonérations / autoliquidation conditionnelles — v497
+## 🟢 Dernière mise à jour — Facture (PDF) : logo image + couleur d'en-tête paramétrables — v498
+**Quoi :** dans **Paramètres de facturation**, deux réglages : (1) **Logo de la facture** — dépôt d'une **image** (PNG/JPG…, ≤ ~1,5 Mo) qui remplace le nom de la société en haut à droite de la **facture A4** (aperçu + PDF), avec aperçu + bouton « Retirer » ; (2) **Couleur d'en-tête** — un sélecteur de couleur qui teinte le **titre** (Facture / Devis / Avoir) de la facture. Le logo est enregistré **immédiatement** (persistant, dataURL) ; la couleur s'applique en cliquant **« Enregistrer les paramètres »**.
+
+**Comment — extension de l'addon `factParamCard`/`factParamSave` (precompta + build V1) + édition de `docHTML` :** nouvelle section « Logo & couleur d'en-tête » (input `type=file` → `factParamLogo()` FileReader→dataURL dans `db.societe.logo` ; `factParamLogoDel()` ; input `type=color` `#fp-color` → `s.factureCouleur`). Dans `docHTML`, la zone `.inv-logo` affiche `<img src=logo>` si présent (sinon la raison sociale) et `.inv-h1` reçoit `style="color:<couleur>"`. Aucune logique comptable modifiée. `sw.js` yada-v93, badge v498, `version.json` 498.
+
+**Validé :** `node --check` (precompta 227 / V1 226, 0 erreur) + accolades CSS (2010/2010) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + Playwright (société avec logo dataURL + couleur `#c81e1e` : facture → `<img>` du logo présent, titre `.inv-h1` teinté ; contrôles `#fp-color`/`#fp-logo-file` rendus ; 0 pageerror). Badge → **v498**.
+
+---
+
+## 🟢 MAJ précédente — Facture (PDF) : mentions légales FR complètes + exonérations / autoliquidation conditionnelles — v497
 **Quoi :** la **facture A4** (aperçu + PDF) affiche désormais un **pied de mentions légales complet** — **Dénomination, Forme, Capital social, RCS + ville, SIRET, Code APE, N° TVA intracommunautaire** — assemblé automatiquement depuis les champs **Informations société** (`is-*`). Une **mention conditionnelle d'exonération / autoliquidation de TVA** s'ajoute au bloc conditions : **« TVA non applicable, art. 293 B du CGI »** (régime **franchise** ou champ `exonerationTVA:'293b'`), **autoliquidation art. 283-2** (`'autoliq'`), ou **exonération intracommunautaire (art. 262 ter I / 283-2)** avec le **n° TVA du preneur** (facture à TVA nulle pour un client disposant d'un n° TVA intracom, ou `'intracom'`). Les pénalités de retard (3× taux légal) + **indemnité forfaitaire 40 €** étaient déjà présentes.
 
 **Comment — édition chirurgicale de `docHTML` (precompta + build V1) + 2 helpers :** `mentionsSocieteFooter(s)` (assemble le pied légal, n'affiche que les champs renseignés, « € » ajouté si capital numérique) remplace l'ancienne ligne `raison, forme — SIREN` ; `mentionsExoTVA(s,d,c)` (mention conditionnelle) insérée dans `.inv-cond` avant les pénalités. Aucune logique comptable modifiée (affichage uniquement). `sw.js` yada-v92, badge v497, `version.json` 497.
