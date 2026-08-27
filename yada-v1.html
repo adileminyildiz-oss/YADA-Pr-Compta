@@ -8424,10 +8424,7 @@ function nfFormHTML(){ const clients=db.tiers.filter(t=>t.type==='client'); cons
       <div class="field"><label>Valeur remise</label><input id="nf-remval" type="number" value="${s.remiseVal||0}" oninput="nfUpdate()"></div>
     </div>
     <div class="field"><label>Acompte versé (€)</label><input id="nf-acompte" type="number" value="${s.acompte||''}" placeholder="ex : 300 — vide si aucun acompte" oninput="nfUpdate()"></div>
-    <div class="row g2">
-      <div class="field"><label>Moyen de paiement</label><select id="nf-moyen" onchange="nfUpdate()">${NF_MOYENS.map(m=>`<option ${m===s.moyen?'selected':''}>${m}</option>`).join('')}</select></div>
-      <div class="field"><label>Conditions de paiement</label><input id="nf-cond" value="${s.conditions||'30 jours'}" onchange="nfUpdate()"></div>
-    </div>
+    <div class="field"><label>Moyen de paiement</label><select id="nf-moyen" onchange="nfUpdate()">${NF_MOYENS.map(m=>`<option ${m===s.moyen?'selected':''}>${m}</option>`).join('')}</select></div>
     <div class="row g2">
       <div class="field"><label>Escompte paiement anticipé (%)</label><input id="nf-esc" type="number" value="${s.escompte||''}" placeholder="ex : 2 — vide si aucun" oninput="nfUpdate()"></div>
       <div class="field"><label>Délai escompte (jours)</label><input id="nf-escdelai" type="number" value="${s.escompteDelai||''}" placeholder="ex : 10" oninput="nfUpdate()"></div>
@@ -8555,10 +8552,7 @@ function nfFormHTML(){ const clients=db.tiers.filter(t=>t.type==='client'); cons
       <div class="field"><label>Valeur remise</label><input id="nf-remval" type="number" value="${s.remiseVal||0}" oninput="nfUpdate()"></div>
     </div>
     <div class="field"><label>Acompte versé (€)</label><input id="nf-acompte" type="number" value="${s.acompte||''}" placeholder="ex : 300 — vide si aucun acompte" oninput="nfUpdate()"></div>
-    <div class="row g2">
-      <div class="field"><label>Moyen de paiement</label><select id="nf-moyen" onchange="nfUpdate()">${NF_MOYENS.map(m=>`<option ${m===s.moyen?'selected':''}>${m}</option>`).join('')}</select></div>
-      <div class="field"><label>Conditions de paiement</label><input id="nf-cond" value="${s.conditions||'30 jours'}" onchange="nfUpdate()"></div>
-    </div>
+    <div class="field"><label>Moyen de paiement</label><select id="nf-moyen" onchange="nfUpdate()">${NF_MOYENS.map(m=>`<option ${m===s.moyen?'selected':''}>${m}</option>`).join('')}</select></div>
     <div class="row g2">
       <div class="field"><label>Escompte paiement anticipé (%)</label><input id="nf-esc" type="number" value="${s.escompte||''}" placeholder="ex : 2 — vide si aucun" oninput="nfUpdate()"></div>
       <div class="field"><label>Délai escompte (jours)</label><input id="nf-escdelai" type="number" value="${s.escompteDelai||''}" placeholder="ex : 10" oninput="nfUpdate()"></div>
@@ -10985,7 +10979,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v495';
+    b.textContent='YADA · v496';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }

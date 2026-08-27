@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Facturation : liste des factures avec recherche, filtres (statut · année), tri par colonne et export CSV — v495
+## 🟢 Dernière mise à jour — Facturation (Création) : correction du champ « Conditions de paiement » en double (id `nf-cond` dupliqué) — v496
+**Quoi :** dans la **fenêtre « Nouvelle facture »** (`#nf-overlay`), le champ **« Conditions de paiement » apparaissait DEUX FOIS** : une **liste déroulante** (en haut, sous la date — celle qui pilote l'**échéance automatique** via `nfEcheanceAuto`) **et** un **champ texte redondant** (plus bas, à côté de « Moyen de paiement »). Les deux portaient le **même `id="nf-cond"`** → **id HTML dupliqué** (invalide) et champ inutile prêtant à confusion. Le **champ texte redondant est retiré** ; seule la **liste déroulante** (avec calcul d'échéance) reste. « Moyen de paiement » devient un champ pleine largeur à sa place.
+
+**Comment — édition chirurgicale (2 définitions de `nfFormHTML`, precompta + build V1) :** le bloc `.row g2` « Moyen de paiement + `<input id="nf-cond">` » est remplacé par le seul champ « Moyen de paiement » (`<select id="nf-moyen">`). Le `<select id="nf-cond">` d'origine (options `faCondOptions`, `onchange="nfEcheanceAuto()"`) est conservé ; `nfSync`/`nfUpdate` lisent toujours `nf-cond` (désormais unique). Aucune logique comptable modifiée. `sw.js` yada-v91, badge v496, `version.json` 496.
+
+**Validé :** `node --check` (precompta 227 / V1 226, 0 erreur) + accolades CSS (2010/2010) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + Playwright (fenêtre facture : **1 seul `#nf-cond`**, « Moyen de paiement » présent, overlay ouvert, 0 pageerror). Badge → **v496**.
+
+---
+
+## 🟢 MAJ précédente — Facturation : liste des factures avec recherche, filtres (statut · année), tri par colonne et export CSV — v495
 **Quoi :** dans le **module Facturation** (Espace Cabinet), la **liste des factures** (« Factures ») gagne une **barre d'outils** : (1) **recherche** en direct par **numéro ou client** (insensible aux accents/casse) ; (2) **filtres** par **statut** (Émise / Brouillon / Payé / Partiel / En retard / Devis / Avoir / Transformé) et par **année** ; (3) **tri par colonne** au **clic** sur l'en-tête (Numéro, Client, Date, Échéance, Statut, HT, TVA, TTC, Date d'envoi — flèche ▲/▼) ; (4) **export CSV** du résultat filtré (toutes pages, séparateur `;`, décimales virgule, BOM UTF-8 pour Excel) ; (5) bouton **↺ Réinitialiser** quand un filtre est actif. La **pagination (25/page)** et les actions par ligne (Voir / ⚙️ Générer / → Facture) sont conservées.
 
 **Comment — `yada-addon234` (100% additif, override de `factureListe()`) :** la barre d'outils (`#fa-search` + 2 `<select>` + boutons) reste **hors** du conteneur repeint `#fa-liste-inner` → le champ de recherche **garde le focus** en frappe (repeint ciblé via `faListeRepaint()`, pas de `render()` global). État sur `window` (`faQuery`/`faStatut`/`faAnnee`/`faSortKey`/`faSortDir`, réutilise `faListePage`). `faListeDocs()` filtre+trie (réutilisé par l'affichage ET l'export) ; `faListeInnerHTML()` rend tableau + pagination ; `faListeExportCSV()` construit le CSV en autonome (BOM + `;` + `""` d'échappement). Réutilise `docStatutFac`/`docTauxTVA`/`voirDoc`/`genererEcritureDoc`/`transformerDevis`/`faListeGo`. La chaîne de wrappers de `pageFacturation` (e-facturation, dépôts cabinet, fiches, catalogue) reste intacte (l'override porte sur `factureListe`, appelée en interne). `sw.js` yada-v90, badge v495, `version.json` 495.
