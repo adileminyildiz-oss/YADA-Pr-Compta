@@ -4689,7 +4689,7 @@ function docHTML(d){
     return `<tr><td class="l">${l.desc||''}</td><td class="q">${presta?'—':(q+(l.unite?(' '+l.unite):''))}</td><td>${eur(+l.pu||0)}</td><td>${(+l.taux||0).toLocaleString('fr-FR',{minimumFractionDigits:1})}%</td><td>${eur(lht)}</td></tr>`;}).join('');
   const ht=Math.abs(d.ht), tva=Math.abs(d.tva), ttc=Math.abs(d.ttc);
   return `<div class="inv-page">
-    <div class="inv-top"><div class="inv-h1">${titre}</div><div class="inv-logo">${(s.raison||'AMA')}</div></div>
+    <div class="inv-top"><div class="inv-h1"${s.factureCouleur?(' style="color:'+s.factureCouleur+'"'):''}>${titre}</div><div class="inv-logo">${s.logo?('<img src="'+s.logo+'" alt="logo" style="max-height:64px;max-width:210px;object-fit:contain">'):(s.raison||'AMA')}</div></div>
     <div class="inv-meta">
       <span><b>Numéro de ${d.type==='devis'?'devis':'facture'}</b></span><span>${d.numero}</span>
       <span><b>Date d'émission</b></span><span>${frDate(d.date)}</span>
@@ -11002,7 +11002,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v497';
+    b.textContent='YADA · v498';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -15425,8 +15425,13 @@ ${lignes}
     s.conditionPaiement=g('fp-cond')||'30 jours';
     try{ var _c=(window.FA_CONDITIONS||[]).filter(function(x){return x.lib===s.conditionPaiement;})[0]; s.delaiPaiement=_c?_c.j:30; }catch(e){ s.delaiPaiement=30; }
     s.banqueBenef=(g('fp-benef')||'').trim(); s.iban=(g('fp-iban')||'').trim(); s.bic=(g('fp-bic')||'').trim();
+    var col=g('fp-color'); if(col) s.factureCouleur=col;
     if(typeof save==='function')save(); if(typeof render==='function')render(); if(typeof toast==='function')toast('Paramètres de facturation enregistrés ✓');
   };
+  window.factParamLogo=function(inp){ try{ var f=inp&&inp.files&&inp.files[0]; if(!f)return;
+    if(f.size>1500000){ if(typeof toast==='function')toast('Logo trop lourd (max ~1,5 Mo) — choisissez une image plus légère.'); return; }
+    var r=new FileReader(); r.onload=function(){ db.societe=db.societe||{}; db.societe.logo=r.result; if(typeof save==='function')save(); if(typeof render==='function')render(); if(typeof toast==='function')toast('Logo enregistré ✓'); }; r.readAsDataURL(f); }catch(e){} };
+  window.factParamLogoDel=function(){ try{ if(db.societe){ delete db.societe.logo; if(typeof save==='function')save(); if(typeof render==='function')render(); if(typeof toast==='function')toast('Logo retiré'); } }catch(e){} };
   function factParamCard(){ var s=db.societe||{}; var tva=s.tvaCondition||'Sur les encaissements'; var moyen=s.moyenDefaut||'Virement';
     return '<div class="card fparam-card"><h2>⚙️ Paramètres de facturation (mentions de la facture A4)</h2>'
       +'<div class="sub">Modifiables ici, appliqués automatiquement en bas de <b>toutes les factures A4</b> (RIB, conditions TVA, type de transaction, escompte, frais de recouvrement).</div>'
@@ -15444,6 +15449,12 @@ ${lignes}
         +'<div class="field"><label>Escompte paiement anticipé (%)</label><input id="fp-esc" type="number" step="0.01" value="'+(s.escompteDefaut!=null?s.escompteDefaut:0)+'"></div>'
         +'<div class="field"><label>Escompte — délai (jours)</label><input id="fp-escd" type="number" value="'+(s.escompteDelaiDefaut!=null?s.escompteDelaiDefaut:0)+'"></div>'
         +'<div class="field" style="display:flex;align-items:flex-end"><button class="btn btn-pri" style="width:100%" onclick="factParamSave()">Enregistrer les paramètres</button></div>'
+      +'</div>'
+      +'<h3 style="margin:10px 0 6px;font-size:13px;color:#9fb6d0">Logo & couleur d\'en-tête (facture A4)</h3>'
+      +'<div class="row g3">'
+        +'<div class="field"><label>Logo de la facture (image)</label><input id="fp-logo-file" type="file" accept="image/*" onchange="factParamLogo(this)">'+(s.logo?('<div style="margin-top:6px;display:flex;align-items:center;gap:8px"><img src="'+s.logo+'" alt="logo" style="max-height:46px;max-width:150px;object-fit:contain;background:#fff;border-radius:6px;padding:3px"><button class="btn btn-ghost btn-sm" onclick="factParamLogoDel()">Retirer</button></div>'):'<div class="sub" style="margin:4px 0 0">Aucun logo — le nom de la société est affiché.</div>')+'</div>'
+        +'<div class="field"><label>Couleur d\'en-tête (titre)</label><input id="fp-color" type="color" value="'+(esc(s.factureCouleur||'#0a1f44'))+'" style="height:40px;padding:2px;width:100%;cursor:pointer"><div class="sub" style="margin:4px 0 0">Appliquée en cliquant « Enregistrer les paramètres ».</div></div>'
+        +'<div></div>'
       +'</div>'
       +'<h3 style="margin:10px 0 6px;font-size:13px;color:#9fb6d0">RIB de la société (affiché en bas de chaque facture)</h3>'
       +'<div class="row g3">'
