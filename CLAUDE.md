@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Facture (Création) : Débours (hors TVA) + Réduction + Remise + Acompte avec n° de facture d'origine — v499
+## 🟢 Dernière mise à jour — Facturation : numéro définitif à la comptabilisation (suite FAC continue, sans trou) — v500
+**Quoi :** le **numéro de facture définitif `FAC-####` n'est plus attribué à la création** mais **à la comptabilisation** (bouton « ⚙️ Générer l'écriture »). Une facture non comptabilisée (brouillon, devis transformé, facture « à générer », récurrence) reçoit un **numéro PROVISOIRE `BR-####`** ; **supprimer un brouillon ne consomme aucun numéro FAC** → la **suite FAC reste continue (aucun trou)**, conforme aux règles françaises de facturation. À la comptabilisation, le `BR-####` est **remplacé par le prochain `FAC-####`** (attribué dans l'ordre de comptabilisation) et l'écriture de vente est postée avec ce numéro définitif. Devis (`DEV`) et Avoirs (`AV`) conservent leur numérotation à la création.
+
+**Comment — édition chirurgicale (precompta + build V1) :** helper `estNumProvisoire(n)` (`/^BR-/`) ; les sites de création de **facture** utilisent `nextNumUnique('BR')` — `nfCreer`, `emettre` (sauf comptabilisation immédiate `valider&&!skipGen` → `FAC`), `transformerDevis`, générateur de **récurrences** ; `genererEcritureDoc` attribue `d.numero=nextNumUnique('FAC')` **si** le numéro est provisoire, avant `posterFacture`, et adapte le message de confirmation. `sw.js` yada-v95, badge v500, `version.json` 500.
+
+**Validé :** `node --check` (precompta 227 / V1 226, 0 erreur) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + Playwright (`nfCreer` → **BR-0001** ; 3 brouillons, le 2ᵉ supprimé, puis comptabilisation du 1ᵉ et du 3ᵉ → **FAC-0001** et **FAC-0002** continus, écritures générées ; `estNumProvisoire` OK ; 0 pageerror). Badge → **v500**.
+
+---
+
+## 🟢 MAJ précédente — Facture (Création) : Débours (hors TVA) + Réduction + Remise + Acompte avec n° de facture d'origine — v499
 **Quoi :** la fenêtre **« Nouvelle facture »** (`#nf-overlay`) gagne des champs **sélectionnables** (vide = inactif, n'apparaît pas sur la facture) : (1) **Débours** — frais avancés au nom du client, **refacturés au coût, HORS base TVA** (art. 267 II-2°), ajoutés au **total à payer** sans TVA ; (2) **Réduction (rabais / ristourne)** — % ou € **sur le HT** (après la remise) ; (3) **Remise** (déjà présente, sur le HT) ; (4) **Acompte déjà facturé** avec **N° de la facture d'acompte d'origine** (affiché « Acompte facturé n° FAC-xxxx : −montant »). La facture A4 affiche les lignes correspondantes ; **Total TTC** reste la partie **taxée** (HT net + TVA), les débours apparaissant en **« Total à payer »**.
 
 **Comment — édition chirurgicale (precompta + build V1) :** `nfState` (+ `reductionType/reductionVal/debours/acompteFactureNum`), `nfSync` (lecture `nf-redtype/nf-redval/nf-debours/nf-acompte-num`), `nfTotaux` (remise → réduction sur HT → TVA proportionnelle → **débours hors TVA** → net à payer ; helper `nfReductionLabel`), `nfTempDoc`/`nfCreer` (persistance), `nfFormHTML` (champs), et `docHTML` (bloc `.inv-tot` : réduction, débours + « Total à payer », acompte + n°). **Rétrocompatible** : une facture sans ces champs s'affiche à l'identique. Aucune écriture modifiée à ce stade (ventilation multi-taux = lot suivant). `sw.js` yada-v94, badge v499, `version.json` 499.

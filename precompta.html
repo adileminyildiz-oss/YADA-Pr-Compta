@@ -3493,6 +3493,10 @@ function nextNum(pref){ db.seq[pref]=(db.seq[pref]||0)+1; return pref+'-'+String
 /* numéro de pièce/suivi UNIQUE : aucune facture/doc ne peut partager le même numéro */
 function numeroUnique(n){ return !db.factures.some(f=>f.numero===n) && !db.docs.some(d=>d.numero===n); }
 function nextNumUnique(pref){ let n; do{ n=nextNum(pref); } while(!numeroUnique(n)); return n; }
+/* Numéro PROVISOIRE (facture non encore comptabilisée) : préfixe BR- (brouillon).
+   Le numéro de facture DÉFINITIF (FAC-…) n'est attribué qu'à la comptabilisation
+   (« Générer l'écriture ») → la suite FAC reste continue même si un brouillon est supprimé. */
+function estNumProvisoire(n){ return /^BR-/.test(n||''); }
 function tiersLettres(nom){ return (nom||'').toUpperCase().normalize('NFD').replace(/[^A-Z]/g,'').slice(0,4); }
 /* Dénomination « de base » d'un tiers : retire les références de facture / numéros de pièce
    (mot-clé + numéro, codes collés type F2024001, dates, n° isolés en fin) afin qu'un même
@@ -4610,7 +4614,8 @@ function emettre(valider, skipGen){
   if(tot.ht<=0 && type!=='avoir') return toast('Renseignez au moins une ligne');
   const date=document.getElementById('fa-date').value, ech=document.getElementById('fa-ech').value;
   const signe=type==='avoir'?-1:1;
-  const numero=nextNumUnique(type==='avoir'?'AV':type==='devis'?'DEV':'FAC');
+  /* Facture : numéro DÉFINITIF (FAC) seulement si comptabilisée immédiatement ; sinon PROVISOIRE (BR). */
+  const numero=nextNumUnique(type==='avoir'?'AV':type==='devis'?'DEV':((valider&&!skipGen)?'FAC':'BR'));
   const condEl=document.getElementById('fa-cond');
   const doc={ id:uid(), type, clientId:t.id, date, echeance:ech, numero,
     conditions:(condEl?condEl.value:'')||'',
@@ -4631,7 +4636,7 @@ function emettre(valider, skipGen){
 }
 function transformerDevis(id){
   const dev=db.docs.find(x=>x.id===id); if(!dev)return; const t=db.tiers.find(x=>x.id===dev.clientId);
-  const numero=nextNumUnique('FAC');
+  const numero=nextNumUnique('BR');   /* provisoire : FAC attribué à la comptabilisation */
   const doc={ id:uid(), type:'facture', clientId:dev.clientId, date:todayStr(), echeance:dev.echeance||todayStr(), numero,
     lignes:JSON.parse(JSON.stringify(dev.lignes||[])), ht:dev.ht, tva:dev.tva, ttc:dev.ttc,
     statut:'valide', envoye:false, ecritureId:null, devisId:dev.id, transformeEn:null };
@@ -8506,7 +8511,7 @@ function nfCreer(){ nfSync(); const s=nfState;
   if(!s.clientId) return toast('Sélectionnez un client');
   const tot=nfTotaux(); if(tot.htBrut<=0 && s.type!=='avoir') return toast('Ajoutez au moins une ligne');
   const signe=s.type==='avoir'?-1:1;
-  const numero=nextNumUnique(s.type==='avoir'?'AV':s.type==='devis'?'DEV':'FAC');
+  const numero=nextNumUnique(s.type==='avoir'?'AV':s.type==='devis'?'DEV':'BR');
   const doc={ id:uid(), type:s.type, clientId:s.clientId, date:s.date, echeance:s.ech, numero, devise:s.devise,
     lignes:JSON.parse(JSON.stringify(s.lignes)),
     htBrut:r2(tot.htBrut*signe), remiseMontant:r2(tot.remiseMontant*signe), remiseLabel:nfRemiseLabel(),
@@ -8524,7 +8529,10 @@ function genererEcritureDoc(id){ const d=db.docs.find(x=>x.id===id); if(!d)retur
   if(d.ecritureId) return toast('Écriture déjà générée pour '+d.numero);
   if(d.type==='devis') return toast('Un devis ne génère pas d\'écriture — transformez-le en facture');
   const t=db.tiers.find(x=>x.id===d.clientId); if(!t)return toast('Client introuvable');
-  yadaConfirm('Générer l\'écriture comptable de la facture '+d.numero+' ?\n\nUne écriture de vente sera enregistrée (TVA collectée incluse) et transmise au module TVA. La numérotation '+d.numero+' est définitive.', function(){
+  const prov=estNumProvisoire(d.numero);
+  yadaConfirm('Générer l\'écriture comptable de cette facture '+(prov?'(brouillon '+d.numero+')':d.numero)+' ?\n\nUne écriture de vente sera enregistrée (TVA collectée incluse) et transmise au module TVA.'+(prov?'\n\nUn numéro de facture DÉFINITIF et continu (FAC-…) lui sera attribué.':' La numérotation '+d.numero+' est définitive.'), function(){
+  /* Numéro DÉFINITIF attribué à la comptabilisation → suite FAC continue (aucun trou si un brouillon a été supprimé). */
+  if(estNumProvisoire(d.numero)){ d.numero=nextNumUnique('FAC'); d.provisoire=false; }
   const taux=Math.abs(d.ht)>0?r2(Math.abs(d.tva)/Math.abs(d.ht)*100):20;
   const f=posterFacture({type:'vente',tiersId:t.id,date:d.date,base:Math.abs(d.ht)*(d.ttc<0?-1:1),baseEst:'HT',taux,compteContre:t.compteContre,compteTVA:'44571',numero:d.numero,echeance:d.echeance});
   d.ecritureId=f.ecritureId; d.statut='valide'; save(); render();
@@ -11042,7 +11050,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v499';
+    b.textContent='YADA · v500';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -17505,7 +17513,7 @@ ${lignes}
       var moisLbl=(typeof moisLabel==='function' && typeof ym==='function')?moisLabel(ym(date)):date.slice(0,7);
       var lib=desc+' — '+moisLbl;
       var ht=r2(pu), tva=r2(pu*taux/100), ttc=r2(ht+tva);
-      var numero=(typeof nextNumUnique==='function'?nextNumUnique('FAC'):('FAC'+(i+1)));
+      var numero=(typeof nextNumUnique==='function'?nextNumUnique('BR'):('BR'+(i+1)));   /* provisoire : FAC à la comptabilisation */
       var doc={ id:uid(), type:'facture', clientId:t.id, date:date, echeance:ech, numero:numero, conditions:cond,
         lignes:[{desc:lib, nature:'prestation', qte:1, pu:pu, taux:taux, unite:''}],
         ht:ht, tva:tva, ttc:ttc, statut:'valide', envoye:false, ecritureId:null, devisId:null, transformeEn:null,
