@@ -3615,24 +3615,49 @@ function calcMontants(base, taux, baseEst){
   else { ht=r2(base); tva=r2(ht*taux/100); ttc=r2(ht+tva); }
   return {ht,tva,ttc};
 }
+/* Compte de TVA par TAUX (ventilation multi-taux).
+   Vente = TVA collectée (4457x) ; achat = TVA déductible (4456x).
+   Le 20 % conserve le compte par défaut (44571 / 44566) → aucune régression
+   sur les factures mono-taux. Les autres taux vont sur un sous-compte 4457x/4456x
+   distinct (tous captés par le module TVA, qui agrège 4457x / 4456x). */
+function tvaCompteVente(taux){ var r=Math.round((+taux||0)*100);
+  switch(r){ case 2000:return '44571'; case 1000:return '445712'; case 550:return '445713'; case 210:return '445714'; case 850:return '445715'; case 0:return null; default:return '445718'; } }
+function tvaCompteAchat(taux){ var r=Math.round((+taux||0)*100);
+  switch(r){ case 2000:return '44566'; case 1000:return '445662'; case 550:return '445663'; case 210:return '445664'; case 850:return '445665'; case 0:return null; default:return '445668'; } }
 function genEcriture(f){
   const t=db.tiers.find(x=>x.id===f.tiersId); const lignes=[];
+  const vent=(f.ventilation&&f.ventilation.length)?f.ventilation:null;
   // Ordre de saisie imposé : 1) tiers (401/411), 2) TVA, 3) charge (achat) / produit (vente)
   if(f.type==='achat'){
-    lignes.push({compte:'401', lib:'Fournisseur '+(t?t.nom:''), debit:0, credit:f.ttc});
-    lignes.push({compte:f.compteTVA, lib:COMPTES[f.compteTVA], debit:f.tva, credit:0});
-    lignes.push({compte:f.compteContre, lib:COMPTES[f.compteContre]||'Charge', debit:f.ht, credit:0});
+    if(vent){
+      lignes.push({compte:'401', lib:'Fournisseur '+(t?t.nom:''), debit:0, credit:f.ttc});
+      vent.forEach(function(v){ var cT=tvaCompteAchat(v.taux); if(cT && Math.abs(v.tva)>0.005) lignes.push({compte:cT, lib:(COMPTES[c9(cT)]||('TVA déd. '+v.taux+' %')), debit:v.tva, credit:0});
+        if(Math.abs(v.ht)>0.005) lignes.push({compte:f.compteContre, lib:COMPTES[f.compteContre]||'Charge', debit:v.ht, credit:0}); });
+    } else {
+      lignes.push({compte:'401', lib:'Fournisseur '+(t?t.nom:''), debit:0, credit:f.ttc});
+      lignes.push({compte:f.compteTVA, lib:COMPTES[f.compteTVA], debit:f.tva, credit:0});
+      lignes.push({compte:f.compteContre, lib:COMPTES[f.compteContre]||'Charge', debit:f.ht, credit:0});
+    }
   } else {
-    lignes.push({compte:'411', lib:'Client '+(t?t.nom:''), debit:f.ttc, credit:0});
-    lignes.push({compte:f.compteTVA, lib:COMPTES[f.compteTVA], debit:0, credit:f.tva});
-    lignes.push({compte:f.compteContre, lib:COMPTES[f.compteContre]||'Produit', debit:0, credit:f.ht});
+    if(vent){
+      lignes.push({compte:'411', lib:'Client '+(t?t.nom:''), debit:f.ttc, credit:0});
+      vent.forEach(function(v){ var cT=tvaCompteVente(v.taux); if(cT && Math.abs(v.tva)>0.005) lignes.push({compte:cT, lib:(COMPTES[c9(cT)]||('TVA '+v.taux+' %')), debit:0, credit:v.tva});
+        if(Math.abs(v.ht)>0.005) lignes.push({compte:f.compteContre, lib:COMPTES[f.compteContre]||'Produit', debit:0, credit:v.ht}); });
+    } else {
+      lignes.push({compte:'411', lib:'Client '+(t?t.nom:''), debit:f.ttc, credit:0});
+      lignes.push({compte:f.compteTVA, lib:COMPTES[f.compteTVA], debit:0, credit:f.tva});
+      lignes.push({compte:f.compteContre, lib:COMPTES[f.compteContre]||'Produit', debit:0, credit:f.ht});
+    }
   }
   return { id:uid(), factureId:f.id, date:f.date, journal:f.type==='achat'?'ACH':'VTE', libelle:f.numero+' · '+(t?t.nom:''), lignes };
 }
-function posterFacture({type, tiersId, date, base, baseEst, taux, compteContre, compteTVA, numero, echeance, source, modeReglement}){
-  const m=calcMontants(base, taux, baseEst);
+function posterFacture({type, tiersId, date, base, baseEst, taux, compteContre, compteTVA, numero, echeance, source, modeReglement, ventilation}){
+  const vent=(ventilation&&ventilation.length)?ventilation:null;
+  const m=vent
+    ? (function(){ var sh=r2(vent.reduce(function(a,v){return a+(+v.ht||0);},0)); var st=r2(vent.reduce(function(a,v){return a+(+v.tva||0);},0)); return {ht:sh, tva:st, ttc:r2(sh+st)}; })()
+    : calcMontants(base, taux, baseEst);
   const f={ id:uid(), type, tiersId, date, numero:numero||nextNumUnique(type==='achat'?'ACH':'FAC'),
-    taux:+taux, ht:m.ht, tva:m.tva, ttc:m.ttc, compteContre, compteTVA,
+    taux:+taux, ht:m.ht, tva:m.tva, ttc:m.ttc, compteContre, compteTVA, ventilation:vent,
     source:source||(type==='achat'?'manuelle':'vente'), modeReglement:modeReglement||'', recuLe:date };
   const ecr=genEcriture(f); f.ecritureId=ecr.id;
   /* COMPTE DE TIERS COMPLET (auxiliaire, ex. 401GASO00 / 411DUPO00) au lieu du collectif 401/411 :
@@ -8533,8 +8558,27 @@ function genererEcritureDoc(id){ const d=db.docs.find(x=>x.id===id); if(!d)retur
   yadaConfirm('Générer l\'écriture comptable de cette facture '+(prov?'(brouillon '+d.numero+')':d.numero)+' ?\n\nUne écriture de vente sera enregistrée (TVA collectée incluse) et transmise au module TVA.'+(prov?'\n\nUn numéro de facture DÉFINITIF et continu (FAC-…) lui sera attribué.':' La numérotation '+d.numero+' est définitive.'), function(){
   /* Numéro DÉFINITIF attribué à la comptabilisation → suite FAC continue (aucun trou si un brouillon a été supprimé). */
   if(estNumProvisoire(d.numero)){ d.numero=nextNumUnique('FAC'); d.provisoire=false; }
+  const signe=(d.ttc<0?-1:1);
   const taux=Math.abs(d.ht)>0?r2(Math.abs(d.tva)/Math.abs(d.ht)*100):20;
-  const f=posterFacture({type:'vente',tiersId:t.id,date:d.date,base:Math.abs(d.ht)*(d.ttc<0?-1:1),baseEst:'HT',taux,compteContre:t.compteContre,compteTVA:'44571',numero:d.numero,echeance:d.echeance});
+  /* VENTILATION TVA MULTI-TAUX : si la facture comporte plusieurs taux (20 % · 10 %…),
+     l'écriture ventile la TVA par taux sur les bons comptes 4457x (au lieu d'un seul taux moyen). */
+  const ventilation=(function(){
+    var groups={}, htBrutTot=0;
+    (d.lignes||[]).forEach(function(l){ var lht=(l.forfait?r2(+l.pu||0):r2((+l.qte||0)*(+l.pu||0))); var r=+l.taux||0; groups[r]=(groups[r]||0)+lht; htBrutTot+=lht; });
+    htBrutTot=r2(htBrutTot);
+    var rates=Object.keys(groups).map(Number);
+    var nz=rates.filter(function(r){ return r>0 && Math.abs(groups[r])>0.005; });
+    if(nz.length<=1) return null;   /* mono-taux → chemin classique (aucune régression) */
+    var fact=htBrutTot>0?(Math.abs(d.ht)/htBrutTot):1;
+    var vent=rates.map(function(r){ var htNet=r2(groups[r]*fact*signe); var tva=r2(htNet*r/100); return {taux:r, ht:htNet, tva:tva}; })
+                  .filter(function(v){ return Math.abs(v.ht)>0.005 || Math.abs(v.tva)>0.005; });
+    /* Ajustement d'arrondi : la somme HT / TVA doit égaler exactement d.ht / d.tva. */
+    var sh=r2(vent.reduce(function(a,v){return a+v.ht;},0)), st=r2(vent.reduce(function(a,v){return a+v.tva;},0));
+    var dh=r2(Math.abs(d.ht)*signe), dt=r2(Math.abs(d.tva)*signe);
+    if(vent.length){ var last=vent[vent.length-1]; last.ht=r2(last.ht+(dh-sh)); last.tva=r2(last.tva+(dt-st)); }
+    return vent;
+  })();
+  const f=posterFacture({type:'vente',tiersId:t.id,date:d.date,base:Math.abs(d.ht)*signe,baseEst:'HT',taux,compteContre:t.compteContre,compteTVA:'44571',numero:d.numero,echeance:d.echeance,ventilation:ventilation});
   d.ecritureId=f.ecritureId; d.statut='valide'; save(); render();
   toast('Écriture générée pour '+d.numero+' — TVA collectée transmise au module TVA');
   });
@@ -11050,7 +11094,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v500';
+    b.textContent='YADA · v501';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }

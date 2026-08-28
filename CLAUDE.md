@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Facturation : numéro définitif à la comptabilisation (suite FAC continue, sans trou) — v500
+## 🟢 Dernière mise à jour — Facturation (compta) : ventilation TVA MULTI-TAUX dans l'écriture de vente — v501
+**Quoi :** à la **comptabilisation** d'une facture comportant **plusieurs taux de TVA** (ex. 20 % · 10 % · 5,5 %), l'écriture de vente **ventile désormais la TVA par taux** sur les **bons comptes 4457x** (collectée), au lieu d'une seule ligne à un **taux moyen** (bug B4). Chaque taux crée sa **ligne de TVA** + sa **ligne de produit** (HT net) ; le **compte client** (411) porte le TTC. Une facture **mono-taux** produit **exactement la même écriture qu'avant** (aucune régression). Le module TVA (qui agrège tous les comptes 4457x) reste juste.
+
+**Comment — édition chirurgicale (precompta + build V1) :** paramètre **optionnel** `ventilation` sur `posterFacture` (tableau `[{taux, ht, tva}]`) → quand présent, `f.ht/tva/ttc` = sommes de la ventilation et `genEcriture` construit **une paire TVA + produit par taux** (helpers `tvaCompteVente`/`tvaCompteAchat` : 20 %→44571, 10 %→445712, 5,5 %→445713… ; 20 % conserve le compte par défaut → mono-taux inchangé). `genererEcritureDoc` calcule la ventilation depuis `d.lignes` (groupées par taux, net proportionnel remise/réduction, **ajustement d'arrondi** sur la dernière ligne pour que ΣHT=`d.ht` et ΣTVA=`d.tva`) et ne la passe **que si ≥ 2 taux** non nuls. `sw.js` yada-v96, badge v501, `version.json` 501.
+
+**Validé :** `node --check` (precompta 227 / V1 226, 0 erreur) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + Playwright (facture **1000 @20 % + 500 @10 %** → écriture **équilibrée 1750=1750** : 411 débit 1750, **445710000 crédit 200**, **445712000 crédit 50**, 706 crédit 1000 + 500 ; facture mono-taux **identique** à l'existant (3 lignes, 411/44571/706) ; module TVA collectée **450** captée ; 0 pageerror). Badge → **v501**.
+
+---
+
+## 🟢 MAJ précédente — Facturation : numéro définitif à la comptabilisation (suite FAC continue, sans trou) — v500
 **Quoi :** le **numéro de facture définitif `FAC-####` n'est plus attribué à la création** mais **à la comptabilisation** (bouton « ⚙️ Générer l'écriture »). Une facture non comptabilisée (brouillon, devis transformé, facture « à générer », récurrence) reçoit un **numéro PROVISOIRE `BR-####`** ; **supprimer un brouillon ne consomme aucun numéro FAC** → la **suite FAC reste continue (aucun trou)**, conforme aux règles françaises de facturation. À la comptabilisation, le `BR-####` est **remplacé par le prochain `FAC-####`** (attribué dans l'ordre de comptabilisation) et l'écriture de vente est postée avec ce numéro définitif. Devis (`DEV`) et Avoirs (`AV`) conservent leur numérotation à la création.
 
 **Comment — édition chirurgicale (precompta + build V1) :** helper `estNumProvisoire(n)` (`/^BR-/`) ; les sites de création de **facture** utilisent `nextNumUnique('BR')` — `nfCreer`, `emettre` (sauf comptabilisation immédiate `valider&&!skipGen` → `FAC`), `transformerDevis`, générateur de **récurrences** ; `genererEcritureDoc` attribue `d.numero=nextNumUnique('FAC')` **si** le numéro est provisoire, avant `posterFacture`, et adapte le message de confirmation. `sw.js` yada-v95, badge v500, `version.json` 500.
