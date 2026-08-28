@@ -11094,7 +11094,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v501';
+    b.textContent='YADA · v502';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21836,6 +21836,17 @@ ${lignes}
   /* --- état & actions --- */
   window.dsAccueil=function(){ window.dsListe=false; window.dsHub=false; window.dsSel=null; window.dsRub=null; window.dsActiveRub=null; window.dsRapport=false; if(typeof render==='function') render(); };
   window.dsOuvrirRapport=function(){ window.dsRapport=true; window.dsListe=false; window.dsHub=false; window.dsSel=null; if(typeof render==='function') render(); };
+  /* Accès DIRECT au module de facturation depuis l'accueil (« Espace dossiers », juste après
+     l'authentification) : ouvre la facturation du dossier ACTIF (ou de l'unique dossier) ;
+     sinon invite à choisir un dossier dans la liste. */
+  window.dsOuvrirFacturation=function(){
+    var id=(typeof db!=='undefined' && db && db.activeId)||null;
+    if(!id){ try{ var L=(db.cabinet&&db.cabinet.dossiers)||[]; if(L.length===1) id=L[0].id; }catch(e){} }
+    if(!id){ if(typeof toast==='function') toast('Sélectionnez d\'abord un dossier à facturer.'); if(typeof window.dsOuvrirListe==='function') window.dsOuvrirListe(); return; }
+    window.dsSel=id;
+    if(typeof window.dsEntrer==='function'){ window.dsEntrer('facturation'); }
+    else { try{ choisirDossier(id); current='facturation'; if(typeof render==='function') render(); }catch(e){} }
+  };
   window.dsOuvrirListe=function(){ window.dsListe=true; window.dsHub=false; if(typeof render==='function') render(); };
   window.dsSelectionner=function(id){ window.dsSel=id; window.dsListe=false; window.dsHub=true; if(typeof render==='function') render(); };
   window.dsOuvrirHub=function(){ if(window.dsSel){ window.dsHub=true; if(typeof render==='function') render(); } };
@@ -23547,6 +23558,11 @@ ${lignes}
             var dbtn='<button id="adm-logout-btn" class="btn btn-ghost" onclick="admDoLogout()" title="Fermer la session et revenir à la connexion">Déconnexion</button>';
             var rbtn='<button id="ds-rapport-btn" class="btn btn-ghost" onclick="dsOuvrirRapport()" title="Saisir un rapport journalier (transmis à Pilotages)">✎ Rapport</button>';
             h=h.replace('Importer des données (JSON)</button>','Importer des données (JSON)</button>'+dbtn+rbtn);
+          }
+          /* Bouton « 🧾 Facturation » (accès direct au module de facturation du dossier actif), avant « Liste Dossier ». */
+          if(h.indexOf('id="ds-facturation-btn"')<0 && h.indexOf('<button class="btn btn-gold" onclick="dsOuvrirListe()">Liste Dossier</button>')>=0){
+            var fbtn='<button id="ds-facturation-btn" class="btn btn-gold" onclick="dsOuvrirFacturation()" title="Ouvrir le module de facturation du dossier">🧾 Facturation</button>';
+            h=h.replace('<button class="btn btn-gold" onclick="dsOuvrirListe()">Liste Dossier</button>', fbtn+'<button class="btn btn-gold" onclick="dsOuvrirListe()">Liste Dossier</button>');
           }
           /* Bouton Espace Admin AVANT « Liste Dossier », même dimension (btn btn-gold), admin seulement. */
           if(window.sessionRole==='admin' && h.indexOf('id="adm-enter-btn"')<0){

@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Facturation (compta) : ventilation TVA MULTI-TAUX dans l'écriture de vente — v501
+## 🟢 Dernière mise à jour — Accès direct : bouton « 🧾 Facturation » sur l'accueil (juste après l'authentification) — v502
+**Quoi :** sur l'écran **« Espace dossiers »** (la page affichée **juste après la connexion**), un **bouton « 🧾 Facturation »** (bleu/or, à gauche de « Liste Dossier ») ouvre **directement le module de facturation** du **dossier actif** (le dernier travaillé), sans passer par Liste → HUB → rubrique. Si aucun dossier n'est actif mais qu'il n'en existe **qu'un seul**, il est utilisé automatiquement ; s'il y en a plusieurs et aucun actif, un message invite à en choisir un et ouvre la **Liste des dossiers**.
+
+**Comment — 2 éditions de l'addon du parcours d'entrée (precompta + build V1) :** nouvelle fonction `window.dsOuvrirFacturation()` (résout le dossier cible = `db.activeId` ou l'unique dossier ; pose `window.dsSel` puis réutilise `dsEntrer('facturation')` → `choisirDossier(id)` + `current='facturation'`) ; injection du bouton `#ds-facturation-btn` avant « Liste Dossier » dans le post-traitement de l'accueil (là où sont déjà greffés Déconnexion / ✎ Rapport). Le module `facturation` (id de `PAGES`) est inchangé. `sw.js` yada-v97, badge v502, `version.json` 502.
+
+**Validé :** `node --check` (precompta 227 / V1 226, 0 erreur) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + Playwright (accueil : bouton `#ds-facturation-btn` présent à côté de « Liste Dossier » ; clic → `current='facturation'`, `connecte=true`, page de facturation rendue pour le dossier actif ; 0 pageerror). Badge → **v502**.
+
+---
+
+## 🟢 MAJ précédente — Facturation (compta) : ventilation TVA MULTI-TAUX dans l'écriture de vente — v501
 **Quoi :** à la **comptabilisation** d'une facture comportant **plusieurs taux de TVA** (ex. 20 % · 10 % · 5,5 %), l'écriture de vente **ventile désormais la TVA par taux** sur les **bons comptes 4457x** (collectée), au lieu d'une seule ligne à un **taux moyen** (bug B4). Chaque taux crée sa **ligne de TVA** + sa **ligne de produit** (HT net) ; le **compte client** (411) porte le TTC. Une facture **mono-taux** produit **exactement la même écriture qu'avant** (aucune régression). Le module TVA (qui agrège tous les comptes 4457x) reste juste.
 
 **Comment — édition chirurgicale (precompta + build V1) :** paramètre **optionnel** `ventilation` sur `posterFacture` (tableau `[{taux, ht, tva}]`) → quand présent, `f.ht/tva/ttc` = sommes de la ventilation et `genEcriture` construit **une paire TVA + produit par taux** (helpers `tvaCompteVente`/`tvaCompteAchat` : 20 %→44571, 10 %→445712, 5,5 %→445713… ; 20 % conserve le compte par défaut → mono-taux inchangé). `genererEcritureDoc` calcule la ventilation depuis `d.lignes` (groupées par taux, net proportionnel remise/réduction, **ajustement d'arrondi** sur la dernière ligne pour que ΣHT=`d.ht` et ΣTVA=`d.tva`) et ne la passe **que si ≥ 2 taux** non nuls. `sw.js` yada-v96, badge v501, `version.json` 501.
