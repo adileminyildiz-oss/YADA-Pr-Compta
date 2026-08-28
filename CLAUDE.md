@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Facture (PDF) : logo image + couleur d'en-tête paramétrables — v498
+## 🟢 Dernière mise à jour — Facture (Création) : Débours (hors TVA) + Réduction + Remise + Acompte avec n° de facture d'origine — v499
+**Quoi :** la fenêtre **« Nouvelle facture »** (`#nf-overlay`) gagne des champs **sélectionnables** (vide = inactif, n'apparaît pas sur la facture) : (1) **Débours** — frais avancés au nom du client, **refacturés au coût, HORS base TVA** (art. 267 II-2°), ajoutés au **total à payer** sans TVA ; (2) **Réduction (rabais / ristourne)** — % ou € **sur le HT** (après la remise) ; (3) **Remise** (déjà présente, sur le HT) ; (4) **Acompte déjà facturé** avec **N° de la facture d'acompte d'origine** (affiché « Acompte facturé n° FAC-xxxx : −montant »). La facture A4 affiche les lignes correspondantes ; **Total TTC** reste la partie **taxée** (HT net + TVA), les débours apparaissant en **« Total à payer »**.
+
+**Comment — édition chirurgicale (precompta + build V1) :** `nfState` (+ `reductionType/reductionVal/debours/acompteFactureNum`), `nfSync` (lecture `nf-redtype/nf-redval/nf-debours/nf-acompte-num`), `nfTotaux` (remise → réduction sur HT → TVA proportionnelle → **débours hors TVA** → net à payer ; helper `nfReductionLabel`), `nfTempDoc`/`nfCreer` (persistance), `nfFormHTML` (champs), et `docHTML` (bloc `.inv-tot` : réduction, débours + « Total à payer », acompte + n°). **Rétrocompatible** : une facture sans ces champs s'affiche à l'identique. Aucune écriture modifiée à ce stade (ventilation multi-taux = lot suivant). `sw.js` yada-v94, badge v499, `version.json` 499.
+
+**Validé :** `node --check` (precompta 227 / V1 226, 0 erreur) + accolades CSS (2010/2010) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + Playwright (1000 HT @20 % · remise 10 % · réduction 5 % · débours 50 · acompte 200 → HT net **855**, TVA **171**, TTC taxé **1 026**, total à payer **1 076**, net à payer **876** ; PDF : lignes Réduction/Débours/« Total à payer »/« Acompte facturé n° FAC-0007 » présentes ; facture ancienne rendue à l'identique ; 0 pageerror). Badge → **v499**.
+
+---
+
+## 🟢 MAJ précédente — Facture (PDF) : logo image + couleur d'en-tête paramétrables — v498
 **Quoi :** dans **Paramètres de facturation**, deux réglages : (1) **Logo de la facture** — dépôt d'une **image** (PNG/JPG…, ≤ ~1,5 Mo) qui remplace le nom de la société en haut à droite de la **facture A4** (aperçu + PDF), avec aperçu + bouton « Retirer » ; (2) **Couleur d'en-tête** — un sélecteur de couleur qui teinte le **titre** (Facture / Devis / Avoir) de la facture. Le logo est enregistré **immédiatement** (persistant, dataURL) ; la couleur s'applique en cliquant **« Enregistrer les paramètres »**.
 
 **Comment — extension de l'addon `factParamCard`/`factParamSave` (precompta + build V1) + édition de `docHTML` :** nouvelle section « Logo & couleur d'en-tête » (input `type=file` → `factParamLogo()` FileReader→dataURL dans `db.societe.logo` ; `factParamLogoDel()` ; input `type=color` `#fp-color` → `s.factureCouleur`). Dans `docHTML`, la zone `.inv-logo` affiche `<img src=logo>` si présent (sinon la raison sociale) et `.inv-h1` reçoit `style="color:<couleur>"`. Aucune logique comptable modifiée. `sw.js` yada-v93, badge v498, `version.json` 498.

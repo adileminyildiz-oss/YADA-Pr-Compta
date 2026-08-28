@@ -4705,13 +4705,16 @@ function docHTML(d){
     <table class="inv-t"><thead><tr><th class="l">Description</th><th>Qté</th><th>Prix Unitaire</th><th>TVA (%)</th><th>Total HT</th></tr></thead>
       <tbody>${rows}</tbody></table>
     <div class="inv-tot">
-      ${d.remiseMontant?`<div><span class="lbl">Total HT brut</span><span>${eur(Math.abs(d.htBrut||0))}</span></div><div><span class="lbl">Remise (${d.remiseLabel||''})</span><span>-${eur(Math.abs(d.remiseMontant))}</span></div>`:''}
+      ${(d.remiseMontant||d.reductionMontant)?`<div><span class="lbl">Total HT brut</span><span>${eur(Math.abs(d.htBrut||0))}</span></div>`:''}
+      ${d.remiseMontant?`<div><span class="lbl">Remise (${d.remiseLabel||''})</span><span>-${eur(Math.abs(d.remiseMontant))}</span></div>`:''}
+      ${d.reductionMontant?`<div><span class="lbl">Réduction (${d.reductionLabel||''})</span><span>-${eur(Math.abs(d.reductionMontant))}</span></div>`:''}
       <div><span class="lbl">Total HT</span><span>${eur(ht)}</span></div>
       <div><span class="lbl">Total TVA</span><span>${eur(tva)}</span></div>
-      <div class="ttc"><span class="lbl">Total TTC</span><span>${eur(ttc)}</span></div>
-      ${d.acompte?`<div><span class="lbl">Acompte versé</span><span>-${eur(Math.abs(d.acompte))}</span></div>`:''}
+      <div class="ttc"><span class="lbl">Total TTC</span><span>${eur(r2(ht+tva))}</span></div>
+      ${d.debours?`<div><span class="lbl">Débours (non soumis à TVA)</span><span>+${eur(Math.abs(d.debours))}</span></div><div class="ttc"><span class="lbl">Total à payer</span><span>${eur(r2(ht+tva+Math.abs(d.debours)))}</span></div>`:''}
+      ${d.acompte?`<div><span class="lbl">Acompte facturé${d.acompteFactureNum?(' n° '+d.acompteFactureNum):''}</span><span>-${eur(Math.abs(d.acompte))}</span></div>`:''}
       ${d.retenue?`<div><span class="lbl">Retenue de garantie</span><span>-${eur(Math.abs(d.retenue))}</span></div>`:''}
-      ${(d.acompte||d.retenue)?`<div class="ttc"><span class="lbl">Net à payer</span><span>${eur(Math.abs(d.netAPayer!=null?d.netAPayer:ttc))}</span></div>`:''}
+      ${(d.acompte||d.retenue)?`<div class="ttc"><span class="lbl">Net à payer</span><span>${eur(Math.abs(d.netAPayer!=null?d.netAPayer:(ht+tva)))}</span></div>`:''}
     </div>
     <div class="inv-cond">
       Type de transaction : ${d.moyen||s.moyenDefaut||'Virement'}<br>Conditions de paiement de la TVA : ${d.tvaCondition||s.tvaCondition||'Sur les encaissements'}<br>
@@ -8367,20 +8370,30 @@ function nfTotaux(){ const s=nfState; let htBrut=0; const parTaux={};
   let remiseMontant=0;
   if(s.remiseType==='pct') remiseMontant=r2(htBrut*(+s.remiseVal||0)/100);
   else if(s.remiseType==='eur') remiseMontant=Math.min(htBrut,r2(+s.remiseVal||0));
-  const htNet=r2(htBrut-remiseMontant);
+  const htApresRemise=r2(htBrut-remiseMontant);
+  /* Réduction (rabais / ristourne) : appliquée sur le HT APRÈS remise. */
+  let reductionMontant=0;
+  if(s.reductionType==='pct') reductionMontant=r2(htApresRemise*(+s.reductionVal||0)/100);
+  else if(s.reductionType==='eur') reductionMontant=Math.min(htApresRemise,r2(+s.reductionVal||0));
+  const htNet=r2(htApresRemise-reductionMontant);
   const fact=htBrut>0?(htNet/htBrut):1;
   let tva=0; Object.keys(parTaux).forEach(t=>{ tva+=r2(parTaux[t]*fact*(+t)/100); }); tva=r2(tva);
-  const ttc=r2(htNet+tva);
+  const ttcTaxe=r2(htNet+tva);
+  /* Débours : frais avancés au nom du client, refacturés au coût, HORS base TVA (art. 267 II-2°). */
+  const debours=r2(+s.debours||0);
+  const ttc=r2(ttcTaxe+debours);
   const acompte=r2(+s.acompte||0);
-  const retenue=s.retenue?r2(ttc*(+s.retenue||0)/100):0;
+  const retenue=s.retenue?r2(ttcTaxe*(+s.retenue||0)/100):0;
   const netAPayer=r2(ttc-acompte-retenue);
-  return {htBrut,remiseMontant,htNet,tva,ttc,acompte,retenue,netAPayer}; }
+  return {htBrut,remiseMontant,reductionMontant,htNet,tva,ttcTaxe,debours,ttc,acompte,retenue,netAPayer}; }
 function nfRemiseLabel(){ const s=nfState; if(s.remiseType==='pct')return (s.remiseVal||0)+' %'; if(s.remiseType==='eur')return eur(s.remiseVal||0); return ''; }
+function nfReductionLabel(){ const s=nfState; if(s.reductionType==='pct')return (s.reductionVal||0)+' %'; if(s.reductionType==='eur')return eur(s.reductionVal||0); return ''; }
 function nfTempDoc(){ nfSync(); const tot=nfTotaux(); const s=nfState;
   return { type:s.type, clientId:s.clientId, date:s.date, echeance:s.ech, numero:s.numero||'(brouillon)', devise:s.devise,
     lignes:s.lignes.map(l=>({desc:l.desc,qte:l.forfait?1:l.qte,pu:l.pu,taux:l.taux,unite:l.forfait?'forfait':l.unite})),
     htBrut:tot.htBrut, remiseMontant:tot.remiseMontant, remiseLabel:nfRemiseLabel(),
-    ht:tot.htNet, tva:tot.tva, ttc:tot.ttc, acompte:tot.acompte, retenue:tot.retenue, netAPayer:tot.netAPayer,
+    reductionMontant:tot.reductionMontant, reductionLabel:nfReductionLabel(), debours:tot.debours,
+    ht:tot.htNet, tva:tot.tva, ttc:tot.ttc, acompte:tot.acompte, acompteFactureNum:s.acompteFactureNum||'', retenue:tot.retenue, netAPayer:tot.netAPayer,
     moyen:s.moyen, conditions:s.conditions, escompte:s.escompte, escompteDelai:s.escompteDelai, showPay:s.showPay!==false }; }
 
 /* ----- Synchronisation des champs scalaires ----- */
@@ -8394,7 +8407,11 @@ function nfSync(){ if(!nfState)return; const g=id=>{const e=document.getElementB
   if((v=g('nf-notes'))!=null)s.notes=v;
   if((v=g('nf-remtype'))!=null)s.remiseType=v;
   if((v=g('nf-remval'))!=null)s.remiseVal=+v||0;
+  if((v=g('nf-redtype'))!=null)s.reductionType=v;
+  if((v=g('nf-redval'))!=null)s.reductionVal=+v||0;
+  if((v=g('nf-debours'))!=null)s.debours=+v||0;
   if((v=g('nf-acompte'))!=null)s.acompte=+v||0;
+  if((v=g('nf-acompte-num'))!=null)s.acompteFactureNum=v;
   if((v=g('nf-moyen'))!=null)s.moyen=v;
   if((v=g('nf-cond'))!=null)s.conditions=v;
   if((v=g('nf-esc'))!=null)s.escompte=+v||0;
@@ -8446,7 +8463,18 @@ function nfFormHTML(){ const clients=db.tiers.filter(t=>t.type==='client'); cons
         <option value="eur" ${s.remiseType==='eur'?'selected':''}>€ montant fixe</option></select></div>
       <div class="field"><label>Valeur remise</label><input id="nf-remval" type="number" value="${s.remiseVal||0}" oninput="nfUpdate()"></div>
     </div>
-    <div class="field"><label>Acompte versé (€)</label><input id="nf-acompte" type="number" value="${s.acompte||''}" placeholder="ex : 300 — vide si aucun acompte" oninput="nfUpdate()"></div>
+    <div class="row g2">
+      <div class="field"><label>Réduction (rabais / ristourne)</label><select id="nf-redtype" onchange="nfUpdate()">
+        <option value="" ${!s.reductionType?'selected':''}>Aucune réduction</option>
+        <option value="pct" ${s.reductionType==='pct'?'selected':''}>% pourcentage</option>
+        <option value="eur" ${s.reductionType==='eur'?'selected':''}>€ montant fixe</option></select></div>
+      <div class="field"><label>Valeur réduction</label><input id="nf-redval" type="number" value="${s.reductionVal||0}" oninput="nfUpdate()"></div>
+    </div>
+    <div class="field"><label>Débours (frais avancés — hors TVA)</label><input id="nf-debours" type="number" value="${s.debours||''}" placeholder="ex : 50 — refacturés au coût, non soumis à TVA" oninput="nfUpdate()"></div>
+    <div class="row g2">
+      <div class="field"><label>Acompte déjà facturé (€)</label><input id="nf-acompte" type="number" value="${s.acompte||''}" placeholder="ex : 300 — vide si aucun acompte" oninput="nfUpdate()"></div>
+      <div class="field"><label>N° facture d'acompte</label><input id="nf-acompte-num" value="${(s.acompteFactureNum||'').replace(/"/g,'&quot;')}" placeholder="ex : FAC-0007" oninput="nfState.acompteFactureNum=this.value"></div>
+    </div>
     <div class="field"><label>Moyen de paiement</label><select id="nf-moyen" onchange="nfUpdate()">${NF_MOYENS.map(m=>`<option ${m===s.moyen?'selected':''}>${m}</option>`).join('')}</select></div>
     <div class="row g2">
       <div class="field"><label>Escompte paiement anticipé (%)</label><input id="nf-esc" type="number" value="${s.escompte||''}" placeholder="ex : 2 — vide si aucun" oninput="nfUpdate()"></div>
@@ -8457,7 +8485,7 @@ function nfFormHTML(){ const clients=db.tiers.filter(t=>t.type==='client'); cons
 function factureNouvelleOuvrir(){
   var _cond=(typeof faCondDefaut==='function'?faCondDefaut():'30 jours');
   nfState={ type:'facture', clientId:'', date:todayStr(), ech:(typeof faEcheanceFromCond==='function'?faEcheanceFromCond(todayStr(),_cond):todayStr()), devise:'EUR',
-    lignes:[nfLigneVide()], notes:'', remiseType:'', remiseVal:0, acompte:0,
+    lignes:[nfLigneVide()], notes:'', remiseType:'', remiseVal:0, reductionType:'', reductionVal:0, debours:0, acompte:0, acompteFactureNum:'',
     moyen:'Non précisé', conditions:_cond, escompte:0, escompteDelai:0, retenue:0 };
   let ov=document.getElementById('nf-overlay'); if(!ov){ ov=document.createElement('div'); ov.id='nf-overlay'; document.body.appendChild(ov); }
   ov.innerHTML='<div class="nf-wrap"><div class="nf-form">'+nfFormHTML()+'</div><div class="nf-prev"><div id="nf-prev-inner"></div></div></div>';
@@ -8482,8 +8510,9 @@ function nfCreer(){ nfSync(); const s=nfState;
   const doc={ id:uid(), type:s.type, clientId:s.clientId, date:s.date, echeance:s.ech, numero, devise:s.devise,
     lignes:JSON.parse(JSON.stringify(s.lignes)),
     htBrut:r2(tot.htBrut*signe), remiseMontant:r2(tot.remiseMontant*signe), remiseLabel:nfRemiseLabel(),
+    reductionMontant:r2(tot.reductionMontant*signe), reductionLabel:nfReductionLabel(), debours:r2(tot.debours*signe),
     ht:r2(tot.htNet*signe), tva:r2(tot.tva*signe), ttc:r2(tot.ttc*signe),
-    acompte:r2(tot.acompte), retenue:r2(tot.retenue*signe), netAPayer:r2(tot.netAPayer*signe),
+    acompte:r2(tot.acompte), acompteFactureNum:s.acompteFactureNum||'', retenue:r2(tot.retenue*signe), netAPayer:r2(tot.netAPayer*signe),
     notesCompta:s.notes, moyen:s.moyen, conditions:s.conditions, escompte:s.escompte, escompteDelai:s.escompteDelai, showPay:s.showPay!==false,
     statut:'brouillon', envoye:false, ecritureId:null, devisId:null, transformeEn:null };
   db.docs.push(doc); save(); nfFermer(); render();
@@ -8574,7 +8603,18 @@ function nfFormHTML(){ const clients=db.tiers.filter(t=>t.type==='client'); cons
         <option value="eur" ${s.remiseType==='eur'?'selected':''}>€ montant fixe</option></select></div>
       <div class="field"><label>Valeur remise</label><input id="nf-remval" type="number" value="${s.remiseVal||0}" oninput="nfUpdate()"></div>
     </div>
-    <div class="field"><label>Acompte versé (€)</label><input id="nf-acompte" type="number" value="${s.acompte||''}" placeholder="ex : 300 — vide si aucun acompte" oninput="nfUpdate()"></div>
+    <div class="row g2">
+      <div class="field"><label>Réduction (rabais / ristourne)</label><select id="nf-redtype" onchange="nfUpdate()">
+        <option value="" ${!s.reductionType?'selected':''}>Aucune réduction</option>
+        <option value="pct" ${s.reductionType==='pct'?'selected':''}>% pourcentage</option>
+        <option value="eur" ${s.reductionType==='eur'?'selected':''}>€ montant fixe</option></select></div>
+      <div class="field"><label>Valeur réduction</label><input id="nf-redval" type="number" value="${s.reductionVal||0}" oninput="nfUpdate()"></div>
+    </div>
+    <div class="field"><label>Débours (frais avancés — hors TVA)</label><input id="nf-debours" type="number" value="${s.debours||''}" placeholder="ex : 50 — refacturés au coût, non soumis à TVA" oninput="nfUpdate()"></div>
+    <div class="row g2">
+      <div class="field"><label>Acompte déjà facturé (€)</label><input id="nf-acompte" type="number" value="${s.acompte||''}" placeholder="ex : 300 — vide si aucun acompte" oninput="nfUpdate()"></div>
+      <div class="field"><label>N° facture d'acompte</label><input id="nf-acompte-num" value="${(s.acompteFactureNum||'').replace(/"/g,'&quot;')}" placeholder="ex : FAC-0007" oninput="nfState.acompteFactureNum=this.value"></div>
+    </div>
     <div class="field"><label>Moyen de paiement</label><select id="nf-moyen" onchange="nfUpdate()">${NF_MOYENS.map(m=>`<option ${m===s.moyen?'selected':''}>${m}</option>`).join('')}</select></div>
     <div class="row g2">
       <div class="field"><label>Escompte paiement anticipé (%)</label><input id="nf-esc" type="number" value="${s.escompte||''}" placeholder="ex : 2 — vide si aucun" oninput="nfUpdate()"></div>
@@ -11002,7 +11042,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v498';
+    b.textContent='YADA · v499';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
