@@ -11094,7 +11094,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v505';
+    b.textContent='YADA · v506';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -26410,6 +26410,19 @@ html body{font-family:'Inter','IBM Plex Sans',system-ui,-apple-system,'Segoe UI'
 .mod-wrap .page-head h1,.dash-wrap .page-head h1,.login-title,#sec-lock .sec-body h2,#sec-lock .sec-logo,
 .card>h2,.card>h3{letter-spacing:-.012em;text-wrap:balance}
 .mod-wrap .page-head h1,.dash-wrap .page-head h1{font-weight:700}
+</style>
+<style id="yada-pc-focus">
+/* ============================================================
+   YADA — REFONTE 2026 · Focus PC (pas mobile)
+   Sur ORDINATEUR, on masque les bannières flottantes qui proposent
+   d'installer l'application MOBILE (elles chevauchaient le contenu et
+   n'ont pas leur place dans l'expérience PC). L'installation reste
+   disponible dans Paramétrage ; sur mobile la bannière est conservée.
+   100% CSS, desktop uniquement, aucune logique modifiée.
+   ============================================================ */
+@media(min-width:821px){
+  #yada-dl-banner,#mob-prop{display:none !important}
+}
 </style>
 </body>
 </html>
