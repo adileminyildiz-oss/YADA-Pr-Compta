@@ -11094,7 +11094,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v506';
+    b.textContent='YADA · v507';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -26317,6 +26317,48 @@ ${lignes}
     B+' #ec-hero .cab-hero-sub,'+B+' #ec-hero small{color:#9aa2bd !important}'
   ].join('\n');
   try{ var s=document.createElement('style'); s.id='yada-refonte-2'; s.textContent=css; document.head.appendChild(s); }catch(e){}
+})();
+</script>
+<script id="yada-addon239">
+/* ============================================================
+   YADA — REFONTE 2026 · Lot 6 — Harmonisation des accents (bleu → indigo/violet)
+   Le thème NUIT pilotait ses accents par --blue/--accent = #1e90ff (bleu vif).
+   On les remappe vers l'indigo/violet de la DA + on recolore les actifs codés
+   en dur (liseré de titre, segmented control, onglets de mois, pastille statut).
+   Le vert/rouge comptable est préservé. 100% CSS additif, injecté en dernier.
+   Scopé html body[data-theme="noir"]. Aucune logique / sélecteur JS modifié.
+   ============================================================ */
+(function(){
+  var B='html body[data-theme="noir"]';
+  var css=[
+    /* --- Variables d'accent → indigo (prime sur les !important de body[data-theme]) --- */
+    B+'{--blue:#5b6cff !important;--accent:#5b6cff !important;--line-strong:#5b6cff !important}',
+    /* --- Liseré à gauche des titres de carte --- */
+    B+' .card h2::before{background:linear-gradient(180deg,#7f8cff,#8a5cff) !important;'
+      +'box-shadow:0 0 14px rgba(91,108,255,.55) !important}',
+    /* --- Segmented control (régime TVA) + onglets de mois (TVA, Charges & Paie) + theme-switch : actif indigo→violet --- */
+    B+' .seg button.on,'+B+' .cp-mtab.on,'+B+' .theme-switch button.on{'
+      +'background:linear-gradient(120deg,#5b6cff,#8a5cff) !important;color:#fff !important;border-color:transparent !important}',
+    /* --- Pastille de statut « En cours » (dossier) --- */
+    B+' .dstat-chip.wip{background:rgba(91,108,255,.16) !important;border-color:rgba(91,108,255,.5) !important;color:#9fb0ff !important}',
+    B+' .dstat-menu button.wip .dot{background:#9fb0ff !important;color:#9fb0ff !important}',
+    B+' .dstat-menu button:hover{background:rgba(91,108,255,.14) !important}',
+    /* --- Justificatifs TVA + survol de lignes : teinte indigo discrète --- */
+    B+' .tva-just{background:rgba(91,108,255,.09) !important;border-left-color:#5b6cff !important}',
+    B+' main:not(.fullbleed) tr:hover td,'+B+' .dash-wrap tr:hover td,'+B+' tr:hover td{background:rgba(91,108,255,.10) !important}',
+    /* --- Liens --- */
+    B+' .rg-link,'+B+' .linkname{color:#9fb0ff !important}',
+
+    /* --- Consultation (.sg-app) : accents bleu vif → indigo/violet (période active, journal, onglet, titre, flèches d'exercice + « Éditions ») --- */
+    B+' .sg-peritem.on{background:linear-gradient(120deg,#5b6cff,#8a5cff) !important}',
+    B+' .sg-peritem.on,'+B+' .sg-peritem.on *{color:#fff !important}',
+    B+' .sg-jrnitem.on{background:rgba(91,108,255,.26) !important;color:#eef1ff !important}',
+    B+' .sg-tab.on{border-top-color:#8a5cff !important}',
+    B+' .sg-app .sg-title{border-bottom:1px solid rgba(91,108,255,.45) !important}',
+    B+' .sg-exoarr{background:rgba(91,108,255,.20) !important;border-color:rgba(138,92,255,.7) !important;color:#e7e9ff !important}',
+    B+' .sg-exoarr:hover{background:linear-gradient(120deg,#5b6cff,#8a5cff) !important;border-color:#8a5cff !important}'
+  ].join('\n');
+  try{ var s=document.createElement('style'); s.id='yada-refonte-3'; s.textContent=css; document.head.appendChild(s); }catch(e){}
 })();
 </script>
 <style id="yada-font-inter">
