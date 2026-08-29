@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Focus PC : bannières d'installation MOBILE masquées sur ordinateur (vue PC épurée) — v506
+## 🟢 Dernière mise à jour — REFONTE DA (Lot 6 · Harmonisation des accents) : bleu vif → indigo/violet dans tous les modules + Consultation — v507
+**Quoi :** **refonte complète des accents** — le thème NUIT pilotait tout son accent par les variables `--blue/--accent = #1e90ff` (bleu vif), en décalage avec la DA « Nextmove » (indigo→violet + magenta). On **remappe ces variables vers l'indigo** et on **recolore les éléments actifs codés en dur** : liseré à gauche des **titres de carte**, **segmented control** (régime TVA), **onglets de mois** (TVA + Charges & Paie), **theme-switch**, **pastille de statut « En cours »**, survols de lignes, justificatifs TVA, liens — et la **Consultation (`.sg-app`)** : **période active**, **journal actif**, **onglet actif**, **filet du bandeau de titre**, **flèches d'exercice ‹ ›** et bouton **« 🖨 Éditions »**. Le **vert/rouge comptable** (CA / Charges / crédit / débit) est **préservé**. Résultat : TVA, Charges & Paie, Journal, Éditions, Analytique, Banque, Suivi des règlements, Tableau de bord, parcours d'entrée **et** Consultation partagent le même accent indigo/violet.
+
+**Comment — `yada-addon239` (`<style id="yada-refonte-3">`, 100% CSS additif, injecté en dernier ; scopé `html body[data-theme="noir"]` — spécificité 0,1,2+ > `body[data-theme="noir"]` !important, precompta + build V1) :** remap `--blue/--accent/--line-strong` → `#5b6cff` ; `.card h2::before`, `.seg button.on`, `.cp-mtab.on`, `.theme-switch button.on`, `.dstat-chip.wip`, `.tva-just`, hovers de ligne, `.rg-link/.linkname` ; `.sg-peritem.on`, `.sg-jrnitem.on`, `.sg-tab.on`, `.sg-app .sg-title`, `.sg-exoarr` (+ `.sg-edlink`) → indigo/violet. Aucune logique / sélecteur JS modifié. `sw.js` yada-v102, badge v507, `version.json` 507.
+
+**Validé :** `node --check` (precompta 230 / V1 229, 0 erreur) + `sw.js` OK + accolades CSS (2017/2017) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + Playwright (TVA : `.seg button.on` & `.cp-mtab.on` = dégradé `rgb(91,108,255)` ; Consultation : `.sg-peritem.on` = dégradé indigo, `.sg-exoarr` bord `rgba(138,92,255,.7)` ; **0 débordement horizontal** ; **0 pageerror**) + captures (TVA & Consultation en indigo/violet, vert/rouge comptable intacts). Badge → **v507**.
+
+---
+
+## 🟢 MAJ précédente — Focus PC : bannières d'installation MOBILE masquées sur ordinateur (vue PC épurée) — v506
 **Quoi :** l'expérience **ordinateur (PC)** est privilégiée. Les **bannières flottantes qui proposent d'installer l'application MOBILE** (« Téléchargez l'application YADA » `#yada-dl-banner` + « Installez aussi YADA sur votre mobile » `#mob-prop`) **ne s'affichent plus sur ordinateur** (elles **chevauchaient le contenu** en bas de page et n'ont pas leur place dans la vue PC). L'**installation reste disponible** (carte « Installer l'application » dans **Paramétrage**, + icône native du navigateur) ; sur **mobile**, la bannière d'ajout à l'écran d'accueil est **conservée**.
 
 **Comment — `yada-pc-focus` (`<style>` additif, precompta + build V1) :** `@media(min-width:821px){#yada-dl-banner,#mob-prop{display:none !important}}`. 100% CSS, **desktop uniquement**, aucune logique / aucun sélecteur JS modifié. `sw.js` yada-v101, badge v506, `version.json` 506.
