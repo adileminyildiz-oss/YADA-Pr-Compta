@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — REFONTE DA (Lot 5 · Typographie) : nouvelle police **Inter** embarquée (hors-ligne) + hero harmonisé — v505
+## 🟢 Dernière mise à jour — Focus PC : bannières d'installation MOBILE masquées sur ordinateur (vue PC épurée) — v506
+**Quoi :** l'expérience **ordinateur (PC)** est privilégiée. Les **bannières flottantes qui proposent d'installer l'application MOBILE** (« Téléchargez l'application YADA » `#yada-dl-banner` + « Installez aussi YADA sur votre mobile » `#mob-prop`) **ne s'affichent plus sur ordinateur** (elles **chevauchaient le contenu** en bas de page et n'ont pas leur place dans la vue PC). L'**installation reste disponible** (carte « Installer l'application » dans **Paramétrage**, + icône native du navigateur) ; sur **mobile**, la bannière d'ajout à l'écran d'accueil est **conservée**.
+
+**Comment — `yada-pc-focus` (`<style>` additif, precompta + build V1) :** `@media(min-width:821px){#yada-dl-banner,#mob-prop{display:none !important}}`. 100% CSS, **desktop uniquement**, aucune logique / aucun sélecteur JS modifié. `sw.js` yada-v101, badge v506, `version.json` 506.
+
+**Validé :** `node --check` (0 erreur) + `sw.js` OK + accolades CSS (2017/2017) + Playwright PC **1920×1080** (bannière `#yada-dl-banner` → `display:none`, `#mob-prop` absent ; **0 débordement horizontal** ; **0 pageerror**) + capture (tableau de bord PC épuré : hero indigo→noir, KPI, typographie Inter, sans bannière mobile). Badge → **v506**.
+
+---
+
+## 🟢 MAJ précédente — REFONTE DA (Lot 5 · Typographie) : nouvelle police **Inter** embarquée (hors-ligne) + hero harmonisé — v505
 **Quoi :** **nouvelle direction typographique** (autorisée) : toute l'interface passe en **police Inter** — un grotesque moderne, net et géométrique, cohérent avec la DA « Nextmove/Stream » (titres resserrés, chiffres alignés). La police est **embarquée dans le fichier** (woff2 variable, sous-ensemble latin — accents FR, «», €, →, Σ) → **100% hors-ligne, aucune requête réseau** (l'app référençait `IBM Plex Sans`/`Inter` sans jamais les charger → repli system-ui ; désormais Inter s'affiche réellement). Les **éditions comptables** (`.doc-page`/`.inv`/`.sg-*`/`.lx-*`/`.rb-*`/`.ec-sage`) **gardent leur police d'impression** (elles déclarent la leur → non impactées). Finition : l'**anneau bleu vif du hero** (Tableau de bord / Espace Client) est remplacé par le **filet discret** de la refonte (dégradé indigo→noir).
 
 **Comment :**
