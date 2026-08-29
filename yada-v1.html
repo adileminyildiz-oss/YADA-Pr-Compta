@@ -11094,7 +11094,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v503';
+    b.textContent='YADA · v504';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -26237,6 +26237,80 @@ ${lignes}
     B+' ::-webkit-scrollbar-thumb:hover{background:rgba(120,140,200,.44)}'
   ].join('\n');
   try{ var s=document.createElement('style'); s.id='yada-refonte-1'; s.textContent=css; document.head.appendChild(s); }catch(e){}
+})();
+</script>
+<script id="yada-addon236">
+/* ============================================================
+   YADA — REFONTE 2026 · Lot 2-4 — thème NUIT
+   Lot 2 : barre latérale (finitions Nextmove), sous-modules, chip retour.
+   Lot 3 : écran de connexion « Stream » (panneau marque + formulaire).
+   Lot 4 : toasts, repères (Enregistré / Synchro / version), pastilles.
+   100% CSS additif, injecté APRÈS le Lot 1 → prime. Scopé thème NUIT
+   (le bouton nuit/jour reste intact). Aucune logique / sélecteur JS modifié.
+   ============================================================ */
+(function(){
+  var B='html body[data-theme="noir"]';
+  var SL=B+' #sec-lock';
+  var css=[
+    /* ===== Lot 2 · Barre latérale (finitions) ===== */
+    B+' aside{background:linear-gradient(180deg,#0a0d16,#070810) !important}',
+    B+' aside .brand small{color:#5b6577 !important;letter-spacing:.16em !important;text-transform:uppercase;font-size:8.5px !important}',
+    B+' #nav .nav-sub{border-left:2px solid rgba(138,92,255,.35) !important}',
+    B+' #nav .nav-grp-h.has-active{color:#e2e6f2 !important}',
+    B+' #nav .nav-grp-h.has-active .ico{color:#9fb0ff !important;filter:none !important}',
+    B+' #nav .nav-sub-btn:hover{background:rgba(255,255,255,.05) !important;color:#fff !important}',
+    B+' #nav .nav-chev{color:#6b7488 !important}',
+    B+' aside::-webkit-scrollbar-thumb,'+B+' #nav::-webkit-scrollbar-thumb{background:rgba(120,140,200,.28) !important}',
+    /* Chip flottant « Retour au dossier » (modules pleine largeur) */
+    B+' #ds-back-chip{background:linear-gradient(180deg,#16171f,#101119) !important;border:1px solid rgba(255,255,255,.08) !important;'
+      +'color:#cfd6e6 !important;border-radius:11px !important;box-shadow:0 12px 30px rgba(0,0,0,.5) !important}',
+    B+' #ds-back-chip:hover{border-color:rgba(138,92,255,.5) !important;'
+      +'box-shadow:0 0 0 3px rgba(91,108,255,.18),0 12px 30px rgba(0,0,0,.55) !important}',
+
+    /* ===== Lot 3 · Écran de connexion « Stream » ===== */
+    SL+'{background:radial-gradient(1100px 700px at 80% -10%,rgba(90,80,255,.16),transparent 55%),'
+      +'radial-gradient(760px 560px at 4% 6%,rgba(255,47,154,.07),transparent 55%),#070810 !important}',
+    /* Panneau MARQUE (gauche) : dégradé indigo->noir + halo magenta */
+    SL+' .sec-hero{background:radial-gradient(760px 520px at 18% 12%,rgba(138,92,255,.40),transparent 60%),'
+      +'radial-gradient(620px 520px at 92% 104%,rgba(255,47,154,.16),transparent 60%),'
+      +'linear-gradient(160deg,#141138,#080910) !important;border-right:1px solid rgba(255,255,255,.07) !important}',
+    SL+' .sec-hero .sec-logo{color:#fff !important;text-shadow:0 8px 40px rgba(122,108,255,.6) !important}',
+    SL+' .sec-hero .sec-logo small{color:#bcabff !important;letter-spacing:.22em !important}',
+    SL+' .sec-tagline{color:#cbc9ea !important}',
+    SL+' .sec-points li{color:#9aa2bd !important}',
+    SL+' .sec-points li::before{color:#8a5cff !important}',
+    /* Panneau FORMULAIRE (droite) */
+    SL+' .sec-body{background:#0a0b12 !important}',
+    SL+' .sec-body h2{color:#eceef5 !important}',
+    SL+' .sec-p{color:#8b93a7 !important}',
+    /* Champs */
+    SL+' input{background:#0e121b !important;color:#eceef5 !important;'
+      +'border:1px solid rgba(255,255,255,.10) !important;border-radius:12px !important}',
+    SL+' input::placeholder{color:#6b7488 !important}',
+    SL+' input:focus{border-color:#5b6cff !important;box-shadow:0 0 0 3px rgba(91,108,255,.24) !important;outline:none !important}',
+    /* Boutons */
+    SL+' .sec-cta:not(.sec-cta-2){background:linear-gradient(135deg,#5b6cff,#8a5cff) !important;color:#fff !important;'
+      +'border:0 !important;box-shadow:0 10px 26px -6px rgba(91,108,255,.7) !important}',
+    SL+' .sec-cta:not(.sec-cta-2):hover{filter:brightness(1.08);'
+      +'box-shadow:0 0 0 2px rgba(122,108,255,.42),0 14px 34px -6px rgba(91,108,255,.6) !important}',
+    SL+' .sec-cta-2{background:rgba(255,255,255,.05) !important;color:#e7e9f3 !important;'
+      +'border:1px solid rgba(138,92,255,.5) !important;box-shadow:none !important}',
+    SL+' .sec-cta-2:hover{background:rgba(138,92,255,.14) !important;border-color:#8a5cff !important}',
+    SL+' .sec-ver{color:#5b6274 !important}',
+
+    /* ===== Lot 4 · Toasts, repères, pastilles ===== */
+    B+' .toast{background:linear-gradient(180deg,rgba(22,23,31,.96),rgba(16,17,25,.96)) !important;'
+      +'border:1px solid rgba(138,92,255,.40) !important;color:#eceef5 !important;'
+      +'box-shadow:0 16px 40px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.04) inset !important;'
+      +'-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}',
+    B+' #yada-save-ind{background:linear-gradient(120deg,#16171f,#101119) !important;'
+      +'border:1px solid rgba(255,255,255,.08) !important;color:#aeb6c8 !important;'
+      +'box-shadow:0 8px 20px rgba(0,0,0,.4) !important}',
+    B+' #yada-cloud-ind{background:linear-gradient(120deg,#5b6cff,#8a5cff) !important;color:#fff !important}',
+    B+' #yada-ver{background:rgba(255,255,255,.05) !important;border:1px solid rgba(255,255,255,.07) !important;color:#7b8398 !important}',
+    B+' .nav-badge-new{background:linear-gradient(135deg,#5b6cff,#8a5cff) !important}'
+  ].join('\n');
+  try{ var s=document.createElement('style'); s.id='yada-refonte-2'; s.textContent=css; document.head.appendChild(s); }catch(e){}
 })();
 </script>
 </body>
