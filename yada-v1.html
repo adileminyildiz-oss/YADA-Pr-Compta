@@ -11094,7 +11094,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v502';
+    b.textContent='YADA · v503';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -26111,6 +26111,132 @@ ${lignes}
     +'.fa-ths:hover{color:#5ab0ff}'
     +'.fa-sar{opacity:.35;font-size:11px}.fa-sar.on{opacity:1;color:#5ab0ff}';
   try{ var s=document.createElement('style'); s.id='fa-liste-tools-mod'; s.textContent=css; document.head.appendChild(s); }catch(e){}
+})();
+</script>
+<script id="yada-addon235">
+/* ============================================================
+   YADA — REFONTE 2026 · Lot 1 (Fondations) — thème NUIT
+   Bleu nuit très foncé + noir, accent bleu/indigo, cartes vitrées.
+   100% CSS additif, injecté EN DERNIER → prime sur tous les addons de thème.
+   Scopé html body[data-theme="noir"] (le toggle nuit/jour reste intact).
+   Aucune logique / aucun sélecteur JS modifié.
+   ============================================================ */
+(function(){
+  var B='html body[data-theme="noir"]';
+  var css=[
+    /* ----- Tokens ----- */
+    B+'{--rf-acc:#5b6cff;--rf-acc2:#8a5cff;--rf-glow:rgba(91,108,255,.5);--rf-mag:#ff2f9a;'
+      +'--rf-txt:#eceef5;--rf-mut:#8b93a7;--rf-faint:#5b6274;--rf-line:rgba(255,255,255,.065);'
+      +'--rf-panel-a:#16171f;--rf-panel-b:#101119}',
+
+    /* ----- Fond global : noir bleu-nuit + halos indigo/magenta (recréation DA Nextmove) ----- */
+    B+'{background:radial-gradient(1200px 700px at 82% -8%,rgba(90,80,255,.14),transparent 55%),'
+      +'radial-gradient(900px 640px at 6% 2%,rgba(255,47,154,.055),transparent 55%),#080910 !important;'
+      +'background-attachment:fixed !important;color:var(--rf-txt) !important;-webkit-font-smoothing:antialiased;overflow-x:hidden}',
+    B+'::before,'+B+'::after{display:none !important}',        /* halos bleus v601 */
+    B+' .layout:not(.solo),'+B+' main,'+B+' .mod-wrap,'+B+' .dash-wrap,'+B+' .login-wrap{background:transparent !important}',
+
+    /* ----- Cartes ----- */
+    B+' .card{background:linear-gradient(180deg,var(--rf-panel-a),var(--rf-panel-b)) !important;'
+      +'border:1px solid var(--rf-line) !important;border-radius:18px !important;'
+      +'box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 20px 46px -18px rgba(0,0,0,.7) !important;'
+      +'-webkit-backdrop-filter:blur(12px) saturate(1.1);backdrop-filter:blur(12px) saturate(1.1)}',
+    B+' .card::before,'+B+' .card::after{background:none !important;box-shadow:none !important;border:0 !important;filter:none !important}',
+    B+' .card h2{color:var(--rf-txt) !important;text-shadow:none !important;font-weight:700 !important}',
+    B+' .card .sub,'+B+' .page-head p,'+B+' .mini,'+B+' .hint,'+B+' .sub{color:var(--rf-mut) !important}',
+    B+' .card h3{color:#c3ccdd !important}',
+
+    /* ----- KPI ----- */
+    B+' .kpi{background:linear-gradient(180deg,var(--rf-panel-a),var(--rf-panel-b)) !important;'
+      +'border:1px solid var(--rf-line) !important;border-radius:14px !important;'
+      +'box-shadow:0 10px 26px rgba(0,0,0,.38) !important;transform:none !important}',
+    B+' .kpi::before,'+B+' .kpi::after{background:none !important;box-shadow:none !important}',
+    B+' .kpi .val{color:var(--rf-txt) !important;text-shadow:none !important}',
+    B+' .kpi .val.cre{color:#34d399 !important}',
+    B+' .kpi .val.deb{color:#fb7185 !important}',
+    B+' .kpi .lbl{color:var(--rf-mut) !important}',
+    B+' .kpi .meta{color:var(--rf-faint) !important}',
+    /* Pastilles d'icône KPI — tuiles PLEINES teintées par nature (spécificité > addon v337) */
+    B+' .kpi .kpi-ic{border:0 !important;border-radius:11px !important;color:#fff !important;text-shadow:none !important;'
+      +'box-shadow:0 6px 16px -6px rgba(0,0,0,.5) !important}',
+    B+' .kpi:not(.green):not(.red) .kpi-ic{background:linear-gradient(135deg,var(--rf-acc),var(--rf-acc2)) !important;color:#fff !important}',
+    B+' .kpi.green .kpi-ic{background:linear-gradient(135deg,#10b981,#34d399) !important;color:#04160e !important}',
+    B+' .kpi.red .kpi-ic{background:linear-gradient(135deg,#f43f5e,#fb7185) !important;color:#1b0509 !important}',
+    B+' .kpi.blue .kpi-ic{background:linear-gradient(135deg,var(--rf-acc),var(--rf-acc2)) !important;color:#fff !important}',
+
+    /* ----- Titres / textes ----- */
+    B+' .page-head h1,'+B+' .page-head h1 *{color:var(--rf-txt) !important;text-shadow:none !important}',
+    B+' label{color:#b7c0d2 !important}',
+    B+' a{color:#7f97ff}',
+
+    /* ----- Boutons ----- */
+    B+' .btn{text-transform:none !important;letter-spacing:0 !important;border-radius:11px !important;'
+      +'font-weight:600 !important;transition:filter .16s,box-shadow .16s,background .16s,transform .06s}',
+    B+' .btn-pri,'+B+' .btn-gold{background:linear-gradient(135deg,var(--rf-acc),var(--rf-acc2)) !important;'
+      +'color:#fff !important;border:0 !important;box-shadow:0 8px 20px -6px var(--rf-glow) !important}',
+    B+' .btn-pri::after,'+B+' .btn-gold::after{display:none !important}',
+    B+' .btn-pri:hover,'+B+' .btn-gold:hover{filter:brightness(1.08);box-shadow:0 10px 26px -6px var(--rf-glow) !important}',
+    B+' .btn-ghost{background:rgba(255,255,255,.045) !important;color:#d7dcea !important;'
+      +'border:1px solid var(--rf-line) !important;box-shadow:none !important}',
+    B+' .btn-ghost::after{display:none !important}',
+    B+' .btn-ghost:hover{background:rgba(255,255,255,.09) !important;color:#fff !important}',
+    B+' .btn.yada-fill{box-shadow:none !important;filter:brightness(1.1)}',   /* neutralise le « sweep » v477 */
+    /* Harmonisation des boutons d'accueil (Liste Dossier / Espace Admin / Facturation) : même gradient indigo */
+    B+' #ds-facturation-btn,'+B+' .btn[onclick="dsOuvrirListe()"],'+B+' #adm-enter-btn,'+B+' #adm-enter-inline,'+B+' #adm-enter-row .btn-gold{'
+      +'background:linear-gradient(135deg,var(--rf-acc),var(--rf-acc2)) !important;color:#fff !important;border:0 !important;'
+      +'box-shadow:0 8px 20px -6px var(--rf-glow) !important}',
+    B+' #ds-facturation-btn::after,'+B+' .btn[onclick="dsOuvrirListe()"]::after,'+B+' #adm-enter-btn::after,'+B+' #adm-enter-inline::after{display:none !important;transform:none !important}',
+
+    /* ----- Champs ----- */
+    B+' input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=file]),'
+      +B+' select,'+B+' textarea{background:#0e121b !important;color:var(--rf-txt) !important;'
+      +'border:1px solid rgba(255,255,255,.09) !important;border-radius:10px !important}',
+    B+' input::placeholder,'+B+' textarea::placeholder{color:#6b7488 !important}',
+    B+' input:focus,'+B+' select:focus,'+B+' textarea:focus{border-color:var(--rf-acc) !important;'
+      +'box-shadow:0 0 0 3px rgba(79,107,255,.24) !important;outline:none !important}',
+
+    /* ----- Tableaux (dans les cartes ; on ne touche PAS aux éditions .doc-page/.inv/.sg-*) ----- */
+    B+' .card table{border-collapse:collapse}',
+    B+' .card th{color:var(--rf-mut) !important;border-bottom:1px solid var(--rf-line) !important;'
+      +'font-weight:600 !important;background:transparent !important}',
+    B+' .card td{color:#dde3ee !important;border-bottom:1px solid rgba(255,255,255,.05) !important}',
+    B+' .card tbody tr:hover td{background:rgba(255,255,255,.03) !important}',
+    B+' .card .empty{color:var(--rf-faint) !important}',
+
+    /* ----- Barre latérale : NOIR bleu-nuit épuré (neutralise aurora/néon ; le magenta actif = Lot 2) ----- */
+    B+' aside{background:#0a0d15 !important;background-image:none !important;'
+      +'-webkit-backdrop-filter:none !important;backdrop-filter:none !important;'
+      +'border-right:1px solid rgba(255,255,255,.055) !important}',
+    B+' #nav-aurora{display:none !important}',
+    B+' aside .brand,'+B+' aside .brand *{color:#eef1f7 !important}',
+    B+' .nav-sec{color:#5b6577 !important}',
+    B+' .nav-btn{color:#aeb6c8 !important;border-radius:10px !important;box-shadow:none !important}',
+    B+' .nav-btn:hover{background:rgba(255,255,255,.055) !important;color:#fff !important}',
+    B+' .nav-btn.active{background:linear-gradient(90deg,rgba(255,255,255,.05),rgba(138,92,255,.16) 60%,rgba(255,47,154,.14)) !important;'
+      +'color:#fff !important;font-weight:600 !important;position:relative;'
+      +'box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),6px 0 22px -8px rgba(255,47,154,.6) !important}',
+    B+' .nav-btn.active .ico{color:#9fb0ff !important;filter:none !important}',
+    B+' .side-foot button{background:rgba(255,255,255,.05) !important;color:#cfd6e6 !important;'
+      +'border:1px solid rgba(255,255,255,.08) !important;border-radius:9px !important}',
+    B+' .side-foot button:hover{background:rgba(255,255,255,.1) !important}',
+
+    /* ----- Parcours d'entrée (Espace dossiers / HUB / liste) ----- */
+    B+' .login-title{color:var(--rf-txt) !important}',
+    B+' .login-sub{color:var(--rf-mut) !important}',
+    B+' .dossier-card,'+B+' .dsc-card,'+B+' .ds-tile,'+B+' #ds-info-panel,'+B+' .ds-row{'
+      +'background:linear-gradient(180deg,var(--rf-panel-a),var(--rf-panel-b)) !important;'
+      +'border:1px solid var(--rf-line) !important;box-shadow:0 12px 30px rgba(0,0,0,.4) !important}',
+    B+' .ds-tile:hover,'+B+' .ds-row:hover{border-color:rgba(79,107,255,.4) !important}',
+    B+' .dsc-head{background:linear-gradient(135deg,rgba(79,107,255,.22),rgba(106,92,255,.12)) !important}',
+    B+' .dsc-av,'+B+' .ds-av,'+B+' .dc-av{background:linear-gradient(135deg,var(--rf-acc),var(--rf-acc2)) !important;color:#fff !important}',
+
+    /* ----- Scrollbar ----- */
+    B+'{scrollbar-color:#2a3350 transparent;scrollbar-width:thin}',
+    B+' ::-webkit-scrollbar{width:10px;height:10px}',
+    B+' ::-webkit-scrollbar-thumb{background:rgba(120,140,200,.28);border-radius:8px}',
+    B+' ::-webkit-scrollbar-thumb:hover{background:rgba(120,140,200,.44)}'
+  ].join('\n');
+  try{ var s=document.createElement('style'); s.id='yada-refonte-1'; s.textContent=css; document.head.appendChild(s); }catch(e){}
 })();
 </script>
 </body>
