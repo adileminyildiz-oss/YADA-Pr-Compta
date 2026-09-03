@@ -11094,7 +11094,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v512';
+    b.textContent='YADA · v513';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -26653,6 +26653,79 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
         +'<button class="btn btn-pri" onclick="yadaDownloadFile()">⬇ Télécharger le fichier (YADA.html)</button>'
       +'</div></div>'; }catch(e){ return _pp(); } };
   }
+})();
+</script>
+<script id="yada-addon241">
+/* ============================================================
+   YADA — REFONTE « CONTRASTE » · Lot 2 — Harmonisation & surfaces (thème NUIT)
+   Écran de connexion, toasts, segmented/onglets, pastille statut, Consultation
+   (.sg-app), éditeur (.ec-sage), modales → accent CYAN. 100% CSS additif,
+   injecté après le Lot 1. Scopé html body[data-theme="noir"] + #sec-lock.
+   Vert/rouge comptable préservé. Aucune logique / sélecteur JS modifié.
+   ============================================================ */
+(function(){
+  var B='html body[data-theme="noir"]';
+  var SL=B+' #sec-lock';
+  var css=[
+    /* ===== Segmented control + onglets de mois (TVA, Charges & Paie) + theme-switch ===== */
+    B+' .seg button.on,'+B+' .cp-mtab.on,'+B+' .theme-switch button.on{'
+      +'background:linear-gradient(120deg,#2fe6ff,#12b9d6) !important;color:#04121a !important;border-color:transparent !important}',
+    /* ===== Pastille de statut « En cours » ===== */
+    B+' .dstat-chip.wip{background:rgba(47,230,255,.14) !important;border-color:rgba(47,230,255,.5) !important;color:#8fefff !important}',
+    B+' .dstat-menu button.wip .dot{background:#8fefff !important;color:#8fefff !important}',
+    B+' .dstat-menu button:hover{background:rgba(47,230,255,.12) !important}',
+    B+' .tva-just{background:rgba(47,230,255,.08) !important;border-left-color:#2fe6ff !important}',
+    B+' main:not(.fullbleed) tr:hover td,'+B+' .dash-wrap tr:hover td,'+B+' tr:hover td{background:rgba(47,230,255,.09) !important}',
+    B+' .rg-link,'+B+' .linkname{color:#8fefff !important}',
+    /* ===== Toasts & repères ===== */
+    B+' .toast{background:linear-gradient(180deg,rgba(19,19,24,.96),rgba(12,12,16,.96)) !important;border:1px solid rgba(47,230,255,.4) !important;'
+      +'color:#f3f3f5 !important;box-shadow:0 16px 40px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.04) inset !important}',
+    B+' #yada-save-ind{background:linear-gradient(120deg,#131318,#0f0f13) !important;border:1px solid rgba(255,255,255,.08) !important;color:#a1a1ac !important}',
+    B+' #yada-cloud-ind{background:linear-gradient(120deg,#2fe6ff,#12b9d6) !important;color:#04121a !important}',
+    B+' #yada-ver{background:rgba(255,255,255,.05) !important;border:1px solid rgba(255,255,255,.07) !important;color:#7b8398 !important}',
+    B+' .nav-badge-new{background:linear-gradient(135deg,#2fe6ff,#12b9d6) !important;color:#04121a !important}',
+    /* ===== Consultation (.sg-app) ===== */
+    B+' .sg-peritem.on{background:linear-gradient(120deg,#2fe6ff,#12b9d6) !important}',
+    B+' .sg-peritem.on,'+B+' .sg-peritem.on *{color:#04121a !important}',
+    B+' .sg-jrnitem.on{background:rgba(47,230,255,.24) !important;color:#eafcff !important}',
+    B+' .sg-tab.on{border-top-color:#2fe6ff !important}',
+    B+' .sg-app .sg-title{border-bottom:1px solid rgba(47,230,255,.45) !important}',
+    B+' .sg-exoarr{background:rgba(47,230,255,.18) !important;border-color:rgba(47,230,255,.6) !important;color:#eafcff !important}',
+    B+' .sg-exoarr:hover{background:linear-gradient(120deg,#2fe6ff,#12b9d6) !important;border-color:#2fe6ff !important;color:#04121a !important}',
+    /* ===== Éditeur d'écritures (.ec-sage) ===== */
+    B+' #ec-overlay .ec-win{border:1px solid rgba(47,230,255,.6) !important}',
+    B+' .ec-sage .ec-titlebar{border-bottom:1px solid #2fe6ff !important}',
+    B+' .ec-sage .ec-table th{border-bottom:1px solid #2fe6ff !important}',
+    B+' .ec-sage .ec-i:focus{border-color:#2fe6ff !important;box-shadow:0 0 0 2px rgba(47,230,255,.28) !important}',
+    B+' .ec-sage .ec-jrn,'+B+' .ec-sage .ec-lettre{color:#5fefff !important;-webkit-text-fill-color:#5fefff !important}',
+    B+' .ec-sage .ec-bt-solde,'+B+' .ec-newbar .ec-bt-solde{background:linear-gradient(120deg,#2fe6ff,#12b9d6) !important;color:#04121a !important}',
+    B+' .ec-sage .ec-soldee{border-top-color:#2fe6ff !important}',
+    B+' .ec-sage .ec-totbar{border-top:1px solid #2fe6ff !important}',
+    B+' .ec-sage .ec-table tbody tr.ec-lsel td:first-child{box-shadow:inset 4px 0 0 #2fe6ff !important}',
+    /* ===== Modales génériques ===== */
+    B+' #modal-c{background:linear-gradient(180deg,#131318,#0f0f13) !important;border:1px solid rgba(255,255,255,.09) !important;'
+      +'box-shadow:0 30px 80px rgba(0,0,0,.7) !important;color:#f3f3f5 !important}',
+
+    /* ===== Écran de connexion « Contraste » ===== */
+    SL+'{background:radial-gradient(1100px 700px at 82% -10%,rgba(47,230,255,.12),transparent 55%),#08080a !important}',
+    SL+' .sec-hero{background:radial-gradient(760px 520px at 18% 12%,rgba(47,230,255,.18),transparent 60%),linear-gradient(160deg,#0b1418,#08080a) !important;'
+      +'border-right:1px solid rgba(255,255,255,.07) !important}',
+    SL+' .sec-hero .sec-logo{color:#fff !important;text-shadow:0 8px 40px rgba(47,230,255,.5) !important}',
+    SL+' .sec-hero .sec-logo small{color:#8fefff !important;letter-spacing:.22em !important}',
+    SL+' .sec-tagline{color:#cfeffb !important}',
+    SL+' .sec-points li{color:#9aa2ad !important}',
+    SL+' .sec-points li::before{color:#2fe6ff !important}',
+    SL+' .sec-body{background:#0a0a0c !important}',
+    SL+' .sec-body h2{color:#f3f3f5 !important}',SL+' .sec-p{color:#8c8c97 !important}',
+    SL+' input{background:#0e0e13 !important;color:#f3f3f5 !important;border:1px solid rgba(255,255,255,.1) !important;border-radius:12px !important}',
+    SL+' input:focus{border-color:#2fe6ff !important;box-shadow:0 0 0 3px rgba(47,230,255,.24) !important;outline:none !important}',
+    SL+' .sec-cta:not(.sec-cta-2){background:linear-gradient(120deg,#2fe6ff,#12b9d6) !important;color:#04121a !important;border:0 !important;box-shadow:0 10px 26px -6px rgba(47,230,255,.6) !important}',
+    SL+' .sec-cta:not(.sec-cta-2):hover{filter:brightness(1.06);box-shadow:0 0 0 2px rgba(47,230,255,.4),0 14px 34px -6px rgba(47,230,255,.6) !important}',
+    SL+' .sec-cta-2{background:rgba(255,255,255,.05) !important;color:#eafcff !important;border:1px solid rgba(47,230,255,.5) !important;box-shadow:none !important}',
+    SL+' .sec-cta-2:hover{background:rgba(47,230,255,.14) !important;border-color:#2fe6ff !important}',
+    SL+' .sec-ver{color:#5a5a64 !important}'
+  ].join('\n');
+  try{ var s=document.createElement('style'); s.id='yada-contraste-2'; s.textContent=css; document.head.appendChild(s); }catch(e){}
 })();
 </script>
 </body>
