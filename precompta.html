@@ -11094,7 +11094,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v509';
+    b.textContent='YADA · v510';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -26294,6 +26294,322 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
     B+' ::-webkit-scrollbar-thumb:hover{background:rgba(47,230,255,.4)}'
   ].join('\n');
   try{var s=document.createElement('style');s.id='yada-contraste-1';s.textContent=css;document.head.appendChild(s);}catch(e){}
+})();
+</script>
+<script id="yada-addon-2fa">
+/* ============================================================
+   YADA 2FA core — TOTP (RFC 6238) + encodeur QR hors-ligne (byte mode, EC-M, v1..6)
+   Testé en Node (round-trip QR + vecteurs RFC 6238) avant intégration.
+   ============================================================ */
+(function(root){
+  'use strict';
+  var C = root.crypto || (typeof require==='function' ? require('crypto').webcrypto : null);
+
+  /* ---------- base32 ---------- */
+  var B32='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  function b32encode(bytes){
+    var out='',bits=0,val=0;
+    for(var i=0;i<bytes.length;i++){ val=(val<<8)|bytes[i]; bits+=8;
+      while(bits>=5){ out+=B32[(val>>>(bits-5))&31]; bits-=5; } }
+    if(bits>0) out+=B32[(val<<(5-bits))&31];
+    return out;
+  }
+  function b32decode(str){
+    str=String(str).toUpperCase().replace(/=+$/,'').replace(/\s+/g,'');
+    var bits=0,val=0,out=[];
+    for(var i=0;i<str.length;i++){ var idx=B32.indexOf(str[i]); if(idx<0) continue;
+      val=(val<<5)|idx; bits+=5; if(bits>=8){ out.push((val>>>(bits-8))&255); bits-=8; } }
+    return new Uint8Array(out);
+  }
+  function randSecret(){ var a=new Uint8Array(20); C.getRandomValues(a); return b32encode(a); }
+
+  /* ---------- HOTP/TOTP (async, WebCrypto HMAC-SHA1) ---------- */
+  async function hotp(secretBytes, counter, digits){
+    digits=digits||6;
+    var buf=new Uint8Array(8);
+    // counter is < 2^53, fill big-endian
+    var c=counter;
+    for(var i=7;i>=0;i--){ buf[i]=c & 0xff; c=Math.floor(c/256); }
+    var key=await C.subtle.importKey('raw', secretBytes, {name:'HMAC',hash:'SHA-1'}, false, ['sign']);
+    var sig=new Uint8Array(await C.subtle.sign('HMAC', key, buf));
+    var off=sig[19]&0xf;
+    var bin=((sig[off]&0x7f)<<24)|((sig[off+1]&0xff)<<16)|((sig[off+2]&0xff)<<8)|(sig[off+3]&0xff);
+    var mod=Math.pow(10,digits);
+    var s=''+(bin%mod); while(s.length<digits) s='0'+s;
+    return s;
+  }
+  async function totp(secretB32, opts){
+    opts=opts||{}; var step=opts.step||30, t=Math.floor((opts.now||Date.now())/1000);
+    return hotp(b32decode(secretB32), Math.floor(t/step), opts.digits||6);
+  }
+  async function totpVerify(secretB32, code, opts){
+    opts=opts||{}; code=String(code||'').replace(/\s/g,''); if(!/^\d{6}$/.test(code)) return false;
+    var step=opts.step||30, t=Math.floor((opts.now||Date.now())/1000), win=opts.window==null?1:opts.window;
+    var sb=b32decode(secretB32);
+    for(var d=-win; d<=win; d++){ var c=await hotp(sb, Math.floor(t/step)+d, 6); if(c===code) return true; }
+    return false;
+  }
+
+  /* ---------- QR encoder : byte mode, EC level M, versions 1..6 ---------- */
+  // GF(256)
+  var EXP=new Array(512),LOG=new Array(256);
+  (function(){ var x=1; for(var i=0;i<255;i++){ EXP[i]=x; LOG[x]=i; x<<=1; if(x&0x100) x^=0x11d; } for(i=255;i<512;i++) EXP[i]=EXP[i-255]; })();
+  function gmul(a,b){ if(a===0||b===0) return 0; return EXP[LOG[a]+LOG[b]]; }
+  function rsGen(n){ var g=[1]; for(var i=0;i<n;i++){ var ng=new Array(g.length+1).fill(0); for(var j=0;j<g.length;j++){ ng[j]^=g[j]; ng[j+1]^=gmul(g[j],EXP[i]); } g=ng; } return g; }
+  function rsEnc(data,n){ var g=rsGen(n); var res=data.concat(new Array(n).fill(0)); for(var i=0;i<data.length;i++){ var c=res[i]; if(c!==0){ for(var j=0;j<g.length;j++) res[i+j]^=gmul(g[j],c); } } return res.slice(data.length); }
+
+  // EC-M spec per version: [totalDataCodewords, blocks, ecPerBlock]
+  var MSPEC={1:[16,1,10],2:[28,1,16],3:[44,1,26],4:[64,2,18],5:[86,2,24],6:[108,4,16]};
+  var ALIGN={1:[],2:[6,18],3:[6,22],4:[6,26],5:[6,30],6:[6,34]};
+  // EC-M format strings (15 bits, already masked with 0x5412), index = mask 0..7
+  var FMT_M=['101010000010010','101000100100101','101111001111100','101101101001011',
+             '100010111111001','100000011001110','100111110010111','100101010100000'];
+
+  function chooseVersion(len){ // len = number of data bytes
+    for(var v=1;v<=6;v++){ var cap=MSPEC[v][0]-2; /* 4b mode + 8b count = 12 bits = 1.5 bytes -> reserve 2 */ if(len<=cap) return v; }
+    return -1;
+  }
+
+  function encodeData(bytes, ver){
+    var total=MSPEC[ver][0];
+    var bb=[]; function put(val,n){ for(var i=n-1;i>=0;i--) bb.push((val>>>i)&1); }
+    put(4,4);            // byte mode
+    put(bytes.length,8); // count (v1..9)
+    for(var i=0;i<bytes.length;i++) put(bytes[i],8);
+    // terminator
+    var cap=total*8; var term=Math.min(4, cap-bb.length); put(0,term);
+    while(bb.length%8!==0) bb.push(0);
+    var cw=[]; for(i=0;i<bb.length;i+=8){ var b=0; for(var k=0;k<8;k++) b=(b<<1)|bb[i+k]; cw.push(b); }
+    var pad=[0xEC,0x11],pi=0; while(cw.length<total){ cw.push(pad[pi&1]); pi++; }
+    // split into blocks + RS
+    var nb=MSPEC[ver][1], ecn=MSPEC[ver][2];
+    var per=total/nb; var blocks=[],ecs=[];
+    for(var bI=0;bI<nb;bI++){ var d=cw.slice(bI*per,(bI+1)*per); blocks.push(d); ecs.push(rsEnc(d,ecn)); }
+    // interleave
+    var out=[]; for(i=0;i<per;i++) for(bI=0;bI<nb;bI++) out.push(blocks[bI][i]);
+    for(i=0;i<ecn;i++) for(bI=0;bI<nb;bI++) out.push(ecs[bI][i]);
+    return out; // codewords
+  }
+
+  function buildMatrix(ver){
+    var n=17+4*ver; var m=[],res=[];
+    for(var r=0;r<n;r++){ m.push(new Array(n).fill(null)); res.push(new Array(n).fill(false)); }
+    function fp(r,c){ for(var dr=-1;dr<=7;dr++) for(var dc=-1;dc<=7;dc++){ var rr=r+dr,cc=c+dc; if(rr<0||cc<0||rr>=n||cc>=n) continue;
+      var inb=(dr>=0&&dr<=6&&(dc===0||dc===6))||(dc>=0&&dc<=6&&(dr===0||dr===6))||(dr>=2&&dr<=4&&dc>=2&&dc<=4);
+      m[rr][cc]=inb?1:0; res[rr][cc]=true; } }
+    fp(0,0); fp(0,n-7); fp(n-7,0);
+    // timing
+    for(var i=8;i<n-8;i++){ if(m[6][i]===null){ m[6][i]=(i%2===0)?1:0; res[6][i]=true; } if(m[i][6]===null){ m[i][6]=(i%2===0)?1:0; res[i][6]=true; } }
+    // dark module
+    m[4*ver+9][8]=1; res[4*ver+9][8]=true;
+    // alignment
+    var ac=ALIGN[ver];
+    for(var a=0;a<ac.length;a++) for(var b=0;b<ac.length;b++){ var ar=ac[a],cc=ac[b];
+      // skip if overlaps finder
+      if((ar<=7&&cc<=7)||(ar<=7&&cc>=n-8)||(ar>=n-8&&cc<=7)) continue;
+      for(var dr=-2;dr<=2;dr++) for(var dc=-2;dc<=2;dc++){ var rr=ar+dr,c2=cc+dc; var on=(Math.max(Math.abs(dr),Math.abs(dc))!==1); m[rr][c2]=on?1:0; res[rr][c2]=true; } }
+    // reserve format areas
+    for(i=0;i<9;i++){ if(m[8][i]===null){res[8][i]=true;} if(m[i][8]===null){res[i][8]=true;} }
+    for(i=0;i<8;i++){ res[8][n-1-i]=true; res[n-1-i][8]=true; }
+    return {m:m,res:res,n:n};
+  }
+
+  function placeData(M, codewords){
+    var m=M.m,res=M.res,n=M.n;
+    var bits=[]; for(var i=0;i<codewords.length;i++) for(var b=7;b>=0;b--) bits.push((codewords[i]>>>b)&1);
+    var idx=0, up=true;
+    for(var col=n-1;col>0;col-=2){ if(col===6) col--; // skip timing column
+      for(var t=0;t<n;t++){ var row=up?(n-1-t):t;
+        for(var c=0;c<2;c++){ var cc=col-c;
+          if(res[row][cc]) continue;
+          m[row][cc]=(idx<bits.length)?bits[idx]:0; idx++;
+        } }
+      up=!up;
+    }
+  }
+
+  function maskFn(k){ return [
+    function(r,c){return (r+c)%2===0;},
+    function(r,c){return r%2===0;},
+    function(r,c){return c%3===0;},
+    function(r,c){return (r+c)%3===0;},
+    function(r,c){return (Math.floor(r/2)+Math.floor(c/3))%2===0;},
+    function(r,c){return ((r*c)%2)+((r*c)%3)===0;},
+    function(r,c){return (((r*c)%2)+((r*c)%3))%2===0;},
+    function(r,c){return (((r+c)%2)+((r*c)%3))%2===0;}
+  ][k]; }
+
+  function applyMask(M, k){ var m=M.m,res=M.res,n=M.n,f=maskFn(k); var out=[]; for(var r=0;r<n;r++){ out.push(m[r].slice()); for(var c=0;c<n;c++){ if(!res[r][c] && f(r,c)) out[r][c]^=1; } } return out; }
+
+  function penalty(g){ var n=g.length,p=0,r,c,i;
+    // rule 1: runs >=5
+    for(r=0;r<n;r++){ var run=1; for(c=1;c<n;c++){ if(g[r][c]===g[r][c-1]){run++; if(run===5)p+=3; else if(run>5)p++;} else run=1; } }
+    for(c=0;c<n;c++){ run=1; for(r=1;r<n;r++){ if(g[r][c]===g[r-1][c]){run++; if(run===5)p+=3; else if(run>5)p++;} else run=1; } }
+    // rule 2: 2x2 blocks
+    for(r=0;r<n-1;r++) for(c=0;c<n-1;c++){ var v=g[r][c]; if(v===g[r][c+1]&&v===g[r+1][c]&&v===g[r+1][c+1]) p+=3; }
+    // rule 3: finder-like patterns 1011101 with 4 light
+    var pat1=[1,0,1,1,1,0,1,0,0,0,0], pat2=[0,0,0,0,1,0,1,1,1,0,1];
+    function match(arr,i,pat){ for(var k=0;k<pat.length;k++){ if(i+k>=arr.length) return false; if(arr[i+k]!==pat[k]) return false;} return true; }
+    for(r=0;r<n;r++){ var row=g[r]; for(c=0;c<=n-11;c++){ if(match(row,c,pat1)||match(row,c,pat2)) p+=40; } }
+    for(c=0;c<n;c++){ var col=[]; for(r=0;r<n;r++) col.push(g[r][c]); for(r=0;r<=n-11;r++){ if(match(col,r,pat1)||match(col,r,pat2)) p+=40; } }
+    // rule 4: dark ratio
+    var dark=0; for(r=0;r<n;r++) for(c=0;c<n;c++) dark+=g[r][c]; var pct=dark*100/(n*n); var k5=Math.floor(Math.abs(pct-50)/5); p+=k5*10;
+    return p;
+  }
+
+  function setFormat(g, res, mask){ var n=g.length, s=FMT_M[mask];
+    var bit=function(i){ return s.charCodeAt(i)-48; };
+    // around top-left
+    // horizontal (row 8): cols 0..5,7,8 then vertical
+    var pos=[]; // 15 bits placement per spec
+    // bits 0..14. Top-left copy:
+    // col for row8: 0,1,2,3,4,5,7,8 ; row for col8: 8(already),7,5,4,3,2,1,0
+    var i=0;
+    // horizontal part row 8
+    for(var c=0;c<=8;c++){ if(c===6) continue; g[8][c]=bit(i); i++; if(i===8) break; }
+    // vertical part col 8 (from row7 up to row0, skipping row6)
+    i=8; for(var r=8-1;r>=0;r--){ if(r===6) continue; g[r][8]=bit(i); i++; if(i===15) break; }
+    // second copy: bits 0..6 up right side (col8 bottom), bits 7..14 along bottom row8 right
+    i=0; for(r=n-1;r>=n-7;r--){ g[r][8]=bit(i); i++; }
+    i=7; for(c=n-8;c<n;c++){ g[8][c]=bit(i); i++; }
+    // dark module already set
+  }
+
+  function encodeToMatrix(text){
+    var bytes=[]; for(var i=0;i<text.length;i++){ var cc=text.charCodeAt(i); if(cc<128) bytes.push(cc); else { // utf8
+      if(cc<2048){ bytes.push(192|(cc>>6),128|(cc&63)); } else { bytes.push(224|(cc>>12),128|((cc>>6)&63),128|(cc&63)); } } }
+    var ver=chooseVersion(bytes.length); if(ver<0) throw new Error('QR: payload trop long ('+bytes.length+' octets)');
+    var cw=encodeData(bytes,ver);
+    var M=buildMatrix(ver);
+    placeData(M,cw);
+    var best=-1,bestP=Infinity,bestG=null;
+    for(var k=0;k<8;k++){ var g=applyMask(M,k); // temporarily set format for penalty? penalty ignores format minor effect
+      var p=penalty(g); if(p<bestP){ bestP=p; best=k; bestG=g; } }
+    setFormat(bestG, M.res, best);
+    return {g:bestG,n:M.n,ver:ver,mask:best};
+  }
+
+  function svg(text, opt){ opt=opt||{}; var q=encodeToMatrix(text); var n=q.n, sc=opt.scale||4, pad=opt.pad==null?4:opt.pad;
+    var size=(n+pad*2)*sc; var dark=opt.dark||'#04121a', light=opt.light||'#ffffff';
+    var d=''; for(var r=0;r<n;r++){ for(var c=0;c<n;c++){ if(q.g[r][c]){ d+='M'+((c+pad)*sc)+' '+((r+pad)*sc)+'h'+sc+'v'+sc+'h'+(-sc)+'z'; } } }
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'" shape-rendering="crispEdges">'
+      +'<rect width="'+size+'" height="'+size+'" fill="'+light+'"/><path d="'+d+'" fill="'+dark+'"/></svg>';
+  }
+
+  var api={ _bm:buildMatrix, _mask:maskFn, b32encode:b32encode, b32decode:b32decode, randSecret:randSecret, totp:totp, totpVerify:totpVerify, hotp:hotp,
+            encodeToMatrix:encodeToMatrix, qrSvg:svg, MSPEC:MSPEC, chooseVersion:chooseVersion, encodeData:encodeData };
+  if(typeof module!=='undefined'&&module.exports) module.exports=api;
+  root.YADA2FA=api;
+})(typeof self!=='undefined'?self:(typeof globalThis!=='undefined'?globalThis:this));
+
+/* ---- Intégration 2FA YADA : carte Paramétrage (enrôlement QR) + porte de connexion (code TOTP). Optionnel, activable par compte. ---- */
+(function(){
+  function Q(){ return window.YADA2FA; }
+  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function tfaCfg(){ try{ db.parametres=db.parametres||{}; db.parametres.twofa=db.parametres.twofa||{}; return db.parametres.twofa; }catch(e){ return {}; } }
+  function key(email){ return String(email||'').trim().toLowerCase(); }
+  function fmtSecret(s){ return String(s).replace(/(.{4})/g,'$1 ').trim(); }
+
+  try{ var st=document.createElement('style'); st.id='tfa-style'; st.textContent=[
+    '#tfa-ov{position:fixed;inset:0;z-index:100002;display:none;align-items:center;justify-content:center;background:rgba(4,6,10,.86);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);padding:20px}',
+    '#tfa-ov.show{display:flex}',
+    '.tfa-card{width:min(420px,94vw);max-height:94vh;overflow:auto;background:linear-gradient(160deg,#131318,#0c0c10);border:1px solid rgba(47,230,255,.35);border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.7);color:#f3f3f5;padding:22px;font-family:inherit}',
+    '.tfa-card h3{margin:0 0 4px;font-size:17px;font-weight:800;letter-spacing:-.01em}',
+    '.tfa-sub{color:#8c8c97;font-size:12.5px;margin-bottom:14px}',
+    '.tfa-qr{background:#fff;border-radius:12px;padding:10px;width:-webkit-max-content;width:max-content;max-width:100%;margin:0 auto 12px;box-shadow:0 8px 24px rgba(0,0,0,.4)}',
+    '.tfa-qr svg{display:block;width:200px;height:200px;max-width:60vw;image-rendering:pixelated}',
+    '.tfa-key{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;letter-spacing:.06em;background:#0e0e13;border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:9px 11px;text-align:center;color:#bfeeff;margin-bottom:12px;word-break:break-all}',
+    '.tfa-code{width:100%;box-sizing:border-box;font-size:22px;letter-spacing:.4em;text-align:center;padding:12px;border-radius:11px;border:1px solid rgba(255,255,255,.14);background:#0e0e13;color:#fff;font-family:ui-monospace,monospace}',
+    '.tfa-code:focus{outline:none;border-color:#2fe6ff;box-shadow:0 0 0 3px rgba(47,230,255,.22)}',
+    '.tfa-err{color:#ff6b6b;font-size:12px;min-height:16px;margin:8px 0 2px;text-align:center}',
+    '.tfa-actions{display:flex;gap:10px;margin-top:8px}',
+    '.tfa-actions .tbtn{flex:1;border:none;border-radius:10px;padding:11px;font:inherit;font-weight:800;cursor:pointer}',
+    '.tfa-ok{background:linear-gradient(120deg,#2fe6ff,#12b9d6);color:#04121a}',
+    '.tfa-cancel{background:rgba(255,255,255,.06);color:#e2e2e8;border:1px solid rgba(255,255,255,.14)}',
+    '.tfa-steps{font-size:12px;color:#9a9aa4;margin:0 0 12px;padding-left:16px}.tfa-steps li{margin:3px 0}'
+  ].join('\n'); (document.head||document.documentElement).appendChild(st); }catch(e){}
+
+  function ov(){ var o=document.getElementById('tfa-ov'); if(!o){ o=document.createElement('div'); o.id='tfa-ov'; (document.body||document.documentElement).appendChild(o);} return o; }
+  function close(){ var o=document.getElementById('tfa-ov'); if(o){ o.classList.remove('show'); o.innerHTML=''; } }
+
+  function gate(email, onOk, onCancel){
+    var cfg=tfaCfg()[key(email)]; if(!cfg||!cfg.enabled){ onOk&&onOk(); return; }
+    var o=ov(); o.innerHTML='';
+    var card=document.createElement('div'); card.className='tfa-card';
+    card.innerHTML='<h3>Vérification en deux étapes</h3><div class="tfa-sub">Code à 6 chiffres de votre application d’authentification pour <b>'+esc(email)+'</b>.</div>'
+      +'<input class="tfa-code" id="tfa-in" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••">'
+      +'<div class="tfa-err" id="tfa-err"></div>'
+      +'<div class="tfa-actions"><button class="tbtn tfa-cancel" id="tfa-x">Annuler</button><button class="tbtn tfa-ok" id="tfa-go">Valider</button></div>';
+    o.appendChild(card); o.classList.add('show');
+    var inp=card.querySelector('#tfa-in'); setTimeout(function(){try{inp.focus();}catch(e){}},60);
+    function fail(m){ var e=card.querySelector('#tfa-err'); if(e)e.textContent=m||'Code incorrect.'; inp.value=''; try{inp.focus();}catch(e){} }
+    async function go(){ var code=(inp.value||'').replace(/\D/g,''); if(code.length!==6){ fail('Entrez 6 chiffres.'); return; }
+      var ok=false; try{ ok=await Q().totpVerify(cfg.secret, code, {window:1}); }catch(e){}
+      if(ok){ close(); onOk&&onOk(); } else fail(); }
+    card.querySelector('#tfa-go').onclick=go;
+    card.querySelector('#tfa-x').onclick=function(){ close(); onCancel&&onCancel(); };
+    inp.onkeydown=function(e){ if(e.key==='Enter') go(); };
+  }
+
+  /* Porte de connexion : après une connexion interactive réussie, si 2FA activée -> demander le code. */
+  if(typeof window.secEssayer==='function'){
+    var _se=window.secEssayer;
+    window.secEssayer=async function(){
+      var email=''; try{ var f=document.getElementById('sec-email'); email=key((f&&f.value)||window.secEmail||''); }catch(e){}
+      var r=await _se.apply(this,arguments);
+      try{
+        var opened=(window.__secLocked===false);
+        var cfg=email && tfaCfg()[email];
+        if(opened && email){ window.__acctEmail=email;
+          if(cfg && cfg.enabled && !window.__tfaPassed){
+            gate(email, function(){ window.__tfaPassed=true; }, function(){ if(typeof window.secVerrouiller==='function') window.secVerrouiller(); });
+          }
+        }
+      }catch(e){}
+      return r;
+    };
+  }
+  if(typeof window.secVerrouiller==='function'){ var _sv=window.secVerrouiller; window.secVerrouiller=function(){ window.__tfaPassed=false; return _sv.apply(this,arguments); }; }
+
+  /* Enrôlement (carte Paramétrage) */
+  window.tfaEnroll=function(){ var email=key(window.__acctEmail||''); if(!email){ if(window.toast)toast('Reconnectez-vous (avec e-mail) pour activer la 2FA'); return; }
+    var secret=Q().randSecret(); var uri='otpauth://totp/YADA:'+encodeURIComponent(email)+'?secret='+secret+'&issuer=YADA';
+    var svg=''; try{ svg=Q().qrSvg(uri,{scale:5,pad:3}); }catch(e){ svg='<div style="color:#c0392b">QR indisponible — utilisez la clé ci-dessous.</div>'; }
+    var o=ov(); o.innerHTML='';
+    var card=document.createElement('div'); card.className='tfa-card';
+    card.innerHTML='<h3>Activer la double authentification</h3><div class="tfa-sub">Compte : <b>'+esc(email)+'</b></div>'
+      +'<ol class="tfa-steps"><li>Scannez ce QR avec Google Authenticator / Authy.</li><li>Ou saisissez la clé manuellement.</li><li>Entrez le code à 6 chiffres pour confirmer.</li></ol>'
+      +'<div class="tfa-qr">'+svg+'</div>'
+      +'<div class="tfa-key" title="Clé de configuration">'+fmtSecret(secret)+'</div>'
+      +'<input class="tfa-code" id="tfa-in" inputmode="numeric" maxlength="6" placeholder="••••••">'
+      +'<div class="tfa-err" id="tfa-err"></div>'
+      +'<div class="tfa-actions"><button class="tbtn tfa-cancel" id="tfa-x">Annuler</button><button class="tbtn tfa-ok" id="tfa-go">Confirmer &amp; activer</button></div>';
+    o.appendChild(card); o.classList.add('show');
+    var inp=card.querySelector('#tfa-in'); setTimeout(function(){try{inp.focus();}catch(e){}},60);
+    card.querySelector('#tfa-x').onclick=close;
+    card.querySelector('#tfa-go').onclick=async function(){ var code=(inp.value||'').replace(/\D/g,'');
+      var er=card.querySelector('#tfa-err');
+      if(code.length!==6){ er.textContent='Entrez 6 chiffres.'; return; }
+      var ok=false; try{ ok=await Q().totpVerify(secret, code, {window:1}); }catch(e){}
+      if(!ok){ er.textContent='Code incorrect — vérifiez l’heure de votre téléphone.'; inp.value=''; try{inp.focus();}catch(e){} return; }
+      tfaCfg()[email]={secret:secret, enabled:true, ts:Date.now()}; try{ save(); }catch(e){}
+      close(); if(window.toast)toast('2FA activée ✓'); if(typeof render==='function') render();
+    };
+  };
+  window.tfaDisable=function(){ var email=key(window.__acctEmail||''); if(!email) return;
+    var doit=function(){ try{ delete tfaCfg()[email]; save(); }catch(e){} if(window.toast)toast('2FA désactivée'); if(typeof render==='function')render(); };
+    if(typeof window.yadaConfirm==='function') yadaConfirm('Désactiver la double authentification pour '+email+' ?', doit); else doit();
+  };
+
+  function tfaCard(){ var email=key(window.__acctEmail||''); var c=email&&tfaCfg()[email]; var on=c&&c.enabled;
+    var body = !email
+      ? '<div class="sub">Reconnectez-vous en saisissant votre e-mail pour pouvoir activer la 2FA sur ce compte.</div>'
+      : on
+        ? '<div class="sub">La 2FA est <b style="color:#34d977">activée</b> pour <b>'+esc(email)+'</b> — un code à 6 chiffres est demandé après le mot de passe à chaque connexion.</div><div class="right" style="margin-top:10px"><button class="btn btn-ghost" onclick="tfaDisable()">Désactiver la 2FA</button></div>'
+        : '<div class="sub">Ajoutez une étape de sécurité : après le mot de passe, un code à 6 chiffres (Google Authenticator / Authy) configuré via un <b>QR code</b>. Optionnel, activable par compte, 100% hors-ligne.</div><div class="right" style="margin-top:10px"><button class="btn btn-pri" onclick="tfaEnroll()">🔐 Activer la 2FA (QR code)</button></div>';
+    return '<div class="card" id="tfa-card"><h2>🔐 Authentification à deux facteurs (2FA)</h2>'+body+'</div>';
+  }
+  if(typeof pageParametrage==='function'){ var _pp=pageParametrage; pageParametrage=function(){ try{ return _pp()+tfaCard(); }catch(e){ return _pp(); } }; }
 })();
 </script>
 </body>
