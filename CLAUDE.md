@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Télécharger YADA sur le PC (fichier autonome hors-ligne) + carte Paramétrage — v512
+## 🟢 Dernière mise à jour — REFONTE « Contraste » (Lot 2) : connexion, toasts, Consultation, éditeur, modales, onglets → cyan — v513
+**Quoi :** extension de la DA « Contraste » (presque noir + cyan) à **toutes les surfaces restantes** : **écran de connexion** (panneau marque near-black + halo cyan, logo glow, boutons cyan / fantôme à bord cyan, champs à anneau cyan), **toasts & repères** (Enregistré/Synchro/version/pastille), **segmented control** (régime TVA) + **onglets de mois** (TVA + Charges & Paie) + theme-switch + **pastille « En cours »** → cyan, **Consultation `.sg-app`** (période/journal/onglet actifs, filet du titre, flèches d'exercice + « Éditions »), **éditeur `.ec-sage`** (bord fenêtre, filet titre, en-têtes, focus, bouton « solder », journal/lettre, totaux) et **modales génériques** (`#modal-c`). Le **vert/rouge comptable** est préservé.
+
+**Comment — `yada-addon241` (`<style id="yada-contraste-2">`, 100% CSS additif, injecté après le Lot 1 ; scopé `html body[data-theme="noir"]` + `#sec-lock`, precompta + build V1).** `sw.js` yada-v108, badge v513, `version.json` 513.
+
+**Validé :** `node --check` (precompta 231 / V1 230, 0 erreur) + `sw.js` OK + accolades CSS (2014/2014) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + Playwright (connexion : CTA cyan `rgb(47,230,255)` ; Consultation : période active cyan ; **0 débordement** ; **0 pageerror**) + captures (connexion & consultation en Contraste). Badge → **v513**.
+
+---
+
+## 🟢 MAJ précédente — Télécharger YADA sur le PC (fichier autonome hors-ligne) + carte Paramétrage — v512
 **Quoi :** on peut désormais **télécharger YADA sur son ordinateur** en un clic : un bouton **« ⬇ Télécharger le fichier YADA (hors-ligne) »** enregistre **`YADA.html`** (application autonome, single-file, avec police & logique embarquées) → il s'ouvre par **double-clic** et fonctionne **sans connexion**. Ajouté (1) dans le modal existant **« Télécharger l'application »** (bannière + `telechargerApp`), et (2) dans une nouvelle carte **Paramétrage « 💻 Télécharger YADA sur mon PC »** (Installer l'application **ou** Télécharger le fichier). L'installation **PWA** (icône dédiée, plein écran) reste disponible.
 
 **Comment — `yada-addon-dlpc` (100% additif, precompta + build V1) :** `window.yadaDownloadFile()` = `fetch(location.href)` (repli `document.documentElement.outerHTML`) → `Blob` `text/html` → `<a download="YADA.html">`. Wrap de `telechargerApp` (ajoute le bouton fichier au modal) + wrap de `pageParametrage` (carte dédiée). `sw.js` yada-v107, badge v512, `version.json` 512.
