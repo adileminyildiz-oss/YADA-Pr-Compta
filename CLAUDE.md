@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Authentification à deux facteurs (2FA) par QR code — TOTP hors-ligne, optionnelle — v510
+## 🟢 Dernière mise à jour — 2FA : le code est TOUJOURS demandé (y compris appareils mémorisés) — v511
+**Quoi :** le code 2FA est désormais **exigé à chaque ouverture** d'un compte 2FA-activé, **y compris sur les appareils de confiance** (connexion automatique « Rester connecté »), et pas seulement lors d'une connexion interactive. Toute ouverture (login ou auto-login au démarrage) sans code valide → **verrouillage**.
+
+**Comment (`yada-addon-2fa`, extension) :** persistance du compte 2FA dans `localStorage 'yada-2fa-acct'` (à la connexion interactive **et** à l'enrôlement) ; **porte de démarrage** `tfaStartup()` (planifiée à 500 ms et 1600 ms après chargement) : si l'app est ouverte (`__secLocked===false`), non encore validée (`!__tfaPassed`) et que le compte mémorisé a la 2FA activée → affiche la modale de code ; échec/annulation → `secVerrouiller`. `sw.js` yada-v106, badge v511, `version.json` 511.
+
+**Validé :** `node --check` (229/228, 0 erreur) + `sw.js` OK + Playwright (appareil **mémorisé** + 2FA activée → **porte de démarrage affichée** ; mauvais code → porte maintenue ; bon code → porte fermée ; 0 pageerror) + filet d'équilibre ✅. Badge → **v511**.
+
+---
+
+## 🟢 MAJ précédente — Authentification à deux facteurs (2FA) par QR code — TOTP hors-ligne, optionnelle — v510
 **Quoi :** ajout d'une **authentification à deux facteurs (2FA)** après le mot de passe : **code à 6 chiffres** d'une application d'authentification (Google Authenticator / Authy), configuré via un **QR code**. **Optionnelle & activable par compte** dans **Paramétrage** (« 🔐 Authentification à deux facteurs (2FA) » → « Activer la 2FA (QR code) ») ; à l'enrôlement, un **QR** + une **clé manuelle** de secours + confirmation d'un code. Ensuite, à chaque **connexion interactive** d'un compte 2FA-activé, un **écran de vérification** demande le code ; échec/annulation → verrouillage. Les **appareils de confiance** (case « Rester connecté ») ne sont pas re-challengés (comportement voulu). **100% hors-ligne** : TOTP calculé localement (WebCrypto HMAC-SHA1) et **QR généré côté client** (encodeur maison — aucun secret envoyé à un service tiers).
 
 **Comment — `yada-addon-2fa` (100% additif, precompta + build V1) :**

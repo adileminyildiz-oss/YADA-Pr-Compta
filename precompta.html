@@ -11094,7 +11094,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v510';
+    b.textContent='YADA · v511';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -26560,7 +26560,7 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
       try{
         var opened=(window.__secLocked===false);
         var cfg=email && tfaCfg()[email];
-        if(opened && email){ window.__acctEmail=email;
+        if(opened && email){ window.__acctEmail=email; try{localStorage.setItem('yada-2fa-acct',email);}catch(e){}
           if(cfg && cfg.enabled && !window.__tfaPassed){
             gate(email, function(){ window.__tfaPassed=true; }, function(){ if(typeof window.secVerrouiller==='function') window.secVerrouiller(); });
           }
@@ -26570,6 +26570,8 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
     };
   }
   if(typeof window.secVerrouiller==='function'){ var _sv=window.secVerrouiller; window.secVerrouiller=function(){ window.__tfaPassed=false; return _sv.apply(this,arguments); }; }
+  function tfaStartup(){ try{ if(window.__tfaPassed) return; if(window.__secLocked!==false) return; var email=''; try{ email=key(localStorage.getItem('yada-2fa-acct')||window.__acctEmail||''); }catch(e){ email=key(window.__acctEmail||''); } if(!email) return; var cfg=tfaCfg()[email]; if(!cfg||!cfg.enabled) return; window.__acctEmail=email; gate(email, function(){ window.__tfaPassed=true; }, function(){ if(typeof window.secVerrouiller==='function') window.secVerrouiller(); }); }catch(e){} }
+  try{ if(document.readyState==='loading') window.addEventListener('load',function(){ setTimeout(tfaStartup,500); }); else setTimeout(tfaStartup,500); setTimeout(tfaStartup,1600); }catch(e){}
 
   /* Enrôlement (carte Paramétrage) */
   window.tfaEnroll=function(){ var email=key(window.__acctEmail||''); if(!email){ if(window.toast)toast('Reconnectez-vous (avec e-mail) pour activer la 2FA'); return; }
@@ -26592,7 +26594,7 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
       if(code.length!==6){ er.textContent='Entrez 6 chiffres.'; return; }
       var ok=false; try{ ok=await Q().totpVerify(secret, code, {window:1}); }catch(e){}
       if(!ok){ er.textContent='Code incorrect — vérifiez l’heure de votre téléphone.'; inp.value=''; try{inp.focus();}catch(e){} return; }
-      tfaCfg()[email]={secret:secret, enabled:true, ts:Date.now()}; try{ save(); }catch(e){}
+      tfaCfg()[email]={secret:secret, enabled:true, ts:Date.now()}; try{ save(); }catch(e){} try{localStorage.setItem('yada-2fa-acct',email);}catch(e){}
       close(); if(window.toast)toast('2FA activée ✓'); if(typeof render==='function') render();
     };
   };
