@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — 2FA : le code est TOUJOURS demandé (y compris appareils mémorisés) — v511
+## 🟢 Dernière mise à jour — Télécharger YADA sur le PC (fichier autonome hors-ligne) + carte Paramétrage — v512
+**Quoi :** on peut désormais **télécharger YADA sur son ordinateur** en un clic : un bouton **« ⬇ Télécharger le fichier YADA (hors-ligne) »** enregistre **`YADA.html`** (application autonome, single-file, avec police & logique embarquées) → il s'ouvre par **double-clic** et fonctionne **sans connexion**. Ajouté (1) dans le modal existant **« Télécharger l'application »** (bannière + `telechargerApp`), et (2) dans une nouvelle carte **Paramétrage « 💻 Télécharger YADA sur mon PC »** (Installer l'application **ou** Télécharger le fichier). L'installation **PWA** (icône dédiée, plein écran) reste disponible.
+
+**Comment — `yada-addon-dlpc` (100% additif, precompta + build V1) :** `window.yadaDownloadFile()` = `fetch(location.href)` (repli `document.documentElement.outerHTML`) → `Blob` `text/html` → `<a download="YADA.html">`. Wrap de `telechargerApp` (ajoute le bouton fichier au modal) + wrap de `pageParametrage` (carte dédiée). `sw.js` yada-v107, badge v512, `version.json` 512.
+
+**Validé :** `node --check` (precompta 230 / V1 229, 0 erreur) + `sw.js` OK + accolades CSS (2014/2014) + Playwright (`yadaDownloadFile()` → **événement download déclenché, fichier `YADA.html`** ; carte Paramétrage présente ; **0 pageerror**). Badge → **v512**.
+
+---
+
+## 🟢 MAJ précédente — 2FA : le code est TOUJOURS demandé (y compris appareils mémorisés) — v511
 **Quoi :** le code 2FA est désormais **exigé à chaque ouverture** d'un compte 2FA-activé, **y compris sur les appareils de confiance** (connexion automatique « Rester connecté »), et pas seulement lors d'une connexion interactive. Toute ouverture (login ou auto-login au démarrage) sans code valide → **verrouillage**.
 
 **Comment (`yada-addon-2fa`, extension) :** persistance du compte 2FA dans `localStorage 'yada-2fa-acct'` (à la connexion interactive **et** à l'enrôlement) ; **porte de démarrage** `tfaStartup()` (planifiée à 500 ms et 1600 ms après chargement) : si l'app est ouverte (`__secLocked===false`), non encore validée (`!__tfaPassed`) et que le compte mémorisé a la 2FA activée → affiche la modale de code ; échec/annulation → `secVerrouiller`. `sw.js` yada-v106, badge v511, `version.json` 511.

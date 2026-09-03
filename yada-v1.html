@@ -11094,7 +11094,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v511';
+    b.textContent='YADA · v512';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -26543,6 +26543,47 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
     return '<div class="card" id="tfa-card"><h2>🔐 Authentification à deux facteurs (2FA)</h2>'+body+'</div>';
   }
   if(typeof pageParametrage==='function'){ var _pp=pageParametrage; pageParametrage=function(){ try{ return _pp()+tfaCard(); }catch(e){ return _pp(); } }; }
+})();
+</script>
+<script id="yada-addon-dlpc">
+/* Télécharger YADA sur le PC : enregistre l'application autonome (fichier .html hors-ligne).
+   S'ajoute au modal « Télécharger l'application » + carte Paramétrage. 100% additif. */
+(function(){
+  window.yadaDownloadFile=async function(){
+    var html=null;
+    try{ var res=await fetch(location.href,{cache:'no-store'}); if(res&&res.ok) html=await res.text(); }catch(e){}
+    if(!html){ try{ html='<!doctype html>\n'+document.documentElement.outerHTML; }catch(e){} }
+    if(!html){ if(window.toast)toast('Téléchargement impossible ici'); return; }
+    try{
+      var blob=new Blob([html],{type:'text/html;charset=utf-8'});
+      var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='YADA.html';
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ try{URL.revokeObjectURL(a.href);}catch(e){} a.remove(); },1500);
+      if(window.toast)toast('YADA téléchargé (YADA.html) — ouvrez-le par double-clic ✓');
+    }catch(e){ if(window.toast)toast('Téléchargement impossible ici'); }
+  };
+  /* bouton dans le modal telechargerApp */
+  if(typeof window.telechargerApp==='function'){ var _ta=window.telechargerApp;
+    window.telechargerApp=function(){ var r=_ta.apply(this,arguments);
+      try{ var mc=document.getElementById('modal-c'); if(mc && !mc.querySelector('#dl-file-btn')){
+        var d=document.createElement('div'); d.style.cssText='margin-top:10px;text-align:center';
+        d.innerHTML='<button id="dl-file-btn" class="btn btn-pri" style="width:100%" onclick="yadaDownloadFile()">⬇ Télécharger le fichier YADA (hors-ligne)</button>'
+          +'<div class="hint" style="margin-top:6px">Enregistre <b>YADA.html</b> sur votre PC : ouvrez-le par double-clic, il fonctionne sans connexion.</div>';
+        mc.appendChild(d);
+      } }catch(e){}
+      return r;
+    };
+  }
+  /* carte Paramétrage */
+  if(typeof pageParametrage==='function'){ var _pp=pageParametrage;
+    pageParametrage=function(){ try{ return _pp()+
+      '<div class="card"><h2>💻 Télécharger YADA sur mon PC</h2>'
+      +'<div class="sub">Deux façons d\'avoir YADA sur votre ordinateur : l\'installer comme application (icône dédiée, plein écran, hors-ligne), ou télécharger le fichier autonome.</div>'
+      +'<div class="right" style="margin-top:10px;gap:8px">'
+        +'<button class="btn btn-ghost" onclick="telechargerApp()">Installer l\'application</button> '
+        +'<button class="btn btn-pri" onclick="yadaDownloadFile()">⬇ Télécharger le fichier (YADA.html)</button>'
+      +'</div></div>'; }catch(e){ return _pp(); } };
+  }
 })();
 </script>
 </body>
