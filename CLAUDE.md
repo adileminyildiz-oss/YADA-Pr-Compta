@@ -36,7 +36,29 @@
 
 ---
 
-## 🟢 Dernière mise à jour — NOUVELLE DA « Contraste audacieux » (Lot 1 · fondations) : presque noir + accent CYAN + police IBM Plex Sans — v509
+## 🟢 Dernière mise à jour — 2FA : le code est TOUJOURS demandé (y compris appareils mémorisés) — v511
+**Quoi :** le code 2FA est désormais **exigé à chaque ouverture** d'un compte 2FA-activé, **y compris sur les appareils de confiance** (connexion automatique « Rester connecté »), et pas seulement lors d'une connexion interactive. Toute ouverture (login ou auto-login au démarrage) sans code valide → **verrouillage**.
+
+**Comment (`yada-addon-2fa`, extension) :** persistance du compte 2FA dans `localStorage 'yada-2fa-acct'` (à la connexion interactive **et** à l'enrôlement) ; **porte de démarrage** `tfaStartup()` (planifiée à 500 ms et 1600 ms après chargement) : si l'app est ouverte (`__secLocked===false`), non encore validée (`!__tfaPassed`) et que le compte mémorisé a la 2FA activée → affiche la modale de code ; échec/annulation → `secVerrouiller`. `sw.js` yada-v106, badge v511, `version.json` 511.
+
+**Validé :** `node --check` (229/228, 0 erreur) + `sw.js` OK + Playwright (appareil **mémorisé** + 2FA activée → **porte de démarrage affichée** ; mauvais code → porte maintenue ; bon code → porte fermée ; 0 pageerror) + filet d'équilibre ✅. Badge → **v511**.
+
+---
+
+## 🟢 MAJ précédente — Authentification à deux facteurs (2FA) par QR code — TOTP hors-ligne, optionnelle — v510
+**Quoi :** ajout d'une **authentification à deux facteurs (2FA)** après le mot de passe : **code à 6 chiffres** d'une application d'authentification (Google Authenticator / Authy), configuré via un **QR code**. **Optionnelle & activable par compte** dans **Paramétrage** (« 🔐 Authentification à deux facteurs (2FA) » → « Activer la 2FA (QR code) ») ; à l'enrôlement, un **QR** + une **clé manuelle** de secours + confirmation d'un code. Ensuite, à chaque **connexion interactive** d'un compte 2FA-activé, un **écran de vérification** demande le code ; échec/annulation → verrouillage. Les **appareils de confiance** (case « Rester connecté ») ne sont pas re-challengés (comportement voulu). **100% hors-ligne** : TOTP calculé localement (WebCrypto HMAC-SHA1) et **QR généré côté client** (encodeur maison — aucun secret envoyé à un service tiers).
+
+**Comment — `yada-addon-2fa` (100% additif, precompta + build V1) :**
+- **Cœur `YADA2FA`** : base32, **TOTP/HOTP RFC 6238** (HMAC-SHA1 via `crypto.subtle`, fenêtre ±1), et un **encodeur QR hors-ligne** (mode octet, EC niveau M, versions 1→6, RS GF(256), masques 0-7 + score de pénalité, sortie SVG). Validé en Node : **vecteurs RFC 6238** (94287082 / 07081804 / 287082) + **round-trip QR** (URI otpauth 96 car. → v6 → décodage = identique).
+- **Stockage** `db.parametres.twofa[email] = {secret, enabled, ts}` (persisté par `save()`, comme `pwdClair`).
+- **Porte de connexion** : wrap de `window.secEssayer` — après succès (détecté par `window.__secLocked===false`), si 2FA activée pour l'e-mail saisi → modale `#tfa-ov` de vérification ; OK → poursuite, Annuler/échec → `secVerrouiller`. `secVerrouiller` remet `__tfaPassed=false`.
+- **Enrôlement** : carte greffée sur `pageParametrage` (`tfaEnroll`/`tfaDisable`), modale QR + clé + confirmation. `sw.js` yada-v105, badge v510, `version.json` 510.
+
+**Validé :** `node --check` (precompta 229 / V1 228, 0 erreur) + `sw.js` OK + accolades CSS (2014/2014) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + tests Node (TOTP RFC 6238 + round-trip QR) + Playwright (enrôlement : QR SVG rendu + clé 32 car. ; code TOTP calculé **accepté** → 2FA **persistée** `db.parametres.twofa` ; carte Paramétrage « activée/Désactiver » ; hook `secEssayer` installé ; **0 pageerror**) + capture (modale d'activation avec vrai QR). Badge → **v510**.
+
+---
+
+## 🟢 MAJ précédente — NOUVELLE DA « Contraste audacieux » (Lot 1 · fondations) : presque noir + accent CYAN + police IBM Plex Sans — v509
 **Quoi :** nouvelle direction artistique **validée par maquette** (« Contraste audacieux ») : **fond presque noir** (`#08080a`) + halos cyan discrets, **accent CYAN unique** (`#2fe6ff`, remplace le bleu vif), **cartes profondes** (dégradé + filet lumineux + ombre), **KPI/boutons/champs/liens en cyan**, **barre latérale** épurée (actif = liseré cyan lumineux), **hero** à halo cyan sans anneau bleu. **Nouvelle police : IBM Plex Sans** (choisie par l'utilisateur), **embarquée hors-ligne** (woff2 latin variable, data-URI). Le **vert/rouge comptable** (CA/Charges/crédit/débit) est **préservé**. Aucune logique/processus touché ; le bouton nuit/jour reste fonctionnel.
 
 **Comment :**
