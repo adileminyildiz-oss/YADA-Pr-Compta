@@ -36,6 +36,15 @@
 
 ---
 
+## 🟢 Dernière mise à jour — Retour à la version d'avant (annulation de l'amélioration du blanc) + purge du cache — v516
+**Quoi :** à la demande, **retour à la version d'avant** — l'**amélioration du « blanc » du mode clair (v515)** est **annulée** : le bloc `yada-addon-clair` (`<style id="yada-clair-white">`) est **retiré** de `precompta.html` et du build `yada-v1.html` → le mode clair revient à l'état **v514** (blanc d'origine). Le **monochrome total reste en place** (`yada-addon-mono` conservé : deux ambiances « noir sombre » / « noir clair », aucune couleur). Le **cache est purgé** (bump du service worker) pour que le retour prenne effet immédiatement en ligne.
+
+**Comment :** `precompta.html` + `yada-v1.html` restaurés à l'identique de l'état **v514** (`git checkout e4df06f -- …` → suppression nette du bloc `yada-addon-clair`, aucune autre différence). Le **numéro de version est AVANCÉ à v516** (et non redescendu) pour ne pas déclencher le **verrou anti-retour de version** (addon133) sur les appareils ayant déjà vu v515 : c'est une mise à jour **vers l'avant** qui rétablit le blanc d'avant. `sw.js` yada-v111 (l'`activate` purge tous les caches ≠ courant), badge v516, `version.json` 516.
+
+**Validé :** `node --check` (aucun `yada-addon-clair`) + accolades CSS (precompta 14803/14803 = v514) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + Playwright (filtre `grayscale(1)` actif, badge v516, `yada-clair-white` **absent**, 0 débordement, 0 pageerror). Badge → **v516**.
+
+---
+
 ## 🟢 Dernière mise à jour — « Noir clair » raffiné : le blanc amélioré (fond doux + cartes blanches nettes) — v515
 **Quoi :** amélioration de la **couleur blanche** du mode clair (« noir clair »). Le blanc était **plat** (fond blanc pur + halos) : les **cartes blanches se fondaient** dans le fond. Désormais **fond gris très clair** (`#eef1f7`) → les **cartes blanches pures (`#fff`) ressortent nettement** avec un **bord propre `#e4e8f1`** + ombre douce ; **titres nets**, **champs** (bord `#dde3ec`, focus doux) et **tables** (séparateurs discrets, survol léger) soignés ; **hero clair** (au lieu d'un bandeau gris foncé) ; scrollbar claire. Valeurs neutres → restent propres après le grayscale (le logiciel reste 100% monochrome).
 

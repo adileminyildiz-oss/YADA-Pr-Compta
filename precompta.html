@@ -11094,7 +11094,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v515';
+    b.textContent='YADA · v516';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -26743,42 +26743,6 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
     ].join('\n');
     var s=document.createElement('style'); s.id='yada-mono'; s.textContent=css;
     document.head.appendChild(s); /* injecté en dernier → prime sur tout */
-  }catch(e){}
-})();
-</script>
-<script id="yada-addon-clair">
-/* v515 — Amélioration du « noir clair » (mode jour) : blanc raffiné.
-   Fond gris très clair (au lieu d'un blanc plat + halos) → les CARTES BLANCHES
-   ressortent nettement ; bords/ombres plus propres ; hero clair ; champs & tables
-   soignés. Valeurs neutres (froid léger) → restent propres après le grayscale.
-   100% additif, scopé body[data-theme="jour"], injecté en dernier. */
-(function(){
-  try{
-    var J='body[data-theme="jour"]';
-    var css=[
-      /* fond doux → profondeur, fin du blanc plat */
-      J+'{background:radial-gradient(1200px 760px at 12% -14%,#ffffff,transparent 60%),#eef1f7 !important;background-attachment:fixed !important;color:#0f1728 !important;}',
-      J+' .layout,'+J+' main,'+J+' main.fullbleed .mod-wrap,'+J+' main.fullbleed .dash-wrap{background:transparent !important;}',
-      /* cartes & KPI : blanc pur qui ressort, bord net, ombre douce */
-      J+' .card,'+J+' .mod-wrap .card,'+J+' .dash-wrap .card,'+J+' .cli-col>.card,'+J+' .kpi{background:#ffffff !important;border:1px solid #e4e8f1 !important;border-radius:16px !important;box-shadow:0 1px 2px rgba(15,23,42,.04),0 12px 30px rgba(15,23,42,.06) !important;color:#0f1728 !important;}',
-      /* titres nets */
-      J+' .page-head h1,'+J+' .card h2,'+J+' .kpi .val{color:#0b1220 !important;}',
-      J+' .sub,'+J+' .hint,'+J+' .mini,'+J+' .page-head p,'+J+' .kpi .lbl,'+J+' label,'+J+' th{color:#5c6b85 !important;}',
-      /* champs */
-      J+' input,'+J+' select,'+J+' textarea{background:#ffffff !important;border:1px solid #dde3ec !important;color:#0f1728 !important;border-radius:11px !important;}',
-      J+' input:focus,'+J+' select:focus,'+J+' textarea:focus{border-color:#9fb0cc !important;box-shadow:0 0 0 3px rgba(90,110,150,.14) !important;outline:none !important;}',
-      /* tables : séparateurs discrets, survol très léger */
-      J+' td,'+J+' th{border-bottom-color:#eaeef5 !important;}',
-      J+' tr:hover td{background:#f5f7fb !important;}',
-      /* hero clair (au lieu du bandeau gris foncé issu du dégradé) */
-      J+' #ec-hero,'+J+' #ec-hero.cab-hero{background:linear-gradient(120deg,#ffffff,#eef2f8) !important;border:1px solid #e4e8f1 !important;box-shadow:0 12px 30px rgba(15,23,42,.07) !important;color:#0b1220 !important;}',
-      J+' #ec-hero .ec-hero-hi,'+J+' #ec-hero .ec-hero-sub,'+J+' #ec-hero h1,'+J+' #ec-hero .cab-hero-hi{color:#0b1220 !important;}',
-      /* scrollbar claire */
-      J+' ::-webkit-scrollbar-thumb{background:#cdd5e2 !important;border-radius:8px}',
-      J+' ::-webkit-scrollbar-track{background:#eef1f7 !important}'
-    ].join('\n');
-    var s=document.createElement('style'); s.id='yada-clair-white'; s.textContent=css;
-    document.head.appendChild(s);
   }catch(e){}
 })();
 </script>
