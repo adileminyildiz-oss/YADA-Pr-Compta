@@ -36,6 +36,15 @@
 
 ---
 
+## 🟢 Dernière mise à jour — « Noir clair » raffiné : le blanc amélioré (fond doux + cartes blanches nettes) — v515
+**Quoi :** amélioration de la **couleur blanche** du mode clair (« noir clair »). Le blanc était **plat** (fond blanc pur + halos) : les **cartes blanches se fondaient** dans le fond. Désormais **fond gris très clair** (`#eef1f7`) → les **cartes blanches pures (`#fff`) ressortent nettement** avec un **bord propre `#e4e8f1`** + ombre douce ; **titres nets**, **champs** (bord `#dde3ec`, focus doux) et **tables** (séparateurs discrets, survol léger) soignés ; **hero clair** (au lieu d'un bandeau gris foncé) ; scrollbar claire. Valeurs neutres → restent propres après le grayscale (le logiciel reste 100% monochrome).
+
+**Comment — `yada-addon-clair` (`<style id="yada-clair-white">`, 100% additif, scopé `body[data-theme="jour"]`, injecté en dernier ; precompta + build V1).** `sw.js` yada-v110, badge v515, `version.json` 515.
+
+**Validé :** `node --check` (addon-clair OK) + accolades CSS (precompta 14819/14819) + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + Playwright (mode jour : fond `rgb(238,241,247)`, carte `rgb(255,255,255)` bord `rgb(228,232,241)`, filtre grayscale actif, 0 débordement, 0 pageerror, badge v515). Badge → **v515**.
+
+---
+
 ## 🟢 Dernière mise à jour — MONOCHROME TOTAL : plus aucune couleur, seulement « noir sombre » et « noir clair » — v514
 **Quoi :** à la demande (« je ne veux plus voir aucune couleur »), **tout le logiciel devient monochrome** — **aucune couleur** nulle part : accents cyan/bleu, KPI, logos, graphiques, sparklines, et même le **vert/rouge comptable** sont **neutralisés en niveaux de gris**, sur **toutes les pages** (connexion, tableau de bord, facturation, TVA, consultation, éditeur, modales…) et dans **les deux ambiances**. Seules deux ambiances subsistent, atteintes par le **bouton nuit/jour existant** : **« noir sombre »** (thème `noir`) et **« noir clair »** (thème `jour`). Le contraste (luminance) est préservé → lisibilité intacte.
 
