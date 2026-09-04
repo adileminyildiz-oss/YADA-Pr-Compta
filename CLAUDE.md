@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Retour à la version d'avant (annulation de l'amélioration du blanc) + purge du cache — v516
+## 🟢 Dernière mise à jour — REFONTE « Console » : fond noir + accent ORANGE + police Inter + spatial UI (compta intacte) — v517
+**Quoi :** refonte visuelle validée par maquettes (référence « console d'administration »). **Fond noir**, **accent orange `#f2681f`** (couleur de l'image de référence), **police Inter** (embarquée hors-ligne), **look spatial UI** : panneaux à filet + halos, boutons travaillés, barre latérale à pastille active, tuiles KPI à icône. La **couleur est rétablie** (annule le monochrome v514/v516). **INTACT (non touché)** : **Consultation** (`.sg-app`), **éditeur d'écritures** (`.ec-*`), **Éditions** (`.doc-page`) — police d'origine + rendu monochrome conservés ; tout le reste reçoit le nouveau design. Le **vert/rouge comptable** est préservé.
+
+**Comment — `yada-addon-nuitbleue` (`<style id="yada-nuit-bleue">`, 100% CSS additif, injecté en fin de `<body>` → prime sur tout ; precompta + build V1) :** `@font-face` Inter (data-URI) + `html body,html body *{font-family:'Inter'…}` (sauf zones compta : police d'origine restaurée) ; `html{filter:none}` + grayscale ré-appliqué sur Consultation/éditeur/Éditions pour les garder intacts ; tokens `--blue/--accent/--acc/--ct-acc → #f2681f` ; fond noir + halos orange ; cartes/KPI/boutons/champs/tables/barre latérale/connexion recolorés ; scopé `html body[data-theme="noir"]` avec exclusion `:not([data-page="compta"]):not([data-page="editions"])` pour le contenu. `sw.js` yada-v112, badge v517, `version.json` 517.
+
+**Validé :** `node --check` (addon OK) + accolades CSS équilibrées + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + Playwright (thème noir : Inter chargée **hors-ligne**, `filter:none`, badge v517, 0 pageerror ; Consultation **intacte** monochrome + police d'origine ; captures Tableau de bord/Facturation/Tiers/Paramétrage en orange). Badge → **v517**.
+
+---
+
+## 🟢 MAJ précédente — Retour à la version d'"'"'avant (annulation de l'amélioration du blanc) + purge du cache — v516
 **Quoi :** à la demande, **retour à la version d'avant** — l'**amélioration du « blanc » du mode clair (v515)** est **annulée** : le bloc `yada-addon-clair` (`<style id="yada-clair-white">`) est **retiré** de `precompta.html` et du build `yada-v1.html` → le mode clair revient à l'état **v514** (blanc d'origine). Le **monochrome total reste en place** (`yada-addon-mono` conservé : deux ambiances « noir sombre » / « noir clair », aucune couleur). Le **cache est purgé** (bump du service worker) pour que le retour prenne effet immédiatement en ligne.
 
 **Comment :** `precompta.html` + `yada-v1.html` restaurés à l'identique de l'état **v514** (`git checkout e4df06f -- …` → suppression nette du bloc `yada-addon-clair`, aucune autre différence). Le **numéro de version est AVANCÉ à v516** (et non redescendu) pour ne pas déclencher le **verrou anti-retour de version** (addon133) sur les appareils ayant déjà vu v515 : c'est une mise à jour **vers l'avant** qui rétablit le blanc d'avant. `sw.js` yada-v111 (l'`activate` purge tous les caches ≠ courant), badge v516, `version.json` 516.
