@@ -11094,7 +11094,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v513';
+    b.textContent='YADA · v514';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -26657,6 +26657,23 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
     SL+' .sec-ver{color:#5a5a64 !important}'
   ].join('\n');
   try{ var s=document.createElement('style'); s.id='yada-contraste-2'; s.textContent=css; document.head.appendChild(s); }catch(e){}
+})();
+</script>
+<script id="yada-addon-mono">
+/* v514 — MONOCHROME TOTAL : aucune couleur dans le logiciel.
+   Deux ambiances seulement : « noir sombre » (thème noir) et « noir clair » (thème jour),
+   via le bouton nuit/jour existant. Filtre grayscale global (bulletproof) : neutralise
+   TOUTE couleur — accents, KPI, logos, graphiques, vert/rouge — sur toutes les pages et
+   dans les deux thèmes. 100% additif, aucune logique modifiée. */
+(function(){
+  try{
+    var css=[
+      'html{filter:grayscale(100%) !important;-webkit-filter:grayscale(100%) !important;}',
+      '::selection{background:rgba(160,160,160,.35) !important;}'
+    ].join('\n');
+    var s=document.createElement('style'); s.id='yada-mono'; s.textContent=css;
+    document.head.appendChild(s);
+  }catch(e){}
 })();
 </script>
 </body>

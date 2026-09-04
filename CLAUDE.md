@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — REFONTE « Contraste » (Lot 2) : connexion, toasts, Consultation, éditeur, modales, onglets → cyan — v513
+## 🟢 Dernière mise à jour — MONOCHROME TOTAL : plus aucune couleur, seulement « noir sombre » et « noir clair » — v514
+**Quoi :** à la demande (« je ne veux plus voir aucune couleur »), **tout le logiciel devient monochrome** — **aucune couleur** nulle part : accents cyan/bleu, KPI, logos, graphiques, sparklines, et même le **vert/rouge comptable** sont **neutralisés en niveaux de gris**, sur **toutes les pages** (connexion, tableau de bord, facturation, TVA, consultation, éditeur, modales…) et dans **les deux ambiances**. Seules deux ambiances subsistent, atteintes par le **bouton nuit/jour existant** : **« noir sombre »** (thème `noir`) et **« noir clair »** (thème `jour`). Le contraste (luminance) est préservé → lisibilité intacte.
+
+**Comment — `yada-addon-mono` (`<style id="yada-mono">`, 100% additif, injecté en dernier ; precompta + build V1) :** `html{filter:grayscale(100%) !important}` (bulletproof — désature toute couleur peinte, sur tout le document et dans tous les thèmes, y compris les logos/graphiques/vert-rouge) + sélection en gris. Aucune logique / aucun sélecteur JS modifié ; le bouton nuit/jour reste fonctionnel. `sw.js` yada-v109, badge v514, `version.json` 514.
+
+**Validé :** `node --check` (addon-mono OK) + accolades CSS (precompta 14803/14803 · V1 14759/14759) + filet d'équilibre (`node tests/equilibre-ecritures.mjs` : vente 1200=1200, achat 600=600 ✅) + Playwright (thèmes **noir** & **jour** : `getComputedStyle(html).filter='grayscale(1)'`, **0 débordement**, **0 pageerror**, badge v514 ; l'overlay de connexion fixe reste bien positionné sous le filtre) + captures (connexion en noir sombre & noir clair, 100% monochrome). Badge → **v514**.
+
+---
+
+## 🟢 MAJ précédente — REFONTE « Contraste » (Lot 2) : connexion, toasts, Consultation, éditeur, modales, onglets → cyan — v513
 **Quoi :** extension de la DA « Contraste » (presque noir + cyan) à **toutes les surfaces restantes** : **écran de connexion** (panneau marque near-black + halo cyan, logo glow, boutons cyan / fantôme à bord cyan, champs à anneau cyan), **toasts & repères** (Enregistré/Synchro/version/pastille), **segmented control** (régime TVA) + **onglets de mois** (TVA + Charges & Paie) + theme-switch + **pastille « En cours »** → cyan, **Consultation `.sg-app`** (période/journal/onglet actifs, filet du titre, flèches d'exercice + « Éditions »), **éditeur `.ec-sage`** (bord fenêtre, filet titre, en-têtes, focus, bouton « solder », journal/lettre, totaux) et **modales génériques** (`#modal-c`). Le **vert/rouge comptable** est préservé.
 
 **Comment — `yada-addon241` (`<style id="yada-contraste-2">`, 100% CSS additif, injecté après le Lot 1 ; scopé `html body[data-theme="noir"]` + `#sec-lock`, precompta + build V1).** `sw.js` yada-v108, badge v513, `version.json` 513.
