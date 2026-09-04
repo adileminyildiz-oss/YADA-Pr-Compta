@@ -26748,7 +26748,7 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
 </script>
 <script id="yada-addon-nuitbleue">
 /* ============================================================
-   YADA — REFONTE « NUIT BLEUE » (Lot 1) — fond noir + accent BLEU (#2f7bff) + Manrope + spatial UI.
+   YADA — REFONTE « NUIT BLEUE » (Lot 1) — fond noir + accent BLEU (#f2681f) + Manrope + spatial UI.
    Rétablit la couleur (annule le monochrome). 100% CSS additif, scopé au thème noir (défaut).
    INTACT (non touché) : Consultation (.sg-app), éditeur d'écritures (.ec-*), Éditions (.doc-page)
    + pages « compta » et « editions » — police d'origine + rendu monochrome conservés.
@@ -26771,49 +26771,52 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
       N+'[data-page="compta"] main,'+N+'[data-page="editions"] main,#ec-overlay,#cl-overlay,'+N+' .ec-win,'+N+' .sg-app,'+N+' .doc-page{filter:grayscale(1) !important}',
       "html body .kpi .val,html body td .num,html body th.num,html body .mono,html body .tnum{font-variant-numeric:tabular-nums}",
       /* Tokens d'accent → BLEU */
-      N+'{--blue:#2f7bff !important;--accent:#2f7bff !important;--acc:#2f7bff !important;--ct-acc:#2f7bff !important;--line-strong:#2f7bff !important;}',
+      N+'{--blue:#f2681f !important;--accent:#f2681f !important;--acc:#f2681f !important;--ct-acc:#f2681f !important;--line-strong:#f2681f !important;}',
       /* Fond NOIR + halos bleus (pages hors compta/éditions) */
-      A+'{background:radial-gradient(820px 480px at 16% -6%,rgba(47,123,255,.16),transparent 60%),radial-gradient(680px 440px at 92% -4%,rgba(47,123,255,.09),transparent 60%),radial-gradient(1100px 560px at 50% 122%,rgba(47,123,255,.05),transparent 60%),#000 !important;background-attachment:fixed !important;color:#eef2fb !important;}',
+      A+'{background:radial-gradient(820px 480px at 16% -6%,rgba(242,104,31,.16),transparent 60%),radial-gradient(680px 440px at 92% -4%,rgba(242,104,31,.09),transparent 60%),radial-gradient(1100px 560px at 50% 122%,rgba(242,104,31,.05),transparent 60%),#000 !important;background-attachment:fixed !important;color:#eef2fb !important;}',
       A+' .layout,'+A+' main,'+A+' main.fullbleed .mod-wrap,'+A+' main.fullbleed .dash-wrap{background:transparent !important;}',
       A+'::before,'+A+'::after{display:none !important}',
       /* Cartes = panneaux à filet + halo bleu (hors compta/éditions) */
-      A+' .card,'+A+' .mod-wrap .card,'+A+' .dash-wrap .card,'+A+' .cli-col>.card,'+A+' .kpi,'+A+' .cp-k,'+A+' .cf-org,'+A+' .kv2{background:linear-gradient(180deg,#151519,#0f0f14) !important;border:1px solid rgba(255,255,255,.07) !important;border-radius:16px !important;box-shadow:0 1px 2px rgba(0,0,0,.5),0 18px 44px -26px rgba(47,123,255,.4) !important;color:#eef2fb !important;}',
+      A+' .card,'+A+' .mod-wrap .card,'+A+' .dash-wrap .card,'+A+' .cli-col>.card,'+A+' .kpi,'+A+' .cp-k,'+A+' .cf-org,'+A+' .kv2{background:linear-gradient(180deg,#151519,#0f0f14) !important;border:1px solid rgba(255,255,255,.07) !important;border-radius:16px !important;box-shadow:0 1px 2px rgba(0,0,0,.5),0 18px 44px -26px rgba(242,104,31,.4) !important;color:#eef2fb !important;}',
       A+' .card h2,'+A+' .page-head h1,'+A+' .kpi .val,'+A+' .cp-k .v{color:#f2f3f6 !important}',
       A+' .sub,'+A+' .hint,'+A+' .mini,'+A+' .page-head p,'+A+' .kpi .lbl,'+A+' label,'+A+' .card th,'+A+' .cp-k .l{color:#a7abb6 !important}',
       A+' .kpi .val.cre,'+A+' .val.cre{color:#37d39a !important}',
       A+' .kpi .val.deb,'+A+' .val.deb{color:#ff6a5c !important}',
-      A+' .kpi-ic{background:rgba(47,123,255,.14) !important;border:1px solid rgba(47,123,255,.4) !important;color:#5b9bff !important;box-shadow:0 10px 24px -12px rgba(47,123,255,.6) !important}',
+      A+' .kpi-ic{background:rgba(242,104,31,.14) !important;border:1px solid rgba(242,104,31,.4) !important;color:#ff8a3d !important;box-shadow:0 10px 24px -12px rgba(242,104,31,.6) !important}',
+      A+' .kpi .kpi-ic,'+A+' .cp-k .kpi-ic{background:rgba(242,104,31,.14) !important;border:1px solid rgba(242,104,31,.4) !important;color:#ff8a3d !important}',
+      A+' .kpi .kpi-ic svg,'+A+' .kpi-ic svg{stroke:#ff8a3d !important;color:#ff8a3d !important}',
       /* Champs (hors compta/éditions) */
       A+' input,'+A+' select,'+A+' textarea{background:#101015 !important;border:1px solid rgba(255,255,255,.09) !important;color:#eef2fb !important;border-radius:10px !important}',
-      A+' input:focus,'+A+' select:focus,'+A+' textarea:focus{border-color:#2f7bff !important;box-shadow:0 0 0 3px rgba(47,123,255,.22) !important;outline:none !important}',
+      A+' input:focus,'+A+' select:focus,'+A+' textarea:focus{border-color:#f2681f !important;box-shadow:0 0 0 3px rgba(242,104,31,.22) !important;outline:none !important}',
       A+' option{background:#101015 !important;color:#eef2fb !important}',
       /* Tables des cartes (hors compta/éditions) */
       A+' .card th{border-bottom:1px solid rgba(255,255,255,.08) !important}',
       A+' .card td{border-bottom-color:rgba(255,255,255,.05) !important;color:#c7ccd8 !important}',
-      A+' .card tr:hover td{background:rgba(47,123,255,.06) !important}',
+      A+' .card tr:hover td{background:rgba(242,104,31,.06) !important}',
       /* Accents divers → bleu (hors compta/éditions) */
-      A+' a,'+A+' .rg-link,'+A+' .linkname{color:#5b9bff !important}',
-      A+' .seg button.on,'+A+' .cp-mtab.on,'+A+' .theme-switch button.on{background:linear-gradient(135deg,#2f7bff,#5b9bff) !important;color:#fff !important;border-color:transparent !important}',
-      A+' .dstat-chip.wip{background:rgba(47,123,255,.14) !important;color:#5b9bff !important;border-color:rgba(47,123,255,.4) !important}',
-      A+' #ec-hero,'+A+' #ec-hero.cab-hero{background:linear-gradient(120deg,#0e1830,#0a0c14) !important;border:1px solid rgba(47,123,255,.35) !important;box-shadow:0 18px 44px -22px rgba(47,123,255,.5) !important}',
+      A+' a,'+A+' .rg-link,'+A+' .linkname{color:#ff8a3d !important}',
+      A+' .seg button.on,'+A+' .cp-mtab.on,'+A+' .theme-switch button.on{background:linear-gradient(135deg,#f2681f,#ff8a3d) !important;color:#fff !important;border-color:transparent !important}',
+      A+' .dstat-chip.wip{background:rgba(242,104,31,.14) !important;color:#ff8a3d !important;border-color:rgba(242,104,31,.4) !important}',
+      A+' #ec-hero,'+A+' #ec-hero.cab-hero{background:linear-gradient(120deg,#17120d,#0b0a09) !important;border:1px solid rgba(242,104,31,.35) !important;box-shadow:0 18px 44px -22px rgba(242,104,31,.5) !important}',
+      N+' #ds-back-chip{background:linear-gradient(135deg,#f2681f,#ff8a3d) !important;color:#fff !important;border-color:transparent !important;box-shadow:0 8px 20px -8px rgba(242,104,31,.7) !important}',
       /* Boutons travaillés (shell, global) */
-      N+' .btn-pri,'+N+' .btn-gold{background:linear-gradient(135deg,#2f7bff,#5b9bff) !important;color:#fff !important;border:0 !important;box-shadow:0 12px 26px -10px rgba(47,123,255,.7) !important;text-transform:none !important;letter-spacing:0 !important}',
+      N+' .btn-pri,'+N+' .btn-gold{background:linear-gradient(135deg,#f2681f,#ff8a3d) !important;color:#fff !important;border:0 !important;box-shadow:0 12px 26px -10px rgba(242,104,31,.7) !important;text-transform:none !important;letter-spacing:0 !important}',
       N+' .btn,'+N+' .btn-ghost{background:#15151b !important;border:1px solid rgba(255,255,255,.09) !important;color:#eef2fb !important;text-transform:none !important;letter-spacing:0 !important;border-radius:11px !important}',
-      N+' .btn:hover,'+N+' .btn-ghost:hover{border-color:rgba(47,123,255,.55) !important;color:#fff !important}',
+      N+' .btn:hover,'+N+' .btn-ghost:hover{border-color:rgba(242,104,31,.55) !important;color:#fff !important}',
       /* Barre latérale (shell, global) */
       N+' aside{background:linear-gradient(180deg,#0d0d12,#070709) !important;border-right:1px solid rgba(255,255,255,.07) !important;backdrop-filter:none !important}',
       N+' .nav-btn{color:#a7abb6 !important;border-radius:10px !important}',
       N+' .nav-btn:hover{background:rgba(255,255,255,.05) !important;color:#fff !important}',
-      N+' .nav-btn.active{background:rgba(47,123,255,.15) !important;color:#fff !important;box-shadow:inset 0 0 0 1px rgba(47,123,255,.42),0 8px 22px -12px #2f7bff !important}',
-      N+' .nav-btn.active::before,'+N+' .nav-grp-h.has-active::before{background:linear-gradient(#2f7bff,#5b9bff) !important}',
-      N+' .nav-sub{border-left-color:rgba(47,123,255,.4) !important}',
+      N+' .nav-btn.active{background:rgba(242,104,31,.15) !important;color:#fff !important;box-shadow:inset 0 0 0 1px rgba(242,104,31,.42),0 8px 22px -12px #f2681f !important}',
+      N+' .nav-btn.active::before,'+N+' .nav-grp-h.has-active::before{background:linear-gradient(#f2681f,#ff8a3d) !important}',
+      N+' .nav-sub{border-left-color:rgba(242,104,31,.4) !important}',
       /* Écran de connexion en bleu (shell) */
-      '#sec-lock .sec-cta:not(.sec-cta-2){background:linear-gradient(135deg,#2f7bff,#5b9bff) !important;color:#fff !important;border:0 !important;box-shadow:0 12px 28px -8px rgba(47,123,255,.7) !important}',
-      '#sec-lock .sec-cta-2{border-color:rgba(47,123,255,.5) !important;color:#dbe8ff !important}',
-      '#sec-lock input:focus{border-color:#2f7bff !important;box-shadow:0 0 0 3px rgba(47,123,255,.24) !important}',
+      '#sec-lock .sec-cta:not(.sec-cta-2){background:linear-gradient(135deg,#f2681f,#ff8a3d) !important;color:#fff !important;border:0 !important;box-shadow:0 12px 28px -8px rgba(242,104,31,.7) !important}',
+      '#sec-lock .sec-cta-2{border-color:rgba(242,104,31,.5) !important;color:#dbe8ff !important}',
+      '#sec-lock input:focus{border-color:#f2681f !important;box-shadow:0 0 0 3px rgba(242,104,31,.24) !important}',
       /* Scrollbar bleue (shell) */
       N+' ::-webkit-scrollbar{width:11px;height:11px}',
-      N+' ::-webkit-scrollbar-thumb{background:rgba(47,123,255,.55) !important;border-radius:8px;border:2px solid transparent;background-clip:padding-box}',
+      N+' ::-webkit-scrollbar-thumb{background:rgba(242,104,31,.55) !important;border-radius:8px;border:2px solid transparent;background-clip:padding-box}',
       N+' ::-webkit-scrollbar-track{background:transparent}'
     ].join('\n');
     var st=document.createElement('style'); st.id='yada-nuit-bleue'; st.textContent=css;
