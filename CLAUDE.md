@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — Bouton « Retour » : TOUJOURS en haut à droite + flèche seule (←) — v531
+## 🟢 Dernière mise à jour — Bouton « Retour » : flèche seule en haut à droite AUSSI sur les écrans du parcours (HUB / dossier / rubrique / Rapport) — v532
+**Quoi :** suite de la v531 (bouton flèche des modules). Le **bouton de retour des écrans du parcours d'entrée** (HUB du dossier, dossier sélectionné, rubrique, page Rapport) — qui affichait **« ← Retour aux dossiers »** en toutes lettres — devient une **flèche seule ←**, compacte, **en haut à droite** (comme dans les modules). La **Déconnexion** reste à côté (texte). Sur le HUB, le groupe d'actions est déjà en haut à droite (v525) → l'arrondi flèche s'y intègre ; sur les autres écrans (Rapport…), le groupe est **positionné en haut à droite**.
+
+**Comment — 4 sites de markup + CSS `ds-anim-mod` (addon214 ; precompta + build V1) :** dans `ecranSelUnique`/`ecranHub`/`ecranRubrique`/`ecranRapport`, le contenu du `.ds-back-btn` passe de `<span class="ds-back-arrow">←</span> Retour aux dossiers` à `<span class="ds-back-arrow" title="Retour" aria-label="Retour">←</span>` (flèche seule, remplacement global). CSS ajouté : `.ds-back-btn{width:40px;height:40px;padding:0;display:inline-flex;justify-content:center;font-size:20px;border-radius:11px}` (chip carré arrondi) + `.login-wrap{position:relative}` + `.login-wrap:not(.ds-hub-wrap) .login-actions:has(.ds-back-btn){position:absolute;top:16px;right:20px;margin:0;justify-content:flex-end}` (haut-droite hors HUB, le HUB étant déjà géré par `dossiers-pc-hub-mod`). Le dégradé bleu du chip (marq-palette) est conservé. `sw.js` yada-v127, badge v532, `version.json` 532.
+
+**Validé :** `node --check` (precompta 238 / V1 237, 0 erreur) + `sw.js` OK + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + Playwright (HUB : `.ds-back-btn` texte **« ← »**, 40×40, en haut à droite (`top≈50`, cluster droit avec Déconnexion), `dsOuvrirListe()` ; 0 pageerror) + capture (flèche bleue en haut à droite du HUB). Badge → **v532**.
+
+---
+
+## 🟢 MAJ précédente — Bouton « Retour » : TOUJOURS en haut à droite + flèche seule (←) — v531
 **Quoi :** à la demande, le **bouton de retour** affiché dans les modules (barre latérale masquée) est **déplacé en HAUT À DROITE** (au lieu du bas à gauche) et **ne montre plus qu'une flèche ←** (fini le libellé « ‹ Retour au dossier »). Un clic ramène toujours au HUB du dossier (`dsRetourModule`). Bouton compact carré arrondi (42×42), coin supérieur droit fixe (`right:14px;top:14px`), title/aria-label « Retour ».
 
 **Comment — `yada-addon190` (`<style id="noside-mod">` + `ensureChip`, precompta + build V1) :** `#ds-back-chip` passe de `position:fixed;left:12px;bottom:118px` (pilule texte) à `right:14px;top:14px;width:42px;height:42px;padding:0;justify-content:center;font-size:22px` (flèche seule) ; `ensureChip()` : `innerHTML='←'` + `title`/`aria-label='Retour'` (au lieu de `'‹ Retour au dossier'`). Le dégradé bleu du chip (marq-palette v529/v530) est conservé (couleurs uniquement). `sw.js` yada-v126, badge v531, `version.json` 531.

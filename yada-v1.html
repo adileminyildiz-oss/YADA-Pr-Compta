@@ -11094,7 +11094,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v531';
+    b.textContent='YADA · v532';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -21923,7 +21923,7 @@ ${lignes}
       +'<div class="login-title">Dossier sélectionné</div>'
       +'<div class="login-sub">Cliquez sur le dossier pour l\'ouvrir.</div>'
       +'<div class="dossier-grid ds-grid-solo">'+carte+'</div>'
-      +actions('<button class="btn btn-ghost ds-back-btn" onclick="dsOuvrirListe()"><span class="ds-back-arrow">←</span> Retour aux dossiers</button><button class="btn btn-ghost ds-logout-btn" onclick="admDoLogout()">Déconnexion</button>')+'</div>';
+      +actions('<button class="btn btn-ghost ds-back-btn" onclick="dsOuvrirListe()"><span class="ds-back-arrow" title="Retour" aria-label="Retour">←</span></button><button class="btn btn-ghost ds-logout-btn" onclick="admDoLogout()">Déconnexion</button>')+'</div>';
   }
   function socRow(lbl,val){ if(!val) return ''; return '<div class="ds-soc-row"><span>'+esc(lbl)+'</span><b>'+esc(val)+'</b></div>'; }
   function socItem(lbl,val,full){ return '<div class="dsc-item'+(full?' full':'')+'"><span class="dsc-l">'+esc(lbl)+'</span><span class="dsc-v">'+esc(val||'—')+'</span></div>'; }
@@ -21944,7 +21944,7 @@ ${lignes}
       +'<div class="login-title">'+esc(i.nom)+'</div>'
       +'<div class="login-sub">Dossier — choisissez une rubrique.</div>'
       +'<div class="ds-hub-grid"><div class="ds-hub-main">'+soc+'</div><div class="ds-hub-side">'+tiles+'</div></div>'
-      +'<div class="login-actions"><button class="btn btn-ghost ds-back-btn" onclick="dsOuvrirListe()"><span class="ds-back-arrow">←</span> Retour aux dossiers</button><button class="btn btn-ghost ds-logout-btn" onclick="admDoLogout()">Déconnexion</button></div>'
+      +'<div class="login-actions"><button class="btn btn-ghost ds-back-btn" onclick="dsOuvrirListe()"><span class="ds-back-arrow" title="Retour" aria-label="Retour">←</span></button><button class="btn btn-ghost ds-logout-btn" onclick="admDoLogout()">Déconnexion</button></div>'
       +'</div>';
   }
   function ecranRubrique(key){ var R=RUBRIQUES[key]; if(!R) return ecranHub(window.dsSel);
@@ -21956,7 +21956,7 @@ ${lignes}
       +'<div class="login-sub">'+esc(i.nom)+' — '+esc(R.desc)+'</div>'
       +'<div class="ds-rub-grid">'+tiles+'</div>'
       +'<div class="login-actions"><button class="btn btn-ghost" onclick="dsRetourHub()">← Retour au dossier</button>'
-      +'<button class="btn btn-ghost ds-back-btn" onclick="dsOuvrirListe()"><span class="ds-back-arrow">←</span> Retour aux dossiers</button><button class="btn btn-ghost ds-logout-btn" onclick="admDoLogout()">Déconnexion</button></div>'
+      +'<button class="btn btn-ghost ds-back-btn" onclick="dsOuvrirListe()"><span class="ds-back-arrow" title="Retour" aria-label="Retour">←</span></button><button class="btn btn-ghost ds-logout-btn" onclick="admDoLogout()">Déconnexion</button></div>'
       +'</div>';
   }
   /* Page « Rapport » ouverte depuis l'accueil « Espace dossiers » (hors dossier). */
@@ -21964,7 +21964,7 @@ ${lignes}
     return '<div class="login-wrap ds-rapport-wrap" style="max-width:1120px;height:100dvh;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch">'+loginHead()
       +'<div class="login-title">Rapport</div>'
       +'<div class="login-sub">Rapports journaliers des travaux effectués — transmis au module Pilotages (Espace Admin) pour le suivi.</div>'
-      +'<div class="login-actions"><button class="btn btn-ghost ds-back-btn" onclick="dsAccueil()"><span class="ds-back-arrow">←</span> Retour aux dossiers</button></div>'
+      +'<div class="login-actions"><button class="btn btn-ghost ds-back-btn" onclick="dsAccueil()"><span class="ds-back-arrow" title="Retour" aria-label="Retour">←</span></button></div>'
       +'<div class="ds-rapport-body" style="margin-top:14px">'+((typeof window.rapportCards==='function')?window.rapportCards():'')+'</div></div>';
   }
   function dsScreen(){
@@ -24357,6 +24357,11 @@ ${lignes}
     +'.ds-back-btn:hover{transform:translateX(-2px)}'
     +'.ds-back-btn:hover .ds-back-arrow{transform:translateX(-5px)}'
     +'.ds-back-btn:active{transform:scale(.97)}'
+    /* Bouton Retour = flèche seule, compacte, en haut à droite (comme dans les modules) */
+    +'.ds-back-btn{min-width:0 !important;width:40px;height:40px;padding:0 !important;display:inline-flex;align-items:center;justify-content:center;font-size:20px;line-height:1;border-radius:11px}'
+    +'.ds-back-btn .ds-back-arrow{font-size:20px}'
+    +'.login-wrap{position:relative}'
+    +'.login-wrap:not(.ds-hub-wrap) .login-actions:has(.ds-back-btn){position:absolute;top:16px;right:20px;margin:0;justify-content:flex-end;z-index:6}'
     /* Dossier : effet d\'appui + animation de sélection */
     +'.ds-row{transition:transform .14s ease,box-shadow .18s ease,background .16s ease}'
     +'.ds-row:active{transform:scale(.985)}'
