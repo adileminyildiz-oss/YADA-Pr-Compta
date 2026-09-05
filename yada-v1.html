@@ -11094,7 +11094,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v527';
+    b.textContent='YADA · v528';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -27234,6 +27234,12 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
     try{ cre=regTotal('client'); }catch(e){} try{ det=regTotal('fournisseur'); }catch(e){}
     var ca=an.ca||0, ch=an.achats||0, res=an.resultat||0, marge=ca?(res/ca*100):0;
 
+    /* En-tête compact (titre + société · date longue) */
+    var _s=(db&&db.societe)||{}, _nom=_s.raison||_s.dossierNom||'Cabinet';
+    var _dt=''; try{ var _d=new Date(), _J=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'], _M=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre']; _dt=_J[_d.getDay()]+' '+_d.getDate()+' '+_M[_d.getMonth()]+' '+_d.getFullYear(); }catch(e){}
+    function qbtn(l,id){ return '<button class="dr-qbtn" onclick="current=\''+id+'\';render()">'+l+'</button>'; }
+    out.push('<div class="dr-head"><div class="dr-head-l"><span class="dr-head-ttl">Tableau de bord</span><span class="dr-head-date">'+esc(_nom)+(_dt?' · '+_dt:'')+'</span></div><div class="dr-quick">'+qbtn('Facturation','facturation')+qbtn('Fournisseurs','achats')+qbtn('Écritures','compta')+qbtn('TVA','tva')+'</div></div>');
+
     /* Bandeau KPI */
     out.push('<div class="dr-band">'
       +kpi('green','Chiffre d\'affaires','<span class="cre">'+money(ca)+'</span>','Produits (comptes 70x)',ic('up'))
@@ -27285,7 +27291,7 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
         var full=_prev.apply(this,arguments);
         var i=full.indexOf('<div id="ec-hero"');
         var prefix=(i>=0)? full.slice(0,i) : '<div class="dash-wrap">';
-        return prefix+(window.dashHero?window.dashHero():'')+richBody()+'</div>';
+        return prefix+richBody()+'</div>';
       }catch(e){ try{ return _prev.apply(this,arguments); }catch(_e){ return '<div class="dash-wrap"></div>'; } }
     };
   }
@@ -27355,6 +27361,101 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
     ].join(''); document.head.appendChild(st);
   } }catch(e){}
 })();
+</script>
+
+<script id="yada-addon-marq-palette">
+/* v528 — Bases de couleur de la maquette « Mar'q » appliquées à la refonte :
+   monochrome noir / blanc — fond noir pur, cartes à filet blanc discret, texte
+   blanc + gris, accents BLANCS (fini le bleu franc). Barre latérale, en-tête,
+   cartes, boutons, champs, tableaux et tableau de bord recolorés. Le VERT/ROUGE
+   comptable (cre/deb, CA/charges) est préservé ; les zones Consultation
+   (.sg-app), éditeur (.ec-*) et Éditions (.doc-page/.inv) ne sont pas touchées.
+   100% CSS additif, injecté en dernier → prime. Structure inchangée. */
+(function(){ try{
+  if(document.getElementById('marq-palette')) return;
+  var css = [
+    /* Fond noir pur + suppression des halos bleus */
+    'html body[data-theme="noir"]:not(#x){background:#000 !important;background-image:none !important}',
+    'html body[data-theme="noir"]::before,html body[data-theme="noir"]::after{display:none !important}',
+    'html{background:#000 !important}',
+    'html body[data-theme="noir"] .layout,html body[data-theme="noir"] main,html body[data-theme="noir"] .mod-wrap,html body[data-theme="noir"] .dash-wrap{background:#000 !important;background-image:none !important}',
+    'html body[data-theme="noir"] .layout::before,html body[data-theme="noir"] .layout::after,html body[data-theme="noir"] main::before,html body[data-theme="noir"] main::after,html body[data-theme="noir"] .mod-wrap::before,html body[data-theme="noir"] .mod-wrap::after,html body[data-theme="noir"] .dash-wrap::before,html body[data-theme="noir"] .dash-wrap::after{display:none !important;content:none !important}',
+    'html body[data-theme] #ds-back-chip:not(#x){background:#141414 !important;background-image:none !important;border:1px solid rgba(255,255,255,.16) !important;color:#e8e8e8 !important;box-shadow:none !important}',
+    'html body[data-theme] #ds-back-chip:not(#x):hover{border-color:rgba(255,255,255,.4) !important;box-shadow:none !important}',
+    /* Barre latérale monochrome */
+    'html body[data-theme] aside{background:#000 !important;background-image:none !important;backdrop-filter:none !important;border-right:1px solid rgba(255,255,255,.08) !important}',
+    '#nav-aurora{display:none !important}',
+    'html body[data-theme] #nav .nav-btn,html body[data-theme] #nav .nav-sub-btn,html body[data-theme] #nav .nav-grp-h{color:#8a8a8a !important;background:transparent !important;background-image:none !important;box-shadow:none !important;border-color:transparent !important}',
+    'html body[data-theme] #nav .nav-btn .ico,html body[data-theme] #nav .nav-sub-btn .ico{filter:none !important;color:inherit !important}',
+    'html body[data-theme] #nav .nav-btn:hover,html body[data-theme] #nav .nav-sub-btn:hover{color:#eaeaea !important;background:rgba(255,255,255,.05) !important}',
+    'html body[data-theme] #nav .nav-btn.active,html body[data-theme] #nav .nav-grp-h.has-active{color:#fff !important;background:rgba(255,255,255,.07) !important;box-shadow:inset 2px 0 0 #fff !important}',
+    'html body[data-theme] #nav .nav-btn.active .ico{color:#fff !important;filter:none !important}',
+    'html body[data-theme] #nav .nav-btn.active,html body[data-theme] #nav .nav-grp-h.has-active,html body[data-theme] #nav .nav-sub{border-color:transparent !important;outline:none !important}',
+    'html body[data-theme] #nav .nav-sec{color:#6a6a6a !important;letter-spacing:.14em !important}',
+    'html body[data-theme] aside .brand small{color:#8a8a8a !important}',
+    'html body[data-theme] .sf-toggle{background:#141414 !important;background-image:none !important;border:1px solid rgba(255,255,255,.14) !important;color:#e8e8e8 !important;box-shadow:none !important}',
+    'html body[data-theme] .sf-ic{background:rgba(255,255,255,.1) !important;color:#eaeaea !important}',
+    /* En-têtes de page */
+    'html body[data-theme="noir"] .page-head h1{color:#f4f4f5 !important}',
+    'html body[data-theme="noir"] .page-head p{color:#8a8a8a !important}',
+    /* Cartes à filet (base maquette) */
+    'html body[data-theme="noir"] .card{background:#0b0b0c !important;background-image:none !important;border:1px solid rgba(255,255,255,.09) !important;box-shadow:none !important}',
+    'html body[data-theme="noir"] .card::after{display:none !important}',
+    'html body[data-theme="noir"] .card h2{color:#f4f4f5 !important}',
+    'html body[data-theme="noir"] .card h2::before{background:#fff !important}',
+    'html body[data-theme="noir"] .card .sub,html body[data-theme="noir"] .card .meta,html body[data-theme="noir"] .card .mini,html body[data-theme="noir"] .card .hint{color:#8a8a8a !important}',
+    /* KPI génériques monochromes (cre/deb conservés) */
+    'html body[data-theme="noir"] .kpi{background:#0b0b0c !important;background-image:none !important;border:1px solid rgba(255,255,255,.09) !important;box-shadow:none !important}',
+    'html body[data-theme="noir"] .kpi::before{background:#fff !important}',
+    'html body[data-theme="noir"] .kpi .val{color:#f4f4f5 !important}',
+    'html body[data-theme="noir"] .kpi .val.cre{color:#31c48d !important}',
+    'html body[data-theme="noir"] .kpi .val.deb{color:#f26d6d !important}',
+    'html body[data-theme="noir"] .kpi .lbl,html body[data-theme="noir"] .kpi .meta{color:#8a8a8a !important}',
+    'html body[data-theme="noir"] .kpi-ic{background:rgba(255,255,255,.08) !important;color:#eaeaea !important;filter:none !important}',
+    /* Boutons monochromes */
+    'html body[data-theme] .btn{background:#141414 !important;background-image:none !important;color:#e8e8e8 !important;border:1px solid rgba(255,255,255,.14) !important;box-shadow:none !important;text-transform:none !important}',
+    'html body[data-theme] .btn::after{background:#fff !important}',
+    'html body[data-theme] .btn:hover{background:#1d1d1d !important}',
+    'html body[data-theme] .btn-pri,html body[data-theme] .btn-gold{background:#fff !important;color:#000 !important;border-color:#fff !important}',
+    'html body[data-theme] .btn-pri:hover,html body[data-theme] .btn-gold:hover{background:#e6e6e6 !important}',
+    'html body[data-theme] .yada-fill{box-shadow:inset 0 0 0 240px rgba(255,255,255,.16) !important}',
+    /* Champs (dans les cartes → épargne l\'éditeur .ec-*) */
+    'html body[data-theme="noir"] .card input,html body[data-theme="noir"] .card select,html body[data-theme="noir"] .card textarea,html body[data-theme="noir"] #cab-search,html body[data-theme="noir"] #ti-search{background:#0c0c0d !important;border:1px solid rgba(255,255,255,.12) !important;color:#eaeaea !important}',
+    'html body[data-theme="noir"] .card input:focus,html body[data-theme="noir"] .card select:focus,html body[data-theme="noir"] .card textarea:focus{outline:1px solid rgba(255,255,255,.55) !important;border-color:rgba(255,255,255,.4) !important}',
+    'html body[data-theme="noir"] ::selection{background:rgba(255,255,255,.22)}',
+    /* Tables des cartes (cre/deb conservés ; compta hors .card non touchée) */
+    'html body[data-theme="noir"] .card th{color:#8a8a8a !important;background:transparent !important;border-color:rgba(255,255,255,.09) !important}',
+    'html body[data-theme="noir"] .card td{border-color:rgba(255,255,255,.06) !important}',
+    'html body[data-theme="noir"] .card tr:hover td{background:rgba(255,255,255,.03) !important}',
+    'html body[data-theme="noir"] .card a,html body[data-theme="noir"] .card .rg-link,html body[data-theme="noir"] .card .linkname{color:#eaeaea !important}',
+    /* ===== Tableau de bord (.dr-*) au rendu maquette ===== */
+    '.dash-riche .dr-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:2px}',
+    '.dash-riche .dr-head-l{display:flex;flex-direction:column;gap:3px;min-width:0}',
+    '.dash-riche .dr-head-ttl{font-size:26px;font-weight:700;letter-spacing:-.02em;color:#f4f4f5;line-height:1.1}',
+    '.dash-riche .dr-head-date{font-size:13px;color:#8a8a8a}',
+    '.dash-riche .dr-quick{display:flex;gap:8px;flex-wrap:wrap}',
+    '.dash-riche .dr-qbtn{font-family:inherit;font-size:12px;font-weight:600;color:#cfcfcf;background:#111;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:8px 13px;cursor:pointer;transition:background .15s,color .15s}',
+    '.dash-riche .dr-qbtn:hover{background:#1c1c1c;color:#fff}',
+    '.dash-riche .dr-card{background:#0b0b0c !important;border:1px solid rgba(255,255,255,.09) !important;box-shadow:none !important}',
+    '.dash-riche .dr-card h3{color:#f4f4f5 !important}',
+    '.dash-riche .dr-card .dr-sub{color:#8a8a8a !important}',
+    '.dash-riche .dr-kpi{background:#0b0b0c !important;border-color:rgba(255,255,255,.09) !important}',
+    '.dash-riche .dr-kpi.blue::after{background:#fff !important}',
+    '.dash-riche .dr-kpi.amber::after{background:#c7c7c7 !important}',
+    '.dash-riche .dr-kpi.blue .dr-kico,.dash-riche .dr-kpi.amber .dr-kico{background:rgba(255,255,255,.08) !important;color:#eaeaea !important}',
+    '.dash-riche .dr-kval{color:#f4f4f5 !important}',
+    '.dash-riche .dr-klbl,.dash-riche .dr-kmeta{color:#8a8a8a !important}',
+    '.dash-riche .dr-area{fill:rgba(255,255,255,.12) !important}',
+    '.dash-riche .dr-linep{stroke:#fff !important}',
+    '.dash-riche .dr-dot{fill:#fff !important;stroke:#0b0b0c !important}',
+    '.dash-riche .dr-tbl th{color:#8a8a8a !important;border-color:rgba(255,255,255,.09) !important}',
+    '.dash-riche .dr-tbl td{border-color:rgba(255,255,255,.06) !important;color:#dcdcdc !important}',
+    '.dash-riche .dr-dontot{fill:#f4f4f5 !important}',
+    '.dash-riche .dr-legl{color:#cfcfcf !important}',
+    '.dash-riche .dr-legv{color:#f4f4f5 !important}'
+  ].join('');
+  var st=document.createElement('style'); st.id='marq-palette'; st.textContent=css; document.head.appendChild(st);
+}catch(e){} })();
 </script>
 </body>
 </html>
