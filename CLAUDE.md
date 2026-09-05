@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — REFONTE (bleu) : CONTRASTE RENFORCÉ du fond & des cartes — v530
+## 🟢 Dernière mise à jour — Bouton « Retour » : TOUJOURS en haut à droite + flèche seule (←) — v531
+**Quoi :** à la demande, le **bouton de retour** affiché dans les modules (barre latérale masquée) est **déplacé en HAUT À DROITE** (au lieu du bas à gauche) et **ne montre plus qu'une flèche ←** (fini le libellé « ‹ Retour au dossier »). Un clic ramène toujours au HUB du dossier (`dsRetourModule`). Bouton compact carré arrondi (42×42), coin supérieur droit fixe (`right:14px;top:14px`), title/aria-label « Retour ».
+
+**Comment — `yada-addon190` (`<style id="noside-mod">` + `ensureChip`, precompta + build V1) :** `#ds-back-chip` passe de `position:fixed;left:12px;bottom:118px` (pilule texte) à `right:14px;top:14px;width:42px;height:42px;padding:0;justify-content:center;font-size:22px` (flèche seule) ; `ensureChip()` : `innerHTML='←'` + `title`/`aria-label='Retour'` (au lieu de `'‹ Retour au dossier'`). Le dégradé bleu du chip (marq-palette v529/v530) est conservé (couleurs uniquement). `sw.js` yada-v126, badge v531, `version.json` 531.
+
+**Validé :** `node --check` (precompta 238 / V1 237, 0 erreur) + `sw.js` OK + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + Playwright (module TVA : `#ds-back-chip` `position:fixed` **top 14 / right 14**, 42×42, texte **« ← »**, title « Retour », `body[data-noside="1"]` `display:flex` ; 0 pageerror) + capture (flèche bleue en haut à droite). Badge → **v531**.
+
+---
+
+## 🟢 MAJ précédente — REFONTE (bleu) : CONTRASTE RENFORCÉ du fond & des cartes — v530
 **Quoi :** à la demande, le fond et les cartes du thème bleu sont retravaillés pour un **contraste renforcé** (meilleure séparation) : **fond plus sombre** (`#05070d` → **`#03040a`**, quasi-noir), **cartes plus visibles** (`#0b0f18` → **`#0f1626`**, plus claires → elles ressortent nettement sur le fond) et **filet bleu plus marqué** (`rgba(47,143,255,.16)` → **`.28`**). Le reste du bleu (accents `#2f8fff`/`#5ab0ff`/`#2f74e6`, nuances de bleu pour cre/deb, barres/donuts/courbe) est inchangé. Zones Consultation/éditeur/Éditions non touchées.
 
 **Comment — `marq-palette` (precompta + build V1) :** remplacement global des 3 tokens dans le `<style id="marq-palette">` : base sombre `#03040a` (body/html/layout/main/mod-wrap/dash-wrap), cartes & KPI & champs & dr-card/dr-kpi `#0f1626`, filet des cartes/KPI/tables `rgba(47,143,255,.28)`. `sw.js` yada-v125, badge v530, `version.json` 530.

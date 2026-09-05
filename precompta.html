@@ -11094,7 +11094,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v530';
+    b.textContent='YADA · v531';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -22164,11 +22164,10 @@ ${lignes}
   var st=document.createElement('style'); st.id='noside-mod'; st.textContent=
     'body[data-noside="1"] .layout:not(.solo){grid-template-columns:1fr!important}'
     +'body[data-noside="1"] aside{display:none!important}'
-    /* Bouton « Retour au dossier » : rangé en bas à gauche, au-dessus des repères (version/enregistrement),
-       pour former un petit bandeau vertical à gauche sans recouvrir le titre du module. */
-    +'#ds-back-chip{position:fixed;left:12px;bottom:118px;z-index:10000;display:none;align-items:center;gap:8px;'
-    +'padding:9px 15px;border-radius:11px;border:1px solid rgba(30,144,255,.55);'
-    +'background:linear-gradient(135deg,#14365f,#0a1b34);color:#dbeafe;font-weight:700;font-size:13px;'
+    /* Bouton « Retour » : TOUJOURS en HAUT À DROITE, une simple flèche (retour en arrière). */
+    +'#ds-back-chip{position:fixed;right:14px;top:14px;z-index:10000;display:none;align-items:center;justify-content:center;'
+    +'width:42px;height:42px;padding:0;border-radius:11px;border:1px solid rgba(30,144,255,.55);'
+    +'background:linear-gradient(135deg,#14365f,#0a1b34);color:#dbeafe;font-weight:700;font-size:22px;line-height:1;'
     +'cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.45)}'
     +'#ds-back-chip:hover{border-color:#1e90ff;box-shadow:0 0 0 3px rgba(30,144,255,.18),0 10px 26px rgba(0,0,0,.5)}'
     +'body[data-noside="1"] #ds-back-chip{display:inline-flex}'
@@ -22194,7 +22193,7 @@ ${lignes}
   window.dsNavModule=function(mod){ try{ if(typeof current!=='undefined'){ current=mod; if(typeof render==='function') render(); } }catch(e){} };
 
   function ensureChip(){ var c=document.getElementById('ds-back-chip'); if(!c){ c=document.createElement('button');
-      c.id='ds-back-chip'; c.type='button'; c.innerHTML='‹ Retour au dossier'; c.onclick=window.dsRetourModule;
+      c.id='ds-back-chip'; c.type='button'; c.innerHTML='←'; c.title='Retour'; c.setAttribute('aria-label','Retour'); c.onclick=window.dsRetourModule;
       document.body.appendChild(c); } return c; }
 
   /* Remplace le contenu de la barre latérale par les SEULS modules de la rubrique active. */
