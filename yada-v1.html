@@ -11094,7 +11094,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v519';
+    b.textContent='YADA · v520';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -26834,6 +26834,158 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
     attach(); setInterval(attach, 800);
     if(document.readyState==='complete'||document.readyState==='interactive') setTimeout(restyle,300);
     document.addEventListener('DOMContentLoaded', function(){ setTimeout(restyle,200); });
+  }catch(e){}
+})();
+</script>
+
+<script id="yada-addon-dossiers-pc">
+/* ============================================================
+   YADA — Page « Espace dossiers » (accueil après connexion) en Structure B « Double barre latérale » (choix utilisateur).
+   Disposition PC : barre latérale de navigation à gauche (Dossiers / Modules) + modules au centre
+   + panneau à droite (dernier dossier « Reprendre », portefeuille, télécharger YADA sur PC).
+   100% additif : transforme le DOM du .login-wrap de l'accueil après chaque rendu (idempotent),
+   réutilise les globales existantes (dsOuvrirListe, dsOuvrirFacturation, ouvrirCreationDossier,
+   dsOuvrirRapport, admShowToggle, admDoLogout, dsSelectionner, yadaDownloadFile, #imp).
+   Icônes SVG filaires (pas d'emoji → non retirées par le balayage anti-emoji v366).
+   ============================================================ */
+(function(){
+  if(window.__dossiersPC) return; window.__dossiersPC=true;
+  try{
+    var css=[
+      '.login-wrap.ds-pc{padding:0 !important;min-height:100vh !important;background:transparent !important}',
+      '.dspc-shell{display:grid;grid-template-columns:236px 1fr 300px;height:100vh;font-family:"IBM Plex Sans",system-ui,sans-serif}',
+      '.dspc-aside{background:linear-gradient(180deg,#0a0d13,#060709);border-right:1px solid rgba(120,150,200,.1);padding:20px 14px;display:flex;flex-direction:column;gap:3px;overflow:auto}',
+      '.dspc-right{background:linear-gradient(180deg,#0a0d13,#070709);border-left:1px solid rgba(120,150,200,.1);padding:24px 20px;overflow:auto}',
+      '.dspc-main{padding:28px 32px;overflow:auto}',
+      '.dspc-logo{display:flex;align-items:center;gap:10px;padding:4px 8px 16px}',
+      '.dspc-logo .ic{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#5ab0ff,#0a64d6);display:grid;place-items:center;color:#fff;font-weight:800;font-size:19px;position:relative;flex:0 0 auto}',
+      '.dspc-logo .ic::after{content:"";position:absolute;top:6px;right:6px;width:6px;height:6px;border-radius:50%;background:#24d17a}',
+      '.dspc-logo .nm{font-size:19px;font-weight:800;letter-spacing:.5px;color:#eaf0fb}',
+      '.dspc-logo .bl{color:#63748f;font-size:9px;letter-spacing:.12em;text-transform:uppercase}',
+      '.dspc-sec{color:#5b6b82;font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin:16px 10px 6px;font-weight:600}',
+      '.dspc-nav{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;color:#9fb0cc;font-size:13.5px;font-weight:600;cursor:pointer;transition:.14s;background:transparent;border:0;width:100%;text-align:left;font-family:inherit}',
+      '.dspc-nav:hover{background:rgba(255,255,255,.05);color:#fff}',
+      '.dspc-nav.on{background:rgba(47,143,255,.15);color:#fff;box-shadow:inset 0 0 0 1px rgba(47,143,255,.42),0 8px 22px -12px #2f8fff}',
+      '.dspc-nav svg{width:18px;height:18px;flex:0 0 auto;opacity:.92}',
+      '.dspc-foot{margin-top:auto;border-top:1px solid rgba(120,150,200,.1);padding-top:12px}',
+      '.dspc-who{padding:6px 10px 12px}.dspc-who b{font-size:12.5px;display:block;color:#eaf0fb}.dspc-who span{color:#63748f;font-size:11px}',
+      '.dspc-nav.danger{color:#ff8a8a}.dspc-nav.danger:hover{background:rgba(255,107,107,.1)}',
+      '.dspc-mhead{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:22px}',
+      '.dspc-title{font-size:26px;font-weight:800;letter-spacing:-.02em;color:#f2f5fb}',
+      '.dspc-sub{color:#9fb0cc;font-size:13.5px;margin-top:4px}',
+      '.dspc-date{color:#63748f;font-size:12px}',
+      '.dspc-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}',
+      '.dspc-mod{background:linear-gradient(180deg,#111623,#0d1119);border:1px solid rgba(120,150,200,.14);border-radius:16px;padding:22px;cursor:pointer;transition:.16s;box-shadow:0 18px 44px -30px rgba(47,143,255,.4);text-align:left;font-family:inherit;color:inherit;display:block;width:100%}',
+      '.dspc-mod:hover{border-color:rgba(47,143,255,.5)}',
+      '.dspc-mod .mi{width:46px;height:46px;border-radius:12px;background:rgba(47,143,255,.14);border:1px solid rgba(47,143,255,.4);display:grid;place-items:center;color:#5aa9ff;margin-bottom:14px}',
+      '.dspc-mod h3{font-size:16px;font-weight:700;margin:0;color:#f2f5fb}.dspc-mod p{color:#63748f;font-size:12px;margin:5px 0 0}',
+      '.dspc-mod.hero{grid-column:span 2;background:linear-gradient(120deg,#0e2547,#0a1526);border:1px solid rgba(47,143,255,.4);display:flex;align-items:center;gap:22px}',
+      '.dspc-mod.hero .mi{width:60px;height:60px;background:linear-gradient(135deg,#2f8fff,#5aa9ff);color:#04101f;border:0;margin:0;flex:0 0 auto}',
+      '.dspc-mod.hero h3{font-size:21px}.dspc-mod.hero p{font-size:13px}',
+      '.dspc-mod.hero .go{margin-left:auto;background:linear-gradient(135deg,#2f8fff,#2f74e6);color:#04101f;border-radius:12px;padding:13px 22px;font-size:14px;font-weight:700;flex:0 0 auto;white-space:nowrap}',
+      '.dspc-rl{color:#5b6b82;font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin:0 0 12px;font-weight:600}',
+      '.dspc-dcard{display:flex;align-items:center;gap:11px;background:linear-gradient(180deg,#111623,#0d1119);border:1px solid rgba(120,150,200,.14);border-radius:12px;padding:12px;cursor:pointer;margin-bottom:9px;width:100%;text-align:left;font-family:inherit}',
+      '.dspc-dcard:hover{border-color:rgba(47,143,255,.5)}',
+      '.dspc-dcard .av{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#5ab0ff,#0a64d6);display:grid;place-items:center;color:#fff;font-weight:800;font-size:14px;flex:0 0 auto}',
+      '.dspc-dcard b{font-size:13px;color:#eaf0fb}.dspc-dcard span{display:block;color:#63748f;font-size:10.5px}',
+      '.dspc-dcard .ggo{margin-left:auto;color:#5aa9ff;font-size:11.5px;white-space:nowrap}',
+      '.dspc-mini{background:linear-gradient(120deg,#0e2547,#0a1526);border:1px solid rgba(47,143,255,.3);border-radius:14px;padding:16px;margin-top:22px}',
+      '.dspc-mini h4{font-size:13px;font-weight:700;margin:0 0 4px;color:#eaf0fb}.dspc-mini p{color:#9fb0cc;font-size:11.5px;margin:0 0 12px}',
+      '.dspc-mini button{width:100%;background:linear-gradient(135deg,#2f8fff,#5aa9ff);color:#04101f;border:0;border-radius:10px;padding:11px;font-family:inherit;font-weight:700;font-size:12.5px;cursor:pointer}',
+      '@media(max-width:900px){.dspc-shell{grid-template-columns:1fr;height:auto}.dspc-grid{grid-template-columns:1fr}.dspc-mod.hero{grid-column:span 1;flex-direction:column;align-items:flex-start}.dspc-mod.hero .go{margin:0}.dspc-right{border-left:0;border-top:1px solid rgba(120,150,200,.1)}}'
+    ].join('\n');
+    var st=document.createElement('style'); st.id='dossiers-pc-mod'; st.textContent=css; document.head.appendChild(st);
+
+    function esc(s){ if(window.esc) return window.esc(s); return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+    function S(p){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>'; }
+    var IC={
+      folder:S('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'),
+      plus:S('<path d="M12 5v14M5 12h14"/>'),
+      down:S('<path d="M12 4v10m0 0l-4-4m4 4l4-4"/><path d="M5 20h14"/>'),
+      receipt:S('<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>'),
+      pencil:S('<path d="M4 20h4L20 8a2 2 0 0 0-3-3L5 17z"/>'),
+      shield:S('<path d="M12 3l7 3v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6z"/>'),
+      power:S('<path d="M12 4v7"/><path d="M6.5 7a8 8 0 1 0 11 0"/>'),
+      building:S('<path d="M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16"/><path d="M15 10h4a1 1 0 0 1 1 1v10"/><path d="M8 8h3M8 12h3M8 16h3"/>'),
+      monitor:S('<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>')
+    };
+    function who(){
+      var c=(window.db&&db.cabinet)||{};
+      var nom=c.collaborateur||'', role=c.role||'';
+      try{
+        if(window.staffId){ var st2=((db.cabinet&&db.cabinet.staff)||[]).filter(function(x){return x&&x.id===window.staffId;})[0]; if(st2){ nom=((st2.prenom||'')+' '+(st2.nom||'')).trim()||st2.email||nom; role='Collaborateur'; } }
+        else if(window.sessionRole==='admin'){ nom=c.collaborateur||'Admin'; role='Admin (superviseur)'; }
+      }catch(e){}
+      return {cab:c.cabinetNom||'', nom:nom, role:role};
+    }
+    function portefeuille(){
+      var list=((window.db&&db.cabinet&&db.cabinet.dossiers)||[]).slice();
+      try{ if(window.staffFilterDossiers) list=window.staffFilterDossiers(list); }catch(e){}
+      return list;
+    }
+    function dateFr(){ try{ return new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }catch(e){ return ''; } }
+    function nav(icon,label,onclick,cls){ return '<button class="dspc-nav'+(cls?(' '+cls):'')+'" onclick="'+onclick+'">'+icon+'<span>'+label+'</span></button>'; }
+    function mod(icon,titre,desc,onclick,hero,goLabel){
+      if(hero) return '<button class="dspc-mod hero" onclick="'+onclick+'"><span class="mi">'+icon+'</span><span><h3>'+titre+'</h3><p>'+desc+'</p></span><span class="go">'+(goLabel||'Ouvrir →')+'</span></button>';
+      return '<button class="dspc-mod" onclick="'+onclick+'"><span class="mi">'+icon+'</span><h3>'+titre+'</h3><p>'+desc+'</p></button>';
+    }
+
+    function shellHTML(){
+      var w=who(), isAdmin=(window.sessionRole==='admin');
+      var list=portefeuille();
+      var actif=null; try{ var aid=window.db&&db.activeId; if(aid){ actif=list.filter(function(d){return d&&d.id===aid;})[0]||null; } }catch(e){}
+      var imp="document.getElementById('imp').click()";
+      /* ---- barre latérale gauche ---- */
+      var aside='<div class="dspc-aside">'
+        +'<div class="dspc-logo"><div class="ic">Y</div><div><div class="nm">YADA</div><div class="bl">Système · CA3</div></div></div>'
+        +'<div class="dspc-sec">Dossiers</div>'
+        +nav(IC.folder,'Liste des dossiers','dsOuvrirListe()','on')
+        +nav(IC.plus,'Créer un dossier','ouvrirCreationDossier()')
+        +nav(IC.down,'Importer (JSON)',imp)
+        +'<div class="dspc-sec">Modules</div>'
+        +nav(IC.receipt,'Facturation','dsOuvrirFacturation()')
+        +nav(IC.pencil,'Rapport','dsOuvrirRapport()')
+        +(isAdmin?nav(IC.shield,'Espace Admin','admShowToggle(true)'):'')
+        +'<div class="dspc-foot"><div class="dspc-who"><b>'+esc(w.cab)+'</b><span>'+esc((w.nom||'')+(w.role?(' · '+w.role):''))+'</span></div>'
+        +nav(IC.power,'Déconnexion','admDoLogout()','danger')
+        +'</div></div>';
+      /* ---- centre : modules ---- */
+      var main='<div class="dspc-main"><div class="dspc-mhead"><div><div class="dspc-title">Espace dossiers</div><div class="dspc-sub">Ouvrez un dossier ou lancez un module.</div></div><div class="dspc-date">'+esc(dateFr())+'</div></div>'
+        +'<div class="dspc-grid">'
+        +mod(IC.folder,'Ouvrir un dossier','Parcourir et sélectionner le dossier à traiter','dsOuvrirListe()',true,'Voir la liste →')
+        +mod(IC.receipt,'Facturation','Module de facturation du dossier actif','dsOuvrirFacturation()')
+        +mod(IC.plus,'Créer un dossier','Nouvelle société (K-bis, statuts)','ouvrirCreationDossier()')
+        +mod(IC.down,'Importer (JSON)','Charger une base existante',imp)
+        +mod(IC.pencil,'Rapport',"Rapport journalier d'activité",'dsOuvrirRapport()')
+        +(isAdmin?mod(IC.shield,'Espace Admin','Collaborateurs, paie, pilotage','admShowToggle(true)'):'')
+        +'</div></div>';
+      /* ---- panneau droit : reprendre + portefeuille + télécharger ---- */
+      var right='<div class="dspc-right">';
+      if(actif){ right+='<div class="dspc-rl">Reprendre</div>'
+        +'<button class="dspc-dcard" onclick="dsSelectionner(\''+esc(actif.id)+'\')"><span class="av">'+esc((actif.nom||'?')[0])+'</span><span><b>'+esc(actif.nom||'')+'</b><span>'+esc([actif.forme,'dernier ouvert'].filter(Boolean).join(' · '))+'</span></span><span class="ggo">Reprendre →</span></button>'; }
+      right+='<div class="dspc-rl" style="margin-top:'+(actif?'22px':'0')+'">Portefeuille</div>';
+      if(list.length){ list.forEach(function(d){ if(!d) return;
+        right+='<button class="dspc-dcard" onclick="dsSelectionner(\''+esc(d.id)+'\')"><span class="av">'+esc((d.nom||'?')[0])+'</span><span><b>'+esc(d.nom||'')+'</b><span>'+esc([d.forme,(d.siren?('SIREN '+d.siren):'')].filter(Boolean).join(' · ')||'—')+'</span></span></button>'; });
+      } else { right+='<div style="color:#63748f;font-size:12px;font-style:italic;padding:6px 2px">Aucun dossier — créez-en un ou importez une base.</div>'; }
+      right+='<div class="dspc-mini"><h4>YADA sur votre PC</h4><p>Application hors-ligne, ouverte d\'un double-clic.</p><button onclick="if(window.yadaDownloadFile)yadaDownloadFile()">Télécharger le fichier</button></div>';
+      right+='</div>';
+      return '<div class="dspc-shell">'+aside+main+right+'</div>';
+    }
+
+    function transform(){
+      var lw=document.querySelector('.login-wrap'); if(!lw) return;
+      if(lw.classList.contains('ds-pc')) return; /* déjà transformé (ce rendu) */
+      var tt=lw.querySelector('.login-title');
+      if(!tt || (tt.textContent||'').trim()!=='Espace dossiers') return; /* seulement l'accueil */
+      lw.classList.add('ds-pc');
+      lw.innerHTML=shellHTML();
+    }
+
+    var _r=window.render;
+    if(typeof _r==='function'){
+      window.render=function(){ var x=_r.apply(this,arguments); try{ transform(); }catch(e){} return x; };
+    }
+    setTimeout(function(){ try{ transform(); }catch(e){} }, 60);
   }catch(e){}
 })();
 </script>
