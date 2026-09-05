@@ -11094,7 +11094,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v524';
+    b.textContent='YADA · v525';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -27043,7 +27043,7 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
       var sth=document.createElement('style'); sth.id='dossiers-pc-hub-mod'; sth.textContent=[
         '.login-wrap.ds-pchub{padding:0 !important;min-height:100vh !important;background:transparent !important}',
         '.dspc-shell-hub{display:grid;grid-template-columns:236px 1fr;height:100vh}',
-        '.dspc-main-hub{padding:22px 30px 28px;overflow:auto}',
+        '.dspc-main-hub{padding:22px 30px 28px;overflow:auto;position:relative}',
         '.dspc-main-hub .login-head{display:none}',
         '.dspc-crumb{font-size:12px;color:#63748f;margin-bottom:10px}.dspc-crumb b{color:#9fb0cc}',
         '.dspc-main-hub .login-title{font-size:24px;font-weight:800;letter-spacing:-.02em;color:#f2f5fb}',
@@ -27052,7 +27052,7 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
         '.dspc-main-hub .ds-hub-main{max-width:none;width:100%}',
         '.dspc-main-hub .ds-hub-side{justify-content:space-between}',
         '.dspc-main-hub .login-title,.dspc-main-hub .login-sub,.dspc-main-hub .dspc-crumb{text-align:center;max-width:1160px;margin-left:auto;margin-right:auto}',
-        '.dspc-main-hub .login-actions{max-width:1160px;margin-left:auto !important;margin-right:auto !important;justify-content:center !important}',
+        '.dspc-main-hub .login-actions{position:absolute;top:22px;right:30px;margin:0 !important;justify-content:flex-end !important;z-index:3}',
         /* rubriques en liste : icône à gauche + texte empilé + « Ouvrir → » à droite */
         '.dspc-main-hub .ds-tile{display:flex !important;flex-direction:row !important;align-items:center;gap:11px;padding:10px 14px !important}',
         '.dspc-main-hub .ds-tile-ic{width:34px;height:34px;border-radius:9px;background:rgba(47,143,255,.12);border:1px solid rgba(47,143,255,.26);display:grid;place-items:center;color:#5aa9ff;flex:0 0 auto}',
@@ -27066,8 +27066,8 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
         '.dspc-main-hub .dsc-item{padding:7px 10px}',
         '.dspc-main-hub .ds-tile-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}',
         '.dspc-main-hub .ds-tile-o{margin:0 !important;color:#5aa9ff;white-space:nowrap;font-weight:600}',
-        '.dspc-main-hub .ds-hub-wrap,.dspc-main-hub .login-actions{margin-top:18px}',
-        '@media(max-width:900px){.dspc-shell-hub{grid-template-columns:1fr;height:auto}.dspc-main-hub .ds-hub-grid{grid-template-columns:1fr !important}}'
+        '.dspc-main-hub .ds-hub-wrap{margin-top:18px}',
+        '@media(max-width:900px){.dspc-shell-hub{grid-template-columns:1fr;height:auto}.dspc-main-hub .ds-hub-grid{grid-template-columns:1fr !important}.dspc-main-hub .login-actions{position:static !important;justify-content:center !important;margin:16px auto 0 !important}}'
       ].join('\n');
       document.head.appendChild(sth);
     }catch(e){}

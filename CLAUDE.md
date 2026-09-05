@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — HUB du dossier : cartes RÉDUITES pour une symétrie complète (rubriques + fiche société compactées, colonnes égales) — v524
+## 🟢 Dernière mise à jour — HUB du dossier : boutons d'action déplacés en HAUT À DROITE + deux cartes alignées — v525
+**Quoi :** à la demande, dans le **HUB du dossier**, les **boutons d'action** (« ← Retour aux dossiers » · « Déconnexion ») passent **en haut à droite** de la zone (au niveau du fil d'Ariane / titre) au lieu d'être centrés sous les cartes. Les **deux cartes** (fiche société à gauche · rubriques à droite) restent **parfaitement alignées** — même haut, même hauteur, même largeur (448 × 416 px, grille `1fr 1fr` `align-items:stretch`).
+
+**Comment — CSS `<style id="dossiers-pc-hub-mod">` (`yada-addon-dossiers-pc`, precompta + build V1) :** `.dspc-main-hub{position:relative}` ; `.dspc-main-hub .login-actions{position:absolute;top:22px;right:30px;margin:0;justify-content:flex-end;z-index:3}` (au lieu de centré) ; la règle `margin-top:18px` ne cible plus `.login-actions` ; en `@media(max-width:900px)` les boutons repassent **statiques et centrés** (`position:static`, `margin:16px auto 0`). `sw.js` yada-v120, badge v525, `version.json` 525.
+
+**Validé :** `node --check` (precompta 236 / V1 235, 0 erreur) + `sw.js` OK + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + Playwright (HUB : `.login-actions` `position:absolute` à `x≈902,y≈50` (haut-droite) avec 2 boutons ; deux colonnes `448×416` — **même top (151), même hauteur (416), même largeur** ; 0 pageerror) + capture (boutons en haut à droite, cartes alignées). Badge → **v525**.
+
+---
+
+## 🟢 MAJ précédente — HUB du dossier : cartes RÉDUITES pour une symétrie complète (rubriques + fiche société compactées, colonnes égales) — v524
 **Quoi :** à la demande (« réduire la taille de certaines cartes pour être complètement symétrique »), les **cartes du HUB sont compactées** afin d'égaliser encore la hauteur des deux colonnes : les **tuiles de rubriques** (padding, icône, libellés) et la **fiche société** (en-tête, avatar, nom, grille d'infos) sont réduites. La grille reste **strictement égale** (`1fr 1fr`, `align-items:stretch`) → colonnes de **même largeur ET même hauteur** (448 × 416 px), contenu centré (v523 conservé).
 
 **Comment — CSS `<style id="dossiers-pc-hub-mod">` (`yada-addon-dossiers-pc`, precompta + build V1) :** `.ds-tile` padding `14px 16px→10px 14px`, gap `13→11` ; `.ds-tile-ic` `40→34px`, rayon `11→9`, svg `20→18px` ; `.ds-tile-t{font-size:14px}.ds-tile-d{font-size:11px}` ; fiche société : `.dsc-head{padding:11px 15px;gap:11px}`, `.dsc-av{40px;font-size:18px}`, `.dsc-nom{17px}`, `.dsc-grid{gap:7px;padding:10px 13px 11px}`, `.dsc-item{padding:7px 10px}` (tout scopé `.dspc-main-hub`). `sw.js` yada-v119, badge v524, `version.json` 524.
