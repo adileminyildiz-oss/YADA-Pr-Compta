@@ -11094,7 +11094,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v529';
+    b.textContent='YADA · v530';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -26774,7 +26774,7 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
       /* Tokens d'accent → BLEU */
       N+'{--blue:#2f8fff !important;--accent:#2f8fff !important;--acc:#2f8fff !important;--ct-acc:#2f8fff !important;--line-strong:#2f8fff !important;}',
       /* Fond NOIR + halos bleus (pages hors compta/éditions) */
-      A+'{background:radial-gradient(820px 480px at 16% -6%,rgba(47,143,255,.16),transparent 60%),radial-gradient(680px 440px at 92% -4%,rgba(47,143,255,.09),transparent 60%),radial-gradient(1100px 560px at 50% 122%,rgba(47,143,255,.05),transparent 60%),#050609 !important;background-attachment:fixed !important;color:#eaf0fb !important;}',
+      A+'{background:radial-gradient(820px 480px at 16% -6%,rgba(47,143,255,.28),transparent 60%),radial-gradient(680px 440px at 92% -4%,rgba(47,143,255,.09),transparent 60%),radial-gradient(1100px 560px at 50% 122%,rgba(47,143,255,.05),transparent 60%),#050609 !important;background-attachment:fixed !important;color:#eaf0fb !important;}',
       A+' .layout,'+A+' main,'+A+' main.fullbleed .mod-wrap,'+A+' main.fullbleed .dash-wrap{background:transparent !important;}',
       A+'::before,'+A+'::after{display:none !important}',
       /* Cartes = panneaux à filet + halo bleu (hors compta/éditions) */
@@ -27401,7 +27401,7 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
       '.dr-axl{fill:#6b7688;font-size:9px}',
       '.dr-axx{fill:#8b98ad;font-size:9px}',
       '.dr-bca{fill:#31c48d}.dr-bch{fill:#f26d6d}',
-      '.dr-area{fill:rgba(47,143,255,.16)}',
+      '.dr-area{fill:rgba(47,143,255,.28)}',
       '.dr-linep{fill:none;stroke:#2f8fff;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}',
       '.dr-dot{fill:#2f8fff;stroke:#0a0d13;stroke-width:1.5}',
       '.dr-legend2{display:flex;gap:16px;margin-top:6px;font-size:11px;color:#8b98ad}',
@@ -27447,20 +27447,20 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
   if(document.getElementById('marq-palette')) return;
   var css = [
     /* Base sombre bleutée + halos retirés */
-    'html body[data-theme="noir"]:not(#x){background:#05070d !important;background-image:none !important}',
+    'html body[data-theme="noir"]:not(#x){background:#03040a !important;background-image:none !important}',
     'html body[data-theme="noir"]::before,html body[data-theme="noir"]::after{display:none !important}',
-    'html{background:#05070d !important}',
-    'html body[data-theme="noir"] .layout,html body[data-theme="noir"] main,html body[data-theme="noir"] .mod-wrap,html body[data-theme="noir"] .dash-wrap{background:#05070d !important;background-image:none !important}',
+    'html{background:#03040a !important}',
+    'html body[data-theme="noir"] .layout,html body[data-theme="noir"] main,html body[data-theme="noir"] .mod-wrap,html body[data-theme="noir"] .dash-wrap{background:#03040a !important;background-image:none !important}',
     'html body[data-theme="noir"] .layout::before,html body[data-theme="noir"] .layout::after,html body[data-theme="noir"] main::before,html body[data-theme="noir"] main::after,html body[data-theme="noir"] .mod-wrap::before,html body[data-theme="noir"] .mod-wrap::after,html body[data-theme="noir"] .dash-wrap::before,html body[data-theme="noir"] .dash-wrap::after{display:none !important;content:none !important}',
     'html body[data-theme] #ds-back-chip:not(#x){background:linear-gradient(135deg,#2f8fff,#5aa9ff) !important;border:1px solid transparent !important;color:#04101f !important;box-shadow:0 8px 20px -8px rgba(47,143,255,.7) !important}',
     'html body[data-theme] #ds-back-chip:not(#x):hover{box-shadow:0 0 0 3px rgba(47,143,255,.25),0 10px 26px rgba(0,0,0,.5) !important}',
     /* Barre latérale bleue */
-    'html body[data-theme] aside{background:#05070d !important;background-image:none !important;backdrop-filter:none !important;border-right:1px solid rgba(47,143,255,.22) !important}',
+    'html body[data-theme] aside{background:#03040a !important;background-image:none !important;backdrop-filter:none !important;border-right:1px solid rgba(47,143,255,.22) !important}',
     '#nav-aurora{display:none !important}',
     'html body[data-theme] #nav .nav-btn,html body[data-theme] #nav .nav-sub-btn,html body[data-theme] #nav .nav-grp-h{color:#8fa6c8 !important;background:transparent !important;background-image:none !important;box-shadow:none !important;border-color:transparent !important}',
     'html body[data-theme] #nav .nav-btn .ico,html body[data-theme] #nav .nav-sub-btn .ico{filter:none !important;color:inherit !important}',
     'html body[data-theme] #nav .nav-btn:hover,html body[data-theme] #nav .nav-sub-btn:hover{color:#cfe0ff !important;background:rgba(47,143,255,.10) !important}',
-    'html body[data-theme] #nav .nav-btn.active,html body[data-theme] #nav .nav-grp-h.has-active{color:#fff !important;background:rgba(47,143,255,.16) !important;box-shadow:inset 2px 0 0 #2f8fff !important}',
+    'html body[data-theme] #nav .nav-btn.active,html body[data-theme] #nav .nav-grp-h.has-active{color:#fff !important;background:rgba(47,143,255,.28) !important;box-shadow:inset 2px 0 0 #2f8fff !important}',
     'html body[data-theme] #nav .nav-btn.active .ico{color:#5ab0ff !important;filter:none !important}',
     'html body[data-theme] #nav .nav-btn.active,html body[data-theme] #nav .nav-grp-h.has-active,html body[data-theme] #nav .nav-sub{border-color:transparent !important;outline:none !important}',
     'html body[data-theme] #nav .nav-sec{color:#6f86a8 !important;letter-spacing:.14em !important}',
@@ -27471,13 +27471,13 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
     'html body[data-theme="noir"] .page-head h1{color:#eaf2ff !important}',
     'html body[data-theme="noir"] .page-head p{color:#8fa6c8 !important}',
     /* Cartes à filet bleu */
-    'html body[data-theme="noir"] .card{background:#0b0f18 !important;background-image:none !important;border:1px solid rgba(47,143,255,.16) !important;box-shadow:none !important}',
+    'html body[data-theme="noir"] .card{background:#0f1626 !important;background-image:none !important;border:1px solid rgba(47,143,255,.28) !important;box-shadow:none !important}',
     'html body[data-theme="noir"] .card::after{display:none !important}',
     'html body[data-theme="noir"] .card h2{color:#eaf2ff !important}',
     'html body[data-theme="noir"] .card h2::before{background:#2f8fff !important}',
     'html body[data-theme="noir"] .card .sub,html body[data-theme="noir"] .card .meta,html body[data-theme="noir"] .card .mini,html body[data-theme="noir"] .card .hint{color:#8fa6c8 !important}',
     /* KPI (tout en bleu) */
-    'html body[data-theme="noir"] .kpi{background:#0b0f18 !important;background-image:none !important;border:1px solid rgba(47,143,255,.16) !important;box-shadow:none !important}',
+    'html body[data-theme="noir"] .kpi{background:#0f1626 !important;background-image:none !important;border:1px solid rgba(47,143,255,.28) !important;box-shadow:none !important}',
     'html body[data-theme="noir"] .kpi::before{background:#2f8fff !important}',
     'html body[data-theme="noir"] .kpi .val{color:#eaf2ff !important}',
     'html body[data-theme="noir"] .kpi .val.cre{color:#5ab0ff !important}',
@@ -27497,11 +27497,11 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
     'html body[data-theme] .btn-pri:hover,html body[data-theme] .btn-gold:hover{background:#2f74e6 !important}',
     'html body[data-theme] .yada-fill{box-shadow:inset 0 0 0 240px rgba(47,143,255,.30) !important}',
     /* Champs bleus (épargne l\'éditeur .ec-*) */
-    'html body[data-theme="noir"] .card input,html body[data-theme="noir"] .card select,html body[data-theme="noir"] .card textarea,html body[data-theme="noir"] #cab-search,html body[data-theme="noir"] #ti-search{background:#0b0f18 !important;border:1px solid rgba(47,143,255,.28) !important;color:#dbeafe !important}',
+    'html body[data-theme="noir"] .card input,html body[data-theme="noir"] .card select,html body[data-theme="noir"] .card textarea,html body[data-theme="noir"] #cab-search,html body[data-theme="noir"] #ti-search{background:#0f1626 !important;border:1px solid rgba(47,143,255,.28) !important;color:#dbeafe !important}',
     'html body[data-theme="noir"] .card input:focus,html body[data-theme="noir"] .card select:focus,html body[data-theme="noir"] .card textarea:focus{outline:1px solid #2f8fff !important;border-color:rgba(47,143,255,.6) !important}',
     'html body[data-theme="noir"] ::selection{background:rgba(47,143,255,.32)}',
     /* Tables des cartes (compta hors .card non touchée) */
-    'html body[data-theme="noir"] .card th{color:#8fa6c8 !important;background:transparent !important;border-color:rgba(47,143,255,.16) !important}',
+    'html body[data-theme="noir"] .card th{color:#8fa6c8 !important;background:transparent !important;border-color:rgba(47,143,255,.28) !important}',
     'html body[data-theme="noir"] .card td{border-color:rgba(47,143,255,.10) !important}',
     'html body[data-theme="noir"] .card tr:hover td{background:rgba(47,143,255,.06) !important}',
     'html body[data-theme="noir"] .card a,html body[data-theme="noir"] .card .rg-link,html body[data-theme="noir"] .card .linkname{color:#5ab0ff !important}',
@@ -27513,10 +27513,10 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
     '.dash-riche .dr-quick{display:flex;gap:8px;flex-wrap:wrap}',
     '.dash-riche .dr-qbtn{font-family:inherit;font-size:12px;font-weight:600;color:#cfe0ff;background:#10233b;border:1px solid rgba(47,143,255,.35);border-radius:10px;padding:8px 13px;cursor:pointer;transition:background .15s,color .15s}',
     '.dash-riche .dr-qbtn:hover{background:#16345a;color:#fff}',
-    '.dash-riche .dr-card{background:#0b0f18 !important;border:1px solid rgba(47,143,255,.16) !important;box-shadow:none !important}',
+    '.dash-riche .dr-card{background:#0f1626 !important;border:1px solid rgba(47,143,255,.28) !important;box-shadow:none !important}',
     '.dash-riche .dr-card h3{color:#eaf2ff !important}',
     '.dash-riche .dr-card .dr-sub{color:#8fa6c8 !important}',
-    '.dash-riche .dr-kpi{background:#0b0f18 !important;border-color:rgba(47,143,255,.16) !important}',
+    '.dash-riche .dr-kpi{background:#0f1626 !important;border-color:rgba(47,143,255,.28) !important}',
     '.dash-riche .dr-kpi::after{background:#2f8fff !important}',
     '.dash-riche .dr-kpi.green::after{background:#5ab0ff !important}',
     '.dash-riche .dr-kpi.red::after{background:#2f74e6 !important}',
@@ -27527,12 +27527,12 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
     '.dash-riche .cre{color:#5ab0ff !important}',
     '.dash-riche .deb{color:#2f74e6 !important}',
     '.dash-riche .dr-klbl,.dash-riche .dr-kmeta{color:#8fa6c8 !important}',
-    '.dash-riche .dr-area{fill:rgba(47,143,255,.16) !important}',
+    '.dash-riche .dr-area{fill:rgba(47,143,255,.28) !important}',
     '.dash-riche .dr-linep{stroke:#2f8fff !important}',
-    '.dash-riche .dr-dot{fill:#2f8fff !important;stroke:#0b0f18 !important}',
+    '.dash-riche .dr-dot{fill:#2f8fff !important;stroke:#0f1626 !important}',
     '.dash-riche .dr-bca{fill:#5ab0ff !important}',
     '.dash-riche .dr-bch{fill:#2f74e6 !important}',
-    '.dash-riche .dr-tbl th{color:#8fa6c8 !important;border-color:rgba(47,143,255,.16) !important}',
+    '.dash-riche .dr-tbl th{color:#8fa6c8 !important;border-color:rgba(47,143,255,.28) !important}',
     '.dash-riche .dr-tbl td{border-color:rgba(47,143,255,.10) !important;color:#cfe0ff !important}',
     '.dash-riche .dr-tbl .cre{color:#5ab0ff !important}',
     '.dash-riche .dr-tbl .deb{color:#2f74e6 !important}',
