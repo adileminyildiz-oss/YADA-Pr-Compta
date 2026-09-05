@@ -11094,7 +11094,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v528';
+    b.textContent='YADA · v529';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -27209,8 +27209,8 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
   };
   function ic(n){ return IC[n]||''; }
 
-  var PAL_CH=['#f26d6d','#f2905e','#f2b45e','#8b9bb5','#5b6b86','#39465c','#2f74e6'];
-  var PAL_PR=['#31c48d','#5ab0ff','#2f8fff','#2f74e6','#6ad0b0','#3a7a63','#8b9bb5'];
+  var PAL_CH=['#2f74e6','#2f8fff','#5ab0ff','#1e5fb8','#7cc0ff','#153f7a','#9fd0ff'];
+  var PAL_PR=['#5ab0ff','#2f8fff','#2f74e6','#7cc0ff','#1e5fb8','#9fd0ff','#153f7a'];
 
   /* ---- Collecte mensuelle depuis les écritures ---- */
   function collecte(){
@@ -27326,7 +27326,7 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
     /* Graphiques */
     out.push('<div class="dr-row r2">'
       +'<div class="dr-card"><h3>Chiffre d\'affaires vs Charges</h3><p class="dr-sub">Par mois'+(C.months.length?(' — '+mLabel(C.months[0])+' → '+mLabel(C.months[C.months.length-1])):'')+'</p>'+svgBars(C.months,C.byM)
-        +'<div class="dr-legend2"><span class="dr-lg"><span class="dr-sw" style="background:#31c48d"></span>CA</span><span class="dr-lg"><span class="dr-sw" style="background:#f26d6d"></span>Charges</span></div></div>'
+        +'<div class="dr-legend2"><span class="dr-lg"><span class="dr-sw" style="background:#5ab0ff"></span>CA</span><span class="dr-lg"><span class="dr-sw" style="background:#2f74e6"></span>Charges</span></div></div>'
       +'<div class="dr-card"><h3>Trésorerie cumulée</h3><p class="dr-sub">Solde des comptes 512 — fin de mois</p>'+svgLine(C.months,C.cum)+'</div>'
       +'</div>');
 
@@ -27435,95 +27435,114 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
 </script>
 
 <script id="yada-addon-marq-palette">
-/* v528 — Bases de couleur de la maquette « Mar'q » appliquées à la refonte :
-   monochrome noir / blanc — fond noir pur, cartes à filet blanc discret, texte
-   blanc + gris, accents BLANCS (fini le bleu franc). Barre latérale, en-tête,
-   cartes, boutons, champs, tableaux et tableau de bord recolorés. Le VERT/ROUGE
-   comptable (cre/deb, CA/charges) est préservé ; les zones Consultation
-   (.sg-app), éditeur (.ec-*) et Éditions (.doc-page/.inv) ne sont pas touchées.
-   100% CSS additif, injecté en dernier → prime. Structure inchangée. */
+/* v529 — Toutes les couleurs remplacées par le BLEU (sur la base sombre de la
+   maquette « Mar'q ») : fond bleu nuit profond, cartes à filet bleu discret,
+   accents bleu franc (#2f8fff / #5ab0ff / #2f74e6). Barre latérale, en-tête,
+   cartes, boutons, champs, tableaux et tableau de bord recolorés en bleu ; le
+   vert/rouge comptable (cre/deb, CA/charges) devient des nuances de bleu
+   (clair #5ab0ff crédit / profond #2f74e6 débit) pour garder la distinction.
+   Zones Consultation (.sg-app), éditeur (.ec-*) et Éditions (.doc-page/.inv)
+   non touchées. 100% CSS additif, injecté en dernier → prime. */
 (function(){ try{
   if(document.getElementById('marq-palette')) return;
   var css = [
-    /* Fond noir pur + suppression des halos bleus */
-    'html body[data-theme="noir"]:not(#x){background:#000 !important;background-image:none !important}',
+    /* Base sombre bleutée + halos retirés */
+    'html body[data-theme="noir"]:not(#x){background:#05070d !important;background-image:none !important}',
     'html body[data-theme="noir"]::before,html body[data-theme="noir"]::after{display:none !important}',
-    'html{background:#000 !important}',
-    'html body[data-theme="noir"] .layout,html body[data-theme="noir"] main,html body[data-theme="noir"] .mod-wrap,html body[data-theme="noir"] .dash-wrap{background:#000 !important;background-image:none !important}',
+    'html{background:#05070d !important}',
+    'html body[data-theme="noir"] .layout,html body[data-theme="noir"] main,html body[data-theme="noir"] .mod-wrap,html body[data-theme="noir"] .dash-wrap{background:#05070d !important;background-image:none !important}',
     'html body[data-theme="noir"] .layout::before,html body[data-theme="noir"] .layout::after,html body[data-theme="noir"] main::before,html body[data-theme="noir"] main::after,html body[data-theme="noir"] .mod-wrap::before,html body[data-theme="noir"] .mod-wrap::after,html body[data-theme="noir"] .dash-wrap::before,html body[data-theme="noir"] .dash-wrap::after{display:none !important;content:none !important}',
-    'html body[data-theme] #ds-back-chip:not(#x){background:#141414 !important;background-image:none !important;border:1px solid rgba(255,255,255,.16) !important;color:#e8e8e8 !important;box-shadow:none !important}',
-    'html body[data-theme] #ds-back-chip:not(#x):hover{border-color:rgba(255,255,255,.4) !important;box-shadow:none !important}',
-    /* Barre latérale monochrome */
-    'html body[data-theme] aside{background:#000 !important;background-image:none !important;backdrop-filter:none !important;border-right:1px solid rgba(255,255,255,.08) !important}',
+    'html body[data-theme] #ds-back-chip:not(#x){background:linear-gradient(135deg,#2f8fff,#5aa9ff) !important;border:1px solid transparent !important;color:#04101f !important;box-shadow:0 8px 20px -8px rgba(47,143,255,.7) !important}',
+    'html body[data-theme] #ds-back-chip:not(#x):hover{box-shadow:0 0 0 3px rgba(47,143,255,.25),0 10px 26px rgba(0,0,0,.5) !important}',
+    /* Barre latérale bleue */
+    'html body[data-theme] aside{background:#05070d !important;background-image:none !important;backdrop-filter:none !important;border-right:1px solid rgba(47,143,255,.22) !important}',
     '#nav-aurora{display:none !important}',
-    'html body[data-theme] #nav .nav-btn,html body[data-theme] #nav .nav-sub-btn,html body[data-theme] #nav .nav-grp-h{color:#8a8a8a !important;background:transparent !important;background-image:none !important;box-shadow:none !important;border-color:transparent !important}',
+    'html body[data-theme] #nav .nav-btn,html body[data-theme] #nav .nav-sub-btn,html body[data-theme] #nav .nav-grp-h{color:#8fa6c8 !important;background:transparent !important;background-image:none !important;box-shadow:none !important;border-color:transparent !important}',
     'html body[data-theme] #nav .nav-btn .ico,html body[data-theme] #nav .nav-sub-btn .ico{filter:none !important;color:inherit !important}',
-    'html body[data-theme] #nav .nav-btn:hover,html body[data-theme] #nav .nav-sub-btn:hover{color:#eaeaea !important;background:rgba(255,255,255,.05) !important}',
-    'html body[data-theme] #nav .nav-btn.active,html body[data-theme] #nav .nav-grp-h.has-active{color:#fff !important;background:rgba(255,255,255,.07) !important;box-shadow:inset 2px 0 0 #fff !important}',
-    'html body[data-theme] #nav .nav-btn.active .ico{color:#fff !important;filter:none !important}',
+    'html body[data-theme] #nav .nav-btn:hover,html body[data-theme] #nav .nav-sub-btn:hover{color:#cfe0ff !important;background:rgba(47,143,255,.10) !important}',
+    'html body[data-theme] #nav .nav-btn.active,html body[data-theme] #nav .nav-grp-h.has-active{color:#fff !important;background:rgba(47,143,255,.16) !important;box-shadow:inset 2px 0 0 #2f8fff !important}',
+    'html body[data-theme] #nav .nav-btn.active .ico{color:#5ab0ff !important;filter:none !important}',
     'html body[data-theme] #nav .nav-btn.active,html body[data-theme] #nav .nav-grp-h.has-active,html body[data-theme] #nav .nav-sub{border-color:transparent !important;outline:none !important}',
-    'html body[data-theme] #nav .nav-sec{color:#6a6a6a !important;letter-spacing:.14em !important}',
-    'html body[data-theme] aside .brand small{color:#8a8a8a !important}',
-    'html body[data-theme] .sf-toggle{background:#141414 !important;background-image:none !important;border:1px solid rgba(255,255,255,.14) !important;color:#e8e8e8 !important;box-shadow:none !important}',
-    'html body[data-theme] .sf-ic{background:rgba(255,255,255,.1) !important;color:#eaeaea !important}',
+    'html body[data-theme] #nav .nav-sec{color:#6f86a8 !important;letter-spacing:.14em !important}',
+    'html body[data-theme] aside .brand small{color:#8fa6c8 !important}',
+    'html body[data-theme] .sf-toggle{background:rgba(47,143,255,.12) !important;background-image:none !important;border:1px solid rgba(47,143,255,.4) !important;color:#cfe0ff !important;box-shadow:none !important}',
+    'html body[data-theme] .sf-ic{background:rgba(47,143,255,.18) !important;color:#5ab0ff !important}',
     /* En-têtes de page */
-    'html body[data-theme="noir"] .page-head h1{color:#f4f4f5 !important}',
-    'html body[data-theme="noir"] .page-head p{color:#8a8a8a !important}',
-    /* Cartes à filet (base maquette) */
-    'html body[data-theme="noir"] .card{background:#0b0b0c !important;background-image:none !important;border:1px solid rgba(255,255,255,.09) !important;box-shadow:none !important}',
+    'html body[data-theme="noir"] .page-head h1{color:#eaf2ff !important}',
+    'html body[data-theme="noir"] .page-head p{color:#8fa6c8 !important}',
+    /* Cartes à filet bleu */
+    'html body[data-theme="noir"] .card{background:#0b0f18 !important;background-image:none !important;border:1px solid rgba(47,143,255,.16) !important;box-shadow:none !important}',
     'html body[data-theme="noir"] .card::after{display:none !important}',
-    'html body[data-theme="noir"] .card h2{color:#f4f4f5 !important}',
-    'html body[data-theme="noir"] .card h2::before{background:#fff !important}',
-    'html body[data-theme="noir"] .card .sub,html body[data-theme="noir"] .card .meta,html body[data-theme="noir"] .card .mini,html body[data-theme="noir"] .card .hint{color:#8a8a8a !important}',
-    /* KPI génériques monochromes (cre/deb conservés) */
-    'html body[data-theme="noir"] .kpi{background:#0b0b0c !important;background-image:none !important;border:1px solid rgba(255,255,255,.09) !important;box-shadow:none !important}',
-    'html body[data-theme="noir"] .kpi::before{background:#fff !important}',
-    'html body[data-theme="noir"] .kpi .val{color:#f4f4f5 !important}',
-    'html body[data-theme="noir"] .kpi .val.cre{color:#31c48d !important}',
-    'html body[data-theme="noir"] .kpi .val.deb{color:#f26d6d !important}',
-    'html body[data-theme="noir"] .kpi .lbl,html body[data-theme="noir"] .kpi .meta{color:#8a8a8a !important}',
-    'html body[data-theme="noir"] .kpi-ic{background:rgba(255,255,255,.08) !important;color:#eaeaea !important;filter:none !important}',
-    /* Boutons monochromes */
-    'html body[data-theme] .btn{background:#141414 !important;background-image:none !important;color:#e8e8e8 !important;border:1px solid rgba(255,255,255,.14) !important;box-shadow:none !important;text-transform:none !important}',
-    'html body[data-theme] .btn::after{background:#fff !important}',
-    'html body[data-theme] .btn:hover{background:#1d1d1d !important}',
-    'html body[data-theme] .btn-pri,html body[data-theme] .btn-gold{background:#fff !important;color:#000 !important;border-color:#fff !important}',
-    'html body[data-theme] .btn-pri:hover,html body[data-theme] .btn-gold:hover{background:#e6e6e6 !important}',
-    'html body[data-theme] .yada-fill{box-shadow:inset 0 0 0 240px rgba(255,255,255,.16) !important}',
-    /* Champs (dans les cartes → épargne l\'éditeur .ec-*) */
-    'html body[data-theme="noir"] .card input,html body[data-theme="noir"] .card select,html body[data-theme="noir"] .card textarea,html body[data-theme="noir"] #cab-search,html body[data-theme="noir"] #ti-search{background:#0c0c0d !important;border:1px solid rgba(255,255,255,.12) !important;color:#eaeaea !important}',
-    'html body[data-theme="noir"] .card input:focus,html body[data-theme="noir"] .card select:focus,html body[data-theme="noir"] .card textarea:focus{outline:1px solid rgba(255,255,255,.55) !important;border-color:rgba(255,255,255,.4) !important}',
-    'html body[data-theme="noir"] ::selection{background:rgba(255,255,255,.22)}',
-    /* Tables des cartes (cre/deb conservés ; compta hors .card non touchée) */
-    'html body[data-theme="noir"] .card th{color:#8a8a8a !important;background:transparent !important;border-color:rgba(255,255,255,.09) !important}',
-    'html body[data-theme="noir"] .card td{border-color:rgba(255,255,255,.06) !important}',
-    'html body[data-theme="noir"] .card tr:hover td{background:rgba(255,255,255,.03) !important}',
-    'html body[data-theme="noir"] .card a,html body[data-theme="noir"] .card .rg-link,html body[data-theme="noir"] .card .linkname{color:#eaeaea !important}',
-    /* ===== Tableau de bord (.dr-*) au rendu maquette ===== */
+    'html body[data-theme="noir"] .card h2{color:#eaf2ff !important}',
+    'html body[data-theme="noir"] .card h2::before{background:#2f8fff !important}',
+    'html body[data-theme="noir"] .card .sub,html body[data-theme="noir"] .card .meta,html body[data-theme="noir"] .card .mini,html body[data-theme="noir"] .card .hint{color:#8fa6c8 !important}',
+    /* KPI (tout en bleu) */
+    'html body[data-theme="noir"] .kpi{background:#0b0f18 !important;background-image:none !important;border:1px solid rgba(47,143,255,.16) !important;box-shadow:none !important}',
+    'html body[data-theme="noir"] .kpi::before{background:#2f8fff !important}',
+    'html body[data-theme="noir"] .kpi .val{color:#eaf2ff !important}',
+    'html body[data-theme="noir"] .kpi .val.cre{color:#5ab0ff !important}',
+    'html body[data-theme="noir"] .kpi .val.deb{color:#2f74e6 !important}',
+    'html body[data-theme="noir"] .kpi .lbl,html body[data-theme="noir"] .kpi .meta{color:#8fa6c8 !important}',
+    'html body[data-theme="noir"] .kpi-ic{background:rgba(47,143,255,.14) !important;color:#5ab0ff !important;filter:none !important}',
+    /* cre/deb → nuances de bleu dans les cartes (bat td.cre/td.deb 0,2,2) */
+    'html body[data-theme="noir"] .card .cre,html body[data-theme="noir"] .card td.cre,html body[data-theme="noir"] .card .num.cre{color:#5ab0ff !important;-webkit-text-fill-color:#5ab0ff !important}',
+    'html body[data-theme="noir"] .card .deb,html body[data-theme="noir"] .card td.deb,html body[data-theme="noir"] .card .num.deb{color:#2f74e6 !important;-webkit-text-fill-color:#2f74e6 !important}',
+    'html body[data-theme="noir"] .dash-riche .cre,html body[data-theme="noir"] .dash-riche td.cre,html body[data-theme="noir"] .dash-riche .num.cre{color:#5ab0ff !important;-webkit-text-fill-color:#5ab0ff !important;border-color:rgba(47,143,255,.10) !important}',
+    'html body[data-theme="noir"] .dash-riche .deb,html body[data-theme="noir"] .dash-riche td.deb,html body[data-theme="noir"] .dash-riche .num.deb{color:#2f74e6 !important;-webkit-text-fill-color:#2f74e6 !important;border-color:rgba(47,143,255,.10) !important}',
+    /* Boutons bleus */
+    'html body[data-theme] .btn{background:#10233b !important;background-image:none !important;color:#cfe0ff !important;border:1px solid rgba(47,143,255,.35) !important;box-shadow:none !important;text-transform:none !important}',
+    'html body[data-theme] .btn::after{background:#2f8fff !important}',
+    'html body[data-theme] .btn:hover{background:#16345a !important}',
+    'html body[data-theme] .btn-pri,html body[data-theme] .btn-gold{background:#2f8fff !important;color:#fff !important;border-color:#2f8fff !important}',
+    'html body[data-theme] .btn-pri:hover,html body[data-theme] .btn-gold:hover{background:#2f74e6 !important}',
+    'html body[data-theme] .yada-fill{box-shadow:inset 0 0 0 240px rgba(47,143,255,.30) !important}',
+    /* Champs bleus (épargne l\'éditeur .ec-*) */
+    'html body[data-theme="noir"] .card input,html body[data-theme="noir"] .card select,html body[data-theme="noir"] .card textarea,html body[data-theme="noir"] #cab-search,html body[data-theme="noir"] #ti-search{background:#0b0f18 !important;border:1px solid rgba(47,143,255,.28) !important;color:#dbeafe !important}',
+    'html body[data-theme="noir"] .card input:focus,html body[data-theme="noir"] .card select:focus,html body[data-theme="noir"] .card textarea:focus{outline:1px solid #2f8fff !important;border-color:rgba(47,143,255,.6) !important}',
+    'html body[data-theme="noir"] ::selection{background:rgba(47,143,255,.32)}',
+    /* Tables des cartes (compta hors .card non touchée) */
+    'html body[data-theme="noir"] .card th{color:#8fa6c8 !important;background:transparent !important;border-color:rgba(47,143,255,.16) !important}',
+    'html body[data-theme="noir"] .card td{border-color:rgba(47,143,255,.10) !important}',
+    'html body[data-theme="noir"] .card tr:hover td{background:rgba(47,143,255,.06) !important}',
+    'html body[data-theme="noir"] .card a,html body[data-theme="noir"] .card .rg-link,html body[data-theme="noir"] .card .linkname{color:#5ab0ff !important}',
+    /* ===== Tableau de bord (.dr-*) tout en bleu ===== */
     '.dash-riche .dr-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:2px}',
     '.dash-riche .dr-head-l{display:flex;flex-direction:column;gap:3px;min-width:0}',
-    '.dash-riche .dr-head-ttl{font-size:26px;font-weight:700;letter-spacing:-.02em;color:#f4f4f5;line-height:1.1}',
-    '.dash-riche .dr-head-date{font-size:13px;color:#8a8a8a}',
+    '.dash-riche .dr-head-ttl{font-size:26px;font-weight:700;letter-spacing:-.02em;color:#eaf2ff;line-height:1.1}',
+    '.dash-riche .dr-head-date{font-size:13px;color:#8fa6c8}',
     '.dash-riche .dr-quick{display:flex;gap:8px;flex-wrap:wrap}',
-    '.dash-riche .dr-qbtn{font-family:inherit;font-size:12px;font-weight:600;color:#cfcfcf;background:#111;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:8px 13px;cursor:pointer;transition:background .15s,color .15s}',
-    '.dash-riche .dr-qbtn:hover{background:#1c1c1c;color:#fff}',
-    '.dash-riche .dr-card{background:#0b0b0c !important;border:1px solid rgba(255,255,255,.09) !important;box-shadow:none !important}',
-    '.dash-riche .dr-card h3{color:#f4f4f5 !important}',
-    '.dash-riche .dr-card .dr-sub{color:#8a8a8a !important}',
-    '.dash-riche .dr-kpi{background:#0b0b0c !important;border-color:rgba(255,255,255,.09) !important}',
-    '.dash-riche .dr-kpi.blue::after{background:#fff !important}',
-    '.dash-riche .dr-kpi.amber::after{background:#c7c7c7 !important}',
-    '.dash-riche .dr-kpi.blue .dr-kico,.dash-riche .dr-kpi.amber .dr-kico{background:rgba(255,255,255,.08) !important;color:#eaeaea !important}',
-    '.dash-riche .dr-kval{color:#f4f4f5 !important}',
-    '.dash-riche .dr-klbl,.dash-riche .dr-kmeta{color:#8a8a8a !important}',
-    '.dash-riche .dr-area{fill:rgba(255,255,255,.12) !important}',
-    '.dash-riche .dr-linep{stroke:#fff !important}',
-    '.dash-riche .dr-dot{fill:#fff !important;stroke:#0b0b0c !important}',
-    '.dash-riche .dr-tbl th{color:#8a8a8a !important;border-color:rgba(255,255,255,.09) !important}',
-    '.dash-riche .dr-tbl td{border-color:rgba(255,255,255,.06) !important;color:#dcdcdc !important}',
-    '.dash-riche .dr-dontot{fill:#f4f4f5 !important}',
-    '.dash-riche .dr-legl{color:#cfcfcf !important}',
-    '.dash-riche .dr-legv{color:#f4f4f5 !important}'
+    '.dash-riche .dr-qbtn{font-family:inherit;font-size:12px;font-weight:600;color:#cfe0ff;background:#10233b;border:1px solid rgba(47,143,255,.35);border-radius:10px;padding:8px 13px;cursor:pointer;transition:background .15s,color .15s}',
+    '.dash-riche .dr-qbtn:hover{background:#16345a;color:#fff}',
+    '.dash-riche .dr-card{background:#0b0f18 !important;border:1px solid rgba(47,143,255,.16) !important;box-shadow:none !important}',
+    '.dash-riche .dr-card h3{color:#eaf2ff !important}',
+    '.dash-riche .dr-card .dr-sub{color:#8fa6c8 !important}',
+    '.dash-riche .dr-kpi{background:#0b0f18 !important;border-color:rgba(47,143,255,.16) !important}',
+    '.dash-riche .dr-kpi::after{background:#2f8fff !important}',
+    '.dash-riche .dr-kpi.green::after{background:#5ab0ff !important}',
+    '.dash-riche .dr-kpi.red::after{background:#2f74e6 !important}',
+    '.dash-riche .dr-kpi.blue::after{background:#2f8fff !important}',
+    '.dash-riche .dr-kpi.amber::after{background:#7cc0ff !important}',
+    '.dash-riche .dr-kico{background:rgba(47,143,255,.14) !important;color:#5ab0ff !important}',
+    '.dash-riche .dr-kval{color:#eaf2ff !important}',
+    '.dash-riche .cre{color:#5ab0ff !important}',
+    '.dash-riche .deb{color:#2f74e6 !important}',
+    '.dash-riche .dr-klbl,.dash-riche .dr-kmeta{color:#8fa6c8 !important}',
+    '.dash-riche .dr-area{fill:rgba(47,143,255,.16) !important}',
+    '.dash-riche .dr-linep{stroke:#2f8fff !important}',
+    '.dash-riche .dr-dot{fill:#2f8fff !important;stroke:#0b0f18 !important}',
+    '.dash-riche .dr-bca{fill:#5ab0ff !important}',
+    '.dash-riche .dr-bch{fill:#2f74e6 !important}',
+    '.dash-riche .dr-tbl th{color:#8fa6c8 !important;border-color:rgba(47,143,255,.16) !important}',
+    '.dash-riche .dr-tbl td{border-color:rgba(47,143,255,.10) !important;color:#cfe0ff !important}',
+    '.dash-riche .dr-tbl .cre{color:#5ab0ff !important}',
+    '.dash-riche .dr-tbl .deb{color:#2f74e6 !important}',
+    /* Pastilles de journal (VTE/ACH…) recolorées en bleu dans le tableau de bord */
+    '.dash-riche .tag.t-ven,.dash-riche .tag.t-pay{background:rgba(90,176,255,.16) !important;color:#7cc0ff !important;border-color:rgba(47,143,255,.45) !important}',
+    '.dash-riche .tag.t-ach,.dash-riche .tag.t-avoir,.dash-riche .tag.t-ecart{background:rgba(47,116,230,.18) !important;color:#8fbdff !important;border-color:rgba(47,116,230,.5) !important}',
+    '.dash-riche .tag.t-org,.dash-riche .tag.t-bq,.dash-riche .tag.t-devis,.dash-riche .tag.t-part,.dash-riche .tag.t-att{background:rgba(47,143,255,.14) !important;color:#5ab0ff !important;border-color:rgba(47,143,255,.35) !important}',
+    '.dash-riche .dr-dontot{fill:#eaf2ff !important}',
+    '.dash-riche .dr-legl{color:#cfe0ff !important}',
+    '.dash-riche .dr-legv{color:#eaf2ff !important}'
   ].join('');
   var st=document.createElement('style'); st.id='marq-palette'; st.textContent=css; document.head.appendChild(st);
 }catch(e){} })();
