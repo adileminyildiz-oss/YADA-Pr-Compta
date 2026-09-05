@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — HUB du dossier : boutons d'action déplacés en HAUT À DROITE + deux cartes alignées — v525
+## 🟢 Dernière mise à jour — HUB du dossier : 5 rubriques à la même taille (symétriques avec la fiche société, bords sans débordement) — v526
+**Quoi :** à la demande, les **5 cartes de rubriques** (Permanent · Déclarations · Ressources Humaines · Pilotages · Comptabilité) sont **toutes réduites à la même taille** et réparties uniformément pour être **symétriques avec le tableau (fiche société) à gauche** : la colonne de rubriques a exactement la **même hauteur** que la fiche société et chaque tuile est **identique** (77 × 448 px). Les **bords ne dépassent plus** (contenu tronqué proprement dans chaque tuile).
+
+**Comment — CSS `<style id="dossiers-pc-hub-mod">` (`yada-addon-dossiers-pc`, precompta + build V1) :** `.ds-hub-side` passe de `justify-content:space-between` (tuiles à hauteur variable selon le contenu) à une **grille de 5 rangées égales** (`display:grid;grid-template-rows:repeat(5,1fr);gap:8px;min-height:0`) → les 5 tuiles remplissent la hauteur de la colonne (elle-même étirée à la hauteur de la fiche société via `align-items:stretch`) en parts égales. `.ds-tile` reçoit `min-height:0;overflow:hidden;box-sizing:border-box` (aucun débordement de bord, y compris pour la description sur 2 lignes de « Permanent »). `sw.js` yada-v121, badge v526, `version.json` 526.
+
+**Validé :** `node --check` (precompta 236 / V1 235, 0 erreur) + `sw.js` OK + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + Playwright (HUB : société `416×448` = colonne rubriques `416×448` ; **5 tuiles identiques 77×448** — même hauteur & même largeur ; **aucun débordement du bord droit** ; 0 pageerror) + capture (5 rubriques égales, symétriques à la fiche société). Badge → **v526**.
+
+---
+
+## 🟢 MAJ précédente — HUB du dossier : boutons d'action déplacés en HAUT À DROITE + deux cartes alignées — v525
 **Quoi :** à la demande, dans le **HUB du dossier**, les **boutons d'action** (« ← Retour aux dossiers » · « Déconnexion ») passent **en haut à droite** de la zone (au niveau du fil d'Ariane / titre) au lieu d'être centrés sous les cartes. Les **deux cartes** (fiche société à gauche · rubriques à droite) restent **parfaitement alignées** — même haut, même hauteur, même largeur (448 × 416 px, grille `1fr 1fr` `align-items:stretch`).
 
 **Comment — CSS `<style id="dossiers-pc-hub-mod">` (`yada-addon-dossiers-pc`, precompta + build V1) :** `.dspc-main-hub{position:relative}` ; `.dspc-main-hub .login-actions{position:absolute;top:22px;right:30px;margin:0;justify-content:flex-end;z-index:3}` (au lieu de centré) ; la règle `margin-top:18px` ne cible plus `.login-actions` ; en `@media(max-width:900px)` les boutons repassent **statiques et centrés** (`position:static`, `margin:16px auto 0`). `sw.js` yada-v120, badge v525, `version.json` 525.
