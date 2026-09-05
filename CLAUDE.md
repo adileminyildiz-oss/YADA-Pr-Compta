@@ -36,7 +36,16 @@
 
 ---
 
-## 🟢 Dernière mise à jour — HUB du dossier : mise en page TRÈS SYMÉTRIQUE (deux colonnes égales, centrées, même hauteur) — v523
+## 🟢 Dernière mise à jour — HUB du dossier : cartes RÉDUITES pour une symétrie complète (rubriques + fiche société compactées, colonnes égales) — v524
+**Quoi :** à la demande (« réduire la taille de certaines cartes pour être complètement symétrique »), les **cartes du HUB sont compactées** afin d'égaliser encore la hauteur des deux colonnes : les **tuiles de rubriques** (padding, icône, libellés) et la **fiche société** (en-tête, avatar, nom, grille d'infos) sont réduites. La grille reste **strictement égale** (`1fr 1fr`, `align-items:stretch`) → colonnes de **même largeur ET même hauteur** (448 × 416 px), contenu centré (v523 conservé).
+
+**Comment — CSS `<style id="dossiers-pc-hub-mod">` (`yada-addon-dossiers-pc`, precompta + build V1) :** `.ds-tile` padding `14px 16px→10px 14px`, gap `13→11` ; `.ds-tile-ic` `40→34px`, rayon `11→9`, svg `20→18px` ; `.ds-tile-t{font-size:14px}.ds-tile-d{font-size:11px}` ; fiche société : `.dsc-head{padding:11px 15px;gap:11px}`, `.dsc-av{40px;font-size:18px}`, `.dsc-nom{17px}`, `.dsc-grid{gap:7px;padding:10px 13px 11px}`, `.dsc-item{padding:7px 10px}` (tout scopé `.dspc-main-hub`). `sw.js` yada-v119, badge v524, `version.json` 524.
+
+**Validé :** `node --check` (precompta 236 / V1 235, 0 erreur) + `sw.js` OK + filet d'équilibre (vente 1200=1200, achat 600=600 ✅) + Playwright (HUB : colonnes `448px 448px` — **largeurs égales**, **hauteurs égales 416/416** (compactées), 5 rubriques + 5 icônes SVG, repères masqués, 0 pageerror) + capture (deux colonnes symétriques compactées, contenu centré). Badge → **v524**.
+
+---
+
+## 🟢 MAJ précédente — HUB du dossier : mise en page TRÈS SYMÉTRIQUE (deux colonnes égales, centrées, même hauteur) — v523
 **Quoi :** à la demande, le **HUB du dossier** (Structure A) est rendu **parfaitement symétrique** : la grille passe de `1fr minmax(420px,540px)` (colonnes inégales) à **deux colonnes strictement égales** (`1fr 1fr`), l'ensemble est **centré** (`max-width:1160px;margin:auto`), les deux colonnes ont la **même hauteur** (`align-items:stretch`) et les **5 rubriques sont réparties uniformément** (`justify-content:space-between`) pour égaler la hauteur de la fiche société. Le **fil d'Ariane, le titre, le sous-titre et la barre d'actions sont centrés**.
 
 **Comment — édition du CSS `<style id="dossiers-pc-hub-mod">` (`yada-addon-dossiers-pc`, precompta + build V1) :** `.ds-hub-grid` → `grid-template-columns:1fr 1fr;margin:16px auto 0;max-width:1160px;align-items:stretch;justify-items:stretch` ; `.ds-hub-main{max-width:none;width:100%}` (fin du cap 560px) ; `.ds-hub-side{justify-content:space-between}` ; `.login-title/.login-sub/.dspc-crumb/.login-actions` centrés (`text-align:center` / `justify-content:center` + `margin:auto`). `sw.js` yada-v118, badge v523, `version.json` 523.
