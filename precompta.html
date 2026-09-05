@@ -11094,7 +11094,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v521';
+    b.textContent='YADA · v522';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -26977,8 +26977,15 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
       shield:S('<path d="M12 3l7 3v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6z"/>'),
       power:S('<path d="M12 4v7"/><path d="M6.5 7a8 8 0 1 0 11 0"/>'),
       building:S('<path d="M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16"/><path d="M15 10h4a1 1 0 0 1 1 1v10"/><path d="M8 8h3M8 12h3M8 16h3"/>'),
-      monitor:S('<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>')
+      monitor:S('<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>'),
+      cog:S('<circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M16.9 16.9l2.1 2.1M19.1 4.9l-2.1 2.1M7 16.9l-2.1 2.1"/>'),
+      percent:S('<path d="M19 5 5 19M8 8.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zM19 15.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>'),
+      people:S('<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 5.5a3 3 0 0 1 0 5.8M21 20a5 5 0 0 0-3.5-4.8"/>'),
+      chart:S('<path d="M4 20V4M4 20h16M8 16v-4M12 16v-8M16 16v-6"/>'),
+      book:S('<path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2zM4 19a2 2 0 0 0 2 2h12"/><path d="M8 7h6M8 11h6"/>')
     };
+    /* Icônes des 5 rubriques du HUB (ordre TILES : Permanent · Déclarations · RH · Pilotages · Comptabilité). */
+    var RIC=[IC.cog, IC.percent, IC.people, IC.chart, IC.book];
     function who(){
       var c=(window.db&&db.cabinet)||{};
       var nom=c.collaborateur||'', role=c.role||'';
@@ -27071,6 +27078,59 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
       shell.appendChild(asideEl.firstChild); shell.appendChild(main);
       lw.appendChild(shell);
     }
+    /* HUB du dossier (Structure A « Fiche société à gauche + rubriques en liste ») : shell PC
+       (barre latérale + fil d'Ariane + fiche société + rubriques à icônes). On ENVELOPPE le
+       contenu existant (.ds-hub-grid + actions) pour préserver dsEntrerRubrique / dsOuvrirListe /
+       admDoLogout, puis on décore les tuiles de rubrique avec des icônes SVG (ordre TILES). */
+    function transformHub(){
+      var lw=document.querySelector('.login-wrap.ds-hub-wrap'); if(!lw) return;
+      if(lw.classList.contains('ds-pchub')) return;
+      lw.classList.add('ds-pchub');
+      var nom=''; try{ var tt=lw.querySelector('.login-title'); nom=tt?(tt.textContent||'').trim():''; }catch(e){}
+      var main=document.createElement('div'); main.className='dspc-main dspc-main-hub';
+      var crumb=document.createElement('div'); crumb.className='dspc-crumb';
+      crumb.innerHTML='<b>Dossiers</b> / '+esc(nom||'Dossier');
+      while(lw.firstChild) main.appendChild(lw.firstChild);
+      main.insertBefore(crumb, main.firstChild);
+      /* décoration des rubriques : icône SVG à gauche + texte empilé + « Ouvrir → » à droite */
+      try{
+        var tiles=main.querySelectorAll('.ds-hub-side .ds-tile');
+        for(var i=0;i<tiles.length;i++){ var t=tiles[i]; if(t.querySelector('.ds-tile-ic')) continue;
+          var o=t.querySelector('.ds-tile-o'), tn=t.querySelector('.ds-tile-t'), dn=t.querySelector('.ds-tile-d');
+          var ic=document.createElement('span'); ic.className='ds-tile-ic'; ic.innerHTML=RIC[i]||IC.folder;
+          var tx=document.createElement('span'); tx.className='ds-tile-txt';
+          if(tn) tx.appendChild(tn); if(dn) tx.appendChild(dn);
+          t.insertBefore(ic, t.firstChild); t.insertBefore(tx, o||null);
+        }
+      }catch(e){}
+      var shell=document.createElement('div'); shell.className='dspc-shell dspc-shell-hub';
+      var asideEl=document.createElement('div'); asideEl.innerHTML=asideHTML();
+      shell.appendChild(asideEl.firstChild); shell.appendChild(main);
+      lw.appendChild(shell);
+    }
+    /* CSS du shell HUB */
+    try{
+      var sth=document.createElement('style'); sth.id='dossiers-pc-hub-mod'; sth.textContent=[
+        '.login-wrap.ds-pchub{padding:0 !important;min-height:100vh !important;background:transparent !important}',
+        '.dspc-shell-hub{display:grid;grid-template-columns:236px 1fr;height:100vh}',
+        '.dspc-main-hub{padding:22px 30px 28px;overflow:auto}',
+        '.dspc-main-hub .login-head{display:none}',
+        '.dspc-crumb{font-size:12px;color:#63748f;margin-bottom:10px}.dspc-crumb b{color:#9fb0cc}',
+        '.dspc-main-hub .login-title{font-size:24px;font-weight:800;letter-spacing:-.02em;color:#f2f5fb}',
+        '.dspc-main-hub .login-sub{color:#9fb0cc;font-size:13px;margin-top:4px}',
+        '.dspc-main-hub .ds-hub-grid{grid-template-columns:1fr minmax(420px,540px) !important;gap:24px;margin-top:16px !important}',
+        '.dspc-main-hub .ds-hub-main{max-width:560px}',
+        /* rubriques en liste : icône à gauche + texte empilé + « Ouvrir → » à droite */
+        '.dspc-main-hub .ds-tile{display:flex !important;flex-direction:row !important;align-items:center;gap:13px;padding:14px 16px !important}',
+        '.dspc-main-hub .ds-tile-ic{width:40px;height:40px;border-radius:11px;background:rgba(47,143,255,.12);border:1px solid rgba(47,143,255,.26);display:grid;place-items:center;color:#5aa9ff;flex:0 0 auto}',
+        '.dspc-main-hub .ds-tile-ic svg{width:20px;height:20px}',
+        '.dspc-main-hub .ds-tile-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}',
+        '.dspc-main-hub .ds-tile-o{margin:0 !important;color:#5aa9ff;white-space:nowrap;font-weight:600}',
+        '.dspc-main-hub .ds-hub-wrap,.dspc-main-hub .login-actions{margin-top:18px}',
+        '@media(max-width:900px){.dspc-shell-hub{grid-template-columns:1fr;height:auto}.dspc-main-hub .ds-hub-grid{grid-template-columns:1fr !important}}'
+      ].join('\n');
+      document.head.appendChild(sth);
+    }catch(e){}
     /* CSS du shell Liste (barre latérale + liste centre + fiche droite) */
     try{
       var stl=document.createElement('style'); stl.id='dossiers-pc-liste-mod'; stl.textContent=[
@@ -27091,11 +27151,22 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
 
     var _r=window.render;
     if(typeof _r==='function'){
-      window.render=function(){ var x=_r.apply(this,arguments); try{ transform(); }catch(e){} try{ transformListe(); }catch(e){} return x; };
+      window.render=function(){ var x=_r.apply(this,arguments); try{ transform(); }catch(e){} try{ transformListe(); }catch(e){} try{ transformHub(); }catch(e){} return x; };
     }
-    setTimeout(function(){ try{ transform(); }catch(e){} try{ transformListe(); }catch(e){} }, 60);
+    setTimeout(function(){ try{ transform(); }catch(e){} try{ transformListe(); }catch(e){} try{ transformHub(); }catch(e){} }, 60);
   }catch(e){}
 })();
+</script>
+<script id="yada-addon-hide-reperes">
+/* Masquer les repères visuels « YADA · vNNN » (#yada-ver) et « Enregistré ✓ … » (#yada-save-ind)
+   à la demande. 100% CSS : les éléments restent dans le DOM (le badge #yada-ver est lu par le
+   contrôle de version / verrou anti-retour / mise à jour auto), ils ne sont plus AFFICHÉS. */
+(function(){ try{
+  if(document.getElementById('hide-reperes-mod')) return;
+  var st=document.createElement('style'); st.id='hide-reperes-mod';
+  st.textContent='#yada-ver,#yada-save-ind{display:none !important}';
+  document.head.appendChild(st);
+}catch(e){} })();
 </script>
 </body>
 </html>
