@@ -11094,7 +11094,7 @@ ${lignes}
 (function(){ try{
   function add(){ if(document.getElementById('yada-ver')) return;
     var b=document.createElement('div'); b.id='yada-ver';
-    b.textContent='YADA · v520';
+    b.textContent='YADA · v521';
     b.title='Repère de version — déploiement GitHub Pages (peut être retiré)';
     b.style.cssText='position:fixed;left:12px;bottom:82px;z-index:9999;font:700 11px system-ui,sans-serif;background:linear-gradient(120deg,#5ab0ff,#0a64d6);color:#ffffff;padding:5px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.85;pointer-events:none';
     document.body.appendChild(b); }
@@ -26930,13 +26930,10 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
       return '<button class="dspc-mod" onclick="'+onclick+'"><span class="mi">'+icon+'</span><h3>'+titre+'</h3><p>'+desc+'</p></button>';
     }
 
-    function shellHTML(){
+    function asideHTML(){
       var w=who(), isAdmin=(window.sessionRole==='admin');
-      var list=portefeuille();
-      var actif=null; try{ var aid=window.db&&db.activeId; if(aid){ actif=list.filter(function(d){return d&&d.id===aid;})[0]||null; } }catch(e){}
       var imp="document.getElementById('imp').click()";
-      /* ---- barre latérale gauche ---- */
-      var aside='<div class="dspc-aside">'
+      return '<div class="dspc-aside">'
         +'<div class="dspc-logo"><div class="ic">Y</div><div><div class="nm">YADA</div><div class="bl">Système · CA3</div></div></div>'
         +'<div class="dspc-sec">Dossiers</div>'
         +nav(IC.folder,'Liste des dossiers','dsOuvrirListe()','on')
@@ -26949,6 +26946,14 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
         +'<div class="dspc-foot"><div class="dspc-who"><b>'+esc(w.cab)+'</b><span>'+esc((w.nom||'')+(w.role?(' · '+w.role):''))+'</span></div>'
         +nav(IC.power,'Déconnexion','admDoLogout()','danger')
         +'</div></div>';
+    }
+    function shellHTML(){
+      var w=who(), isAdmin=(window.sessionRole==='admin');
+      var list=portefeuille();
+      var actif=null; try{ var aid=window.db&&db.activeId; if(aid){ actif=list.filter(function(d){return d&&d.id===aid;})[0]||null; } }catch(e){}
+      var imp="document.getElementById('imp').click()";
+      /* ---- barre latérale gauche ---- */
+      var aside=asideHTML();
       /* ---- centre : modules ---- */
       var main='<div class="dspc-main"><div class="dspc-mhead"><div><div class="dspc-title">Espace dossiers</div><div class="dspc-sub">Ouvrez un dossier ou lancez un module.</div></div><div class="dspc-date">'+esc(dateFr())+'</div></div>'
         +'<div class="dspc-grid">'
@@ -26980,12 +26985,44 @@ html body,html body *{font-family:'IBM Plex Sans','Segoe UI',-apple-system,Blink
       lw.classList.add('ds-pc');
       lw.innerHTML=shellHTML();
     }
+    /* Liste des dossiers : shell PC (barre latérale + liste au centre + fiche à droite).
+       On ENVELOPPE le contenu existant (titre + recherche + .ds-liste-layout + actions) pour
+       préserver la recherche (dsFilterListe), le survol→fiche (#ds-info-panel) et la sélection. */
+    function transformListe(){
+      var lw=document.querySelector('.login-wrap'); if(!lw) return;
+      if(lw.classList.contains('ds-pcl')) return;
+      var tt=lw.querySelector('.login-title');
+      if(!tt || (tt.textContent||'').trim()!=='Liste des dossiers') return;
+      lw.classList.add('ds-pcl');
+      var main=document.createElement('div'); main.className='dspc-main dspc-main-liste';
+      while(lw.firstChild) main.appendChild(lw.firstChild);
+      var shell=document.createElement('div'); shell.className='dspc-shell dspc-shell-liste';
+      var asideEl=document.createElement('div'); asideEl.innerHTML=asideHTML();
+      shell.appendChild(asideEl.firstChild); shell.appendChild(main);
+      lw.appendChild(shell);
+    }
+    /* CSS du shell Liste (barre latérale + liste centre + fiche droite) */
+    try{
+      var stl=document.createElement('style'); stl.id='dossiers-pc-liste-mod'; stl.textContent=[
+        '.login-wrap.ds-pcl{padding:0 !important;min-height:100vh !important;background:transparent !important}',
+        '.dspc-shell-liste{display:grid;grid-template-columns:236px 1fr;height:100vh}',
+        '.dspc-main-liste{padding:26px 30px 30px;overflow:auto}',
+        '.dspc-main-liste .login-head{display:none}',
+        '.dspc-main-liste .login-title{font-size:24px;font-weight:800;letter-spacing:-.02em;color:#f2f5fb}',
+        '.dspc-main-liste .login-sub{color:#9fb0cc;font-size:13px;margin-top:4px}',
+        '.dspc-main-liste .ds-liste-layout{grid-template-columns:minmax(420px,1fr) 340px !important;align-items:start}',
+        '.dspc-main-liste .ds-list-col{order:1}',
+        '.dspc-main-liste .ds-info-col{order:2}',
+        '@media(max-width:900px){.dspc-shell-liste{grid-template-columns:1fr;height:auto}.dspc-main-liste .ds-liste-layout{grid-template-columns:1fr !important}}'
+      ].join('\n');
+      document.head.appendChild(stl);
+    }catch(e){}
 
     var _r=window.render;
     if(typeof _r==='function'){
-      window.render=function(){ var x=_r.apply(this,arguments); try{ transform(); }catch(e){} return x; };
+      window.render=function(){ var x=_r.apply(this,arguments); try{ transform(); }catch(e){} try{ transformListe(); }catch(e){} return x; };
     }
-    setTimeout(function(){ try{ transform(); }catch(e){} }, 60);
+    setTimeout(function(){ try{ transform(); }catch(e){} try{ transformListe(); }catch(e){} }, 60);
   }catch(e){}
 })();
 </script>
